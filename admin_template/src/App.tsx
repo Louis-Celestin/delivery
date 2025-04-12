@@ -19,6 +19,8 @@ import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
 
+import LivraisonForm from "./pages/Forms/LivraisonForms/LivraisonForm";
+
 export default function App() {
   return (
     <>
@@ -36,6 +38,7 @@ export default function App() {
 
             {/* Forms */}
             <Route path="/form-elements" element={<FormElements />} />
+            <Route path="/form-livraison" element={<LivraisonForm />} />
 
             {/* Tables */}
             <Route path="/basic-tables" element={<BasicTables />} />
