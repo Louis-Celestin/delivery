@@ -15,9 +15,9 @@ import Calendar from "./pages/Calendar";
 import BasicTables from "./pages/Tables/BasicTables";
 import FormElements from "./pages/Forms/FormElements";
 import Blank from "./pages/Blank";
-import AppLayout from "./layout/AppLayout";
+import AppLayout from "./layouts/deliveryAdminLayout/AppLayoutDelivery";
 import { ScrollToTop } from "./components/common/ScrollToTop";
-import Home from "./pages/Dashboard/Home";
+import Home from "./pages/Dashboards/DeliveryDashboard";
 
 import LivraisonForm from "./pages/Forms/LivraisonForms/LivraisonForm";
 

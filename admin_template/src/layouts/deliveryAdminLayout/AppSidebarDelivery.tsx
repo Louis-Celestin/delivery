@@ -14,9 +14,9 @@ import {
   PlugInIcon,
   TableIcon,
   UserCircleIcon,
-} from "../icons";
-import { useSidebar } from "../context/SidebarContext";
-import SidebarWidget from "./SidebarWidget";
+} from "../../icons";
+import { useSidebar } from "../../context/SidebarContext";
+import SidebarWidget from "./SidebarWidgetDelivery";
 
 type NavItem = {
   name: string;
@@ -333,7 +333,7 @@ const AppSidebar: React.FC = () => {
               height={32}
             />
           )} */}
-          <span className="w-full text-center">DASHBOARD</span>
+          <span className="w-full text-center">DASHBOARD DELIVERY</span>
         </Link>
       </div>
       <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">

@@ -5,7 +5,8 @@ import MonthlyTarget from "../../components/ecommerce/MonthlyTarget";
 import RecentOrders from "../../components/ecommerce/RecentOrders";
 import DemographicCard from "../../components/ecommerce/DemographicCard";
 import PageMeta from "../../components/common/PageMeta";
-import TerminalOrders from "../../components/livraisons/TerminalOrders"
+
+import TerminalOrders from "../../components/livraisons/StockChargeurs"
 
 
 export default function Home() {
@@ -19,23 +20,23 @@ export default function Home() {
         <div className="col-span-4 space-y-6">
           <TerminalOrders />
         </div>
-        {/* <div className="col-span-12 space-y-6 xl:col-span-7">
+        <div className="col-span-12 space-y-6 xl:col-span-7">
           <EcommerceMetrics />
 
           <MonthlySalesChart />
-        </div> */}
+        </div>
 
-        {/* <div className="col-span-12 xl:col-span-5">
+        <div className="col-span-12 xl:col-span-5">
           <MonthlyTarget />
-        </div> */}
+        </div>
 
-        {/* <div className="col-span-12">
+        <div className="col-span-12">
           <StatisticsChart />
-        </div> */}
+        </div>
 
-        {/* <div className="col-span-12 xl:col-span-5">
+        <div className="col-span-12 xl:col-span-5">
           <DemographicCard />
-        </div> */}
+        </div>
 
         <div className="col-span-12 xl:col-span-7">
           <RecentOrders />
