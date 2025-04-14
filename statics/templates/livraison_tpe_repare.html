@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>LIVRAISON TPE RÉPARÉ</title>
+  <style>
+    .container {
+      border: 1px solid #000;
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 40px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #000;
+      padding: 6px;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <img src="../../statics/images/logos/logo.png" alt="Logo" width="200" height="50">
+      <h1 style="text-align: center; flex: 1;">LIVRAISON TPE RÉPARÉ</h1>
+    </div>
+
+    <div><strong>Commentaire :</strong> {{commentaire}}</div>
+    <div><strong>Date :</strong> {{date_livraison}}</div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Marchand</th>
+          <th>Numéro de série</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{produitsRows}}
+      </tbody>
+    </table>
+
+    <div style="margin-top: 15px;">
+      <strong>Total :</strong> {{qte_totale_livraison}}
+    </div>
+
+    <div class="footer">
+      <div>
+        <strong>Expéditeur :</strong> {{nom_expediteur}}
+        <div style="margin-top: 40px;">Signature</div>
+      </div>
+      <div>
+        <strong>Récepteur :</strong> {{nom_recepteur}}
+        <div style="margin-top: 40px;">Signature</div>
+      </div>
+    </div>
+
+    <p style="text-align: center; margin-top: 30px;">
+      <i>@ Automatiquement généré par le système de livraison Green-Pay</i>
+    </p>
+  </div>
+</body>
+</html>

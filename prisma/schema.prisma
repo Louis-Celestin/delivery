@@ -1,0 +1,173 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model agents {
+  id         Int       @id @default(autoincrement())
+  nom        String    @db.VarChar(100)
+  fonction   String    @db.VarChar(50)
+  entite_id  Int?
+  section_id Int?
+  entites    entites?  @relation(fields: [entite_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "agents_ibfk_1")
+  sections   sections? @relation(fields: [section_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "agents_ibfk_2")
+  users      users[]
+
+  @@index([entite_id], map: "entite_id")
+  @@index([section_id], map: "section_id")
+}
+
+model chargeurs {
+  id_chargeur    Int            @id @default(autoincrement())
+  model_chargeur String         @db.VarChar(255)
+  description    String         @db.VarChar(255)
+  qte            Int
+  stock          Int
+  transactions   transactions[]
+}
+
+model entites {
+  id       Int        @id @default(autoincrement())
+  nom      String     @db.VarChar(100)
+  agents   agents[]
+  sections sections[]
+}
+
+model livraison {
+  id_livraison         Int                        @id @default(autoincrement())
+  statut_livraison     livraison_statut_livraison @default(en_cours)
+  qte_totale_livraison Int
+  produitsLivre        String                     @db.LongText
+  commentaire          String?                    @db.VarChar(255)
+  date_livraison       DateTime                   @db.DateTime(0)
+  deleted              Boolean                    @default(false)
+  date_deleted         DateTime?                  @db.DateTime(0)
+  user_id              Int?
+  nom_livreur          String?                    @db.VarChar(255)
+  type_livraison_id    Int?
+  users                users?                     @relation(fields: [user_id], references: [id_user], onDelete: Restrict, onUpdate: Restrict, map: "livraison_ibfk_1")
+  typeLivraison        typeLivraison?             @relation(fields: [type_livraison_id], references: [id_type_livraison], onDelete: Restrict, onUpdate: Restrict, map: "livraison_ibfk_2")
+  validations          validations[]
+
+  @@index([type_livraison_id], map: "type_livraison_id")
+  @@index([user_id], map: "user_id")
+}
+
+model permissions {
+  id_permission    Int                @id @default(autoincrement())
+  description      String?            @db.VarChar(255)
+  role_permissions role_permissions[]
+}
+
+model role_permissions {
+  id            Int          @id @default(autoincrement())
+  role_id       Int?
+  permission_id Int?
+  roles         roles?       @relation(fields: [role_id], references: [id_role], onDelete: Restrict, onUpdate: Restrict, map: "role_permissions_ibfk_1")
+  permissions   permissions? @relation(fields: [permission_id], references: [id_permission], onDelete: Restrict, onUpdate: Restrict, map: "role_permissions_ibfk_2")
+
+  @@index([permission_id], map: "permission_id")
+  @@index([role_id], map: "role_id")
+}
+
+model roles {
+  id_role          Int                @id @default(autoincrement())
+  designation_role String?            @db.VarChar(255)
+  role_permissions role_permissions[]
+  user_roles       user_roles[]
+}
+
+model sections {
+  id        Int      @id @default(autoincrement())
+  nom       String   @db.VarChar(100)
+  entite_id Int?
+  agents    agents[]
+  entites   entites? @relation(fields: [entite_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "sections_ibfk_1")
+
+  @@index([entite_id], map: "entite_id")
+}
+
+model transactions {
+  id_transaction   Int                           @id @default(autoincrement())
+  type_transaction transactions_type_transaction
+  quantite         Int
+  date_transaction DateTime                      @default(now()) @db.DateTime(0)
+  chargeur_id      Int?
+  user_id          Int?
+  chargeurs        chargeurs?                    @relation(fields: [chargeur_id], references: [id_chargeur], onDelete: Restrict, onUpdate: Restrict, map: "transactions_ibfk_1")
+  users            users?                        @relation(fields: [user_id], references: [id_user], onDelete: Restrict, onUpdate: Restrict, map: "transactions_ibfk_2")
+
+  @@index([chargeur_id], map: "chargeur_id")
+  @@index([user_id], map: "user_id")
+}
+
+model typeLivraison {
+  id_type_livraison  Int         @id @default(autoincrement())
+  nom_type_livraison String?     @db.VarChar(255)
+  livraison          livraison[]
+}
+
+model user_roles {
+  id      Int    @id @default(autoincrement())
+  user_id Int?
+  role_id Int?
+  users   users? @relation(fields: [user_id], references: [id_user], onDelete: Restrict, onUpdate: Restrict, map: "user_roles_ibfk_1")
+  roles   roles? @relation(fields: [role_id], references: [id_role], onDelete: Restrict, onUpdate: Restrict, map: "user_roles_ibfk_2")
+
+  @@index([role_id], map: "role_id")
+  @@index([user_id], map: "user_id")
+}
+
+model users {
+  id_user       Int            @id @default(autoincrement())
+  username      String?        @db.VarChar(255)
+  password      String?        @db.VarChar(255)
+  email         String?        @db.VarChar(255)
+  agent_id      Int?
+  reset_token   String?        @db.VarChar(255)
+  reset_expires DateTime?      @db.DateTime(0)
+  livraison     livraison[]
+  transactions  transactions[]
+  user_roles    user_roles[]
+  agents        agents?        @relation(fields: [agent_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "users_ibfk_1")
+  validations   validations[]
+
+  @@index([agent_id], map: "agent_id")
+}
+
+model validations {
+  id_validation   Int                         @id @default(autoincrement())
+  livraison_id    Int
+  date_validation DateTime                    @default(now()) @db.DateTime(0)
+  etat_validation validations_etat_validation @default(valide)
+  commentaire     String?                     @db.VarChar(255)
+  user_id         Int?
+  nom_recepteur   String?                     @db.VarChar(255)
+  livraison       livraison                   @relation(fields: [livraison_id], references: [id_livraison], onUpdate: Restrict, map: "validations_ibfk_1")
+  users           users?                      @relation(fields: [user_id], references: [id_user], onDelete: Restrict, onUpdate: Restrict, map: "validations_ibfk_2")
+
+  @@index([livraison_id], map: "livraison_id")
+  @@index([user_id], map: "user_id")
+}
+
+enum transactions_type_transaction {
+  entree
+  sortie
+  retour
+}
+
+enum livraison_statut_livraison {
+  en_cours
+  livre
+  en_attente
+}
+
+enum validations_etat_validation {
+  valide
+  partiel
+  refuse
+}
