@@ -49,7 +49,7 @@ try {
 const login = async (req, res) => {
     try {
         const { email, password } = req.body;
-        const user = await prisma.users.findFirst({ where: { email } ,include:{agents:true}});
+        const user = await prisma.users.findFirst({ where: { email } ,include:{agents:true, roles :true}});
 
         if (!user) return res.status(401).json({ message: "Identifiants invalides." });
 

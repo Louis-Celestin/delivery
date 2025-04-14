@@ -79,6 +79,7 @@ model roles {
   designation_role String?            @db.VarChar(255)
   role_permissions role_permissions[]
   user_roles       user_roles[]
+  users            users[]
 }
 
 model sections {
@@ -130,13 +131,16 @@ model users {
   agent_id      Int?
   reset_token   String?        @db.VarChar(255)
   reset_expires DateTime?      @db.DateTime(0)
+  role_id       Int?
   livraison     livraison[]
   transactions  transactions[]
   user_roles    user_roles[]
+  roles         roles?         @relation(fields: [role_id], references: [id_role], onDelete: Restrict, onUpdate: Restrict, map: "fk_role_id")
   agents        agents?        @relation(fields: [agent_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "users_ibfk_1")
   validations   validations[]
 
   @@index([agent_id], map: "agent_id")
+  @@index([role_id], map: "fk_role_id")
 }
 
 model validations {
