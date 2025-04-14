@@ -8,9 +8,10 @@ require("crypto")
 
 const prisma = new PrismaClient();
 
+
 const register = async(req,res)=>{
 
-    const {email,password,username, agent_id}=req.body
+    const {email,password,username, agent_id, role_id}=req.body
 try {
 
     // find users
@@ -28,7 +29,8 @@ try {
             agent_id: parseInt(agent_id),
             email,
             password: hashedPassword,
-            username
+            username,
+            role_id:parseInt(role_id)
         }
     }).then((user)=>{
         if(user){
@@ -60,6 +62,7 @@ const login = async (req, res) => {
 
         res.status(200).json({ message: "Connexion réussie.", token, user });
     } catch (error) {
+        console.log(error)
         res.status(500).json({ message: "Erreur serveur.", error });
     }
 };
@@ -170,7 +173,6 @@ const resetPassword = async (req, res) => {
         res.status(500).json({ message: "Erreur serveur.", error });
     }
 };
-
 
 
 module.exports ={

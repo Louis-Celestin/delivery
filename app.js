@@ -12,6 +12,7 @@ const deliveryRoutes = require("./routes/deliveryRoutes")
 const receiveRoutes = require("./routes/receiveRoutes")
 const transactionsRoutes = require("./routes/transactionsRoutes")
 const merchantsRoutes = require("./routes/merchantsRoutes")
+const statsRoutes = require("./routes/statsRoutes")
 
 dotenv.config()
 
@@ -44,6 +45,7 @@ app.use('/api/delivery', deliveryRoutes);
 app.use('/api/receive', receiveRoutes);
 app.use('/api/transaction', transactionsRoutes);
 app.use('/api/merchants', merchantsRoutes);
+app.use('/api/stats', statsRoutes);
 
 
 
