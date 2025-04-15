@@ -46,7 +46,8 @@ const navItems: NavItem[] = [
     icon: <ListIcon />,
     subItems: [
       { name: "Livraison", path: "/form-livraison", pro: false },
-      { name: "Form", path: "/form-elements", pro: false }
+      {name: "Toutes les livraisons", path:"/toutes-les-livraisons", pro: false},
+      { name: "Form", path: "/form-elements", pro: false },
     ],
     
   },

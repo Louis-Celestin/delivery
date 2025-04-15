@@ -9,7 +9,7 @@ import PageMeta from "../../components/common/PageMeta";
 import TerminalOrders from "../../components/livraisons/StockChargeurs"
 
 
-export default function Home() {
+export default function DeliveryDashboard() {
   return (
     <>
       <PageMeta

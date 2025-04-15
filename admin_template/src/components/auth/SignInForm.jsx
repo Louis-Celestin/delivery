@@ -32,11 +32,16 @@ export default function SignInForm() {
       window.sessionStorage.setItem('email', response.user.email);
       window.sessionStorage.setItem('name', response.user.agents.nom);
       window.sessionStorage.setItem('fonction', response.user.agents.fonction);
-      window.sessionStorage.setItem('user_type', response.user.agent_id);
+      window.sessionStorage.setItem('user_id', response.user.agent_id);
+      window.sessionStorage.setItem('role', response.user.roles.designation_role );
       const name = window.sessionStorage.getItem('name');
-      const user_type = window.sessionStorage.getItem('user_type');
+      const user_id = window.sessionStorage.getItem('user_id');
+      const user_fonction = window.sessionStorage.getItem('fonction');
+      const user_role = window.sessionStorage.getItem('role');
       console.log(name)
-      console.log(user_type)
+      console.log('fonction : ', user_fonction)
+      console.log('USER ID : ', user_id)
+      console.log('ROLE :', user_role)
       console.log(connectMessage)
       navigate('/');
     } catch (error) {

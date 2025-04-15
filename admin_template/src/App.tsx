@@ -15,11 +15,18 @@ import Calendar from "./pages/Calendar";
 import BasicTables from "./pages/Tables/BasicTables";
 import FormElements from "./pages/Forms/FormElements";
 import Blank from "./pages/Blank";
-import AppLayout from "./layouts/deliveryAdminLayout/AppLayoutDelivery";
+// import AppLayout from "./layouts/deliveryAdminLayout/AppLayoutDelivery";
 import { ScrollToTop } from "./components/common/ScrollToTop";
-import Home from "./pages/Dashboards/DeliveryDashboard";
+
+
+import DeliveryDashboard from "./pages/Dashboards/DeliveryDashboard";
+
+import DashboardRedirector from "./DashboardRedirector";
+import AdminRenderer from "./AdminRenderer";
+
 
 import LivraisonForm from "./pages/Forms/LivraisonForms/LivraisonForm";
+import AllDeliveries from "./pages/DeliveryPages/AllDeliveries";
 
 export default function App() {
   return (
@@ -28,9 +35,9 @@ export default function App() {
         <ScrollToTop />
         <Routes>
           {/* Dashboard Layout */}
-          <Route element={<AppLayout />}>
-            <Route index path="/" element={<Home />} />
+          <Route element={<AdminRenderer />}>
 
+            <Route index element={<DashboardRedirector />} />
             {/* Others Page */}
             <Route path="/profile" element={<UserProfiles />} />
             <Route path="/calendar" element={<Calendar />} />
@@ -39,6 +46,7 @@ export default function App() {
             {/* Forms */}
             <Route path="/form-elements" element={<FormElements />} />
             <Route path="/form-livraison" element={<LivraisonForm />} />
+            <Route path="/toutes-les-livraisons" element={<AllDeliveries/>} />
 
             {/* Tables */}
             <Route path="/basic-tables" element={<BasicTables />} />

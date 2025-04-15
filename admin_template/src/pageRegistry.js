@@ -3,6 +3,6 @@ import ReceiveDashboard from './pages/Dashboards/ReceiveDashboard';
 
 
 export const pageMap = {
-  delivery: DeliveryDashboard,
-  receive: ReceiveDashboard,
+  livreur: DeliveryDashboard,
+  receveur: ReceiveDashboard,
 };

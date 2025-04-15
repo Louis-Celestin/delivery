@@ -13,16 +13,14 @@ import {
   TableRow,
 } from "../../ui/table";
 
-import { EyeCloseIcon, EyeIcon, TimeIcon } from "../../../icons/index.ts";
-import DatePicker from "../date-picker.tsx";
 
 import { PlusIcon } from "../../../icons/index.ts";
 import { ListIcon } from "../../../icons/index.ts";
-
-
-import { ProgressSpinner } from 'primereact/progressspinner';
+import 'primeicons/primeicons.css';
         
+import { ProgressSpinner } from 'primereact/progressspinner';
 
+import { useNavigate } from "react-router";
 
 import { Merchants } from "../../../backend/livraisons/Merchants.js";
 import { Deliver } from "../../../backend/livraisons/livraisonterminals.js";
@@ -37,13 +35,16 @@ export default function LivraisonInputs() {
   const [terminals, setTerminals] = useState([]);
   const [terminalSN, setTerminalSN] = useState('');
   const [loadingMerchant, setLoadingMerchant] = useState(false);
+  const [loadingDelivery, setLoadingDelivery] = useState(false);
   const [typeLivraison, setTypeLivraison] = useState('');
   const [livraisonID, setLivraisonID] = useState(null);
   const [message, setMessage] = useState("");
   const [mobileMoney, setMobileMoney] = useState([]);
-  const [produitLivresTable, setProduitsLivresTable] = useState([]);
-  const [produitLivres, setProduitsLivres] = useState([]);
+  const [produitsLivreTable, setProduitsLivresTable] = useState([]);
+  const [produitsLivre, setProduitsLivres] = useState([]);
+  const [error, setError] = useState(null);
   const userId = window.sessionStorage.getItem('user_id');
+  const navigate = useNavigate();
 
 
   
@@ -77,6 +78,12 @@ export default function LivraisonInputs() {
 
   const handleAjout = (e) => {
     e.preventDefault(); // prevent page reload
+
+    console.log('Trying to ADD.....')
+    const localMobileMoney = [];
+    if (isOrangeChecked) localMobileMoney.push("OM");
+    if (isMTNChecked) localMobileMoney.push("MTN");
+    if (isMOOVChecked) localMobileMoney.push("MOOV");
     
     const newProduitLivreTable = {
       pointMarchand: filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(", "),
@@ -88,22 +95,13 @@ export default function LivraisonInputs() {
       isMOOVChecked,
     };
 
-    if(isOrangeChecked){
-      setMobileMoney((prev) => [...prev, "OM"])
-    }
-    if(isMTNChecked){
-      setMobileMoney((prev) => [...prev, "MTN"])
-    }
-    if(isMOOVChecked){
-      setMobileMoney((prev) => [...prev, "MOOV"])
-    }
 
     const newProduitLivre = {
-      pointMarchand: filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(", "),
+      pointMarchand: filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(","),
       caisse: filteredPointMarchand.map((terminal) => terminal.TPE).join(","),
       serialNumber: terminalSN,
-      banque: filteredPointMarchand.map((terminal) => terminal.BANQUE).join(", "),
-      mobile_money: mobileMoney,
+      banque: filteredPointMarchand.map((terminal) => terminal.BANQUE).join(","),
+      mobile_money: localMobileMoney,
     };
   
     setProduitsLivresTable((prev) => [...prev, newProduitLivreTable]);
@@ -115,27 +113,37 @@ export default function LivraisonInputs() {
     setMTNChecked(false);
     setMOOVChecked(false);
     setMessage('');
+    setMobileMoney([]);
   };
 
   const handleDeliver = async (e) => {
     e.preventDefault();
+    setLoadingDelivery(true);
     const commentaire = message;
     const type_livraison_id = livraisonID
-    const user_id = userId;
+    const user_id = 3;
     const isAncienne = false;
 
-    try{
-    const response = await Deliver(commentaire, type_livraison_id, user_id, isAncienne, produitLivres)
-    console.log(response);
+    console.log('Trying to create form...')
+    console.log('Commentaire : ',commentaire)
+    console.log('ID Livraison : ',type_livraison_id)
+    console.log('ID User', user_id)
+    console.log('Ancienne ? ', isAncienne)
+    console.log('Produits livrés : ',produitsLivre)
 
+    try{
+    const response = await Deliver(commentaire, type_livraison_id, user_id, isAncienne, produitsLivre)
+    console.log(response);
+    console.log('Formulaire créé')
+    navigate('/toutes-les-livraisons');
     }catch (error) {
       console.log('error')
-      setError('Une erreur lors de la génération du formulaire');
-
+      setError('Erreur lors de la génération du formulaire');
     }finally{
-
+      setProduitsLivres([])
+      setProduitsLivresTable([])
+      setLoadingDelivery(false)
     }
-
    
   }
   
@@ -151,6 +159,15 @@ export default function LivraisonInputs() {
     { value: "TPE REPARE", label: "TPE REPARE" },
     { value: "CHARGEUR", label: "CHARGEUR" },
   ];
+
+  const handleDelete = (indexToRemove) => {
+    setProduitsLivresTable((prev) =>
+      prev.filter((_, index) => index !== indexToRemove)
+    );
+    setProduitsLivres((prev) =>
+      prev.filter((_, index) => index !== indexToRemove)
+    );
+  };
 
   
   return (
@@ -178,7 +195,7 @@ export default function LivraisonInputs() {
                   <Label>Point Marchand</Label>
                   <Input type="text" id="input" 
                           className="cursor-default"
-                          value={filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(", ")}
+                          value={filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(",")}
                           readOnly
                           />
                 </div>
@@ -186,7 +203,7 @@ export default function LivraisonInputs() {
                   <Label>Banque</Label>
                   <Input type="text" id="input" 
                           className="cursor-default"
-                          value={filteredPointMarchand.map((terminal) => terminal.BANQUE).join(", ")}
+                          value={filteredPointMarchand.map((terminal) => terminal.BANQUE).join(",")}
                           readOnly
                           />
                 </div>
@@ -216,7 +233,7 @@ export default function LivraisonInputs() {
                   />
                 </div>
                 <div>
-                  <button onChange="handleAjout" className="w-full bg-green-400 rounded-2xl h-10 flex items-center justify-center">
+                  <button onClick={handleAjout} className="w-full bg-green-400 rounded-2xl h-10 flex items-center justify-center">
                     <span>Ajouter</span>
                     <span className="text-2xl"><PlusIcon /></span>
                   </button>
@@ -256,21 +273,31 @@ export default function LivraisonInputs() {
                   <TableCell
                     isHeader
                     className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    MTN
+                  </TableCell>
+                  <TableCell
+                    isHeader
+                    className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                     MOOV
                   </TableCell>
                   <TableCell
                     isHeader
                     className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
-                    MTN
+                    Supprimer
                   </TableCell>
                 </TableRow>
               </TableHeader>
               {/* Table Body */}
               <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-                {produitLivresTable.map((item, index) => (
+                {produitsLivreTable.map((item, index) => (
                   <TableRow key={index}>
-                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                      {item.pointMarchand}
+                    <TableCell className="px-5 py-4 sm:px-6 text-start">
+                      <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
+                        {item.pointMarchand}
+                      </span>
+                      <span className="block text-gray-500 text-theme-xs dark:text-gray-400">
+                        {item.caisse}
+                      </span>
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       {item.serialNumber}
@@ -279,13 +306,21 @@ export default function LivraisonInputs() {
                       {item.banque}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                      {item.isOrangeChecked ? "Oui" : "Non"}
+                      {item.isOrangeChecked ? <i className="pi pi-check" style={{ color: 'green' }}></i> : ""}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                      {item.isMOOVChecked ? "Oui" : "Non"}
+                      {item.isMTNChecked ? <i className="pi pi-check" style={{ color: 'green' }}></i> : ""}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                      {item.isMTNChecked ? "Oui" : "Non"}
+                      {item.isMOOVChecked ? <i className="pi pi-check" style={{ color: 'green' }}></i> : ""}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                      <button
+                        className="text-red-500 hover:text-red-700"
+                        onClick={() => handleDelete(index)}
+                        >
+                        <i className="pi pi-trash" style={{ color: 'black' }}></i>
+                      </button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -295,10 +330,16 @@ export default function LivraisonInputs() {
           </div>
         </div>
         <div className="w-full flex justify-center">
-          <button onChange="handleAjout" className="w-1/4 mt-6 bg-green-400 rounded-2xl h-10 flex justify-center items-center">
-            <span>Créer formulaire</span>
-            <span className="text-2xl"><ListIcon /></span>
-          </button>
+          {loadingDelivery? 
+            <span className="mt-20">
+              <ProgressSpinner style={{width: '50px', height: '50px'}} strokeWidth="8" animationDuration=".5s" />
+            </span>
+          :
+            <button onClick={handleDeliver} className="w-1/4 mt-20 bg-green-400 rounded-2xl h-10 flex justify-center items-center">
+              <span>Créer formulaire</span>
+              <span className="text-2xl"><ListIcon /></span>
+            </button> 
+            }
         </div>
       </div>
     </>
