@@ -27,6 +27,7 @@ import AdminRenderer from "./AdminRenderer";
 
 import LivraisonForm from "./pages/Forms/LivraisonForms/LivraisonForm";
 import AllDeliveries from "./pages/DeliveryPages/AllDeliveries";
+import DeliveryDetails from "./pages/DeliveryPages/DeliveryDetails";
 
 export default function App() {
   return (
@@ -47,6 +48,7 @@ export default function App() {
             <Route path="/form-elements" element={<FormElements />} />
             <Route path="/form-livraison" element={<LivraisonForm />} />
             <Route path="/toutes-les-livraisons" element={<AllDeliveries/>} />
+            <Route path="/formulaire/:id" element={<DeliveryDetails/>} />
 
             {/* Tables */}
             <Route path="/basic-tables" element={<BasicTables />} />

@@ -55,6 +55,7 @@ import { ReactComponent as ErrorHexaIcon } from "./info-hexa.svg?react";
 
 import { ReactComponent as BaseLinePhoneIcon } from "./baseline-smartphone.svg?react";
 import { ReactComponent as CableDataIcon } from "./cable-data.svg?react";
+import { ReactComponent as PhoneSetting } from "./round-phonelink-setup.svg?react";
 
 export {
   ErrorHexaIcon,
@@ -113,4 +114,5 @@ export {
   ChatIcon,
   BaseLinePhoneIcon,
   CableDataIcon,
+  PhoneSetting,
 };

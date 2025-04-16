@@ -23,15 +23,18 @@ import { ProgressSpinner } from 'primereact/progressspinner';
 import { useNavigate } from "react-router";
 
 import { Merchants } from "../../../backend/livraisons/Merchants.js";
-import { Deliver } from "../../../backend/livraisons/livraisonterminals.js";
+import { ProductDeliveries } from "../../../backend/livraisons/productDeliveries.js";
 
 
 export default function LivraisonInputs() {
 
+  const merchants = new Merchants();
+  const productDeliveries = new ProductDeliveries();
+  const userId = window.sessionStorage.getItem('user_id');
+  const navigate = useNavigate();
   const [isOrangeChecked, setOrangeChecked] = useState(false);
   const [isMTNChecked, setMTNChecked] = useState(false);
   const [isMOOVChecked, setMOOVChecked] = useState(false);
-  const merchants = new Merchants();
   const [terminals, setTerminals] = useState([]);
   const [terminalSN, setTerminalSN] = useState('');
   const [loadingMerchant, setLoadingMerchant] = useState(false);
@@ -43,11 +46,7 @@ export default function LivraisonInputs() {
   const [produitsLivreTable, setProduitsLivresTable] = useState([]);
   const [produitsLivre, setProduitsLivres] = useState([]);
   const [error, setError] = useState(null);
-  const userId = window.sessionStorage.getItem('user_id');
-  const navigate = useNavigate();
 
-
-  
   const ChangeTypeLivraison = (value) => {
     console.log("Selected value:", value);
     setTypeLivraison(value);
@@ -132,7 +131,7 @@ export default function LivraisonInputs() {
     console.log('Produits livrés : ',produitsLivre)
 
     try{
-    const response = await Deliver(commentaire, type_livraison_id, user_id, isAncienne, produitsLivre)
+    const response = await productDeliveries.deliver(commentaire, type_livraison_id, user_id, isAncienne, produitsLivre)
     console.log(response);
     console.log('Formulaire créé')
     navigate('/toutes-les-livraisons');

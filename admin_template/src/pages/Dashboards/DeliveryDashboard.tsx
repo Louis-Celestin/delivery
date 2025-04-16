@@ -20,7 +20,7 @@ export default function DeliveryDashboard() {
         <div className="col-span-4 space-y-6">
           <TerminalOrders />
         </div>
-        <div className="col-span-12 space-y-6 xl:col-span-7">
+        {/* <div className="col-span-12 space-y-6 xl:col-span-7">
           <EcommerceMetrics />
 
           <MonthlySalesChart />
@@ -40,7 +40,7 @@ export default function DeliveryDashboard() {
 
         <div className="col-span-12 xl:col-span-7">
           <RecentOrders />
-        </div>
+        </div> */}
       </div>
     </>
   );
