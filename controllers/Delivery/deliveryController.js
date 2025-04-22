@@ -7,11 +7,13 @@ const { envoyerEmail } = require("../../config/emailConfig")
 const cloudinary = require("../../config/clouddinaryConifg");
 require("crypto")
 
+
 const deliver = async (req, res) => {
     const {
       produitsLivre,
       commentaire,
       user_id,
+      
       nom_livreur,
       type_livraison_id,
       isAncienne,
@@ -206,7 +208,28 @@ const deleteLivraison = async (req, res) => {
       res.status(500).json({ message: "Erreur lors de la suppression", error });
     }
   };
+
+
+const generatePdf = async (req, res) => {
+    const { id } = req.params;
   
+    try {
+      const livraison = await prisma.livraison.findUnique({
+        where: { id_livraison: parseInt(id) }
+      });
+  
+      if (!livraison) {
+        return res.status(404).json({ message: "Livraison introuvable" });
+      }
+  
+      // Logique pour générer le PDF
+      // Vous pouvez utiliser une bibliothèque comme pdfkit ou puppeteer ici
+  
+      res.status(200).json({ message: "PDF généré avec succès" });
+    } catch (error) {
+      res.status(500).json({ message: "Erreur lors de la génération du PDF", error });
+    }
+  };
 
 module.exports = {
     deliver,

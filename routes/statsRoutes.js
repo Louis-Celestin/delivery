@@ -1,12 +1,13 @@
 const express = require("express")
 const router = express.Router();
 
-const {nbdeliverycharger,nbreturncharger,nbexitcharger,nblivraisonpartype, nbdeliverychargeurperperdiod}=require("../controllers/Stats/statsController")
+const {nbdeliverycharger,nbreturncharger,nbexitcharger,nblivraisonpartype, nbdeliverychargeurperperdiod, statsreceveurs}=require("../controllers/Stats/statsController")
 
-router.get("/nbdeliverycharger", nbdeliverycharger)
-router.get("/nbexitcharger", nbexitcharger)
-router.get("/nbreturncharger", nbreturncharger)
-router.get("/nblivraisonpartype", nblivraisonpartype)
-router.get("/nbdeliverychargeurperperdiod", nbdeliverychargeurperperdiod)
+router.get("/nbdeliverycharger/:id", nbdeliverycharger)
+router.get("/nbexitcharger/:id", nbexitcharger)
+router.get("/nbreturncharger/:id", nbreturncharger)
+router.get("/nblivraisonpartype/:id", nblivraisonpartype)
+router.get("/nbdeliverychargeurperperdiod/:id", nbdeliverychargeurperperdiod)
+router.get("/statsreceveurs/:id", statsreceveurs)
 
 module.exports = router
