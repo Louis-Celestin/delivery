@@ -4,42 +4,82 @@
   <meta charset="UTF-8">
   <title>LIVRAISON TPE GIM</title>
   <style>
-    .container {
-      border: 1px solid #000;
-      width: 100%;
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
       font-family: Arial, sans-serif;
     }
+
+    .container {
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 20px;
+    }
+
     .header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 20px;
     }
-    .footer {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 40px;
+
+    .header h1 {
+      flex: 1;
+      text-align: center;
+      font-size: 18px;
+      margin: 0;
     }
+
+    .logo {
+      max-width: 180px;
+      height: auto;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 10px;
     }
+
     th, td {
       border: 1px solid #000;
       padding: 6px;
       text-align: left;
+      font-size: 13px;
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 40px;
+    }
+
+    .footer div {
+      width: 45%;
+    }
+
+    .footer-signature {
+      margin-top: 40px;
+    }
+
+    .note {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 12px;
+      font-style: italic;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <img src="../../statics/images/logos/logo.png" alt="Logo" width="200" height="50">
-      <h1 style="text-align: center; flex: 1;">LIVRAISON TPE GIM</h1>
+      <img src="https://res.cloudinary.com/digitkbit/image/upload/v1744802840/logo_bdj4ks.png" class="logo" alt="Green Pay">
+      <h1>LIVRAISON TPE GIM</h1>
     </div>
 
     <div><strong>Commentaire :</strong> {{commentaire}}</div>
@@ -66,16 +106,16 @@
     <div class="footer">
       <div>
         <strong>Expéditeur :</strong> {{nom_expediteur}}
-        <div style="margin-top: 40px;">Signature</div>
+        <div class="footer-signature">Signature</div>
       </div>
       <div>
         <strong>Récepteur :</strong> {{nom_recepteur}}
-        <div style="margin-top: 40px;">Signature</div>
+        <div class="footer-signature">Signature</div>
       </div>
     </div>
 
-    <p style="text-align: center; margin-top: 30px;">
-      <i>@ Automatiquement généré par le système de livraison Green-Pay</i>
+    <p class="note">
+      @ Automatiquement généré par le système de livraison Green-Pay
     </p>
   </div>
 </body>

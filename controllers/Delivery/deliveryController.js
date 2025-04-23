@@ -1,19 +1,19 @@
+const puppeteer = require("puppeteer");
+const fs = require("fs");
+const path = require("path");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const { validationResult } = require("express-validator");
-const { envoyerEmail } = require("../../config/emailConfig")
-const cloudinary = require("../../config/clouddinaryConifg");
-require("crypto")
 
+const formatDate = (isoDate) => {
+  const date = new Date(isoDate);
+  return date.toLocaleDateString("fr-FR");
+};
 
 const deliver = async (req, res) => {
     const {
       produitsLivre,
       commentaire,
       user_id,
-      
       nom_livreur,
       type_livraison_id,
       isAncienne,
@@ -123,7 +123,10 @@ const getAllLivraisons = async (req, res) => {
     try {
       const livraisons = await prisma.livraison.findMany({
         where: { deleted: false },
-        orderBy: { date_livraison: 'desc' }
+        orderBy: { date_livraison: 'desc' },
+        include : {
+          validations : true
+        }
       });
   
       res.status(200).json(livraisons);
@@ -138,7 +141,10 @@ const getOneLivraison = async (req, res) => {
   
     try {
       const livraison = await prisma.livraison.findUnique({
-        where: { id_livraison: parseInt(id) }
+        where: { id_livraison: parseInt(id) },
+        include: {
+          validations: true,
+        }
       });
   
       if (!livraison || livraison.deleted) {
@@ -210,31 +216,132 @@ const deleteLivraison = async (req, res) => {
   };
 
 
-const generatePdf = async (req, res) => {
+  const generateLivraisonPDF = async (req, res) => {
     const { id } = req.params;
   
     try {
-      const livraison = await prisma.livraison.findUnique({
+      const data = await prisma.livraison.findUnique({
         where: { id_livraison: parseInt(id) }
       });
   
-      if (!livraison) {
-        return res.status(404).json({ message: "Livraison introuvable" });
+      if (!data) return res.status(404).json({ message: "Livraison introuvable" });
+  
+      const livraison = {
+        ...data,
+        produitsLivre: typeof data.produitsLivre === "string"
+          ? JSON.parse(data.produitsLivre)
+          : data.produitsLivre
+      };
+  
+      // 🔎 Récupération de l'agent qui a fait la livraison (si user_id défini)
+      let expediteurNom = "N/A";
+  
+      if (livraison.nom_livreur) {
+        // ✅ Ancienne livraison ou nom fourni manuellement
+        expediteurNom = livraison.nom_livreur;
+      } else if (livraison.user_id) {
+        const user = await prisma.users.findUnique({
+          where: { id_user: livraison.user_id },
+        });
+  
+        if (user?.agent_id) {
+          const agent = await prisma.agents.findUnique({
+            where: { id: user.agent_id }
+          });
+          if (agent?.nom) {
+            expediteurNom = agent.nom;
+          }
+        }
       }
   
-      // Logique pour générer le PDF
-      // Vous pouvez utiliser une bibliothèque comme pdfkit ou puppeteer ici
+      // 🗺️ Sélection du template
+      const templatesMap = {
+        1: "livraison_tpe_gim.html",
+        2: "livraison_tpe_repare.html",
+        3: "livraison_mj_gim.html",
+        4: "livraison_tpe_mobile.html",
+        5: "livraison_chargeur_tpe.html"
+      };
   
-      res.status(200).json({ message: "PDF généré avec succès" });
-    } catch (error) {
-      res.status(500).json({ message: "Erreur lors de la génération du PDF", error });
+      const templateFile = templatesMap[livraison.type_livraison_id];
+      if (!templateFile) return res.status(400).json({ message: "Type de livraison inconnu" });
+  
+      const filePath = path.join(__dirname, "../../statics/templates/", templateFile);
+      let html = fs.readFileSync(filePath, "utf8");
+  
+      // 🧱 Construction du tableau
+      const produitsRows = livraison.produitsLivre.map((p, index) => {
+        let row = "";
+        switch (livraison.type_livraison_id) {
+          case 1:
+            row = `<tr><td>${p.marchand}</td><td>${p.sn}</td><td>${p.caisse}</td><td>${p.banque}</td></tr>`;
+            break;
+          case 2:
+            row = `<tr><td>${p.marchand}</td><td>${p.sn}</td></tr>`;
+            break;
+          case 3:
+            row = `<tr><td>${p.marchand}</td><td>${p.sn}</td><td>${p.banque}</td></tr>`;
+            break;
+          case 4:
+            const has = (m) => p.mobile_money?.includes(m) ? "✔" : "";
+            row = `<tr><td>${p.marchand}</td><td>${p.sn}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
+            break;
+          case 5:
+            row = `<tr><td>${p.marchand}</td><td>${p.sn}</td><td>${p.caisse}</td><td>${p.quantite}</td></tr>`;
+            break;
+          default:
+            row = "";
+        }
+      
+        // ➕ Ajout du saut de page toutes les 20 lignes
+        if ((index + 1) % 20 === 0) {
+          row += `<tr class="page-break"></tr>`;
+        }
+      
+        return row;
+      }).join("\n");
+      
+  
+      // 🧩 Remplacement des balises HTML
+      html = html
+        .replace("{{commentaire}}", livraison.commentaire || "")
+        .replace("{{date_livraison}}", formatDate(livraison.date_livraison))
+        .replace("{{qte_totale_livraison}}", livraison.qte_totale_livraison || livraison.produitsLivre.length)
+        .replace("{{nom_expediteur}}", expediteurNom)
+        .replace("{{nom_recepteur}}", req.user?.nom || "Receveur")
+        .replace("{{produitsRows}}", produitsRows);
+  
+      // 🖨️ Génération PDF
+      const browser = await puppeteer.launch({ headless: "new" });
+      const page = await browser.newPage();
+      await page.setContent(html, { waitUntil: "networkidle0" });
+  
+      const pdfBuffer = await page.pdf({
+        format: "A4",
+        printBackground: true,
+      });
+  
+      await browser.close();
+  
+      res.set({
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename=livraison_${livraison.id_livraison}.pdf`
+      });
+  
+      return res.send(pdfBuffer);
+  
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Erreur lors de la génération du PDF" });
     }
   };
+  
 
 module.exports = {
     deliver,
     getAllLivraisons,
     getOneLivraison,
     updateLivraison,
-    deleteLivraison
+    deleteLivraison,
+    generateLivraisonPDF
 }

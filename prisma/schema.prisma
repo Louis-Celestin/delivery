@@ -151,6 +151,7 @@ model validations {
   commentaire     String?                     @db.VarChar(255)
   user_id         Int?
   nom_recepteur   String?                     @db.VarChar(255)
+  signature       String?                     @db.VarChar(255)
   livraison       livraison                   @relation(fields: [livraison_id], references: [id_livraison], onUpdate: Restrict, map: "validations_ibfk_1")
   users           users?                      @relation(fields: [user_id], references: [id_user], onDelete: Restrict, onUpdate: Restrict, map: "validations_ibfk_2")
 
