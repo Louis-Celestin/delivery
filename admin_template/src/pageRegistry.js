@@ -4,5 +4,5 @@ import ReceiveDashboard from './pages/Dashboards/ReceiveDashboard';
 
 export const pageMap = {
   livreur: DeliveryDashboard,
-  receveur: ReceiveDashboard,
+  recepteur: ReceiveDashboard,
 };

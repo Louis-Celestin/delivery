@@ -7,6 +7,8 @@ import DemographicCard from "../../components/ecommerce/DemographicCard";
 import PageMeta from "../../components/common/PageMeta";
 
 import TerminalOrders from "../../components/livraisons/StockChargeurs"
+import RetourChargeurs from "../../components/livraisons/RetourChargeurs"
+import LivraisonsTPE from "../../components/livraisons/LivraisonsTPE"
 
 
 export default function DeliveryDashboard() {
@@ -19,6 +21,12 @@ export default function DeliveryDashboard() {
       <div className="grid grid-cols-12 gap-4 md:gap-6">
         <div className="col-span-4 space-y-6">
           <TerminalOrders />
+        </div>
+        <div className="col-span-4 space-y-6">
+          <RetourChargeurs />
+        </div>
+        <div className="col-span-12 space-y-6 xl:col-span-12">
+          <LivraisonsTPE />
         </div>
         {/* <div className="col-span-12 space-y-6 xl:col-span-7">
           <EcommerceMetrics />

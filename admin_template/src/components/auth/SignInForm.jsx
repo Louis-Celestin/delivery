@@ -5,7 +5,7 @@ import Label from "../form/Label";
 import Input from "../form/input/InputField";
 import Checkbox from "../form/input/Checkbox";
 import Button from "../ui/button/Button";
-
+import { ProgressSpinner } from 'primereact/progressspinner';
 
 import { login } from '../../backend/services/authService';
 import { useNavigate } from "react-router";
@@ -14,6 +14,7 @@ import { useNavigate } from "react-router";
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -24,6 +25,7 @@ export default function SignInForm() {
     event.preventDefault();
     // setLoading(true);
     try {
+      setLoading(true)
       const response = await login(email, password);
       console.log('API Response:', response);
       const connectMessage = response.message;
@@ -49,7 +51,7 @@ export default function SignInForm() {
       setError('Utilisateur ou mot de passe incorrects');
     }
     finally{
-      // setLoading(false)
+      setLoading(false)
     }
   };
 
@@ -70,9 +72,20 @@ export default function SignInForm() {
             <h1 className="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">
               Sign In
             </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Enter your email and password to sign in!
-            </p>
+            {error ?(
+                <>
+                <p className="text-sm text-error-600 dark:text-gray-400">
+                  {error}
+                </p>
+              </>
+            ) : 
+            (
+              <>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Enter your email and password to sign in!
+                </p>
+              </>
+            )}
           </div>
           <div>
             {/* <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5">
@@ -137,6 +150,7 @@ export default function SignInForm() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  error={error}
                   />
                 </div>
                 <div>
@@ -149,6 +163,7 @@ export default function SignInForm() {
                       placeholder="Enter your password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      error={error}
                     />
                     <span
                       onClick={() => setShowPassword(!showPassword)}
@@ -169,22 +184,28 @@ export default function SignInForm() {
                       Keep me logged in
                     </span>
                   </div>
-                  <Link
+                  {/* <Link
                     to="/reset-password"
                     className="text-sm text-brand-500 hover:text-brand-600 dark:text-brand-400"
                   >
                     Forgot password?
-                  </Link>
+                  </Link> */}
                 </div>
                 <div>
-                  <Button type="submit" className="w-full" size="sm">
-                    Sign in
-                  </Button>
+                  {loading? 
+                    (<span className="mt-20">
+                      <ProgressSpinner style={{width: '50px', height: '50px'}} strokeWidth="8" animationDuration=".5s" />
+                    </span>)
+                    :
+                    (<Button type="submit" className="w-full" size="sm">
+                      Sign in
+                    </Button>)
+                    }
                 </div>
               </div>
             </form>
 
-            <div className="mt-5">
+            {/* <div className="mt-5">
               <p className="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start">
                 Don&apos;t have an account? {""}
                 <Link
@@ -194,7 +215,7 @@ export default function SignInForm() {
                   Sign Up
                 </Link>
               </p>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

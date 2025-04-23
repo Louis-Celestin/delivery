@@ -28,6 +28,7 @@ import AdminRenderer from "./AdminRenderer";
 import LivraisonForm from "./pages/Forms/LivraisonForms/LivraisonForm";
 import AllDeliveries from "./pages/DeliveryPages/AllDeliveries";
 import DeliveryDetails from "./pages/DeliveryPages/DeliveryDetails";
+import ProtectedRoutes from "./ProtectedRoutes";
 
 export default function App() {
   return (
@@ -36,35 +37,35 @@ export default function App() {
         <ScrollToTop />
         <Routes>
           {/* Dashboard Layout */}
-          <Route element={<AdminRenderer />}>
+            <Route element={<ProtectedRoutes><AdminRenderer /></ProtectedRoutes>}>
 
-            <Route index element={<DashboardRedirector />} />
-            {/* Others Page */}
-            <Route path="/profile" element={<UserProfiles />} />
-            <Route path="/calendar" element={<Calendar />} />
-            <Route path="/blank" element={<Blank />} />
+              <Route index element={<DashboardRedirector />} />
+              {/* Others Page */}
+              <Route path="/profile" element={<UserProfiles />} />
+              <Route path="/calendar" element={<Calendar />} />
+              <Route path="/blank" element={<Blank />} />
 
-            {/* Forms */}
-            <Route path="/form-elements" element={<FormElements />} />
-            <Route path="/form-livraison" element={<LivraisonForm />} />
-            <Route path="/toutes-les-livraisons" element={<AllDeliveries/>} />
-            <Route path="/formulaire/:id" element={<DeliveryDetails/>} />
+              {/* Forms */}
+              <Route path="/form-elements" element={<FormElements />} />
+              <Route path="/form-livraison" element={<LivraisonForm />} />
+              <Route path="/toutes-les-livraisons" element={<AllDeliveries/>} />
+              <Route path="/formulaire/:id" element={<DeliveryDetails/>} />
 
-            {/* Tables */}
-            <Route path="/basic-tables" element={<BasicTables />} />
+              {/* Tables */}
+              <Route path="/basic-tables" element={<BasicTables />} />
 
-            {/* Ui Elements */}
-            <Route path="/alerts" element={<Alerts />} />
-            <Route path="/avatars" element={<Avatars />} />
-            <Route path="/badge" element={<Badges />} />
-            <Route path="/buttons" element={<Buttons />} />
-            <Route path="/images" element={<Images />} />
-            <Route path="/videos" element={<Videos />} />
+              {/* Ui Elements */}
+              <Route path="/alerts" element={<Alerts />} />
+              <Route path="/avatars" element={<Avatars />} />
+              <Route path="/badge" element={<Badges />} />
+              <Route path="/buttons" element={<Buttons />} />
+              <Route path="/images" element={<Images />} />
+              <Route path="/videos" element={<Videos />} />
 
-            {/* Charts */}
-            <Route path="/line-chart" element={<LineChart />} />
-            <Route path="/bar-chart" element={<BarChart />} />
-          </Route>
+              {/* Charts */}
+              <Route path="/line-chart" element={<LineChart />} />
+              <Route path="/bar-chart" element={<BarChart />} />
+            </Route>
 
           {/* Auth Layout */}
           <Route path="/signin" element={<SignIn />} />

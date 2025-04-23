@@ -17,7 +17,7 @@ import TerminalOrdersTable from "../../../components/tables/BasicTables/Terminal
 export default function LivraisonForm() {
     return (
         <div>
-          <PageBreadcrumb pageTitle="Livraison TPE" />
+          <PageBreadcrumb pageTitle="Livraison" />
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-1">
             <div className="space-y-6 flex justify-center">
               <div className="w-full">

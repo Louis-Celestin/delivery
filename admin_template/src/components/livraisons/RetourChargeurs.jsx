@@ -8,10 +8,10 @@ import {
 }from "../../icons";
 
 
-export default function TerminalOrders() {
+export default function RetourChargeurs() {
 
     const statsLivraisons = new StatsLivraisons()
-    const [nbrChargeurLivre, setNbrChargeurLivre] = useState('');
+    const [nbrChargeurRetour, setNbrChargeurRetour] = useState('');
     const [loading, setLoading] = useState(false)
 
     useEffect( ()=> {
@@ -21,9 +21,9 @@ export default function TerminalOrders() {
                 let data;
                 let id = window.sessionStorage.getItem("id")
                 console.log('id utilisateur : ', id)
-                data = await statsLivraisons.nbdeliverycharger(id)
+                data = await statsLivraisons.nbreturncharger(id)
                 console.log(data)
-                setNbrChargeurLivre(data.nbdeliverycharger);
+                setNbrChargeurRetour(data.nbreturncharger);
             } catch(error){
                 console.log("Error fetchind data ", error)
             } finally{
@@ -37,14 +37,14 @@ export default function TerminalOrders() {
             <div>
                 <div className="flex items-center justify-between">
                     <h3 className="text-lg font-light text-gray-800 dark:text-white/90">
-                        Chargeurs livrés
+                        Chargeurs retournés
                     </h3>
-                    <span className="text-3xl p-1 rounded-xl bg-green-300 ">
+                    <span className="text-3xl p-1 rounded-xl bg-red-300 ">
                         <CableDataIcon />
                     </span>
                 </div>
                 <div>
-                    <span className="text-3xl font-bold my-3">{nbrChargeurLivre}</span>
+                    <span className="text-3xl font-bold my-3">{nbrChargeurRetour}</span>
                 </div>
             </div>
 

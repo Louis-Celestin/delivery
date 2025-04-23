@@ -1,8 +1,12 @@
 import PageBreadcrumb from "../../components/common/PageBreadCrumb"
 import AllDeliveriesList from "../../components/livraisons/AllDeliveriesList"
 import DeliveriesFilter from "../../components/livraisons/DeliveriesFilter"
+import { useState } from "react"
+
 
 export default function AllDeliveries() {
+
+    const [filterType, setFilterType] = useState(null);
     
     return(
         <>
@@ -10,8 +14,8 @@ export default function AllDeliveries() {
                 <PageBreadcrumb pageTitle="Retrouvez vos livraisons"/>
                 <div className="grid grid-cols-1">
                     <div className="space-y-6">
-                        <DeliveriesFilter />
-                        <AllDeliveriesList />
+                        <DeliveriesFilter onFilterSelect={setFilterType} />
+                        <AllDeliveriesList filterType={filterType} />
                     </div>
                 </div>  
             </div>
