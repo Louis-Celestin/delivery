@@ -21,6 +21,8 @@ const deliver = async (req, res) => {
     } = req.body;
   
     try {
+
+      // Verification de l'agent livreur
       const produits = typeof produitsLivre === "string"
         ? JSON.parse(produitsLivre)
         : produitsLivre;
@@ -33,8 +35,7 @@ const deliver = async (req, res) => {
   
       if (!typeLivraison) {
         return res.status(404).json({ message: "Type de livraison non trouvé" });
-      }
-  
+      }  
       let utilisateur = null;
       if (!isAncienne) {
         utilisateur = await prisma.users.findUnique({
@@ -221,10 +222,16 @@ const deleteLivraison = async (req, res) => {
   
     try {
       const data = await prisma.livraison.findUnique({
-        where: { id_livraison: parseInt(id) }
+        where: { id_livraison: parseInt(id) },
+        include: {
+          validations: true,
+        }
       });
+
+      console.log(data)
   
       if (!data) return res.status(404).json({ message: "Livraison introuvable" });
+      if (data.validations.length < 1) return res.status(400).json({ message: "Aucune validation trouvée" });
   
       const livraison = {
         ...data,
@@ -241,7 +248,7 @@ const deleteLivraison = async (req, res) => {
         expediteurNom = livraison.nom_livreur;
       } else if (livraison.user_id) {
         const user = await prisma.users.findUnique({
-          where: { id_user: livraison.user_id },
+          where: { id_user: livraison.user_id }
         });
   
         if (user?.agent_id) {
@@ -274,20 +281,20 @@ const deleteLivraison = async (req, res) => {
         let row = "";
         switch (livraison.type_livraison_id) {
           case 1:
-            row = `<tr><td>${p.marchand}</td><td>${p.sn}</td><td>${p.caisse}</td><td>${p.banque}</td></tr>`;
+            row = `<tr><td>${p.pointpointMarchand}</td><td>${p.serialNumber}</td><td>${p.caisse}</td><td>${p.banque}</td></tr>`;
             break;
           case 2:
-            row = `<tr><td>${p.marchand}</td><td>${p.sn}</td></tr>`;
+            row = `<tr><td>${p.pointMarchand}</td><td>${p.serialNumber}</td></tr>`;
             break;
           case 3:
-            row = `<tr><td>${p.marchand}</td><td>${p.sn}</td><td>${p.banque}</td></tr>`;
+            row = `<tr><td>${p.pointMarchand}</td><td>${p.serialNumber}</td><td>${p.banque}</td></tr>`;
             break;
           case 4:
             const has = (m) => p.mobile_money?.includes(m) ? "✔" : "";
-            row = `<tr><td>${p.marchand}</td><td>${p.sn}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
+            row = `<tr><td>${p.pointMarchand}</td><td>${p.serialNumber}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
             break;
           case 5:
-            row = `<tr><td>${p.marchand}</td><td>${p.sn}</td><td>${p.caisse}</td><td>${p.quantite}</td></tr>`;
+            row = `<tr><td>${p.pointMarchand}</td><td>${p.serialNumber}</td><td>${p.caisse}</td><td>${p.quantite}</td></tr>`;
             break;
           default:
             row = "";
@@ -301,15 +308,18 @@ const deleteLivraison = async (req, res) => {
         return row;
       }).join("\n");
       
-  
+      console.log(livraison.validations[0].signature)
       // 🧩 Remplacement des balises HTML
       html = html
         .replace("{{commentaire}}", livraison.commentaire || "")
         .replace("{{date_livraison}}", formatDate(livraison.date_livraison))
         .replace("{{qte_totale_livraison}}", livraison.qte_totale_livraison || livraison.produitsLivre.length)
         .replace("{{nom_expediteur}}", expediteurNom)
-        .replace("{{nom_recepteur}}", req.user?.nom || "Receveur")
-        .replace("{{produitsRows}}", produitsRows);
+        .replace("{{nom_recepteur}}", livraison.validations[0].nom_recepteur || "Receveur")
+        .replace("{{produitsRows}}", produitsRows)
+        .replace("{{signature}}", livraison.validations[0].signature)
+        .replace("{{date_validation}}", livraison.validations[0].date_validation ? formatDate(livraison.validations[0].date_validation) : "N/A");
+        
   
       // 🖨️ Génération PDF
       const browser = await puppeteer.launch({ headless: "new" });

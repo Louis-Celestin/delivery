@@ -4,96 +4,30 @@
   <meta charset="UTF-8">
   <title>LIVRAISON CHARGEUR TPE</title>
   <style>
-    .page-break {
-  page-break-after: always;
-}
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      padding: 0;
-      overflow-x: hidden;
-      font-family: Arial, sans-serif;
-    }
-
-    .container {
-      max-width: 800px;
-      margin: 20px auto;
-      padding: 20px;
-    }
-
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-
-    .header h1 {
-      flex: 1;
-      text-align: center;
-      font-size: 18px;
-      margin: 0;
-    }
-
-    .logo {
-      max-width: 180px;
-      height: auto;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-
-    th, td {
-      border: 1px solid #000;
-      padding: 5px;
-      text-align: center;
-      font-size: 13px;
-    }
-
-    .footer {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 40px;
-    }
-
-    .footer div {
-      width: 45%;
-    }
-
-    .footer strong {
-      display: block;
-      margin-bottom: 20px;
-    }
-
-    .footer-signature {
-      margin-top: 40px;
-    }
-
-    .note {
-      text-align: center;
-      margin-top: 30px;
-      font-size: 12px;
-      font-style: italic;
-    }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 0; overflow-x: hidden; font-family: Arial, sans-serif; }
+    .container { max-width: 800px; margin: 20px auto; padding: 20px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .header h1 { flex: 1; text-align: center; font-size: 18px; margin: 0; }
+    .logo { max-width: 180px; height: auto; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #000; padding: 5px; text-align: center; font-size: 13px; }
+    .footer { display: flex; justify-content: space-between; margin-top: 40px; }
+    .footer div { width: 45%; }
+    .footer-signature { margin-top: 20px; }
+    .signature-image { margin-top: 10px; max-width: 250px; max-height: 120px; object-fit: contain; border: 1px solid #ccc; }
+    .date-validation { margin-top: 5px; font-size: 12px; color: #333; text-align: center; }
+    .note { text-align: center; margin-top: 30px; font-size: 12px; font-style: italic; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <img src="https://res.cloudinary.com/digitkbit/image/upload/v1744802840/logo_bdj4ks.png" alt="Green Pay" class="logo">
+      <img src="https://res.cloudinary.com/digitkbit/image/upload/v1744802840/logo_bdj4ks.png" class="logo" alt="Green Pay">
       <h1>LIVRAISON CHARGEUR TPE</h1>
     </div>
-
     <div><strong>Commentaire :</strong> {{commentaire}}</div>
     <div><strong>Date :</strong> {{date_livraison}}</div>
-
     <table>
       <thead>
         <tr>
@@ -103,15 +37,9 @@
           <th>Quantité</th>
         </tr>
       </thead>
-      <tbody>
-        {{produitsRows}}
-      </tbody>
+      <tbody>{{produitsRows}}</tbody>
     </table>
-
-    <div style="margin-top: 15px;">
-      <strong>Total :</strong> {{qte_totale_livraison}}
-    </div>
-
+    <div style="margin-top: 15px;"><strong>Total :</strong> {{qte_totale_livraison}}</div>
     <div class="footer">
       <div>
         <strong>Expéditeur :</strong> {{nom_expediteur}}
@@ -119,13 +47,13 @@
       </div>
       <div>
         <strong>Récepteur :</strong> {{nom_recepteur}}
-        <div class="footer-signature">Signature</div>
+        <div class="footer-signature">
+          <img src="{{signature}}" alt="Signature du récepteur" class="signature-image"/>
+          <div class="date-validation"><strong>Date de réception :</strong> {{date_validation}}</div>
+        </div>
       </div>
-    </div>
-
-    <p class="note">
-      @ Automatiquement généré par le système de gestion de livraison Green-Pay
-    </p>
+    </div> 
+    <p class="note">@ Automatiquement généré par le système de livraison Green-Pay</p>
   </div>
 </body>
 </html>
