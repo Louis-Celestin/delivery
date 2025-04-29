@@ -55,10 +55,14 @@ export default function LivraisonInputs() {
     setTypeLivraison(value);
     if(value == 'TPE GIM'){
       setLivraisonID(1);
-    }else if(value == 'CHARGEUR'){
-      setLivraisonID(5);
-    }else if(value == 'MOBILE'){
+    }else if(value == 'TPE REPARE'){
+      setLivraisonID(2);
+    }else if(value == 'TPE MAJ'){
+      setLivraisonID(3)
+    }else if(value == 'TPE MOBILE'){
       setLivraisonID(4)
+    }else if(value == 'CHARGEUR'){
+      setLivraisonID(5)
     }
   };
   
@@ -132,7 +136,7 @@ export default function LivraisonInputs() {
       setLoadingDelivery(true);
       const commentaire = message;
       const type_livraison_id = livraisonID
-      const user_id = 3;
+      const user_id = userId;
       const isAncienne = false;
   
       console.log('Trying to create form...')

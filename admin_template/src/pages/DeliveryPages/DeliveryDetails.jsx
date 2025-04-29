@@ -43,9 +43,15 @@ export default function DeliveryDetail() {
                         ...data,
                         produitsLivre: JSON.parse(data.produitsLivre)
                       });
-                      if(data.type_livraison_id == 2){
+                      if(data.type_livraison_id == 1){
                         setTypeLivraison("TPE GIM")
+                      } else if(data.type_livraison_id == 2){
+                        setTypeLivraison("TPE MOBILE")
+                      } else if(data.type_livraison_id == 3){
+                        setTypeLivraison("TPE REPARE")
                       } else if(data.type_livraison_id == 4){
+                        setTypeLivraison("TPE MAJ")
+                      } else if(data.type_livraison_id == 5){
                         setTypeLivraison("CHARGEUR")
                       }
                       setDateLivraison(formatDate(data.date_livraison))

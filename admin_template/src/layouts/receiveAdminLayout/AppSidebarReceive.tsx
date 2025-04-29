@@ -29,23 +29,23 @@ const navItems: NavItem[] = [
   {
     icon: <GridIcon />,
     name: "Dashboard",
-    subItems: [{ name: "Livraisons", path: "/", pro: false }],
+    subItems: [{ name: "Statistiques", path: "/", pro: false }],
   },
   // {
   //   icon: <CalenderIcon />,
   //   name: "Calendar",
   //   path: "/calendar",
   // },
-  {
-    icon: <UserCircleIcon />,
-    name: "User Profile",
-    path: "/profile",
-  },
+  // {
+  //   icon: <UserCircleIcon />,
+  //   name: "User Profile",
+  //   path: "/profile",
+  // },
   {
     name: "Formulaire",
     icon: <ListIcon />,
     subItems: [
-      { name: "Livraison", path: "/form-livraison", pro: false },
+      {name: "Toutes les réceptions", path:"/toutes-les-receptions", pro: false},
       { name: "Form", path: "/form-elements", pro: false }
     ],
     
@@ -308,18 +308,18 @@ const AppSidebar: React.FC = () => {
         }`}
       >
         <Link to="/">
-          {/* {isExpanded || isHovered || isMobileOpen ? (
+          {isExpanded || isHovered || isMobileOpen ? (
             <>
               <img
                 className="dark:hidden"
-                src="/images/logo/logo.svg"
+                src="/images/logo/greenpay.jpeg"
                 alt="Logo"
                 width={150}
                 height={40}
               />
               <img
                 className="hidden dark:block"
-                src="/images/logo/logo-dark.svg"
+                src="/images/logo/greenpay.jpeg"
                 alt="Logo"
                 width={150}
                 height={40}
@@ -327,13 +327,12 @@ const AppSidebar: React.FC = () => {
             </>
           ) : (
             <img
-              src="/images/logo/logo-icon.svg"
+              src="/images/logo/greenpay.jpeg"
               alt="Logo"
               width={32}
               height={32}
             />
-          )} */}
-          <span className="w-full text-center">DASHBOARD DELIVERY</span>
+          )}
         </Link>
       </div>
       <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">

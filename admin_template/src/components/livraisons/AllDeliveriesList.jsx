@@ -101,6 +101,7 @@ export default function AllDeliveriesList({ filterType }) {
                             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
                                 {currentItems.map((item, index) => {
                                     let title = '';
+                                    let date_cloture = '';
                                     if (item.type_livraison_id === 1) {
                                         title = 'Livraison TPE GIM';
                                     } else if (item.type_livraison_id === 2) {
@@ -121,6 +122,7 @@ export default function AllDeliveriesList({ filterType }) {
                                     } else if (statut == 'livre'){
                                         statut = 'Livré';
                                         statutClass = 'text-xs border rounded-xl p-0.5 px-1 bg-green-300'
+                                        date_cloture = formatDate(item.validations[0].date_validation)
                                     }
 
                                     return (
@@ -141,7 +143,7 @@ export default function AllDeliveriesList({ filterType }) {
                                                 {formDate}
                                             </TableCell>
                                             <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                                                
+                                                {date_cloture}
                                             </TableCell>
                                             <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                                                 <span className={statutClass}>{statut}</span>
@@ -153,9 +155,16 @@ export default function AllDeliveriesList({ filterType }) {
                                                             <i className="pi pi-eye"></i>
                                                         </button>
                                                     </Link>
-                                                    <button className="mx-1">
-                                                        <i className="pi pi-print"></i>
-                                                    </button>
+                                                    {statut == 'Livré' ? 
+                                                    (
+                                                        <button className="mx-1">
+                                                            <i className="pi pi-print"></i>
+                                                        </button>
+                                                    ) : (
+                                                        <button className="mx-1">
+                                                            <i className="pi pi-pencil"></i>
+                                                        </button>
+                                                    )}
                                                 </span>
                                             </TableCell>
                                             </TableRow>

@@ -6,6 +6,9 @@ import RecentOrders from "../../components/ecommerce/RecentOrders";
 import DemographicCard from "../../components/ecommerce/DemographicCard";
 import PageMeta from "../../components/common/PageMeta";
 
+import LivraisonsAttente from "../../components/receptions/LivraisonsAttente"
+import LivraisonsRecu from "../../components/receptions/LivraisonsRecu"
+
 // import TerminalOrders from "../../components/livraisons/StockChargeurs"
 
 
@@ -17,30 +20,31 @@ export default function ReceiveDashboard() {
         description="This is React.js Ecommerce Dashboard page for TailAdmin - React.js Tailwind CSS Admin Dashboard Template"
       />
       <div className="grid grid-cols-12 gap-4 md:gap-6">
-        {/* <div className="col-span-4 space-y-6">
-          <TerminalOrders />
-        </div> */}
+
         <div className="col-span-12 space-y-6 xl:col-span-7">
-          <EcommerceMetrics />
+          <LivraisonsAttente />
+          {/* <EcommerceMetrics />
 
-          <MonthlySalesChart />
+          <MonthlySalesChart /> */}
+
         </div>
 
-        <div className="col-span-12 xl:col-span-5">
+        {/* <div className="col-span-12 xl:col-span-5">
           <MonthlyTarget />
+        </div> */}
+
+        <div className="col-span-12 xl:col-span-7">
+          <LivraisonsRecu />
+          {/* <StatisticsChart /> */}
         </div>
 
-        <div className="col-span-12">
-          <StatisticsChart />
-        </div>
-
-        <div className="col-span-12 xl:col-span-5">
+        {/* <div className="col-span-12 xl:col-span-5">
           <DemographicCard />
         </div>
 
         <div className="col-span-12 xl:col-span-7">
           <RecentOrders />
-        </div>
+        </div> */}
       </div>
     </>
   );

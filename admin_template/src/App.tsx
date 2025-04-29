@@ -30,6 +30,9 @@ import AllDeliveries from "./pages/DeliveryPages/AllDeliveries";
 import DeliveryDetails from "./pages/DeliveryPages/DeliveryDetails";
 import ProtectedRoutes from "./ProtectedRoutes";
 
+import AllReceptions from "./pages/ReceivePages/AllReceptions";
+import ReceptionDetails from "./pages/ReceivePages/ReceptionDetails"
+
 export default function App() {
   return (
     <>
@@ -48,8 +51,14 @@ export default function App() {
               {/* Forms */}
               <Route path="/form-elements" element={<FormElements />} />
               <Route path="/form-livraison" element={<LivraisonForm />} />
+
+              {/* Livraisons */}
               <Route path="/toutes-les-livraisons" element={<AllDeliveries/>} />
               <Route path="/formulaire/:id" element={<DeliveryDetails/>} />
+
+              {/* Receptions */}
+              <Route path="/toutes-les-receptions" element={<AllReceptions />} />
+              <Route path="/formulaire-recu/:id" element={<ReceptionDetails />} />
 
               {/* Tables */}
               <Route path="/basic-tables" element={<BasicTables />} />
