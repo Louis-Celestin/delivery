@@ -158,13 +158,11 @@ const getOneLivraison = async (req, res) => {
     }
   };
   
-  const updateLivraison = async (req, res) => {
+const updateLivraison = async (req, res) => {
     const { id } = req.params;
     const {
         produitsLivre,
         commentaire,
-        statut_livraison,
-        type_livraison_id,
         nom_livreur,
         is_old_livraison = false,  // Nouveau paramètre pour distinguer les 2 cas
         date_livraison  // Date de livraison pour le cas "ancienne"
@@ -242,7 +240,7 @@ const deleteLivraison = async (req, res) => {
   
       // 🔎 Récupération de l'agent qui a fait la livraison (si user_id défini)
       let expediteurNom = "N/A";
-  
+      // console.log(livraison)
       if (livraison.nom_livreur) {
         // ✅ Ancienne livraison ou nom fourni manuellement
         expediteurNom = livraison.nom_livreur;
@@ -281,20 +279,20 @@ const deleteLivraison = async (req, res) => {
         let row = "";
         switch (livraison.type_livraison_id) {
           case 1:
-            row = `<tr><td>${p.pointpointMarchand}</td><td>${p.serialNumber}</td><td>${p.caisse}</td><td>${p.banque}</td></tr>`;
+            row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${p.banque}</td></tr>`;
             break;
           case 2:
-            row = `<tr><td>${p.pointMarchand}</td><td>${p.serialNumber}</td></tr>`;
+            row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td></tr>`;
             break;
           case 3:
-            row = `<tr><td>${p.pointMarchand}</td><td>${p.serialNumber}</td><td>${p.banque}</td></tr>`;
+            row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.banque}</td></tr>`;
             break;
           case 4:
             const has = (m) => p.mobile_money?.includes(m) ? "✔" : "";
-            row = `<tr><td>${p.pointMarchand}</td><td>${p.serialNumber}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
+            row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
             break;
           case 5:
-            row = `<tr><td>${p.pointMarchand}</td><td>${p.serialNumber}</td><td>${p.caisse}</td><td>${p.quantite}</td></tr>`;
+            row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${p.quantite}</td></tr>`;
             break;
           default:
             row = "";
@@ -308,7 +306,7 @@ const deleteLivraison = async (req, res) => {
         return row;
       }).join("\n");
       
-      console.log(livraison.validations[0].signature)
+      // console.log(livraison.validations[0].signature)
       // 🧩 Remplacement des balises HTML
       html = html
         .replace("{{commentaire}}", livraison.commentaire || "")
@@ -346,7 +344,6 @@ const deleteLivraison = async (req, res) => {
     }
   };
   
-
 module.exports = {
     deliver,
     getAllLivraisons,
