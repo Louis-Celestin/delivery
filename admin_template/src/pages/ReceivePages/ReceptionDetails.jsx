@@ -18,6 +18,7 @@ import { ProgressSpinner } from 'primereact/progressspinner';
 import { ProductDeliveries } from '../../backend/livraisons/productDeliveries';
 import { Reception } from '../../backend/receptions/Reception';
 import { generatePdf } from '../../backend/receptions/GeneratePDF';
+import Swal from 'sweetalert2'
 
 
 
@@ -129,7 +130,11 @@ export default function ReceptionDetails() {
                 console.log(`${key}:`, value);
             }
             const response = await reception.receive(fd);
-            // const response = await reception.receive(livraisonID, user_id, commentaire, is_old_validation, signUrl)
+            Swal.fire({
+                    title: "Succès",
+                    text: "Formulaire réceptionné avec succès",
+                    icon: "success"
+                  });
             console.log(response)
             navigate('/toutes-les-receptions');
         } catch(error){

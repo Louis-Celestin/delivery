@@ -18,20 +18,23 @@ import Blank from "./pages/Blank";
 // import AppLayout from "./layouts/deliveryAdminLayout/AppLayoutDelivery";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 
-
 import DeliveryDashboard from "./pages/Dashboards/DeliveryDashboard";
 
 import DashboardRedirector from "./DashboardRedirector";
 import AdminRenderer from "./AdminRenderer";
 
-
 import LivraisonForm from "./pages/Forms/LivraisonForms/LivraisonForm";
 import AllDeliveries from "./pages/DeliveryPages/AllDeliveries";
 import DeliveryDetails from "./pages/DeliveryPages/DeliveryDetails";
+import AncienneLivraisonForm from "./pages/Forms/LivraisonForms/AncienneLivraisonForm";
+import ModifyLivraisonForm from "./pages/Forms/LivraisonForms/ModifyLivraisonForm"
+
 import ProtectedRoutes from "./ProtectedRoutes";
 
 import AllReceptions from "./pages/ReceivePages/AllReceptions";
-import ReceptionDetails from "./pages/ReceivePages/ReceptionDetails"
+import ReceptionDetails from "./pages/ReceivePages/ReceptionDetails";
+
+import GestionStockChargeur from "./pages/GestionStock/GestionStockChargeur";
 
 export default function App() {
   return (
@@ -51,6 +54,8 @@ export default function App() {
               {/* Forms */}
               <Route path="/form-elements" element={<FormElements />} />
               <Route path="/form-livraison" element={<LivraisonForm />} />
+              <Route path="/form-ancienne-livraison" element={<AncienneLivraisonForm />} />
+              <Route path="/form-modify-nouvelle-livraison/:id" element={<ModifyLivraisonForm />} />
 
               {/* Livraisons */}
               <Route path="/toutes-les-livraisons" element={<AllDeliveries/>} />
@@ -59,6 +64,9 @@ export default function App() {
               {/* Receptions */}
               <Route path="/toutes-les-receptions" element={<AllReceptions />} />
               <Route path="/formulaire-recu/:id" element={<ReceptionDetails />} />
+
+              {/* Stock chargeurs */}
+              <Route path="/gestion-stock-chargeur" element={<GestionStockChargeur />} />
 
               {/* Tables */}
               <Route path="/basic-tables" element={<BasicTables />} />

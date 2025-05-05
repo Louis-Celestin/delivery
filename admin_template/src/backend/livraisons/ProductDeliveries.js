@@ -18,6 +18,22 @@ export class ProductDeliveries{
       }
     };
 
+    async deliverOld(commentaire, type_livraison_id, isAncienne, date_livraison, nom_livreur, produitsLivre){
+      try {
+        const response = await axios.post(`${urlBase}/api/delivery/deliver`,
+           {commentaire,
+            type_livraison_id,
+            isAncienne,
+            date_livraison,
+            nom_livreur,
+            produitsLivre});
+        console.log(response)
+        return response.data;
+      } catch (error) {
+        throw error.response.data;
+      }
+    };
+
     async getAllLivraisons(){
       try{
         const response = await axios.get(`${urlBase}/api/delivery/getAllLivraisons`)
@@ -31,6 +47,20 @@ export class ProductDeliveries{
     async getOneLivraison(id){
       try{
         const response = await axios.get(`${urlBase}/api/delivery/getOneLivraison/${id}`)
+        console.log(response)
+        return response.data;
+      } catch(error){
+        throw error.response.data
+      }
+    };
+
+    async updateLivraison(id){
+      try{
+        const response = await axios.put(`${urlBase}/api/delivery/updateLivraison/${id}`,
+        {produitsLivre,
+        commentaire,
+        type_livraison_id,});
+
         console.log(response)
         return response.data;
       } catch(error){

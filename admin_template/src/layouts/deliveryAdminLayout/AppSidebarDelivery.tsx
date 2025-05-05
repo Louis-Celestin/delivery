@@ -14,6 +14,7 @@ import {
   PlugInIcon,
   TableIcon,
   UserCircleIcon,
+  CableDataIcon,
 } from "../../icons";
 import { useSidebar } from "../../context/SidebarContext";
 import SidebarWidget from "./SidebarWidgetDelivery";
@@ -45,9 +46,18 @@ const navItems: NavItem[] = [
     name: "Formulaire",
     icon: <ListIcon />,
     subItems: [
-      { name: "Livraison", path: "/form-livraison", pro: false },
+      { name: "Nouvelle Livraison", path: "/form-livraison", pro: false },
+      { name: "Ancienne Livraison", path: "/form-ancienne-livraison", pro: false },
       {name: "Toutes les livraisons", path:"/toutes-les-livraisons", pro: false},
       { name: "Form", path: "/form-elements", pro: false },
+    ],
+    
+  },
+  {
+    name: "Stock Chargeurs",
+    icon: <CableDataIcon />,
+    subItems: [
+      { name: "Ajout et Retour", path: "/gestion-stock-chargeur", pro: false },
     ],
     
   },

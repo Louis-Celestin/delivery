@@ -9,8 +9,8 @@ import {
     TableHeader,
     TableRow,
   } from "../../components/ui/table"
-  
 
+import 'primeicons/primeicons.css';
 
 import { ProductDeliveries } from '../../backend/livraisons/productDeliveries';
 
@@ -24,6 +24,7 @@ export default function DeliveryDetail() {
     const [deliveryDetails, setDeliveryDetails] = useState('')
     const [typeLivraison, setTypeLivraison] = useState('')
     const [dateLivraison, setDateLivraison] = useState('')
+    const [commentaire, setCommentaire] = useState('');
 
     const formatDate = (date) => {
         const d = new Date(date);
@@ -55,6 +56,7 @@ export default function DeliveryDetail() {
                         setTypeLivraison("CHARGEUR")
                       }
                       setDateLivraison(formatDate(data.date_livraison))
+                      setCommentaire(data.commentaire)
                 } catch(error){
                     console.log("Error fetchind data ", error)
                 } finally{
@@ -74,6 +76,17 @@ export default function DeliveryDetail() {
                 <div>
                     <div className='my-6'>
                         <span>{`Livraison du ${dateLivraison}`}</span>
+                    </div>
+                    <div className='overflow-hidden mb-6 pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
+                        <div className='mb-6 pb-2 w-full border-b'>
+                            <span className='text-sm mr-2'>Commentaire livraison</span>
+                            <span className='text-sm'><i className="pi pi-comment"></i></span>
+                        </div>
+                        {commentaire ? (
+                            <p className='text-sm text-cyan-700'>{commentaire}</p>
+                        ) : (
+                            <p className='text-xs opacity-20'>Sans commentaire</p>
+                        ) }
                     </div>
                     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
                         <div className="max-w-full overflow-x-auto">

@@ -58,7 +58,8 @@ import { ReactComponent as CableDataIcon } from "./cable-data.svg?react";
 import { ReactComponent as PhoneSetting } from "./round-phonelink-setup.svg?react";
 import { ReactComponent as TransferIcon } from "./arrow-transfer-diagonal-3-solid.svg?react"
 import { ReactComponent as ReceiveBoxIcon } from  "./package-receive.svg?react"
-
+import { ReactComponent as RefreshTimeIcon } from "./refresh-time.svg?react"
+import { ReactComponent as BaselineSearch } from "./baseline-search.svg?react"
 export {
   ErrorHexaIcon,
   AlertHexaIcon,
@@ -119,4 +120,6 @@ export {
   PhoneSetting,
   TransferIcon,
   ReceiveBoxIcon,
+  RefreshTimeIcon,
+  BaselineSearch,
 };

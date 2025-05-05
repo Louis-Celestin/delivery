@@ -1,4 +1,4 @@
-import { useEffect, useState, CSSProperties } from "react";
+import { useEffect, useState, useRef } from "react";
 import ComponentCard from "../../common/ComponentCard.tsx";
 import Label from "../Label.tsx";
 import Input from "../input/InputField.tsx";
@@ -12,25 +12,21 @@ import {
   TableHeader,
   TableRow,
 } from "../../ui/table";
-
-
 import { PlusIcon } from "../../../icons/index.ts";
 import { ListIcon } from "../../../icons/index.ts";
-import 'primeicons/primeicons.css';
-        
+import 'primeicons/primeicons.css'; 
 import { ProgressSpinner } from 'primereact/progressspinner';
-
 import { useNavigate } from "react-router";
-
 import { Merchants } from "../../../backend/livraisons/Merchants.js";
 import { ProductDeliveries } from "../../../backend/livraisons/productDeliveries.js";
+import Swal from 'sweetalert2'
 
 
 export default function LivraisonInputs() {
 
   const merchants = new Merchants();
   const productDeliveries = new ProductDeliveries();
-  const userId = window.sessionStorage.getItem('user_id');
+  const userId = window.sessionStorage.getItem('id');
   const navigate = useNavigate();
   const [isOrangeChecked, setOrangeChecked] = useState(false);
   const [isMTNChecked, setMTNChecked] = useState(false);
@@ -49,6 +45,7 @@ export default function LivraisonInputs() {
   const [errorFrom, setErrorForm] = useState(null);
   const [errorAjout, setErrorAjout] = useState(null);
   const [errorDeliver, setErrorDeliver] = useState(null);
+
 
   const ChangeTypeLivraison = (value) => {
     console.log("Selected value:", value);
@@ -122,7 +119,6 @@ export default function LivraisonInputs() {
         setOrangeChecked(false);
         setMTNChecked(false);
         setMOOVChecked(false);
-        setMessage('');
         setMobileMoney([]);
       };
     }
@@ -150,6 +146,11 @@ export default function LivraisonInputs() {
       const response = await productDeliveries.deliver(commentaire, type_livraison_id, user_id, isAncienne, produitsLivre)
       console.log(response);
       console.log('Formulaire créé')
+      Swal.fire({
+        title: "Succès",
+        text: "Formulaire créé avec succès",
+        icon: "success"
+      });
       navigate('/toutes-les-livraisons');
       }catch (error) {
         console.log('error')
