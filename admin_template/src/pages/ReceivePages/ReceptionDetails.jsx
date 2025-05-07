@@ -3,6 +3,9 @@ import { useParams } from 'react-router';
 import SignatureCanvas from 'react-signature-canvas'
 import { useNavigate } from "react-router";
 
+import Label from "../../components/form/Label";
+import TextArea from "../../components/form/input/TextArea";
+
 import PageBreadcrumb from '../../components/common/PageBreadCrumb';
 import {
     Table,
@@ -33,6 +36,7 @@ export default function ReceptionDetails() {
     // const fd = new window.FormData()
     const [loading, setLoading] = useState(false);
     const [loadingValidate, setLoadingValidate] = useState(false);
+    const [message, setMessage] = useState("");
     const [loadingPrint, setLoadingPrint] = useState(false);
     const [deliveryDetails, setDeliveryDetails] = useState('')
     const [typeLivraison, setTypeLivraison] = useState('')
@@ -44,6 +48,11 @@ export default function ReceptionDetails() {
     const [showSignButton, setShowSignButton] = useState(true);
     const [showValidateButton, setShowValidateButton] = useState(false);
     const [actionButtons, setActionButtons] = useState(false);
+    const [commentaire, setCommentaire] = useState('');
+    const [commentaireReception, setCommentaireReception] = useState('');
+    const [statutLivraison, setStatutLivraison] = useState('en attente');
+    const [statutClass, setStatutClass] = useState('text-sm rounded-xl p-1 bg-orange-100 text-orange-500 font-bold')
+
     
 
     const formatDate = (date) => {
@@ -76,9 +85,14 @@ export default function ReceptionDetails() {
                       }
                       setDateLivraison(formatDate(data.date_livraison))
                       setLivraisonID(data.type_livraison_id)
+                      setCommentaire(data.commentaire)
                       if(data.statut_livraison == 'livre'){
                         setShowSignButton(false)
                         setActionButtons(true)
+                        setStatutLivraison('Livré')
+                        setStatutClass('text-sm border rounded-xl p-1 bg-green-100 text-green-500 font-bold')
+
+                        setCommentaireReception(data.validations[0].commentaire)
                       }
                 } catch(error){
                     console.log("Error fetchind data ", error)
@@ -110,7 +124,7 @@ export default function ReceptionDetails() {
         e.preventDefault();
         
         setLoadingValidate(true);
-        let commentaire = ''
+        let commentaire = message
         let is_old_validation = false
 
         try{
@@ -161,11 +175,11 @@ export default function ReceptionDetails() {
             {loading ?
                 (<>Loading...</>) :
             (<>
-                <PageBreadcrumb pageTitle={`Reception | ${typeLivraison}`}/>
+                <PageBreadcrumb pageTitle={`Réception | ${typeLivraison}`}/>
                 <div>
                     <div className='my-6 flex justify-between items-center'>
                         <div>
-                            <span>{`Reception du ${dateLivraison}`}</span>
+                            <span>{`Réception du ${dateLivraison}`}</span>
                         </div>
                         {actionButtons? 
                         (
@@ -186,6 +200,39 @@ export default function ReceptionDetails() {
                             <></>
                         )}
                     </div>
+                    <div className='mb-3'>
+                        <span className={statutClass}>
+                            {statutLivraison}
+                        </span>
+                    </div>
+                    <div className='overflow-hidden mb-6 pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
+                        <div className='mb-6 pb-2 w-full border-b'>
+                            <span className='text-sm mr-2'>Commentaire livraison</span>
+                            <span className='text-sm'><i className="pi pi-comment"></i></span>
+                        </div>
+                        {commentaire ? (
+                            <p className='text-sm text-cyan-700'>{commentaire}</p>
+                        ) : (
+                            <p className='text-xs opacity-20'>Sans commentaire</p>
+                        ) }
+                    </div>
+                    {actionButtons ? (
+                        <>
+                            <div className='overflow-hidden mb-6 pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
+                                <div className='mb-6 pb-2 w-full border-b text-right'>
+                                    <span className='text-sm mr-2'>Commentaire réception</span>
+                                    <span className='text-sm'><i className="pi pi-comment"></i></span>
+                                </div>
+                            {commentaireReception ? (
+                                <p className='text-sm text-orange-500 text-right'>{commentaireReception}</p>
+                            ) : (
+                                <p className='text-xs opacity-20 text-right'>Sans commentaire</p>
+                            ) }
+                            </div>
+                        </>
+                    ) : (
+                        <></>
+                    )}
                     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
                         <div className="max-w-full overflow-x-auto">
                             <Table>
@@ -304,16 +351,25 @@ export default function ReceptionDetails() {
                 </div>
             </>)
             }
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} className="p-6 max-w-md">
-                <div className='p-5'>
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} className="p-4 max-w-md">
+                <div className='p-1'>
                     <div className='text-center mb-3 text-sm'>
                         <span>Signez manuellement pour valider la livraison</span>
                     </div>
-                    <div className='w-full flex flex-col justify-center items-center'>
+                    <div className='flex flex-col justify-center items-center'>
                         <SignatureCanvas
                             ref={data=>setSignature(data)}
-                            canvasProps={{ width: 300, className: 'sigCanvas border border-gray-300 rounded' }}
+                            canvasProps={{ width: 300, height: 250, className: 'sigCanvas border border-gray-300 rounded' }}
                         />
+                        <div className='w-full mt-3'>
+                            <Label>Commentaire</Label>
+                            <TextArea
+                                value={message}
+                                onChange={(value) => setMessage(value)}
+                                rows={4}
+                                placeholder="Ajoutez un commentaire"
+                            />
+                        </div>
                         <div className='w-full mt-6 flex justify-center items-center'>
                             <button
                                 onClick={handleClear}

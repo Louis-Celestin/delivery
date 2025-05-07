@@ -11,7 +11,7 @@ import {
 export default function TerminalOrders() {
 
     const statsLivraisons = new StatsLivraisons()
-    const [nbrChargeurLivre, setNbrChargeurLivre] = useState('');
+    const [nbrChargeurLivre, setNbrChargeurLivre] = useState('0');
     const [loading, setLoading] = useState(false)
 
     useEffect( ()=> {

@@ -11,7 +11,7 @@ import {
 export default function RetourChargeurs() {
 
     const statsLivraisons = new StatsLivraisons()
-    const [nbrChargeurRetour, setNbrChargeurRetour] = useState('');
+    const [nbrChargeurRetour, setNbrChargeurRetour] = useState('0');
     const [loading, setLoading] = useState(false)
 
     useEffect( ()=> {

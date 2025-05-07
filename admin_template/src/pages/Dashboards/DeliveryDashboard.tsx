@@ -25,7 +25,7 @@ export default function DeliveryDashboard() {
         <div className="col-span-4 space-y-6">
           <RetourChargeurs />
         </div>
-        <div className="col-span-12 space-y-6 xl:col-span-12">
+        <div className="col-span-12 space-y-6 xl:col-span-6">
           <LivraisonsTPE />
         </div>
         {/* <div className="col-span-12 space-y-6 xl:col-span-7">

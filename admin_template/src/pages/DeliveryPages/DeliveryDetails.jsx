@@ -1,5 +1,5 @@
 import { useState, useEffect} from 'react';
-import { useParams } from 'react-router';
+import { useParams, Link } from 'react-router';
 
 import PageBreadcrumb from '../../components/common/PageBreadCrumb';
 import {
@@ -21,10 +21,15 @@ export default function DeliveryDetail() {
     const productDeliveries = new ProductDeliveries()
     const { id } = useParams();
     const [loading, setLoading] = useState(false);
+    const [loadingPrint, setLoadingPrint] = useState(false);
     const [deliveryDetails, setDeliveryDetails] = useState('')
     const [typeLivraison, setTypeLivraison] = useState('')
     const [dateLivraison, setDateLivraison] = useState('')
+    const [actionButtons, setActionButtons] = useState(false);
     const [commentaire, setCommentaire] = useState('');
+    const [commentaireReception, setCommentaireReception] = useState('');
+    const [statutLivraison, setStatutLivraison] = useState('en attente');
+    const [statutClass, setStatutClass] = useState('text-sm rounded-xl p-1 bg-orange-100 text-orange-500 font-bold')
 
     const formatDate = (date) => {
         const d = new Date(date);
@@ -57,6 +62,13 @@ export default function DeliveryDetail() {
                       }
                       setDateLivraison(formatDate(data.date_livraison))
                       setCommentaire(data.commentaire)
+                      if(data.statut_livraison == 'livre'){
+                        setActionButtons(true)
+                        setStatutLivraison('Livré')
+                        setStatutClass('text-sm border rounded-xl p-1 bg-green-100 text-green-500 font-bold')
+
+                        setCommentaireReception(data.validations[0].commentaire)
+                      }
                 } catch(error){
                     console.log("Error fetchind data ", error)
                 } finally{
@@ -67,6 +79,19 @@ export default function DeliveryDetail() {
         }
     },[id]);
 
+    const handleGeneratePdf = async () =>{
+            setLoadingPrint(true);
+            try{
+                const blob = await generatePdf(id);
+                const fileURL = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+                window.open(fileURL, '_blank');
+            }catch(error){
+                console.log(error)
+            }finally{
+                setLoadingPrint(false);
+            }
+        }
+
     return (
         <>
             {loading ?
@@ -74,8 +99,34 @@ export default function DeliveryDetail() {
             (<>
                 <PageBreadcrumb pageTitle={`Livraison | ${typeLivraison}`}/>
                 <div>
-                    <div className='my-6'>
+                    <div className='my-3 flex justify-between items-center'>
                         <span>{`Livraison du ${dateLivraison}`}</span>
+                        {actionButtons? 
+                        (
+                            <div>
+                                <>
+                                    {loadingPrint ? (
+                                        <span className='m-3'>
+                                            <ProgressSpinner style={{width: '20px', height: '20px'}} strokeWidth="8" animationDuration=".5s" />
+                                        </span>
+                                    ) : (
+                                        <button onClick={handleGeneratePdf} className='m-3 text-2xl'><span><i className="pi pi-print"></i></span></button>
+                                    )}
+                                </>
+                            </div>
+
+                        ) : (
+                            <>
+                                <Link to={`/form-modify-nouvelle-livraison/${deliveryDetails.id_livraison}`}>
+                                    <button className='m-3 text-2xl'><span><i className="pi pi-pencil"></i></span></button>
+                                </Link>
+                            </>
+                        )}
+                    </div>
+                    <div className='mb-3'>
+                        <span className={statutClass}>
+                            {statutLivraison}
+                        </span>
                     </div>
                     <div className='overflow-hidden mb-6 pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
                         <div className='mb-6 pb-2 w-full border-b'>
@@ -88,6 +139,23 @@ export default function DeliveryDetail() {
                             <p className='text-xs opacity-20'>Sans commentaire</p>
                         ) }
                     </div>
+                    {actionButtons ? (
+                        <>
+                            <div className='overflow-hidden mb-6 pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
+                                <div className='mb-6 pb-2 w-full border-b text-right'>
+                                    <span className='text-sm mr-2'>Commentaire réception</span>
+                                    <span className='text-sm'><i className="pi pi-comment"></i></span>
+                                </div>
+                            {commentaireReception ? (
+                                <p className='text-sm text-orange-500 text-right'>{commentaireReception}</p>
+                            ) : (
+                                <p className='text-xs opacity-20 text-right'>Sans commentaire</p>
+                            ) }
+                            </div>
+                        </>
+                    ) : (
+                        <></>
+                    )}
                     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
                         <div className="max-w-full overflow-x-auto">
                             <Table>

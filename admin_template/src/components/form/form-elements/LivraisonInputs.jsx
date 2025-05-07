@@ -173,7 +173,7 @@ export default function LivraisonInputs() {
   const options_livraison = [
     { value: "TPE GIM", label: "TPE GIM" },
     { value: "TPE MOBILE", label: "TPE MOBILE" },
-    { value: "MISE A JOUR", label: "MISE A JOUR" },
+    { value: "TPE MAJ", label: "MISE A JOUR" },
     { value: "TPE REPARE", label: "TPE REPARE" },
     { value: "CHARGEUR", label: "CHARGEUR" },
   ];

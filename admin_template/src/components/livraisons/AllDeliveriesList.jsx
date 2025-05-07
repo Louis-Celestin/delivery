@@ -201,24 +201,13 @@ export default function AllDeliveriesList({ filterType }) {
                         showIcon
                         />
                     </div>
-                    {/* <DatePicker
-                                id="date-picker"
-                                label="Date début"
-                                placeholder="Date de début"
-                                onChange={(dates, currentDateString) => {
-                                // Handle your logic
-                                    setStartDate(currentDateString)
-                                }}
-                              />
-                    <DatePicker
-                                id="date-picker"
-                                label="Date fin"
-                                placeholder="Date de fin"
-                                onChange={(dates, currentDateString) => {
-                                // Handle your logic
-                                    setEndDate(currentDateString)
-                                }}
-                              /> */}
+                    <div className="flex items-center">
+                        <span>
+                            <Link to={"/form-livraison"} className="bg-green-400 p-3 rounded-2xl ">
+                                Nouvelle livraison
+                            </Link>
+                        </span>
+                    </div>
                     
                 </div>
                 <div className="card">

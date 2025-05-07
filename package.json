@@ -10,6 +10,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "date-fns": "^4.1.0",
     "react-notifications-component": "^4.0.1",
     "sweetalert2": "^11.19.1"
   }
