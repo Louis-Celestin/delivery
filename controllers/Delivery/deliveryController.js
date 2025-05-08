@@ -70,7 +70,7 @@ const deliver = async (req, res) => {
         for (const item of produits) {
           const chargeur = await prisma.chargeurs.findUnique({
             where: {
-              id_chargeur: item.id_chargeur
+              id_chargeur: parseInt(1)
             }
           });
   
@@ -87,7 +87,7 @@ const deliver = async (req, res) => {
               quantite,
               date_transaction: new Date(),
               chargeurs : {connect : {
-                id_chargeur : parseInt(chargeur.id_chargeur)
+                id_chargeur : parseInt(1)
               }},
               users: utilisateur ? {connect : {
                 id_user : parseInt(utilisateur.id_user)
@@ -99,7 +99,7 @@ const deliver = async (req, res) => {
   
           // Mettre à jour le stock
           await prisma.chargeurs.update({
-            where: { id_chargeur: chargeur.id_chargeur },
+            where: { id_chargeur: parseInt(1) },
             data: {
               stock: {
                 decrement: quantite
