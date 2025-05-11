@@ -33,7 +33,7 @@ export default function RetourChargeurs() {
     },[]);
 
     return (
-        <div className="rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800">
+        <div className="rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800 dark:bg-gray-800">
             <div>
                 <div className="flex items-center justify-between">
                     <h3 className="text-lg font-light text-gray-800 dark:text-white/90">
@@ -44,7 +44,7 @@ export default function RetourChargeurs() {
                     </span>
                 </div>
                 <div>
-                    <span className="text-3xl font-bold my-3">{nbrChargeurRetour}</span>
+                    <span className="text-3xl font-bold my-3 dark:text-white">{nbrChargeurRetour}</span>
                 </div>
             </div>
 

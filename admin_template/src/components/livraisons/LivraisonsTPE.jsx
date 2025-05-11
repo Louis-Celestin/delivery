@@ -75,7 +75,7 @@ export default function LivraisonsTPE() {
 
     return (
         <>
-            <div className="rounded-2xl border border-gray-200 bg-white pb-3 pt-4 dark:border-gray-800">
+            <div className="rounded-2xl border border-gray-200 bg-white pb-3 pt-4 dark:border-gray-800 dark:bg-gray-800 dark:text-white">
                 <div className="flex flex-col items-center justify-center">
                     <div className="mb-4 px-3 pb-1.5 w-full border-b flex justify-between items-center">
                         <span className="font-light">Ensemble des livraisons de TPE par type</span>

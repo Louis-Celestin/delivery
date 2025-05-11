@@ -37,7 +37,7 @@ export default function ModifyLivraisonInputs() {
   const [loadingMerchant, setLoadingMerchant] = useState(false);
   const [loadingDelivery, setLoadingDelivery] = useState(false);
   const [typeLivraison, setTypeLivraison] = useState('');
-  const [livraisonID, setLivraisonID] = useState(null);
+  const [livraisonID, setLivraisonID] = useState();
   const [message, setMessage] = useState("");
   const [mobileMoney, setMobileMoney] = useState([]);
   const [produitsLivreTable, setProduitsLivresTable] = useState([]);
@@ -46,8 +46,6 @@ export default function ModifyLivraisonInputs() {
   const [errorFrom, setErrorForm] = useState(null);
   const [errorAjout, setErrorAjout] = useState(null);
   const [errorDeliver, setErrorDeliver] = useState(null);
-  const [deliveryDetails, setDeliveryDetails] = useState('')
-
 
   const ChangeTypeLivraison = (value) => {
     console.log("Selected value:", value);
@@ -65,7 +63,6 @@ export default function ModifyLivraisonInputs() {
     }
   };
   
-
   useEffect( ()=>{
     const fetchDeliveryInfos = async () => {
       setLoadingDeliveryInfos(true)
@@ -73,22 +70,18 @@ export default function ModifyLivraisonInputs() {
         let data;
         data = await productDeliveries.getOneLivraison(id);
         console.log(data)
-        setDeliveryDetails({
-            ...data,
-            produitsLivre: JSON.parse(data.produitsLivre)
-          });
-          if(data.type_livraison_id == 1){
-            setTypeLivraison("TPE GIM")
-          } else if(data.type_livraison_id == 2){
-            setTypeLivraison("TPE MOBILE")
-          } else if(data.type_livraison_id == 3){
-            setTypeLivraison("TPE REPARE")
-          } else if(data.type_livraison_id == 4){
-            setTypeLivraison("TPE MAJ")
-          } else if(data.type_livraison_id == 5){
-            setTypeLivraison("CHARGEUR")
-          }
-          setMessage(data.commentaire);
+        setMessage(data.commentaire);
+        const parsedProduitsLivre = JSON.parse(data.produitsLivre);
+        setProduitsLivres(parsedProduitsLivre);
+        setProduitsLivresTable(parsedProduitsLivre);
+        switch (data.type_livraison_id) {
+        case 1: setTypeLivraison("TPE GIM"); break;
+        case 2: setTypeLivraison("TPE REPARE"); break;
+        case 3: setTypeLivraison("TPE MAJ"); break;
+        case 4: setTypeLivraison("TPE MOBILE"); break;
+        case 5: setTypeLivraison("CHARGEUR"); break;
+        default: setTypeLivraison("Inconnu"); break;
+      }
       }catch(error){
         console.log('Error fetching data ',error)
         setErrorForm('Erreur lors de la génération du formulaire')
@@ -114,7 +107,9 @@ export default function ModifyLivraisonInputs() {
     };
     fetchDeliveryInfos();
     fetchTerminalInfos();
+    
     },[id])
+    
 
   const handleAjout = (e) => {
     e.preventDefault(); // prevent page reload
@@ -124,77 +119,77 @@ export default function ModifyLivraisonInputs() {
     if (isOrangeChecked) localMobileMoney.push("OM");
     if (isMTNChecked) localMobileMoney.push("MTN");
     if (isMOOVChecked) localMobileMoney.push("MOOV");
-    if (!filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(", ")){
-      setErrorAjout("S/N invalide")
-    }else{
-        const newProduitLivreTable = {
-          pointMarchand: filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(", "),
-          caisse: filteredPointMarchand.map((terminal) => terminal.TPE).join(","),
-          serialNumber: terminalSN,
-          banque: filteredPointMarchand.map((terminal) => terminal.BANQUE).join(", "),
-          isOrangeChecked,
-          isMTNChecked,
-          isMOOVChecked,
-        };
 
-        const newProduitLivre = {
-          pointMarchand: filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(","),
-          caisse: filteredPointMarchand.map((terminal) => terminal.TPE).join(","),
-          serialNumber: terminalSN,
-          banque: filteredPointMarchand.map((terminal) => terminal.BANQUE).join(","),
-          mobile_money: localMobileMoney,
-        };
-      
-        setProduitsLivresTable((prev) => [...prev, newProduitLivreTable]);
-        setProduitsLivres((prev) => [...prev, newProduitLivre]);
-      
-        // Optional: Reset form fields
-        setTerminalSN('');
-        setOrangeChecked(false);
-        setMTNChecked(false);
-        setMOOVChecked(false);
-        setMobileMoney([]);
-      };
+    if (!filteredPointMarchand || filteredPointMarchand.length === 0) {
+      setErrorAjout("S/N invalide");
+      return;
+    }
+    const isDuplicate = produitsLivre.some(prod => prod.serialNumber === terminalSN);
+    if (isDuplicate) {
+      setErrorAjout("Ce numéro de série a déjà été ajouté.");
+      return;
+    }
+
+    const newProduit = {
+      pointMarchand: filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(", "),
+      caisse: filteredPointMarchand.map((terminal) => terminal.TPE).join(","),
+      serialNumber: terminalSN,
+      banque: filteredPointMarchand.map((terminal) => terminal.BANQUE).join(", "),
+      mobile_money: localMobileMoney,
+    };
+  
+    setProduitsLivresTable((prev) => [...prev, newProduit]);
+    setProduitsLivres((prev) => [...prev, newProduit]);
+  
+    // Optional: Reset form fields
+    setTerminalSN('');
+    setOrangeChecked(false);
+    setMTNChecked(false);
+    setMOOVChecked(false);
+    setMobileMoney([]);
     }
     
 
   const handleDeliver = async (e) => {
     e.preventDefault();
+
     if(produitsLivre.length == 0){
       setErrorDeliver("Veuillez ajouter des produits")
-    }else{
-      setLoadingDelivery(true);
-      const commentaire = message;
-      const type_livraison_id = livraisonID
-      const user_id = userId;
-      const isAncienne = false;
-  
-      console.log('Trying to create form...')
-      console.log('Commentaire : ',commentaire)
-      console.log('ID Livraison : ',type_livraison_id)
-      console.log('ID User', user_id)
-      console.log('Ancienne ? ', isAncienne)
-      console.log('Produits livrés : ',produitsLivre)
-  
-      try{
-      const response = await productDeliveries.updateLivraison(commentaire, type_livraison_id, user_id, isAncienne, produitsLivre)
-      console.log(response);
-      console.log('Formulaire créé')
-      Swal.fire({
-        title: "Succès",
-        text: "Formulaire créé avec succès",
-        icon: "success"
-      });
-      navigate('/toutes-les-livraisons');
-      }catch (error) {
-        console.log('error')
-        setError('Erreur lors de la génération du formulaire');
-      }finally{
-        setProduitsLivres([])
-        setProduitsLivresTable([])
-        setLoadingDelivery(false)
-      }
+      return;
+    }
 
+    setLoadingDelivery(true);
+    const commentaire = message;
+    const type_livraison_id = livraisonID
+    const user_id = userId;
+    const isAncienne = false;
+    const statut_livraison = 'en_attente'
+    const nom_livreur = 'YAO ORNELLA'
+
+    console.log('Trying to create form...')
+    console.log('Commentaire : ',commentaire)
+    console.log('ID Livraison : ',type_livraison_id)
+    console.log('ID User', user_id)
+    console.log('Ancienne ? ', isAncienne)
+    console.log('Produits livrés : ',produitsLivre)
+
+    try{
+    const response = await productDeliveries.updateLivraison(id, produitsLivre, commentaire, statut_livraison, type_livraison_id, nom_livreur)
+    console.log(response);
+    console.log('Formulaire modifié')
+    Swal.fire({
+      title: "Succès",
+      text: "Formulaire modifié avec succès",
+      icon: "success"
+    });
+    navigate('/toutes-les-livraisons');
+    }catch (error) {
+      console.log(error)
+      setError('Erreur lors de la génération du formulaire');
+    }finally{
+      setProduitsLivres([])
+      setProduitsLivresTable([])
+      setLoadingDelivery(false)
     }
    
   }
@@ -244,8 +239,8 @@ export default function ModifyLivraisonInputs() {
                           <Select
                             options={options_livraison}
                             defaultValue ={typeLivraison}
-                            placeholder="Select an option"
                             onChange={ChangeTypeLivraison}
+                            placeholder="Select an option"
                             className="dark:bg-dark-900"
                           />
                         </div>
@@ -360,7 +355,7 @@ export default function ModifyLivraisonInputs() {
               </TableHeader>
               {/* Table Body */}
               <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-                {deliveryDetails.produitsLivre?.map((item, index) => (
+                {produitsLivreTable.map((item, index) => (
                   <TableRow key={index}>
                     <TableCell className="px-5 py-4 sm:px-6 text-start">
                       <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
@@ -369,6 +364,13 @@ export default function ModifyLivraisonInputs() {
                       <span className="block text-gray-500 text-theme-xs dark:text-gray-400">
                         {item.caisse}
                       </span>
+                      {item.commentaireTPE ? (
+                        <span className="block text-gray-700 text-theme-xs dark:text-gray-400">
+                         « {item.commentaireTPE} » 
+                        </span>
+                      ) : (
+                        <></>
+                      )}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       {item.serialNumber}
@@ -410,9 +412,6 @@ export default function ModifyLivraisonInputs() {
             </span>
           : 
             <div className="flex">
-                <button className="mt-20 mx-1 w-50 bg-red-400 rounded-2xl h-10 flex justify-center items-center">
-                    <span>Annuler</span>
-                </button>
                 <button onClick={handleDeliver} className=" mt-20 w-50 mx-1 bg-green-400 rounded-2xl h-10 flex justify-center items-center">
                     <span>Modifier formulaire</span>
                     <span className="text-2xl"><ListIcon /></span>

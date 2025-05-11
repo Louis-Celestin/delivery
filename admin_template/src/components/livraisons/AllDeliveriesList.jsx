@@ -210,6 +210,11 @@ export default function AllDeliveriesList({ filterType }) {
                     </div>
                     
                 </div>
+                <div className="p-6 pt-0">
+                    <span className="text-md text-gray-600 dark:text-gray-300">
+                        {filteredDeliveryForms.length} formulaire(s) trouvé(s)
+                    </span>
+                </div>
                 <div className="card">
                     <DataTable
                         value={filteredDeliveryForms}

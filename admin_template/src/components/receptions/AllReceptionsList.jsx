@@ -205,25 +205,11 @@ export default function AllReceptionsList() {
                         showIcon
                         />
                     </div>
-                    {/* <DatePicker
-                                id="date-picker"
-                                label="Date début"
-                                placeholder="Date de début"
-                                onChange={(dates, currentDateString) => {
-                                // Handle your logic
-                                    setStartDate(currentDateString)
-                                }}
-                              />
-                    <DatePicker
-                                id="date-picker"
-                                label="Date fin"
-                                placeholder="Date de fin"
-                                onChange={(dates, currentDateString) => {
-                                // Handle your logic
-                                    setEndDate(currentDateString)
-                                }}
-                              /> */}
-                    
+                </div>
+                <div className="p-6 pt-0">
+                    <span className="text-md text-gray-600 dark:text-gray-300">
+                        {filteredDeliveryForms.length} formulaire(s) trouvé(s)
+                    </span>
                 </div>
                 <div className="card">
                     <DataTable

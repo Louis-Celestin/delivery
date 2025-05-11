@@ -52,11 +52,11 @@ export default function DeliveryDetail() {
                       if(data.type_livraison_id == 1){
                         setTypeLivraison("TPE GIM")
                       } else if(data.type_livraison_id == 2){
-                        setTypeLivraison("TPE MOBILE")
-                      } else if(data.type_livraison_id == 3){
                         setTypeLivraison("TPE REPARE")
-                      } else if(data.type_livraison_id == 4){
+                      } else if(data.type_livraison_id == 3){
                         setTypeLivraison("TPE MAJ")
+                      } else if(data.type_livraison_id == 4){
+                        setTypeLivraison("TPE MOBILE")
                       } else if(data.type_livraison_id == 5){
                         setTypeLivraison("CHARGEUR")
                       }
@@ -199,12 +199,19 @@ export default function DeliveryDetail() {
                                 {deliveryDetails.produitsLivre?.map((item, index) => (
                                 <TableRow key={index}>
                                     <TableCell className="px-5 py-4 sm:px-6 text-start">
-                                    <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
-                                        {item.pointMarchand}
-                                    </span>
-                                    <span className="block text-gray-500 text-theme-xs dark:text-gray-400">
-                                        {item.caisse}
-                                    </span>
+                                        <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
+                                            {item.pointMarchand}
+                                        </span>
+                                        <span className="block text-gray-500 text-theme-xs dark:text-gray-400">
+                                            {item.caisse}
+                                        </span>
+                                        {item.commentaireTPE ? (
+                                            <span className="block text-gray-700 text-theme-xs dark:text-gray-400">
+                                            « {item.commentaireTPE} » 
+                                            </span>
+                                        ) : (
+                                            <></>
+                                        )}
                                     </TableCell>
                                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                                     {item.serialNumber}

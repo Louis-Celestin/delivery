@@ -46,6 +46,8 @@ export default function LivraisonInputs() {
   const [errorAjout, setErrorAjout] = useState(null);
   const [errorDeliver, setErrorDeliver] = useState(null);
 
+  const [messageTPE, setMessageTPE] = useState('')
+
 
   const ChangeTypeLivraison = (value) => {
     console.log("Selected value:", value);
@@ -90,79 +92,89 @@ export default function LivraisonInputs() {
     if (isOrangeChecked) localMobileMoney.push("OM");
     if (isMTNChecked) localMobileMoney.push("MTN");
     if (isMOOVChecked) localMobileMoney.push("MOOV");
-    if (!filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(", ")){
-      setErrorAjout("S/N invalide")
-    }else{
-        const newProduitLivreTable = {
-          pointMarchand: filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(", "),
-          caisse: filteredPointMarchand.map((terminal) => terminal.TPE).join(","),
-          serialNumber: terminalSN,
-          banque: filteredPointMarchand.map((terminal) => terminal.BANQUE).join(", "),
-          isOrangeChecked,
-          isMTNChecked,
-          isMOOVChecked,
-        };
-
-        const newProduitLivre = {
-          pointMarchand: filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(","),
-          caisse: filteredPointMarchand.map((terminal) => terminal.TPE).join(","),
-          serialNumber: terminalSN,
-          banque: filteredPointMarchand.map((terminal) => terminal.BANQUE).join(","),
-          mobile_money: localMobileMoney,
-        };
-      
-        setProduitsLivresTable((prev) => [...prev, newProduitLivreTable]);
-        setProduitsLivres((prev) => [...prev, newProduitLivre]);
-      
-        // Optional: Reset form fields
-        setTerminalSN('');
-        setOrangeChecked(false);
-        setMTNChecked(false);
-        setMOOVChecked(false);
-        setMobileMoney([]);
-      };
+    if (!filteredPointMarchand || filteredPointMarchand.length === 0) {
+      setErrorAjout("S/N invalide");
+      return;
     }
+    const isDuplicate = produitsLivre.some(prod => prod.serialNumber === terminalSN);
+    if (isDuplicate) {
+      setErrorAjout("Ce numéro de série a déjà été ajouté.");
+      return;
+    }
+
+    const newProduit = {
+      pointMarchand: filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(","),
+      caisse: filteredPointMarchand.map((terminal) => terminal.TPE).join(","),
+      serialNumber: terminalSN,
+      banque: filteredPointMarchand.map((terminal) => terminal.BANQUE).join(","),
+      mobile_money: localMobileMoney,
+      commentaireTPE: messageTPE,
+    };
+  
+    setProduitsLivresTable((prev) => [...prev, newProduit]);
+    setProduitsLivres((prev) => [...prev, newProduit]);
+  
+    // Optional: Reset form fields
+    setTerminalSN('');
+    setMessageTPE('')
+    setOrangeChecked(false);
+    setMTNChecked(false);
+    setMOOVChecked(false);
+    setMobileMoney([]);
+
+    setErrorAjout('')
+  }
     
 
   const handleDeliver = async (e) => {
     e.preventDefault();
     if(produitsLivre.length == 0){
-      setErrorDeliver("Veuillez ajouter des produits")
-    }else{
-      setLoadingDelivery(true);
-      const commentaire = message;
-      const type_livraison_id = livraisonID
-      const user_id = userId;
-      const isAncienne = false;
-  
-      console.log('Trying to create form...')
-      console.log('Commentaire : ',commentaire)
-      console.log('ID Livraison : ',type_livraison_id)
-      console.log('ID User', user_id)
-      console.log('Ancienne ? ', isAncienne)
-      console.log('Produits livrés : ',produitsLivre)
-  
-      try{
-      const response = await productDeliveries.deliver(commentaire, type_livraison_id, user_id, isAncienne, produitsLivre)
-      console.log(response);
-      console.log('Formulaire créé')
-      Swal.fire({
-        title: "Succès",
-        text: "Formulaire créé avec succès",
-        icon: "success"
+       Swal.fire({
+      title: "Error",
+      text: "Vous devez ajoutez des produits",
+      icon: "error"
       });
-      navigate('/toutes-les-livraisons');
-      }catch (error) {
-        console.log('error')
-        setError('Erreur lors de la génération du formulaire');
-      }finally{
-        setProduitsLivres([])
-        setProduitsLivresTable([])
-        setLoadingDelivery(false)
-      }
-
+      return;
     }
-   
+    if(!livraisonID){
+      Swal.fire({
+      title: "Error",
+      text: "Vous devez choisir un type de livraison",
+      icon: "error"
+      });
+      return;
+    }
+    setLoadingDelivery(true);
+    const commentaire = message;
+    const type_livraison_id = livraisonID
+    const user_id = userId;
+    const isAncienne = false;
+
+    console.log('Trying to create form...')
+    console.log('Commentaire : ',commentaire)
+    console.log('ID Livraison : ',type_livraison_id)
+    console.log('ID User', user_id)
+    console.log('Ancienne ? ', isAncienne)
+    console.log('Produits livrés : ',produitsLivre)
+
+    try{
+    const response = await productDeliveries.deliver(commentaire, type_livraison_id, user_id, isAncienne, produitsLivre)
+    console.log(response);
+    console.log('Formulaire créé')
+    Swal.fire({
+      title: "Succès",
+      text: "Formulaire créé avec succès",
+      icon: "success"
+    });
+    navigate('/toutes-les-livraisons');
+    }catch (error) {
+      console.log('error')
+      setError('Erreur lors de la génération du formulaire');
+    }finally{
+      setProduitsLivres([])
+      setProduitsLivresTable([])
+      setLoadingDelivery(false)
+    } 
   }
   
 
@@ -200,9 +212,12 @@ export default function LivraisonInputs() {
             ) : (
                   <>
                     <ComponentCard className="w-1/2" title={`Livraison ${typeLivraison}`}>
+                      <div className="pb-3 text-center">
+                            <span className="text-sm font-semibold">Informations générales</span>
+                      </div>
                       <div className="space-y-6">
                         <div>
-                          <Label>Type de Livraison</Label>
+                          <Label>Type de Livraison *</Label>
                           <Select
                             options={options_livraison}
                             placeholder="Select an option"
@@ -210,11 +225,31 @@ export default function LivraisonInputs() {
                             className="dark:bg-dark-900"
                           />
                         </div>
-
                         <div>
-                          <Label htmlFor="input">Numéro de série</Label>
+                          <Label>Description</Label>
+                          <TextArea
+                            value={message}
+                            onChange={(value) => setMessage(value)}
+                            rows={4}
+                            placeholder="Ajoutez un commentaire"
+                          />
+                        </div>
+                        <div className="pb-3 text-center">
+                            <span className="text-sm font-semibold">Informations sur produits</span>
+                        </div>
+                        <div>
+                          <Label htmlFor="input">Numéro de série *</Label>
                           <Input type="text" id="input" value={terminalSN} onChange={(e) => setTerminalSN(e.target.value)}
                           error={errorAjout}/>
+                        </div>
+                        <div>
+                          <Label>Commentaire pour terminal</Label>
+                          <TextArea
+                          value={messageTPE}
+                          onChange={(value) => setMessageTPE(value)}
+                          rows={2}
+                          placeholder="Ajoutez un commentaire"
+                          />
                         </div>
                         <div>
                           <Label>Point Marchand</Label>
@@ -247,15 +282,6 @@ export default function LivraisonInputs() {
                           <div className="flex items-center gap-3 my-2">
                             <Checkbox checked={isMOOVChecked} onChange={setMOOVChecked} label="MOOV Money" />
                           </div>
-                        </div>
-                        <div>
-                          <Label>Description</Label>
-                          <TextArea
-                            value={message}
-                            onChange={(value) => setMessage(value)}
-                            rows={4}
-                            placeholder="Ajoutez un commentaire"
-                          />
                         </div>
                         <div>
                           <button onClick={handleAjout} className="w-full bg-green-400 rounded-2xl h-10 flex items-center justify-center">
@@ -330,6 +356,14 @@ export default function LivraisonInputs() {
                       <span className="block text-gray-500 text-theme-xs dark:text-gray-400">
                         {item.caisse}
                       </span>
+                      {item.commentaireTPE ? (
+                        <span className="block text-gray-700 text-theme-xs dark:text-gray-400">
+                         « {item.commentaireTPE} » 
+                        </span>
+                      ) : (
+                        <></>
+                      )}
+                      
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       {item.serialNumber}
@@ -338,13 +372,16 @@ export default function LivraisonInputs() {
                       {item.banque}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                      {item.isOrangeChecked ? <i className="pi pi-check" style={{ color: 'green' }}></i> : ""}
+                      {item.mobile_money.includes("OM") ?
+                        ( <i className="pi pi-check" style={{ color: 'green' }}></i> ) : ""}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                      {item.isMTNChecked ? <i className="pi pi-check" style={{ color: 'green' }}></i> : ""}
+                      {item.mobile_money.includes("MTN") ?
+                        ( <i className="pi pi-check" style={{ color: 'green' }}></i> ) : ""}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                      {item.isMOOVChecked ? <i className="pi pi-check" style={{ color: 'green' }}></i> : ""}
+                      {item.mobile_money.includes("MOOV") ?
+                        ( <i className="pi pi-check" style={{ color: 'green' }}></i> ) : ""}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       <button
