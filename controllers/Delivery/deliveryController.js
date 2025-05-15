@@ -163,9 +163,6 @@ const updateLivraison = async (req, res) => {
     const {
         produitsLivre,
         commentaire,
-        nom_livreur,
-        is_old_livraison = false,  // Nouveau paramètre pour distinguer les 2 cas
-        date_livraison  // Date de livraison pour le cas "ancienne"
     } = req.body;
 
     try {
@@ -180,7 +177,7 @@ const updateLivraison = async (req, res) => {
 
         // Si c'est une ancienne livraison, on ajoute la date de livraison et on vérifie la validité de la date
         if (is_old_livraison && date_livraison) {
-            dataToUpdate.date_livraison = new Date(date_livraison);
+            dataToUpdate.date_livraison = new Date(Now());
         }
 
         // Mise à jour de la livraison
