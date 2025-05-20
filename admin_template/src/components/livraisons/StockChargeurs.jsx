@@ -47,7 +47,6 @@ export default function TerminalOrders() {
                     <span className="text-3xl font-bold my-3 dark:text-white">{nbrChargeurLivre}</span>
                 </div>
             </div>
-
         </div>
     )
 

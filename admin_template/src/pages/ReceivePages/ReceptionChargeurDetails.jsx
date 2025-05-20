@@ -1,5 +1,10 @@
-import { useState, useEffect} from 'react';
-import { useParams, Link } from 'react-router';
+import { useState, useEffect, useRef} from 'react';
+import { useParams } from 'react-router';
+import SignatureCanvas from 'react-signature-canvas'
+import { useNavigate } from "react-router";
+
+import Label from "../../components/form/Label";
+import TextArea from "../../components/form/input/TextArea";
 
 import PageBreadcrumb from '../../components/common/PageBreadCrumb';
 import {
@@ -9,33 +14,51 @@ import {
     TableHeader,
     TableRow,
   } from "../../components/ui/table"
-
+import {Modal} from "../../components/ui/modal/index"
 import 'primeicons/primeicons.css';
+import { ProgressSpinner } from 'primereact/progressspinner';
 
 import { ProductDeliveries } from '../../backend/livraisons/productDeliveries';
+import { Reception } from '../../backend/receptions/Reception';
+import { generatePdf } from '../../backend/receptions/GeneratePDF';
+import Swal from 'sweetalert2'
 
 
 
-export default function DeliveryDetail() {
+export default function ReceptionChargeurDetails() {
     
-    const productDeliveries = new ProductDeliveries()
+    const productDeliveries = new ProductDeliveries();
+    const reception = new Reception();
     const { id } = useParams();
+    const user_id = window.sessionStorage.getItem("id")
+    const navigate = useNavigate();
+    // const signatureRef = useRef(null);
+    // const fd = new window.FormData()
     const [loading, setLoading] = useState(false);
+    const [loadingValidate, setLoadingValidate] = useState(false);
+    const [message, setMessage] = useState("");
     const [loadingPrint, setLoadingPrint] = useState(false);
     const [deliveryDetails, setDeliveryDetails] = useState('')
     const [typeLivraison, setTypeLivraison] = useState('')
+    const [livraisonID, setLivraisonID] = useState('')
     const [dateLivraison, setDateLivraison] = useState('')
+    const [signature, setSignature] = useState();
+    const [signUrl, setSignUrl] = useState();
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [showSignButton, setShowSignButton] = useState(true);
+    const [showValidateButton, setShowValidateButton] = useState(false);
     const [actionButtons, setActionButtons] = useState(false);
     const [commentaire, setCommentaire] = useState('');
     const [commentaireReception, setCommentaireReception] = useState('');
     const [statutLivraison, setStatutLivraison] = useState('en attente');
     const [statutClass, setStatutClass] = useState('text-sm rounded-xl p-1 bg-orange-100 text-orange-500 font-bold')
 
+    
+
     const formatDate = (date) => {
         const d = new Date(date);
         return d.toLocaleDateString('fr-FR'); // or use any locale you want
       };
-
 
     useEffect( ()=>{
         if(id){
@@ -49,23 +72,22 @@ export default function DeliveryDetail() {
                         ...data,
                         produitsLivre: JSON.parse(data.produitsLivre)
                       });
-                      if(data.type_livraison_id == 1){
-                        setTypeLivraison("TPE GIM")
-                      } else if(data.type_livraison_id == 2){
-                        setTypeLivraison("TPE REPARE")
-                      } else if(data.type_livraison_id == 3){
-                        setTypeLivraison("TPE MAJ")
-                      } else if(data.type_livraison_id == 4){
-                        setTypeLivraison("TPE MOBILE")
-                      } else if(data.type_livraison_id == 5){
-                        setTypeLivraison("CHARGEUR")
-                      } else if(data.type_livraison_id == 6){
-                        setTypeLivraison("TPE ECOBANK")
-                      }
-                      
+                    //   if(data.type_livraison_id == 1){
+                    //     setTypeLivraison("TPE GIM")
+                    //   } else if(data.type_livraison_id == 2){
+                    //     setTypeLivraison("TPE REPARE")
+                    //   } else if(data.type_livraison_id == 3){
+                    //     setTypeLivraison("TPE MAJ")
+                    //   } else if(data.type_livraison_id == 4){
+                    //     setTypeLivraison("TPE MOBILE")
+                    //   } else if(data.type_livraison_id == 5){
+                    //     setTypeLivraison("CHARGEUR")
+                    //   }
                       setDateLivraison(formatDate(data.date_livraison))
+                      setLivraisonID(data.type_livraison_id)
                       setCommentaire(data.commentaire)
                       if(data.statut_livraison == 'livre'){
+                        setShowSignButton(false)
                         setActionButtons(true)
                         setStatutLivraison('Livré')
                         setStatutClass('text-sm border rounded-xl p-1 bg-green-100 text-green-500 font-bold')
@@ -81,32 +103,88 @@ export default function DeliveryDetail() {
             fetchDeliveryDetails();
         }
     },[id]);
+    const handleSignature = () =>{
+        console.log('yes')
+        setSignUrl(signature.toDataURL('image/png'))
+        setIsModalOpen(false)
+        setShowSignButton(false)
+        setShowValidateButton(true)
+    }
+    const handleClear = () =>{
+        console.log(signUrl)
+        signature.clear()
+    }
+    const handleDeleteSign = () =>{
+        // signature.clear()
+        setSignUrl(null)
+        setShowSignButton(true)
+        setShowValidateButton(false)
+    }
+    const handleValidate = async (e) =>{
+        e.preventDefault();
+        
+        setLoadingValidate(true);
+        let commentaire = message
+        let is_old_validation = false
 
-    const handleGeneratePdf = async () =>{
-            setLoadingPrint(true);
-            try{
-                const blob = await generatePdf(id);
-                const fileURL = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
-                window.open(fileURL, '_blank');
-            }catch(error){
-                console.log(error)
-            }finally{
-                setLoadingPrint(false);
+        try{
+            const fd = new FormData();
+            fd.append('livraison_id', id);
+            fd.append('user_id', user_id);
+            fd.append('commentaire', commentaire);
+            fd.append('is_old_validation', is_old_validation);
+
+
+            if (signUrl) {
+            const blob = await fetch(signUrl).then(res => res.blob());
+            fd.append('signature', blob, 'signature.png');
             }
+
+            for (let [key, value] of fd.entries()) {
+                console.log(`${key}:`, value);
+            }
+            const response = await reception.receive(fd);
+            Swal.fire({
+                    title: "Succès",
+                    text: "Formulaire réceptionné avec succès",
+                    icon: "success"
+                  });
+            console.log(response)
+            navigate('/toutes-les-receptions');
+        } catch(error){
+            console.log(error)
+        } finally{
+            setLoadingValidate(false)
         }
+    }
+    const handleGeneratePdf = async () =>{
+        setLoadingPrint(true);
+        try{
+            const blob = await generatePdf(id);
+            const fileURL = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+            window.open(fileURL, '_blank');
+        }catch(error){
+            console.log(error)
+        }finally{
+            setLoadingPrint(false);
+        }
+    }
 
     return (
         <>
             {loading ?
                 (<>Loading...</>) :
             (<>
-                <PageBreadcrumb pageTitle={`Livraison | ${typeLivraison}`}/>
+                <PageBreadcrumb pageTitle="Réception | CHARGEUR"/>
                 <div>
-                    <div className='my-3 flex justify-between items-center'>
-                        <span>{`Livraison du ${dateLivraison}`}</span>
+                    <div className='my-6 flex justify-between items-center'>
+                        <div>
+                            <span>{`Réception du ${dateLivraison}`}</span>
+                        </div>
                         {actionButtons? 
                         (
                             <div>
+                                {/* <button className='m-3 text-2xl'><span><i className="pi pi-pencil"></i></span></button> */}
                                 <>
                                     {loadingPrint ? (
                                         <span className='m-3'>
@@ -119,11 +197,7 @@ export default function DeliveryDetail() {
                             </div>
 
                         ) : (
-                            <>
-                                <Link to={`/form-modify-nouvelle-livraison/${deliveryDetails.id_livraison}`}>
-                                    <button className='m-3 text-2xl'><span><i className="pi pi-pencil"></i></span></button>
-                                </Link>
-                            </>
+                            <></>
                         )}
                     </div>
                     <div className='mb-3'>
@@ -175,7 +249,7 @@ export default function DeliveryDetail() {
                                     className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                                     S/N
                                 </TableCell>
-                                <TableCell
+                                {/* <TableCell
                                     isHeader
                                     className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                                     Banque
@@ -194,7 +268,7 @@ export default function DeliveryDetail() {
                                     isHeader
                                     className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                                     MOOV
-                                </TableCell>
+                                </TableCell> */}
                                 </TableRow>
                             </TableHeader>
                             {/* Table Body */}
@@ -219,7 +293,7 @@ export default function DeliveryDetail() {
                                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                                     {item.serialNumber}
                                     </TableCell>
-                                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                                    {/* <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                                     {item.banque}
                                     </TableCell>
                                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
@@ -233,7 +307,7 @@ export default function DeliveryDetail() {
                                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                                     {item.mobile_money.includes("MOOV") ?
                                         ( <i className="pi pi-check" style={{ color: 'green' }}></i> ) : ""}
-                                    </TableCell>
+                                    </TableCell> */}
                                 </TableRow>
                                 ))}
                             </TableBody>
@@ -241,10 +315,83 @@ export default function DeliveryDetail() {
                             </Table>
                         </div>
                     </div>
+                    <div className='w-full flex flex-col justify-center items-center'>
+                        {showSignButton ? 
+                        ( <button onClick={() => setIsModalOpen(true)}
+                                className='w-1/4 my-10 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
+                                Réceptionner
+                        </button>) : (<></>)}
+                       
+                    </div>
+                    <div className='w-auto mt-6 flex justify-center items-center static'>
+                        <div className='relative'>
+                            {signUrl ? 
+                            (
+                                <button onClick={handleDeleteSign} className='p-3 flex items-center rounded-bl-2xl bg-red-400 text-white hover:bg-red-500 absolute top-0 right-0'>
+                                <i className="pi pi-trash"></i>
+                            </button>
+                            ) : (<></>)}
+                            
+                            <img src={signUrl} alt="" srcset="" className='border-1 border-black bg-white' />
+                        </div>
+                    </div>
+                    <div className='w-full flex flex-col justify-center items-center'>
+                        {showValidateButton ?
+                         (
+                            <>
+                                {loadingValidate ? 
+                                    (
+                                        <span className="mt-20">
+                                                <ProgressSpinner style={{width: '50px', height: '50px'}} strokeWidth="8" animationDuration=".5s" />
+                                        </span>
+                                    ) : (
+
+                                        <button onClick={handleValidate} className='w-1/4 my-10 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
+                                            Valider livraison
+                                        </button>
+                                    )}
+                            </>
+                        ) : 
+                        (<></>)}
+                        
+                    </div>
                 </div>
             </>)
             }
-            
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} className="p-4 max-w-md">
+                <div className='p-1'>
+                    <div className='text-center mb-3 text-sm'>
+                        <span>Signez manuellement pour valider la livraison</span>
+                    </div>
+                    <div className='flex flex-col justify-center items-center'>
+                        <SignatureCanvas
+                            ref={data=>setSignature(data)}
+                            canvasProps={{ width: 300, height: 250, className: 'sigCanvas border border-gray-300 rounded' }}
+                        />
+                        <div className='w-full mt-3'>
+                            <Label>Commentaire</Label>
+                            <TextArea
+                                value={message}
+                                onChange={(value) => setMessage(value)}
+                                rows={4}
+                                placeholder="Ajoutez un commentaire"
+                            />
+                        </div>
+                        <div className='w-full mt-6 flex justify-center items-center'>
+                            <button
+                                onClick={handleClear}
+                                className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
+                                Clear
+                                </button>
+                                <button
+                                onClick={handleSignature}
+                                className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
+                                Valider
+                            </button>
+                        </div>  
+                    </div>
+                </div>
+            </Modal>
         </>
     )
 }

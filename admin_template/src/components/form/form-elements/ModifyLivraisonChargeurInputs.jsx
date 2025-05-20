@@ -12,32 +12,32 @@ import {
   TableHeader,
   TableRow,
 } from "../../ui/table";
-import { PlusIcon } from "../../../icons/index.ts";
-import { ListIcon } from "../../../icons/index.ts";
+import { PlusIcon, ListIcon, PencilIcon } from "../../../icons/index.ts";
 import 'primeicons/primeicons.css'; 
 import { ProgressSpinner } from 'primereact/progressspinner';
-import { useNavigate } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { Merchants } from "../../../backend/livraisons/Merchants.js";
 import { ProductDeliveries } from "../../../backend/livraisons/productDeliveries.js";
 import Swal from 'sweetalert2'
-import { Modal } from "../../ui/modal/index.tsx";
 
 
-export default function LivraisonInputs() {
+export default function ModifyLivraisonChargeurInputs() {
 
   const merchants = new Merchants();
   const productDeliveries = new ProductDeliveries();
   const userId = window.sessionStorage.getItem('id');
+  const { id } = useParams();
   const navigate = useNavigate();
   const [isOrangeChecked, setOrangeChecked] = useState(false);
   const [isMTNChecked, setMTNChecked] = useState(false);
   const [isMOOVChecked, setMOOVChecked] = useState(false);
   const [terminals, setTerminals] = useState([]);
   const [terminalSN, setTerminalSN] = useState('');
+  const [loadingDeliveryInfos, setLoadingDeliveryInfos] = useState(false);
   const [loadingMerchant, setLoadingMerchant] = useState(false);
   const [loadingDelivery, setLoadingDelivery] = useState(false);
   const [typeLivraison, setTypeLivraison] = useState('');
-  const [livraisonID, setLivraisonID] = useState(null);
+  const [livraisonID, setLivraisonID] = useState();
   const [message, setMessage] = useState("");
   const [mobileMoney, setMobileMoney] = useState([]);
   const [produitsLivreTable, setProduitsLivresTable] = useState([]);
@@ -46,88 +46,58 @@ export default function LivraisonInputs() {
   const [errorFrom, setErrorForm] = useState(null);
   const [errorAjout, setErrorAjout] = useState(null);
   const [errorDeliver, setErrorDeliver] = useState(null);
-  const [messageTPE, setMessageTPE] = useState('')
-  const [isConfirmModalOpen , setIsConfirmModalOpen] = useState(false)
-
-
-  const ChangeTypeLivraison = (value) => {
-    console.log("Selected value:", value);
-    setTypeLivraison(value);
-    if(value == 'TPE GIM'){
-      setLivraisonID(1);
-    }else if(value == 'TPE REPARE'){
-      setLivraisonID(2);
-    }else if(value == 'TPE MAJ'){
-      setLivraisonID(3)
-    }else if(value == 'TPE MOBILE'){
-      setLivraisonID(4)
-    }else if(value == 'CHARGEUR'){
-      setLivraisonID(5)
-    }else if(value == 'TPE ECOBANK'){
-      setLivraisonID(6)
-    }
-    
-  };
   
-
   useEffect( ()=>{
-    const fetchTerminalInfos = async () => {
-      setLoadingMerchant(true)
+    const fetchDeliveryInfos = async () => {
+      setLoadingDeliveryInfos(true)
       try{
         let data;
-        data = await merchants.findMerchant();
+        data = await productDeliveries.getOneLivraison(id);
         console.log(data)
-        setTerminals(data)
+        setMessage(data.commentaire);
+        const parsedProduitsLivre = JSON.parse(data.produitsLivre);
+        setProduitsLivres(parsedProduitsLivre);
+        setProduitsLivresTable(parsedProduitsLivre);
+
       }catch(error){
         console.log('Error fetching data ',error)
         setErrorForm('Erreur lors de la génération du formulaire')
 
       }finally{
-        setLoadingMerchant(false)
+        setLoadingDeliveryInfos(false)
       }
-    };fetchTerminalInfos();
-  },[])
-
-  const handleConfirm = () => {
-    if(!livraisonID){
-      setErrorAjout("Vous devez choisir le type de livraison !");
-      return;
     }
-    if (!filteredPointMarchand || filteredPointMarchand.length === 0) {
-      setErrorAjout("S/N invalide !");
-      return;
-    }
-    const isDuplicate = produitsLivre.some(prod => prod.serialNumber === terminalSN);
-    if (isDuplicate) {
-      setErrorAjout("Ce numéro de série a déjà été ajouté.");
-      return;
-    }
-    const localMobileMoney = [];
-    if (isOrangeChecked) localMobileMoney.push("OM");
-    if (isMTNChecked) localMobileMoney.push("MTN");
-    if (isMOOVChecked) localMobileMoney.push("MOOV");
+    const fetchTerminalInfos = async () => {
+        setLoadingMerchant(true)
+        try{
+          let data;
+          data = await merchants.findMerchant();
+          console.log(data)
+          setTerminals(data)
+        }catch(error){
+          console.log('Error fetching data ',error)
+          setErrorForm('Erreur lors de la génération du formulaire')
+  
+        }finally{
+          setLoadingMerchant(false)
+        }
+    };
+    fetchDeliveryInfos();
+    fetchTerminalInfos();
     
-    setErrorAjout('')
-    setIsConfirmModalOpen(true)
-  }
+    },[id])
+    
 
   const handleAjout = (e) => {
     e.preventDefault(); // prevent page reload
 
     console.log('Trying to ADD.....')
     const localMobileMoney = [];
-    if (isOrangeChecked) localMobileMoney.push("OM");
-    if (isMTNChecked) localMobileMoney.push("MTN");
-    if (isMOOVChecked) localMobileMoney.push("MOOV");
-    if(!livraisonID){
-      setErrorAjout("Vous devez choisir le type de livraison !");
-      return;
-    }
-    if (!filteredPointMarchand || filteredPointMarchand.length === 0) {
-      setErrorAjout("S/N invalide !");
-      return;
-    }
 
+    if (!filteredPointMarchand || filteredPointMarchand.length === 0) {
+      setErrorAjout("S/N invalide");
+      return;
+    }
     const isDuplicate = produitsLivre.some(prod => prod.serialNumber === terminalSN);
     if (isDuplicate) {
       setErrorAjout("Ce numéro de série a déjà été ajouté.");
@@ -135,12 +105,9 @@ export default function LivraisonInputs() {
     }
 
     const newProduit = {
-      pointMarchand: filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(","),
+      pointMarchand: filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(", "),
       caisse: filteredPointMarchand.map((terminal) => terminal.TPE).join(","),
       serialNumber: terminalSN,
-      banque: filteredPointMarchand.map((terminal) => terminal.BANQUE).join(","),
-      mobile_money: localMobileMoney,
-      commentaireTPE: messageTPE,
     };
   
     setProduitsLivresTable((prev) => [...prev, newProduit]);
@@ -148,32 +115,24 @@ export default function LivraisonInputs() {
   
     // Optional: Reset form fields
     setTerminalSN('');
-    setMessageTPE('')
-    setOrangeChecked(false);
-    setMTNChecked(false);
-    setMOOVChecked(false);
-    setMobileMoney([]);
-
-    setErrorAjout('')
-    setIsConfirmModalOpen(false)
-  }
+    }
     
 
   const handleDeliver = async (e) => {
     e.preventDefault();
+
     if(produitsLivre.length == 0){
-       Swal.fire({
-      title: "Error",
-      text: "Vous devez ajouter au moins un (1) TPE.",
-      icon: "error"
-      });
+      setErrorDeliver("Veuillez ajouter des produits")
       return;
     }
+
     setLoadingDelivery(true);
     const commentaire = message;
-    const type_livraison_id = livraisonID
+    const type_livraison_id = 5
     const user_id = userId;
     const isAncienne = false;
+    const statut_livraison = 'en_attente'
+    const nom_livreur = 'YAO ORNELLA'
 
     console.log('Trying to create form...')
     console.log('Commentaire : ',commentaire)
@@ -183,38 +142,30 @@ export default function LivraisonInputs() {
     console.log('Produits livrés : ',produitsLivre)
 
     try{
-    const response = await productDeliveries.deliver(commentaire, type_livraison_id, user_id, isAncienne, produitsLivre)
+    const response = await productDeliveries.updateLivraison(id, produitsLivre, commentaire, statut_livraison, type_livraison_id, nom_livreur)
     console.log(response);
-    console.log('Formulaire créé')
+    console.log('Formulaire modifié')
     Swal.fire({
       title: "Succès",
-      text: "Formulaire créé avec succès",
+      text: "Formulaire modifié avec succès",
       icon: "success"
     });
     navigate('/toutes-les-livraisons');
     }catch (error) {
-      console.log('error')
+      console.log(error)
       setError('Erreur lors de la génération du formulaire');
     }finally{
       setProduitsLivres([])
       setProduitsLivresTable([])
       setLoadingDelivery(false)
-    } 
+    }
+   
   }
   
 
   const filteredPointMarchand = terminalSN ? 
   terminals.filter((terminal) => 
         terminal.SERIAL_NUMBER.includes(terminalSN)) : [];
-
-  const options_livraison = [
-    { value: "TPE GIM", label: "TPE GIM" },
-    { value: "TPE MOBILE", label: "TPE MOBILE" },
-    { value: "TPE MAJ", label: "MISE A JOUR" },
-    { value: "TPE REPARE", label: "TPE REPARE" },
-    { value: "TPE ECOBANK", label: "TPE ECOBANK" },
-    // { value: "CHARGEUR", label: "CHARGEUR" },
-  ];
 
   const handleDelete = (indexToRemove) => {
     setProduitsLivresTable((prev) =>
@@ -237,20 +188,30 @@ export default function LivraisonInputs() {
               </div>
             ) : (
                   <>
-                    <ComponentCard className="w-1/2" title={`Livraison ${typeLivraison}`}>
-                      <div className="pb-3 text-center">
-                            <span className="text-sm font-semibold">Informations générales</span>
-                      </div>
+                    <ComponentCard className="w-1/2" title="Livraison CHARGEUR">
                       <div className="space-y-6">
+                        <div className="flex items-center justify-between border-b pb-3">
+                            <span className="text-xs">Modifiez une livraison de chargeur</span>
+                            <span className="text-3xl"><PencilIcon /></span> 
+                        </div>
+
                         <div>
-                          <Label>Type de Livraison *</Label>
-                          <Select
-                            options={options_livraison}
-                            placeholder="Select an option"
-                            onChange={ChangeTypeLivraison}
-                            className="dark:bg-dark-900"
-                            
-                          />
+                          <Label htmlFor="input">Numéro de série</Label>
+                          <Input type="text" id="input" value={terminalSN} onChange={(e) => setTerminalSN(e.target.value)}
+                          error={errorAjout}/>
+                        </div>
+                        <div>
+                          <Label>Point Marchand</Label>
+                          <Input type="text" id="input"
+                                  className="cursor-default"
+                                  value={filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(",")}
+                                  readOnly
+                                  />
+                        </div>
+                        <div>
+                          <Input type="text" id="input" 
+                                  value={filteredPointMarchand.map((terminal) => terminal.TPE).join(",")}
+                                  className="hidden"/>
                         </div>
                         <div>
                           <Label>Description</Label>
@@ -261,56 +222,8 @@ export default function LivraisonInputs() {
                             placeholder="Ajoutez un commentaire"
                           />
                         </div>
-                        <div className="pb-3 text-center">
-                            <span className="text-sm font-semibold">Informations sur produits</span>
-                        </div>
                         <div>
-                          <Label htmlFor="input">Numéro de série *</Label>
-                          <Input type="text" id="input" value={terminalSN} onChange={(e) => setTerminalSN(e.target.value)}/>
-                        </div>
-                        <div>
-                          <Label>Commentaire pour terminal</Label>
-                          <TextArea
-                          value={messageTPE}
-                          onChange={(value) => setMessageTPE(value)}
-                          rows={2}
-                          placeholder="Ajoutez un commentaire"
-                          />
-                        </div>
-                        <div>
-                          <Label>Point Marchand</Label>
-                          <Input type="text" id="input"
-                                  className="cursor-default"
-                                  value={filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(" - ")}
-                                  readOnly
-                                  />
-                        </div>
-                        <div>
-                          <Label>Banque</Label>
-                          <Input type="text" id="input" 
-                                  className="cursor-default"
-                                  value={filteredPointMarchand.map((terminal) => terminal.BANQUE).join(" - ")}
-                                  readOnly
-                                  />
-                        </div>
-                        <div>
-                          <Input type="text" id="input" 
-                                  value={filteredPointMarchand.map((terminal) => terminal.TPE).join(" - ")}
-                                  className="hidden"/>
-                        </div>
-                        <div className="flex flex-col">
-                          <div className="flex items-center gap-3 my-2">
-                            <Checkbox checked={isOrangeChecked} onChange={setOrangeChecked} label="Orange Money" />
-                          </div>
-                          <div className="flex items-center gap-3 my-2">
-                            <Checkbox checked={isMTNChecked} onChange={setMTNChecked} label="MTN Money" />
-                          </div>
-                          <div className="flex items-center gap-3 my-2">
-                            <Checkbox checked={isMOOVChecked} onChange={setMOOVChecked} label="MOOV Money" />
-                          </div>
-                        </div>
-                        <div>
-                          <button onClick={handleConfirm} className="w-full bg-green-400 rounded-2xl h-10 flex items-center justify-center">
+                          <button onClick={handleAjout} className="w-full bg-green-400 rounded-2xl h-10 flex items-center justify-center">
                             <span>Ajouter</span>
                             <span className="text-2xl"><PlusIcon /></span>
                           </button>
@@ -344,7 +257,7 @@ export default function LivraisonInputs() {
                     className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                     S/N
                   </TableCell>
-                  <TableCell
+                  {/* <TableCell
                     isHeader
                     className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                     Banque
@@ -363,7 +276,7 @@ export default function LivraisonInputs() {
                     isHeader
                     className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                     MOOV
-                  </TableCell>
+                  </TableCell> */}
                   <TableCell
                     isHeader
                     className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
@@ -389,12 +302,11 @@ export default function LivraisonInputs() {
                       ) : (
                         <></>
                       )}
-                      
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       {item.serialNumber}
                     </TableCell>
-                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                    {/* <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       {item.banque}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
@@ -408,7 +320,7 @@ export default function LivraisonInputs() {
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       {item.mobile_money.includes("MOOV") ?
                         ( <i className="pi pi-check" style={{ color: 'green' }}></i> ) : ""}
-                    </TableCell>
+                    </TableCell> */}
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       <button
                         className="text-red-500 hover:text-red-700"
@@ -429,11 +341,13 @@ export default function LivraisonInputs() {
             <span className="mt-20">
               <ProgressSpinner style={{width: '50px', height: '50px'}} strokeWidth="8" animationDuration=".5s" />
             </span>
-          :
-            <button onClick={handleDeliver} className="w-1/4 mt-20 bg-green-400 rounded-2xl h-10 flex justify-center items-center">
-              <span>Créer formulaire</span>
-              <span className="text-2xl"><ListIcon /></span>
-            </button> 
+          : 
+            <div className="flex">
+                <button onClick={handleDeliver} className=" mt-20 w-50 mx-1 bg-green-400 rounded-2xl h-10 flex justify-center items-center">
+                    <span>Modifier formulaire</span>
+                    <span className="text-2xl"><ListIcon /></span>
+                </button> 
+            </div>
             }
             {errorDeliver?
               <span className="text-error-600 font-medium flex items-center justify-center text-sm p-1 mt-4">
@@ -444,56 +358,6 @@ export default function LivraisonInputs() {
             }
         </div>
       </div>
-      <Modal isOpen={isConfirmModalOpen} onClose={() => setIsConfirmModalOpen(false)} className="p-4 max-w-xl">
-        <div className="p-6 mt-5">
-          <div>
-            <span>Vous allez ajouter un terminal pour livraison :  <span className="font-bold text-red-700">{typeLivraison}</span></span>
-          </div>
-          <div>
-            <div>
-              <span>S/N terminal : <span className="font-bold text-red-700">{terminalSN}</span></span>
-            </div>
-            <div>
-              <span>Point Marchand : <span className="font-bold text-red-700">{filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join("%")}</span></span>
-            </div>
-            <div>
-              <span> Banque : <span className="font-bold text-red-700">{filteredPointMarchand.map((terminal) => terminal.BANQUE).join("%")}</span></span>
-            </div>
-            <div className="flex flex-col">
-              <span>Mobile Money : </span>
-              <ul>
-                <li className="font-bold text-red-700">
-                  {isOrangeChecked ? 
-                    (<> Orange Money </>):
-                    (<></>)
-                  }
-                </li>
-                <li className="font-bold text-red-700">
-                  {isMTNChecked ? 
-                    (<> MTN Money </>):
-                    (<></>)
-                  }
-                </li>
-                <li className="font-bold text-red-700">
-                  {isMOOVChecked ? 
-                    (<> MOOV Money </>):
-                    (<></>)
-                  }
-                </li>
-              </ul>
-              
-              
-            </div>
-          </div>
-        </div>
-        <div className='w-full mt-6 flex justify-center items-center'>
-          <button
-            onClick={handleAjout}
-            className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
-            Valider
-          </button>
-        </div>
-      </Modal>
     </>
   );
 }

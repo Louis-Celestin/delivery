@@ -82,6 +82,8 @@ export default function ReceptionDetails() {
                         setTypeLivraison("TPE MOBILE")
                       } else if(data.type_livraison_id == 5){
                         setTypeLivraison("CHARGEUR")
+                      } else if(data.type_livraison_id == 6){
+                        setTypeLivraison("TPE ECOBANK")
                       }
                       setDateLivraison(formatDate(data.date_livraison))
                       setLivraisonID(data.type_livraison_id)
@@ -104,7 +106,6 @@ export default function ReceptionDetails() {
         }
     },[id]);
     const handleSignature = () =>{
-        console.log('yes')
         setSignUrl(signature.toDataURL('image/png'))
         setIsModalOpen(false)
         setShowSignButton(false)

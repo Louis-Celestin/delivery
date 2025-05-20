@@ -16,7 +16,7 @@ import { ProductDeliveries } from '../../backend/livraisons/productDeliveries';
 
 
 
-export default function DeliveryDetail() {
+export default function DeliveryChargeurDetails () {
     
     const productDeliveries = new ProductDeliveries()
     const { id } = useParams();
@@ -59,10 +59,7 @@ export default function DeliveryDetail() {
                         setTypeLivraison("TPE MOBILE")
                       } else if(data.type_livraison_id == 5){
                         setTypeLivraison("CHARGEUR")
-                      } else if(data.type_livraison_id == 6){
-                        setTypeLivraison("TPE ECOBANK")
                       }
-                      
                       setDateLivraison(formatDate(data.date_livraison))
                       setCommentaire(data.commentaire)
                       if(data.statut_livraison == 'livre'){
@@ -100,7 +97,7 @@ export default function DeliveryDetail() {
             {loading ?
                 (<>Loading...</>) :
             (<>
-                <PageBreadcrumb pageTitle={`Livraison | ${typeLivraison}`}/>
+                <PageBreadcrumb pageTitle="Livraison | CHARGEUR"/>
                 <div>
                     <div className='my-3 flex justify-between items-center'>
                         <span>{`Livraison du ${dateLivraison}`}</span>
@@ -120,7 +117,7 @@ export default function DeliveryDetail() {
 
                         ) : (
                             <>
-                                <Link to={`/form-modify-nouvelle-livraison/${deliveryDetails.id_livraison}`}>
+                                <Link to={`/form-modify-livraison-chargeur/${deliveryDetails.id_livraison}`}>
                                     <button className='m-3 text-2xl'><span><i className="pi pi-pencil"></i></span></button>
                                 </Link>
                             </>
@@ -175,7 +172,7 @@ export default function DeliveryDetail() {
                                     className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                                     S/N
                                 </TableCell>
-                                <TableCell
+                                {/* <TableCell
                                     isHeader
                                     className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                                     Banque
@@ -194,7 +191,7 @@ export default function DeliveryDetail() {
                                     isHeader
                                     className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                                     MOOV
-                                </TableCell>
+                                </TableCell> */}
                                 </TableRow>
                             </TableHeader>
                             {/* Table Body */}
@@ -217,10 +214,10 @@ export default function DeliveryDetail() {
                                         )}
                                     </TableCell>
                                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                                    {item.serialNumber}
+                                        {item.serialNumber}
                                     </TableCell>
-                                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                                    {item.banque}
+                                    {/* <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                                        {item.banque}
                                     </TableCell>
                                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                                     {item.mobile_money.includes("OM") ?
@@ -233,7 +230,7 @@ export default function DeliveryDetail() {
                                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                                     {item.mobile_money.includes("MOOV") ?
                                         ( <i className="pi pi-check" style={{ color: 'green' }}></i> ) : ""}
-                                    </TableCell>
+                                    </TableCell> */}
                                 </TableRow>
                                 ))}
                             </TableBody>

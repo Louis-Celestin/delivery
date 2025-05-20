@@ -54,14 +54,13 @@ export class ProductDeliveries{
       }
     };
 
-    async updateLivraison(id, produitsLivre, commentaire, statut_livraison, type_livraison_id, nom_livreur){
+    async updateLivraison(id, produitsLivre, commentaire, statut_livraison, type_livraison_id){
       try{
         const response = await axios.put(`${urlBase}/api/delivery/updateLivraison/${id}`,
         {produitsLivre,
         commentaire,
         statut_livraison,
         type_livraison_id,
-        nom_livreur,
         });
 
         console.log(response)

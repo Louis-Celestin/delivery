@@ -31,6 +31,7 @@ export default function AllReceptionsList() {
         {label: 'TPE Réparé', value:2},
         {label: 'MAJ GIM', value:3},
         {label: 'TPE MOBILE', value:4},
+        {label: 'TPE ECOBANK', value:6},
         {label: 'Chargeur', value:5},
     ]
     const [startDate, setStartDate] = useState(null);
@@ -66,12 +67,14 @@ export default function AllReceptionsList() {
             }catch(error){
                 console.log(error)
             }finally{
-            
+                setPrintingId(null);
             }
     }
 
     const titleTemplate = (deliveryForms) =>{
         let title = '';
+        let linkSee = `/formulaire-recu/${deliveryForms.id_livraison}`;
+
         if (deliveryForms.type_livraison_id === 1) {
             title = 'Livraison TPE GIM';
         } else if (deliveryForms.type_livraison_id === 2) {
@@ -82,11 +85,14 @@ export default function AllReceptionsList() {
             title = 'Livraison TPE MOBILE'; // fallback or other types
         } else if (deliveryForms.type_livraison_id === 5) {
             title = 'Livraison CHARGEUR'; // fallback or other types
+            linkSee = `/formulaire-chargeur-recu/${deliveryForms.id_livraison}`
+        } else if (deliveryForms.type_livraison_id === 6) {
+            title = 'Livraison TPE ECOBANK'; // fallback or other types
         }
         return (
             <span className="flex flex-col">
                 <Link key={deliveryForms.id_livraison}
-                    to={`/formulaire-recu/${deliveryForms.id_livraison}`} >
+                    to={linkSee} >
                     <span className="font-bold text-sm">{title}</span>
                 </Link>
               <span className="text-xs font-extralight">#{deliveryForms.id_livraison}</span>
@@ -118,9 +124,14 @@ export default function AllReceptionsList() {
         )
     }
     const actionTemplate = (deliveryForms) =>{
+        let linkSee = `/formulaire-recu/${deliveryForms.id_livraison}`;
+
+        if (deliveryForms.type_livraison_id === 5) {
+            linkSee = `/formulaire-chargeur-recu/${deliveryForms.id_livraison}`
+        }
         return(
             <span className="flex items-center">
-                <Link to={`/formulaire-recu/${deliveryForms.id_livraison}`}>
+                <Link to={linkSee}>
                     <button className="mx-1">
                         <i className="pi pi-eye"></i>
                     </button>
@@ -137,9 +148,9 @@ export default function AllReceptionsList() {
                                 <button onClick={() => handleGeneratePdf(deliveryForms.id_livraison)}><span className="mx-1"><i className="pi pi-print"></i></span></button>
                             )}
                         </>
-                        <button className="mx-1">
+                        {/* <button className="mx-1">
                             <i className="pi pi-pencil"></i>
-                        </button>
+                        </button> */}
                     </>
                 ) : (
                     <></>

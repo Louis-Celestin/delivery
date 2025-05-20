@@ -20,10 +20,9 @@ import { useNavigate } from "react-router";
 import { Merchants } from "../../../backend/livraisons/Merchants.js";
 import { ProductDeliveries } from "../../../backend/livraisons/productDeliveries.js";
 import Swal from 'sweetalert2'
-import { Modal } from "../../ui/modal/index.tsx";
 
 
-export default function LivraisonInputs() {
+export default function LivraisonChargeurInputs(){
 
   const merchants = new Merchants();
   const productDeliveries = new ProductDeliveries();
@@ -46,30 +45,9 @@ export default function LivraisonInputs() {
   const [errorFrom, setErrorForm] = useState(null);
   const [errorAjout, setErrorAjout] = useState(null);
   const [errorDeliver, setErrorDeliver] = useState(null);
+
   const [messageTPE, setMessageTPE] = useState('')
-  const [isConfirmModalOpen , setIsConfirmModalOpen] = useState(false)
-
-
-  const ChangeTypeLivraison = (value) => {
-    console.log("Selected value:", value);
-    setTypeLivraison(value);
-    if(value == 'TPE GIM'){
-      setLivraisonID(1);
-    }else if(value == 'TPE REPARE'){
-      setLivraisonID(2);
-    }else if(value == 'TPE MAJ'){
-      setLivraisonID(3)
-    }else if(value == 'TPE MOBILE'){
-      setLivraisonID(4)
-    }else if(value == 'CHARGEUR'){
-      setLivraisonID(5)
-    }else if(value == 'TPE ECOBANK'){
-      setLivraisonID(6)
-    }
-    
-  };
   
-
   useEffect( ()=>{
     const fetchTerminalInfos = async () => {
       setLoadingMerchant(true)
@@ -88,46 +66,14 @@ export default function LivraisonInputs() {
     };fetchTerminalInfos();
   },[])
 
-  const handleConfirm = () => {
-    if(!livraisonID){
-      setErrorAjout("Vous devez choisir le type de livraison !");
-      return;
-    }
-    if (!filteredPointMarchand || filteredPointMarchand.length === 0) {
-      setErrorAjout("S/N invalide !");
-      return;
-    }
-    const isDuplicate = produitsLivre.some(prod => prod.serialNumber === terminalSN);
-    if (isDuplicate) {
-      setErrorAjout("Ce numéro de série a déjà été ajouté.");
-      return;
-    }
-    const localMobileMoney = [];
-    if (isOrangeChecked) localMobileMoney.push("OM");
-    if (isMTNChecked) localMobileMoney.push("MTN");
-    if (isMOOVChecked) localMobileMoney.push("MOOV");
-    
-    setErrorAjout('')
-    setIsConfirmModalOpen(true)
-  }
-
   const handleAjout = (e) => {
     e.preventDefault(); // prevent page reload
 
     console.log('Trying to ADD.....')
-    const localMobileMoney = [];
-    if (isOrangeChecked) localMobileMoney.push("OM");
-    if (isMTNChecked) localMobileMoney.push("MTN");
-    if (isMOOVChecked) localMobileMoney.push("MOOV");
-    if(!livraisonID){
-      setErrorAjout("Vous devez choisir le type de livraison !");
-      return;
-    }
     if (!filteredPointMarchand || filteredPointMarchand.length === 0) {
-      setErrorAjout("S/N invalide !");
+      setErrorAjout("S/N invalide");
       return;
     }
-
     const isDuplicate = produitsLivre.some(prod => prod.serialNumber === terminalSN);
     if (isDuplicate) {
       setErrorAjout("Ce numéro de série a déjà été ajouté.");
@@ -138,8 +84,6 @@ export default function LivraisonInputs() {
       pointMarchand: filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(","),
       caisse: filteredPointMarchand.map((terminal) => terminal.TPE).join(","),
       serialNumber: terminalSN,
-      banque: filteredPointMarchand.map((terminal) => terminal.BANQUE).join(","),
-      mobile_money: localMobileMoney,
       commentaireTPE: messageTPE,
     };
   
@@ -149,13 +93,8 @@ export default function LivraisonInputs() {
     // Optional: Reset form fields
     setTerminalSN('');
     setMessageTPE('')
-    setOrangeChecked(false);
-    setMTNChecked(false);
-    setMOOVChecked(false);
-    setMobileMoney([]);
 
     setErrorAjout('')
-    setIsConfirmModalOpen(false)
   }
     
 
@@ -164,14 +103,14 @@ export default function LivraisonInputs() {
     if(produitsLivre.length == 0){
        Swal.fire({
       title: "Error",
-      text: "Vous devez ajouter au moins un (1) TPE.",
+      text: "Vous devez ajoutez des produits",
       icon: "error"
       });
       return;
     }
     setLoadingDelivery(true);
     const commentaire = message;
-    const type_livraison_id = livraisonID
+    const type_livraison_id = 5
     const user_id = userId;
     const isAncienne = false;
 
@@ -207,15 +146,6 @@ export default function LivraisonInputs() {
   terminals.filter((terminal) => 
         terminal.SERIAL_NUMBER.includes(terminalSN)) : [];
 
-  const options_livraison = [
-    { value: "TPE GIM", label: "TPE GIM" },
-    { value: "TPE MOBILE", label: "TPE MOBILE" },
-    { value: "TPE MAJ", label: "MISE A JOUR" },
-    { value: "TPE REPARE", label: "TPE REPARE" },
-    { value: "TPE ECOBANK", label: "TPE ECOBANK" },
-    // { value: "CHARGEUR", label: "CHARGEUR" },
-  ];
-
   const handleDelete = (indexToRemove) => {
     setProduitsLivresTable((prev) =>
       prev.filter((_, index) => index !== indexToRemove)
@@ -237,21 +167,11 @@ export default function LivraisonInputs() {
               </div>
             ) : (
                   <>
-                    <ComponentCard className="w-1/2" title={`Livraison ${typeLivraison}`}>
+                    <ComponentCard className="w-1/2" title="Livraison CHARGEUR">
                       <div className="pb-3 text-center">
                             <span className="text-sm font-semibold">Informations générales</span>
                       </div>
                       <div className="space-y-6">
-                        <div>
-                          <Label>Type de Livraison *</Label>
-                          <Select
-                            options={options_livraison}
-                            placeholder="Select an option"
-                            onChange={ChangeTypeLivraison}
-                            className="dark:bg-dark-900"
-                            
-                          />
-                        </div>
                         <div>
                           <Label>Description</Label>
                           <TextArea
@@ -266,7 +186,8 @@ export default function LivraisonInputs() {
                         </div>
                         <div>
                           <Label htmlFor="input">Numéro de série *</Label>
-                          <Input type="text" id="input" value={terminalSN} onChange={(e) => setTerminalSN(e.target.value)}/>
+                          <Input type="text" id="input" value={terminalSN} onChange={(e) => setTerminalSN(e.target.value)}
+                          error={errorAjout}/>
                         </div>
                         <div>
                           <Label>Commentaire pour terminal</Label>
@@ -281,36 +202,17 @@ export default function LivraisonInputs() {
                           <Label>Point Marchand</Label>
                           <Input type="text" id="input"
                                   className="cursor-default"
-                                  value={filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(" - ")}
-                                  readOnly
-                                  />
-                        </div>
-                        <div>
-                          <Label>Banque</Label>
-                          <Input type="text" id="input" 
-                                  className="cursor-default"
-                                  value={filteredPointMarchand.map((terminal) => terminal.BANQUE).join(" - ")}
+                                  value={filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(",")}
                                   readOnly
                                   />
                         </div>
                         <div>
                           <Input type="text" id="input" 
-                                  value={filteredPointMarchand.map((terminal) => terminal.TPE).join(" - ")}
+                                  value={filteredPointMarchand.map((terminal) => terminal.TPE).join(",")}
                                   className="hidden"/>
                         </div>
-                        <div className="flex flex-col">
-                          <div className="flex items-center gap-3 my-2">
-                            <Checkbox checked={isOrangeChecked} onChange={setOrangeChecked} label="Orange Money" />
-                          </div>
-                          <div className="flex items-center gap-3 my-2">
-                            <Checkbox checked={isMTNChecked} onChange={setMTNChecked} label="MTN Money" />
-                          </div>
-                          <div className="flex items-center gap-3 my-2">
-                            <Checkbox checked={isMOOVChecked} onChange={setMOOVChecked} label="MOOV Money" />
-                          </div>
-                        </div>
                         <div>
-                          <button onClick={handleConfirm} className="w-full bg-green-400 rounded-2xl h-10 flex items-center justify-center">
+                          <button onClick={handleAjout} className="w-full bg-green-400 rounded-2xl h-10 flex items-center justify-center">
                             <span>Ajouter</span>
                             <span className="text-2xl"><PlusIcon /></span>
                           </button>
@@ -344,7 +246,7 @@ export default function LivraisonInputs() {
                     className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                     S/N
                   </TableCell>
-                  <TableCell
+                  {/* <TableCell
                     isHeader
                     className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                     Banque
@@ -363,7 +265,7 @@ export default function LivraisonInputs() {
                     isHeader
                     className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                     MOOV
-                  </TableCell>
+                  </TableCell> */}
                   <TableCell
                     isHeader
                     className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
@@ -394,7 +296,7 @@ export default function LivraisonInputs() {
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       {item.serialNumber}
                     </TableCell>
-                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                    {/* <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       {item.banque}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
@@ -408,7 +310,7 @@ export default function LivraisonInputs() {
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       {item.mobile_money.includes("MOOV") ?
                         ( <i className="pi pi-check" style={{ color: 'green' }}></i> ) : ""}
-                    </TableCell>
+                    </TableCell> */}
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       <button
                         className="text-red-500 hover:text-red-700"
@@ -444,56 +346,6 @@ export default function LivraisonInputs() {
             }
         </div>
       </div>
-      <Modal isOpen={isConfirmModalOpen} onClose={() => setIsConfirmModalOpen(false)} className="p-4 max-w-xl">
-        <div className="p-6 mt-5">
-          <div>
-            <span>Vous allez ajouter un terminal pour livraison :  <span className="font-bold text-red-700">{typeLivraison}</span></span>
-          </div>
-          <div>
-            <div>
-              <span>S/N terminal : <span className="font-bold text-red-700">{terminalSN}</span></span>
-            </div>
-            <div>
-              <span>Point Marchand : <span className="font-bold text-red-700">{filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join("%")}</span></span>
-            </div>
-            <div>
-              <span> Banque : <span className="font-bold text-red-700">{filteredPointMarchand.map((terminal) => terminal.BANQUE).join("%")}</span></span>
-            </div>
-            <div className="flex flex-col">
-              <span>Mobile Money : </span>
-              <ul>
-                <li className="font-bold text-red-700">
-                  {isOrangeChecked ? 
-                    (<> Orange Money </>):
-                    (<></>)
-                  }
-                </li>
-                <li className="font-bold text-red-700">
-                  {isMTNChecked ? 
-                    (<> MTN Money </>):
-                    (<></>)
-                  }
-                </li>
-                <li className="font-bold text-red-700">
-                  {isMOOVChecked ? 
-                    (<> MOOV Money </>):
-                    (<></>)
-                  }
-                </li>
-              </ul>
-              
-              
-            </div>
-          </div>
-        </div>
-        <div className='w-full mt-6 flex justify-center items-center'>
-          <button
-            onClick={handleAjout}
-            className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
-            Valider
-          </button>
-        </div>
-      </Modal>
     </>
   );
 }

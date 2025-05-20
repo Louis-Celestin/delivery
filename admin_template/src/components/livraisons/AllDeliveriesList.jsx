@@ -31,6 +31,7 @@ export default function AllDeliveriesList({ filterType }) {
         {label: 'TPE Réparé', value:2},
         {label: 'MAJ GIM', value:3},
         {label: 'TPE MOBILE', value:4},
+        {label: 'TPE ECOBANK', value:6},
         {label: 'Chargeur', value:5},
     ]
     const [startDate, setStartDate] = useState(null);
@@ -66,11 +67,12 @@ export default function AllDeliveriesList({ filterType }) {
                   }catch(error){
                       console.log(error)
                   }finally{
-                      
+                      setPrintingId(null);
                   }
       }
     const titleTemplate = (deliveryForms) =>{
         let title = '';
+        let link = `/formulaire/${deliveryForms.id_livraison}`;
         if (deliveryForms.type_livraison_id === 1) {
             title = 'Livraison TPE GIM';
         } else if (deliveryForms.type_livraison_id === 2) {
@@ -81,10 +83,13 @@ export default function AllDeliveriesList({ filterType }) {
             title = 'Livraison TPE MOBILE'; // fallback or other types
         } else if (deliveryForms.type_livraison_id === 5) {
             title = 'Livraison CHARGEUR'; // fallback or other types
+            link = `/formulaire-chargeur/${deliveryForms.id_livraison}`
+        } else if (deliveryForms.type_livraison_id === 6) {
+            title = 'Livraison TPE ECOBANK'
         }
         return (
             <span className="flex flex-col">
-              <Link to={`/formulaire/${deliveryForms.id_livraison}`}>
+              <Link to={link}>
                 <span className="font-bold text-sm">{title}</span>
               </Link>
               <span className="text-xs font-extralight">#{deliveryForms.id_livraison}</span>
@@ -116,9 +121,16 @@ export default function AllDeliveriesList({ filterType }) {
         )
     }
     const actionTemplate = (deliveryForms) =>{
+        let linkSee = `/formulaire/${deliveryForms.id_livraison}`;
+        let linkModify = `/form-modify-nouvelle-livraison/${deliveryForms.id_livraison}`
+
+        if (deliveryForms.type_livraison_id === 5) {
+            linkSee = `/formulaire-chargeur/${deliveryForms.id_livraison}`
+            linkModify = `/form-modify-livraison-chargeur/${deliveryForms.id_livraison}`
+        }
         return(
             <span className="flex items-center">
-                <Link to={`/formulaire/${deliveryForms.id_livraison}`}>
+                <Link to={linkSee}>
                     <button className="mx-1">
                         <i className="pi pi-eye"></i>
                     </button>
@@ -135,7 +147,7 @@ export default function AllDeliveriesList({ filterType }) {
                         )}
                     </>
                 ) : (
-                    <Link to={`/form-modify-nouvelle-livraison/${deliveryForms.id_livraison}`}>
+                    <Link to={linkModify}>
                         <button className="mx-1 text-gray-500 text-theme-sm dark:text-gray-400">
                             <i className="pi pi-pencil"></i>
                         </button>
@@ -201,13 +213,13 @@ export default function AllDeliveriesList({ filterType }) {
                         showIcon
                         />
                     </div>
-                    <div className="flex items-center">
+                    {/* <div className="flex items-center">
                         <span>
                             <Link to={"/form-livraison"} className="bg-green-400 p-3 rounded-2xl ">
                                 Nouvelle livraison
                             </Link>
                         </span>
-                    </div>
+                    </div> */}
                     
                 </div>
                 <div className="p-6 pt-0">

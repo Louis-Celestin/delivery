@@ -24,16 +24,22 @@ import DashboardRedirector from "./DashboardRedirector";
 import AdminRenderer from "./AdminRenderer";
 
 import LivraisonForm from "./pages/Forms/LivraisonForms/LivraisonForm";
+import AncienneLivraisonForm from "./pages/Forms/LivraisonForms/AncienneLivraisonForm";
+import ModifyLivraisonForm from "./pages/Forms/LivraisonForms/ModifyLivraisonForm";
+import LivraisonChargeurForm from "./pages/Forms/LivraisonForms/LivraisonChargeurForm";
+import ModifyLivraisonChargeurForm from "./pages/Forms/LivraisonForms/ModifyLivraisonChargeurForm";
+
 import AllDeliveries from "./pages/DeliveryPages/AllDeliveries";
 import DeliveryDetails from "./pages/DeliveryPages/DeliveryDetails";
-import AncienneLivraisonForm from "./pages/Forms/LivraisonForms/AncienneLivraisonForm";
-import ModifyLivraisonForm from "./pages/Forms/LivraisonForms/ModifyLivraisonForm"
+import DeliveryChargeurDetails from "./pages/DeliveryPages/DeliveryChargeurDetails"
 
 import ProtectedRoutes from "./ProtectedRoutes";
 
 import AllReceptions from "./pages/ReceivePages/AllReceptions";
 import ReceptionDetails from "./pages/ReceivePages/ReceptionDetails";
+import ReceptionChargeurDetails from "./pages/ReceivePages/ReceptionChargeurDetails"
 
+import StatistiquesLivraisons from "./components/livraisons/StatistiquesLivraisons"
 import GestionStockChargeur from "./pages/GestionStock/GestionStockChargeur";
 
 export default function App() {
@@ -45,7 +51,9 @@ export default function App() {
           {/* Dashboard Layout */}
             <Route element={<ProtectedRoutes><AdminRenderer /></ProtectedRoutes>}>
 
+              {/* Dashboard */}
               <Route index element={<DashboardRedirector />} />
+              <Route path="/statistiques-livraisons" element={<StatistiquesLivraisons />} />
               {/* Others Page */}
               <Route path="/profile" element={<UserProfiles />} />
               <Route path="/calendar" element={<Calendar />} />
@@ -56,14 +64,18 @@ export default function App() {
               <Route path="/form-livraison" element={<LivraisonForm />} />
               <Route path="/form-ancienne-livraison" element={<AncienneLivraisonForm />} />
               <Route path="/form-modify-nouvelle-livraison/:id" element={<ModifyLivraisonForm />} />
+              <Route path="/form-livraison-chargeur" element={<LivraisonChargeurForm />} />
+              <Route path="/form-modify-livraison-chargeur/:id" element={<ModifyLivraisonChargeurForm />} />
 
               {/* Livraisons */}
               <Route path="/toutes-les-livraisons" element={<AllDeliveries/>} />
               <Route path="/formulaire/:id" element={<DeliveryDetails/>} />
+              <Route path="/formulaire-chargeur/:id" element={<DeliveryChargeurDetails />} />
 
               {/* Receptions */}
               <Route path="/toutes-les-receptions" element={<AllReceptions />} />
               <Route path="/formulaire-recu/:id" element={<ReceptionDetails />} />
+              <Route path="/formulaire-chargeur-recu/:id" element={<ReceptionChargeurDetails />} />
 
               {/* Stock chargeurs */}
               <Route path="/gestion-stock-chargeur" element={<GestionStockChargeur />} />

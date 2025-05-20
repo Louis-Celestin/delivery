@@ -154,7 +154,19 @@ export default function ModifyLivraisonInputs() {
     e.preventDefault();
 
     if(produitsLivre.length == 0){
-      setErrorDeliver("Veuillez ajouter des produits")
+      Swal.fire({
+        title: "Error",
+        text: "Vous devez ajoutez des produits",
+        icon: "error"
+      });
+      return;
+    }
+    if(!livraisonID){
+      Swal.fire({
+        title: "Error",
+        text: "Vous devez choisir un type de livraison",
+        icon: "error"
+      });
       return;
     }
 
@@ -163,7 +175,7 @@ export default function ModifyLivraisonInputs() {
     const type_livraison_id = livraisonID
     const user_id = userId;
     const isAncienne = false;
-    const statut_livraison = 'en_attente'
+    const statut_livraison = 'en_cours'
     const nom_livreur = 'YAO ORNELLA'
 
     console.log('Trying to create form...')
@@ -174,7 +186,7 @@ export default function ModifyLivraisonInputs() {
     console.log('Produits livrés : ',produitsLivre)
 
     try{
-    const response = await productDeliveries.updateLivraison(id, produitsLivre, commentaire, statut_livraison, type_livraison_id, nom_livreur)
+    const response = await productDeliveries.updateLivraison(id, produitsLivre, commentaire, statut_livraison, type_livraison_id)
     console.log(response);
     console.log('Formulaire modifié')
     Swal.fire({

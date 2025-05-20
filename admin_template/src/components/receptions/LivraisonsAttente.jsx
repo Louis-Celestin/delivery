@@ -3,6 +3,8 @@ import { AlertIcon, TransferIcon } from "../../icons"
 
 import { ProductDeliveries } from "../../backend/livraisons/productDeliveries"
 
+import { ProgressSpinner } from 'primereact/progressspinner';
+
 
 export default function LivraisonsAttente() {
 
@@ -14,6 +16,7 @@ export default function LivraisonsAttente() {
     useEffect( () =>{
         const fetchLivraisonsAttente = async () =>{
             try{
+                setLoading(true)
                 let data = await delivery.getAllLivraisons()
 
                 const livraisonsAttente = data.filter(
@@ -36,7 +39,12 @@ export default function LivraisonsAttente() {
                         <span>Livraisons en attente</span>
                     </div>
                     <div className="flex justify-between items-center text-title-md">
-                        <span>{count}</span> {/*Place to show the number of instance*/}
+                        <>
+                            {loading ? 
+                                (<ProgressSpinner style={{width: '15px', height: '15px'}} strokeWidth="8" animationDuration=".5s" />):
+                                (<span>{count}</span>)
+                            }
+                        </>
                         <span className="text-warning-400"><TransferIcon /></span>
                     </div>
                 </div>
