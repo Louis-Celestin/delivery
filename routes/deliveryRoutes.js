@@ -7,7 +7,7 @@ const {deliver,getAllLivraisons, getOneLivraison,deleteLivraison,updateLivraison
 router.post("/deliver", deliver);
 router.get("/getAllLivraisons", getAllLivraisons);
 router.get("/getOneLivraison/:id", getOneLivraison);
-router.get("/updateLivraison/:id", updateLivraison);
+router.put("/updateLivraison/:id", updateLivraison);
 router.get("/deleteLivraison/:id", deleteLivraison);
 router.get("/pdf/:id", generateLivraisonPDF);
 

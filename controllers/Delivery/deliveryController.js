@@ -108,6 +108,64 @@ const deliver = async (req, res) => {
           });
         }
       }
+
+      // GENERATION DE MAIL POUR RECEVEUR 
+
+      // Récupération du type de livraison
+      let livraisonTypeName = ''
+      switch(type_livraison_id){
+        case 1 :
+          livraisonTypeName = 'TPE GIM';
+          break;
+        case 2 :
+          livraisonTypeName = 'TPE REPARE';
+          break;
+        case 3 :
+          livraisonTypeName = 'TPE MAJ';
+          break;
+        case 4 :
+          livraisonTypeName = 'TPE MOBILE';
+          break;
+        case 5 :
+          livraisonTypeName = 'CHARGEUR';
+          break;
+        case 6 :
+          livraisonTypeName = 'TPE ECOBANK'; // Ajout du type ECOBANK.
+          break;
+        
+      }
+
+      // Fonction de génération de mail
+      const sendMail = require("../../utils/emailSender");
+      const receivers = await prisma.users.findMany({
+        where: {
+        role_id: 4,
+        },
+      });
+      if (receivers && receivers.length > 0) {
+      // 2. Prepare email content
+      const subject = `NOUVELLE LIVRAISON ${livraisonTypeName}`;
+      const html = `
+        <p>Bonjour,</p>
+        <p>Une nouvelle livraison a été enregistrée.</p>
+        <ul>
+          <li><strong>Type de livraison:</strong> ${livraisonTypeName}</li>
+          <li><strong>Nombre de produits:</strong> ${produits.length}</li>
+        </ul>
+        </br>
+        </br>
+        <p>Green - Pay vous remercie.</p>
+      `;
+
+      // 3. Send email to each receiver
+      // for (const receiver of receivers) {
+      //   await sendMail({
+      //     to: receiver.email,
+      //     subject,
+      //     html,
+      //   });
+      // }
+      }
   
       res.status(201).json({
         message: "Livraison enregistrée avec succès",
@@ -157,28 +215,62 @@ const getOneLivraison = async (req, res) => {
       res.status(500).json({ message: "Erreur serveur", error });
     }
   };
+
+
   
+  /* 
+    Modification de la fonction updateLivraison.
+    Les données à update: produitsLivre, commentaire, type_livraison_id, date_livraison, qte_totale_livraison
+
+
+  */
 const updateLivraison = async (req, res) => {
     const { id } = req.params;
     const {
         produitsLivre,
         commentaire,
+        statut_livraison,
+        type_livraison_id,
+        date_livraison,
+        qte_totale_livraison,
+        user_id,
     } = req.body;
 
     try {
-        // Données à mettre à jour
+      // Données à mettre à jour
+        const produits = typeof produitsLivre === "string"
+        ? JSON.parse(produitsLivre)
+        : produitsLivre;
+
+        let utilisateur = null;
+      
+        utilisateur = await prisma.users.findUnique({
+          where: {
+            id_user: parseInt(user_id)
+          }})
+      
+  
+        if (!utilisateur) {
+          return res.status(404).json({ message: "Utilisateur non trouvé" });
+        }
+      
+        
         const dataToUpdate = {
-            produitsLivre: typeof produitsLivre === "string" ? produitsLivre : JSON.stringify(produitsLivre),
-            commentaire,
-            statut_livraison,
-            type_livraison_id,
-            nom_livreur
+          produitsLivre: typeof produitsLivre === "string" ? produitsLivre : JSON.stringify(produitsLivre),
+          commentaire,
+          statut_livraison,
+          type_livraison_id,
+          date_livraison: new Date(),
+          qte_totale_livraison : produits.length,
+          user_id: utilisateur ? utilisateur.id_user : null
+          // nom_livreur
         };
 
+        // if (date_livraison) {
+        //     dataToUpdate.date_livraison = new Date();
+        // }
+
         // Si c'est une ancienne livraison, on ajoute la date de livraison et on vérifie la validité de la date
-        if (is_old_livraison && date_livraison) {
-            dataToUpdate.date_livraison = new Date(Now());
-        }
 
         // Mise à jour de la livraison
         const updated = await prisma.livraison.update({
@@ -262,7 +354,8 @@ const deleteLivraison = async (req, res) => {
         2: "livraison_tpe_repare.html",
         3: "livraison_mj_gim.html",
         4: "livraison_tpe_mobile.html",
-        5: "livraison_chargeur_tpe.html"
+        5: "livraison_chargeur_tpe.html",
+        6: "livraison_tpe_ecobank.html", // Type Ecobank ajouté aux templates
       };
   
       const templateFile = templatesMap[livraison.type_livraison_id];
@@ -274,22 +367,25 @@ const deleteLivraison = async (req, res) => {
       // 🧱 Construction du tableau
       const produitsRows = livraison.produitsLivre.map((p, index) => {
         let row = "";
+        const has = (m) => p.mobile_money?.includes(m) ? "✔" : "";
         switch (livraison.type_livraison_id) {
           case 1:
-            row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${p.banque}</td></tr>`;
+            row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${p.banque}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
             break;
           case 2:
-            row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td></tr>`;
+            row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td></tr>`;
             break;
           case 3:
-            row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.banque}</td></tr>`;
+            row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${p.banque}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
             break;
           case 4:
-            const has = (m) => p.mobile_money?.includes(m) ? "✔" : "";
-            row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
+            row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
             break;
           case 5:
-            row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${p.quantite}</td></tr>`;
+            row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td></tr>`;
+            break;
+          case 6:
+            row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${p.banque}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
             break;
           default:
             row = "";

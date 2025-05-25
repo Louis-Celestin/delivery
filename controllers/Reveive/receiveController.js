@@ -189,10 +189,74 @@ const deleteValidation = async (req, res) => {
   }
 };
 
+// Retourner une livraison
+const returnDelivery = async (req, res) => {
+  const {
+    livraison_id,
+    commentaire_return,
+    user_id,
+  } = req.body;
+  try {
+    const livraison = await prisma.livraison.findUnique({
+      where: { id_livraison: parseInt(livraison_id) },
+    });
+
+    if (!livraison) return res.status(404).json({ message: "Livraison introuvable." });
+
+    if (livraison.statut_livraison === "livre") {
+      return res.status(400).json({ message: "Livraison déjà validée." });
+    }
+
+    if (!commentaire_return) {
+      return res.status(400).json({ message: "Commentaire de retour requis." });
+    }
+
+    let final_nom_validateur;
+    let final_date_validation;
+
+    if (!user_id) return res.status(403).json({ message: "Utilisateur non authentifié." });
+
+      const user = await prisma.users.findUnique({
+        where: { id_user: parseInt(user_id) },
+        include: { agents: true },
+      });
+
+      if (!user || !user.agents) {
+        return res.status(404).json({ message: "Utilisateur ou agent non trouvé." });
+      }
+
+      final_nom_validateur = user.agents.nom;
+      final_date_validation = new Date();
+
+      const newValidation = await prisma.validations.create({
+      data: {
+        livraison_id: parseInt(livraison_id),
+        etat_validation: 'refuse',
+        commentaire: commentaire_return,
+        user_id: user_id ? parseInt(user_id) : null,
+        nom_recepteur: final_nom_validateur,
+        date_validation: final_date_validation,
+      },
+    });
+
+    await prisma.livraison.update({
+      where: { id_livraison: parseInt(livraison_id) },
+      data: { statut_livraison: 'en_attente' },
+    });
+
+    return res.status(201).json(newValidation);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Erreur serveur." });
+  }
+};
+
+
 module.exports = {
   createValidation,
   updateValidation,
   getAllValidations,
   getOneValidation,
   deleteValidation,
+  returnDelivery,
 };

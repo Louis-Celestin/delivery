@@ -19,6 +19,8 @@ const generateDemandePaiementPDF = async (livraison, outputPath) => {
         let template = fs.readFileSync(path.join(__dirname, "../statics/templates/livraison_tpe_mobile.html"), "utf8");
     }else if(livraison.type_livraison_id === 5) {
         let template = fs.readFileSync(path.join(__dirname, "../statics/templates/livraison_chargeur_tpe.html"), "utf8");
+    }else if(livraison.type_livraison_id === 6) {
+        let template = fs.readFileSync(path.join(__dirname, "../statics/templates/livraison_tpe_ecobank.html"), "utf8");
     }
 
 
