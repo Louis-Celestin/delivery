@@ -45,6 +45,7 @@ export default function ReceptionChargeurDetails() {
     const [signature, setSignature] = useState();
     const [signUrl, setSignUrl] = useState();
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isModalReturnOpen, setIsModalReturnOpen] = useState(false);
     const [showSignButton, setShowSignButton] = useState(true);
     const [showValidateButton, setShowValidateButton] = useState(false);
     const [actionButtons, setActionButtons] = useState(false);
@@ -52,7 +53,9 @@ export default function ReceptionChargeurDetails() {
     const [commentaireReception, setCommentaireReception] = useState('');
     const [statutLivraison, setStatutLivraison] = useState('en attente');
     const [statutClass, setStatutClass] = useState('text-sm rounded-xl p-1 bg-orange-100 text-orange-500 font-bold')
-
+    const [recu, setRecu] = useState(false);
+    const [errorReturn, setErrorReturn] = useState('');
+    const [loadingReturn, setLoadingReturn] = useState(false);
     
 
     const formatDate = (date) => {
@@ -89,8 +92,17 @@ export default function ReceptionChargeurDetails() {
                       if(data.statut_livraison == 'livre'){
                         setShowSignButton(false)
                         setActionButtons(true)
+                        setRecu(true)
                         setStatutLivraison('Livré')
                         setStatutClass('text-sm border rounded-xl p-1 bg-green-100 text-green-500 font-bold')
+
+                        setCommentaireReception(data.validations[0].commentaire)
+                      }else if(data.statut_livraison == 'en_attente'){
+                        setShowSignButton(false)
+                        setActionButtons(false)
+                        setRecu(true)
+                        setStatutLivraison('Retourné')
+                        setStatutClass('text-sm border rounded-xl p-1 bg-red-100 text-red-500 font-bold')
 
                         setCommentaireReception(data.validations[0].commentaire)
                       }
@@ -157,6 +169,39 @@ export default function ReceptionChargeurDetails() {
             setLoadingValidate(false)
         }
     }
+    const handleReturn = async (e) =>{
+        e.preventDefault();
+        setLoadingValidate(true);
+        const commentaire_return = message
+        const livraison_id = id
+        
+        console.log('Commentaire de retour : ', commentaire_return)
+        console.log('id livraison : ', livraison_id)
+        console.log('user id : ', user_id)
+
+        if(!commentaire_return){
+            setErrorReturn("Ajoutez un commentaire avant de retourner une livraison!")
+            return;
+        }
+
+        try{
+            setLoadingReturn(true)
+            const response = await reception.returnDelivery(livraison_id, commentaire_return, user_id);
+            Swal.fire({
+                    title: "Succès",
+                    text: "Livraison retournée avec succès",
+                    icon: "success"
+                    });
+            console.log(response)
+            setIsModalReturnOpen(false)
+            navigate('/toutes-les-receptions');
+        } catch(error){
+            console.log(error)
+        } finally{
+            setLoadingReturn(false)
+        }
+    }
+
     const handleGeneratePdf = async () =>{
         setLoadingPrint(true);
         try{
@@ -216,7 +261,7 @@ export default function ReceptionChargeurDetails() {
                             <p className='text-xs opacity-20'>Sans commentaire</p>
                         ) }
                     </div>
-                    {actionButtons ? (
+                    {recu ? (
                         <>
                             <div className='overflow-hidden mb-6 pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
                                 <div className='mb-6 pb-2 w-full border-b text-right'>
@@ -317,11 +362,18 @@ export default function ReceptionChargeurDetails() {
                     </div>
                     <div className='w-full flex flex-col justify-center items-center'>
                         {showSignButton ? 
-                        ( <button onClick={() => setIsModalOpen(true)}
-                                className='w-1/4 my-10 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
-                                Réceptionner
-                        </button>) : (<></>)}
-                       
+                        ( 
+                            <div className='flex'>
+                                <button onClick={() => setIsModalReturnOpen(true)}
+                                    className='w-48 my-10 mx-3 bg-red-400 rounded-2xl h-10 flex justify-center items-center'>
+                                    Retourner
+                                </button>
+                                <button onClick={() => setIsModalOpen(true)}
+                                    className='w-48 my-10 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
+                                    Réceptionner
+                                </button>
+                            </div>)
+                         : (<></>)}
                     </div>
                     <div className='w-auto mt-6 flex justify-center items-center static'>
                         <div className='relative'>
@@ -392,6 +444,51 @@ export default function ReceptionChargeurDetails() {
                     </div>
                 </div>
             </Modal>
+            <Modal isOpen={isModalReturnOpen} onClose={() => setIsModalReturnOpen(false)} className="p-4 max-w-md">
+            {loadingReturn ? 
+                (
+                    <div className='w-full h-full flex justify-center items-center'>
+                        <ProgressSpinner />
+                    </div>
+                ) :
+                (
+                    <div className='p-1'>
+                        <div className='text-center mb-3 text-sm'>
+                            <span>Indiquez la raison du retour pour valider</span>
+                        </div>
+                        <div className='flex flex-col justify-center items-center'>
+                            <div className='w-full mt-3'>
+                                <Label>Commentaire *</Label>
+                                <TextArea
+                                    value={message}
+                                    onChange={(value) => setMessage(value)}
+                                    rows={4}
+                                    placeholder="Ajoutez un commentaire"
+                                    error={errorReturn}
+                                    hint={errorReturn}
+                                />
+                            </div>
+                            <div className='w-full mt-6 flex justify-center items-center'>
+                                <button
+                                    onClick={handleReturn}
+                                    className='w-48 mx-3 bg-red-400 rounded-2xl h-10 flex justify-center items-center'>
+                                    Retourner
+                                </button>
+                                <button
+                                    onClick={() =>{
+                                        setIsModalReturnOpen(false);
+                                        setErrorReturn('')
+                                    }}
+                                    className='w-48 mx-3 bg-gray-400 rounded-2xl h-10 flex justify-center items-center'>
+                                    Annuler
+                                </button>
+                            </div>  
+                        </div>
+                    </div>
+                )
+            }
+            
+        </Modal>
         </>
     )
 }

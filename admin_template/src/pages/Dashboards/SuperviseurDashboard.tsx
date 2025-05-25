@@ -1,13 +1,14 @@
-
 import { useState } from "react";
 import LivraisonsGenerales from "../../components/livraisons/LivraisonsGenerales"
 import LivraisonsPieStats from "../../components/livraisons/LivraisonsPieStats"
-import ChargeursReturn from "../../components/livraisons/ChargeursReturn"
+import LivraisonsAttente from "../../components/receptions/LivraisonsAttente"
+import LivraisonsRecu from "../../components/receptions/LivraisonsRecu"
 import LivraisonsReturn from "../../components/receptions/LivraisonsReturn"
+
 import DatePicker from "../../components/form/date-picker";
 import { startOfWeek, endOfWeek, format, getWeek, formatDate } from "date-fns";
 
-export default function DeliveryDashboard() {
+export default function SuperviseurDashboard() {
 
   const currentWeek = getWeek(new Date(), { weekStartsOn: 1 });
   const getFormattedDate = (date) => format(date, 'yyyy-MM-dd');
@@ -19,7 +20,7 @@ export default function DeliveryDashboard() {
       <div className="mb-6">
         <div className="mb-2 flex justify-between">
           <span className="text-xl font-bold">
-            DASHBOARD LIVRAISON
+            DASHBOARD SUPERVISION
           </span>
           <div className="flex flex-col">
             <span className="text-2xl">
@@ -36,38 +37,40 @@ export default function DeliveryDashboard() {
           </span>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-6 space-y-6">
-        <div className="grid grid-cols-1">
-          <div className="p-6 flex justify-center border bg-white rounded-2xl">
-            <div className="mx-3">
-              <DatePicker
-                id="date-picker-debut"
-                label="Date début"
-                placeholder={getFormattedDate(startDate)}
-                value={getFormattedDate(startDate)}
-                onChange={(dates, currentDateString) => {
-                    console.log("Date début changée : ",currentDateString)
-                    setStartDate(new Date(currentDateString));
-                }}
-              />
-            </div>
-            <div className="mx-3">
-              <DatePicker
-                id="date-picker"
-                label="Date fin"
-                placeholder={getFormattedDate(endDate)}
-                value={getFormattedDate(endDate)}
-                onChange={(dates, currentDateString) => {
-                    console.log("Date fin changée : ",currentDateString)
-                    setEndDate(new Date(currentDateString));
-                }}
-              />
+      <div className="grid grid-cols-2 gap-6">
+        <div>
+            <div className="mb-6 p-6 flex justify-center border bg-white rounded-2xl">
+                <div className="mx-3">
+                    <DatePicker
+                      id="date-picker-debut"
+                      label="Date début"
+                      placeholder={getFormattedDate(startDate)}
+                      value={getFormattedDate(startDate)}
+                      onChange={(dates, currentDateString) => {
+                          console.log("Date début changée : ",currentDateString)
+                          setStartDate(new Date(currentDateString));
+                      }}
+                    />
+                </div>
+                <div className="mx-3">
+                    <DatePicker
+                      id="date-picker"
+                      label="Date fin"
+                      placeholder={getFormattedDate(endDate)}
+                      value={getFormattedDate(endDate)}
+                      onChange={(dates, currentDateString) => {
+                          console.log("Date fin changée : ",currentDateString)
+                          setEndDate(new Date(currentDateString));
+                        }}
+                    />
+                </div>
             </div>
           </div>
-        </div>
-        <div className="grid grid-cols-2 gap-6 mb-6">
-          <LivraisonsReturn startDate={startDate} endDate={endDate} />
-          <ChargeursReturn startDate={startDate} endDate={endDate} />
+      </div>
+
+      <div className="grid grid-cols-2 gap-6">
+        <div className="mb-6">
+          <span className="font-bold text-2xl text-neutral-400">Informations Livraisons</span>
         </div>
       </div>
 
@@ -79,8 +82,24 @@ export default function DeliveryDashboard() {
           <LivraisonsPieStats startDate={startDate} endDate={endDate} />
         </div>
       </div>
-      <div className="grid grid-cols-2">
+
+      <div className="grid grid-cols-2 gap-6">
+        <div className="mb-6">
+          <span className="font-bold text-2xl text-neutral-400">Informations Réceptions</span>
+        </div>
       </div>
+
+       <div className="grid grid-cols-3 space-y-3 gap-4 md:gap-6">
+          <div className="">
+            <LivraisonsAttente />
+          </div>
+          <div className="">
+            <LivraisonsRecu startDate={startDate} endDate={endDate} />
+          </div>
+          <div>
+            <LivraisonsReturn startDate={startDate} endDate={endDate} />
+          </div>
+        </div>
   
       <div className="grid grid-cols-12 gap-4 md:gap-6">
         {/* <div className="col-span-4 space-y-6">

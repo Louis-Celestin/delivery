@@ -30,6 +30,7 @@ export default function DeliveryDetail() {
     const [commentaireReception, setCommentaireReception] = useState('');
     const [statutLivraison, setStatutLivraison] = useState('en attente');
     const [statutClass, setStatutClass] = useState('text-sm rounded-xl p-1 bg-orange-100 text-orange-500 font-bold')
+    const [recu, setRecu] = useState(false);
 
     const formatDate = (date) => {
         const d = new Date(date);
@@ -69,6 +70,13 @@ export default function DeliveryDetail() {
                         setActionButtons(true)
                         setStatutLivraison('Livré')
                         setStatutClass('text-sm border rounded-xl p-1 bg-green-100 text-green-500 font-bold')
+                        setRecu(true)
+                        setCommentaireReception(data.validations[0].commentaire)
+                      }else if(data.statut_livraison == 'en_attente'){
+                        setActionButtons(false)
+                        setRecu(true)
+                        setStatutLivraison('Retourné')
+                        setStatutClass('text-sm border rounded-xl p-1 bg-red-100 text-red-500 font-bold')
 
                         setCommentaireReception(data.validations[0].commentaire)
                       }
@@ -119,10 +127,15 @@ export default function DeliveryDetail() {
                             </div>
 
                         ) : (
-                            <>
-                                <Link to={`/form-modify-nouvelle-livraison/${deliveryDetails.id_livraison}`}>
-                                    <button className='m-3 text-2xl'><span><i className="pi pi-pencil"></i></span></button>
-                                </Link>
+                            <>  
+                                {recu ? 
+                                (
+                                    <></>
+                                ) : (
+                                    <Link to={`/form-modify-nouvelle-livraison/${deliveryDetails.id_livraison}`}>
+                                        <button className='m-3 text-2xl'><span><i className="pi pi-pencil"></i></span></button>
+                                    </Link>
+                                )}
                             </>
                         )}
                     </div>
@@ -142,7 +155,7 @@ export default function DeliveryDetail() {
                             <p className='text-xs opacity-20'>Sans commentaire</p>
                         ) }
                     </div>
-                    {actionButtons ? (
+                    {recu ? (
                         <>
                             <div className='overflow-hidden mb-6 pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
                                 <div className='mb-6 pb-2 w-full border-b text-right'>

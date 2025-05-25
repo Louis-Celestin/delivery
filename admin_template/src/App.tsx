@@ -42,6 +42,12 @@ import ReceptionChargeurDetails from "./pages/ReceivePages/ReceptionChargeurDeta
 import StatistiquesLivraisons from "./components/livraisons/StatistiquesLivraisons"
 import GestionStockChargeur from "./pages/GestionStock/GestionStockChargeur";
 
+import AllDeliveriesVue from "./pages/VueOnlyPages/AllDeliveriesVue";
+import DeliveryDetailsVue from "./pages/VueOnlyPages/DeliveryDetailsVue";
+import DeliveryChargeurDetailsVue from "./pages/VueOnlyPages/DeliveryChargeurDetailsVue";
+
+import AllMaintenanceDeliveries from "./pages/MaintenancePages/AllMaintenanceDeliveries";
+
 export default function App() {
   return (
     <>
@@ -77,8 +83,16 @@ export default function App() {
               <Route path="/formulaire-recu/:id" element={<ReceptionDetails />} />
               <Route path="/formulaire-chargeur-recu/:id" element={<ReceptionChargeurDetails />} />
 
+              {/* Supervision */}
+              <Route path="/toutes-les-livraisons-vue" element={<AllDeliveriesVue />} />
+              <Route path="/formulaire-vue/:id" element={<DeliveryDetailsVue/>} />
+              <Route path="/formulaire-chargeur-vue/:id" element={<DeliveryChargeurDetailsVue />} />
+
               {/* Stock chargeurs */}
               <Route path="/gestion-stock-chargeur" element={<GestionStockChargeur />} />
+
+              {/* Maintenance */}
+              <Route path="/toutes-les-livraisons-maintenance" element={<AllMaintenanceDeliveries />} />
 
               {/* Tables */}
               <Route path="/basic-tables" element={<BasicTables />} />

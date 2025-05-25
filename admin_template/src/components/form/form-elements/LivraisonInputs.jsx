@@ -18,7 +18,7 @@ import 'primeicons/primeicons.css';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { useNavigate } from "react-router";
 import { Merchants } from "../../../backend/livraisons/Merchants.js";
-import { ProductDeliveries } from "../../../backend/livraisons/productDeliveries.js";
+import { ProductDeliveries } from "../../../backend/livraisons/ProductDeliveries.js";
 import Swal from 'sweetalert2'
 import { Modal } from "../../ui/modal/index.tsx";
 
@@ -34,6 +34,7 @@ export default function LivraisonInputs() {
   const [isMOOVChecked, setMOOVChecked] = useState(false);
   const [terminals, setTerminals] = useState([]);
   const [terminalSN, setTerminalSN] = useState('');
+  const [terminalBanque, setTerminalBanque] = useState('');
   const [loadingMerchant, setLoadingMerchant] = useState(false);
   const [loadingDelivery, setLoadingDelivery] = useState(false);
   const [typeLivraison, setTypeLivraison] = useState('');
@@ -89,23 +90,51 @@ export default function LivraisonInputs() {
   },[])
 
   const handleConfirm = () => {
+    
+    let banque = ''
+    banque = filteredPointMarchand.map((terminal) => terminal.BANQUE).join("-");
+    console.log(banque)
+
     if(!livraisonID){
       setErrorAjout("Vous devez choisir le type de livraison !");
       return;
     }
-    if (!filteredPointMarchand || filteredPointMarchand.length === 0) {
+    if (!filteredPointMarchand || filteredPointMarchand.length === 0 || terminalSN.length < 10) {
       setErrorAjout("S/N invalide !");
       return;
     }
     const isDuplicate = produitsLivre.some(prod => prod.serialNumber === terminalSN);
     if (isDuplicate) {
-      setErrorAjout("Ce numéro de série a déjà été ajouté.");
+      setErrorAjout("Ce numéro de série a déjà été ajouté !");
+      return;
+    }
+    if (livraisonID == 1 && !banque){
+      setErrorAjout("Ce Terminal n'est pas bancaire !");
+      return;
+    }
+    if (livraisonID == 6 && !banque){
+      setErrorAjout("Ce Terminal n'est pas bancaire !");
+      return;
+    }
+    if (livraisonID == 6 && !(banque === 'ECOBANK' || banque === 'ECOBANK CI')){
+      setErrorAjout("Ce Terminal n'est pas ecobank !");
+      return;
+    }
+    if (livraisonID == 1 && (banque === 'ECOBANK' || banque === 'ECOBANK CI')){
+      setErrorAjout("Ce Terminal n'est pas GIM !");
       return;
     }
     const localMobileMoney = [];
-    if (isOrangeChecked) localMobileMoney.push("OM");
-    if (isMTNChecked) localMobileMoney.push("MTN");
-    if (isMOOVChecked) localMobileMoney.push("MOOV");
+     if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_ORANGE?.startsWith("07"))){
+      setOrangeChecked(true)};
+    if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_MTN?.startsWith("05"))){
+      setMTNChecked(true)};
+    if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_MOOV?.startsWith("01"))){
+      setMOOVChecked(true)};
+    
+    // if (isOrangeChecked) localMobileMoney.push("OM");
+    // if (isMTNChecked) localMobileMoney.push("MTN");
+    // if (isMOOVChecked) localMobileMoney.push("MOOV");
     
     setErrorAjout('')
     setIsConfirmModalOpen(true)
@@ -116,24 +145,31 @@ export default function LivraisonInputs() {
 
     console.log('Trying to ADD.....')
     const localMobileMoney = [];
-    if (isOrangeChecked) localMobileMoney.push("OM");
-    if (isMTNChecked) localMobileMoney.push("MTN");
-    if (isMOOVChecked) localMobileMoney.push("MOOV");
-    if(!livraisonID){
-      setErrorAjout("Vous devez choisir le type de livraison !");
-      return;
-    }
-    if (!filteredPointMarchand || filteredPointMarchand.length === 0) {
-      setErrorAjout("S/N invalide !");
-      return;
-    }
+    if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_ORANGE?.startsWith("07"))){
+      localMobileMoney.push("OM")};
+    if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_MTN?.startsWith("05"))){
+      localMobileMoney.push("MTN")};
+    if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_MOOV?.startsWith("01"))){
+      localMobileMoney.push("MOOV")};
+    // if(!livraisonID){
+    //   setErrorAjout("Vous devez choisir le type de livraison !");
+    //   return;
+    // }
+    // if (!filteredPointMarchand || filteredPointMarchand.length === 0) {
+    //   setErrorAjout("S/N invalide !");
+    //   return;
+    // }
 
-    const isDuplicate = produitsLivre.some(prod => prod.serialNumber === terminalSN);
-    if (isDuplicate) {
-      setErrorAjout("Ce numéro de série a déjà été ajouté.");
-      return;
-    }
-
+    // const isDuplicate = produitsLivre.some(prod => prod.serialNumber === terminalSN);
+    // if (isDuplicate) {
+    //   setErrorAjout("Ce numéro de série a déjà été ajouté.");
+    //   return;
+    // }
+    // if (livraisonID == 1 && !filteredPointMarchand.map((terminal) => terminal.BANQUE).join("-")){
+    //   setErrorAjout("Ce Ternminal n'est pas un TPE GIM");
+    //   return;
+    // }
+    
     const newProduit = {
       pointMarchand: filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(","),
       caisse: filteredPointMarchand.map((terminal) => terminal.TPE).join(","),
@@ -164,7 +200,7 @@ export default function LivraisonInputs() {
     if(produitsLivre.length == 0){
        Swal.fire({
       title: "Error",
-      text: "Vous devez ajouter au moins un (1) TPE.",
+      text: "Vous devez ajouter au moins un TPE.",
       icon: "error"
       });
       return;
@@ -266,7 +302,15 @@ export default function LivraisonInputs() {
                         </div>
                         <div>
                           <Label htmlFor="input">Numéro de série *</Label>
-                          <Input type="text" id="input" value={terminalSN} onChange={(e) => setTerminalSN(e.target.value)}/>
+                          <Input type="text" id="input" value={terminalSN} onChange={(e) =>{
+                            const value = e.target.value
+                            // Allow only digits
+                            if (/^\d*$/.test(value)){
+                            // Only allow up to 10 characters
+                              if (value.length <= 10) {
+                                setTerminalSN(value);
+                              }} 
+                              }}/>
                         </div>
                         <div>
                           <Label>Commentaire pour terminal</Label>
@@ -300,13 +344,40 @@ export default function LivraisonInputs() {
                         </div>
                         <div className="flex flex-col">
                           <div className="flex items-center gap-3 my-2">
-                            <Checkbox checked={isOrangeChecked} onChange={setOrangeChecked} label="Orange Money" />
+                            <Checkbox
+                             checked={
+                                filteredPointMarchand.length > 0 &&
+                                filteredPointMarchand.some((terminal) =>
+                                  terminal.NUM_ORANGE?.startsWith("07")
+                                )
+                              }
+                              onChange={(e)=>{}}
+                              readOnly
+                               label="Orange Money" />
                           </div>
                           <div className="flex items-center gap-3 my-2">
-                            <Checkbox checked={isMTNChecked} onChange={setMTNChecked} label="MTN Money" />
+                            <Checkbox 
+                            checked={
+                                filteredPointMarchand.length > 0 &&
+                                filteredPointMarchand.some((terminal) =>
+                                  terminal.NUM_MTN?.startsWith("05")
+                                )
+                              }
+                              onChange={(e)=>{}}
+                              readOnly
+                            label="MTN Money" />
                           </div>
                           <div className="flex items-center gap-3 my-2">
-                            <Checkbox checked={isMOOVChecked} onChange={setMOOVChecked} label="MOOV Money" />
+                            <Checkbox 
+                            checked={
+                                filteredPointMarchand.length > 0 &&
+                                filteredPointMarchand.some((terminal) =>
+                                  terminal.NUM_MOOV?.startsWith("01")
+                                )
+                              }
+                              onChange={(e)=>{}}
+                              readOnly 
+                            label="MOOV Money" />
                           </div>
                         </div>
                         <div>

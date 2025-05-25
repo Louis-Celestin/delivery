@@ -23,7 +23,8 @@ export default function AllDeliveriesList({ filterType }) {
     const [selectedStatus, setSelectedStatus] = useState(null);
     const statusOptions = [
         { label: 'En cours', value: 'en_cours' },
-        { label: 'Livré', value: 'livre' }
+        { label: 'Livré', value: 'livre' },
+        { label : 'Retourné', value: 'en_attente'},
     ];
     const [selectedType, setSelectedType] = useState(null)
     const typeOptions = [
@@ -115,6 +116,9 @@ export default function AllDeliveriesList({ filterType }) {
         } else if (deliveryForms.statut_livraison == 'livre'){
             statut = 'Livré';
             statutClass = 'text-xs border rounded-xl p-0.5 px-1 bg-green-300'
+        } else if (deliveryForms.statut_livraison == 'en_attente'){
+            statut = 'retourné';
+            statutClass = 'text-xs border rounded-xl p-0.5 px-1 bg-red-300'
         }
         return(
             <span className={statutClass}>{statut}</span>
@@ -147,11 +151,18 @@ export default function AllDeliveriesList({ filterType }) {
                         )}
                     </>
                 ) : (
-                    <Link to={linkModify}>
-                        <button className="mx-1 text-gray-500 text-theme-sm dark:text-gray-400">
-                            <i className="pi pi-pencil"></i>
-                        </button>
-                    </Link>
+                    <>
+                        {deliveryForms.statut_livraison == 'en_attente' ? 
+                        (<></>) :
+                        (
+                            <Link to={linkModify}>
+                                <button className="mx-1 text-gray-500 text-theme-sm dark:text-gray-400">
+                                    <i className="pi pi-pencil"></i>
+                                </button>
+                            </Link>
+                        )}
+                    </>
+                    
                 )}
             </span>
         )

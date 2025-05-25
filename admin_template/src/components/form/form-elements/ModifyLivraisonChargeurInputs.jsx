@@ -17,7 +17,8 @@ import 'primeicons/primeicons.css';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { useNavigate, useParams } from "react-router";
 import { Merchants } from "../../../backend/livraisons/Merchants.js";
-import { ProductDeliveries } from "../../../backend/livraisons/productDeliveries.js";
+import { ProductDeliveries } from "../../../backend/livraisons/ProductDeliveries.js";
+import { Modal } from "../../ui/modal/index.tsx";
 import Swal from 'sweetalert2'
 
 
@@ -36,8 +37,8 @@ export default function ModifyLivraisonChargeurInputs() {
   const [loadingDeliveryInfos, setLoadingDeliveryInfos] = useState(false);
   const [loadingMerchant, setLoadingMerchant] = useState(false);
   const [loadingDelivery, setLoadingDelivery] = useState(false);
-  const [typeLivraison, setTypeLivraison] = useState('');
-  const [livraisonID, setLivraisonID] = useState();
+  const [typeLivraison, setTypeLivraison] = useState('CHARGEUR');
+  const [livraisonID, setLivraisonID] = useState(5);
   const [message, setMessage] = useState("");
   const [mobileMoney, setMobileMoney] = useState([]);
   const [produitsLivreTable, setProduitsLivresTable] = useState([]);
@@ -46,6 +47,8 @@ export default function ModifyLivraisonChargeurInputs() {
   const [errorFrom, setErrorForm] = useState(null);
   const [errorAjout, setErrorAjout] = useState(null);
   const [errorDeliver, setErrorDeliver] = useState(null);
+  const [isConfirmModalOpen , setIsConfirmModalOpen] = useState(false)
+  const [messageTPE, setMessageTPE] = useState('')
   
   useEffect( ()=>{
     const fetchDeliveryInfos = async () => {
@@ -86,6 +89,56 @@ export default function ModifyLivraisonChargeurInputs() {
     fetchTerminalInfos();
     
     },[id])
+
+   const handleConfirm = () => {
+    
+    let banque = ''
+    banque = filteredPointMarchand.map((terminal) => terminal.BANQUE).join("-");
+
+    if(!livraisonID){
+      setErrorAjout("Vous devez choisir le type de livraison !");
+      return;
+    }
+    if (!filteredPointMarchand || filteredPointMarchand.length === 0 || terminalSN.length < 10) {
+      setErrorAjout("S/N invalide !");
+      return;
+    }
+    const isDuplicate = produitsLivre.some(prod => prod.serialNumber === terminalSN);
+    if (isDuplicate) {
+      setErrorAjout("Ce numéro de série a déjà été ajouté !");
+      return;
+    }
+    // if (livraisonID == 1 && !banque){
+    //   setErrorAjout("Ce Terminal n'est pas bancaire !");
+    //   return;
+    // }
+    // if (livraisonID == 6 && !banque){
+    //   setErrorAjout("Ce Terminal n'est pas bancaire !");
+    //   return;
+    // }
+    // if (livraisonID == 6 && !(banque === 'ECOBANK' || banque === 'ECOBANK CI')){
+    //   setErrorAjout("Ce Terminal n'est pas ecobank !");
+    //   return;
+    // }
+    // if (livraisonID == 1 && (banque === 'ECOBANK' || banque === 'ECOBANK CI')){
+    //   setErrorAjout("Ce Terminal n'est pas GIM !");
+    //   return;
+    // }
+    const localMobileMoney = [];
+     if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_ORANGE?.startsWith("07"))){
+      setOrangeChecked(true)};
+    if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_MTN?.startsWith("05"))){
+      setMTNChecked(true)};
+    if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_MOOV?.startsWith("01"))){
+      setMOOVChecked(true)};
+    
+    // if (isOrangeChecked) localMobileMoney.push("OM");
+    // if (isMTNChecked) localMobileMoney.push("MTN");
+    // if (isMOOVChecked) localMobileMoney.push("MOOV");
+    
+    setErrorAjout('')
+    setIsConfirmModalOpen(true)
+  }
     
 
   const handleAjout = (e) => {
@@ -108,6 +161,7 @@ export default function ModifyLivraisonChargeurInputs() {
       pointMarchand: filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(", "),
       caisse: filteredPointMarchand.map((terminal) => terminal.TPE).join(","),
       serialNumber: terminalSN,
+      commentaireTPE: messageTPE,
     };
   
     setProduitsLivresTable((prev) => [...prev, newProduit]);
@@ -115,6 +169,8 @@ export default function ModifyLivraisonChargeurInputs() {
   
     // Optional: Reset form fields
     setTerminalSN('');
+    setMessageTPE('')
+    setIsConfirmModalOpen(false)
     }
     
 
@@ -122,7 +178,11 @@ export default function ModifyLivraisonChargeurInputs() {
     e.preventDefault();
 
     if(produitsLivre.length == 0){
-      setErrorDeliver("Veuillez ajouter des produits")
+      Swal.fire({
+        title: "Error",
+        text: "Vous devez ajouter au moins un TPE",
+        icon: "error"
+      });
       return;
     }
 
@@ -131,8 +191,8 @@ export default function ModifyLivraisonChargeurInputs() {
     const type_livraison_id = 5
     const user_id = userId;
     const isAncienne = false;
-    const statut_livraison = 'en_attente'
-    const nom_livreur = 'YAO ORNELLA'
+    const statut_livraison = 'en_cours'
+
 
     console.log('Trying to create form...')
     console.log('Commentaire : ',commentaire)
@@ -142,7 +202,7 @@ export default function ModifyLivraisonChargeurInputs() {
     console.log('Produits livrés : ',produitsLivre)
 
     try{
-    const response = await productDeliveries.updateLivraison(id, produitsLivre, commentaire, statut_livraison, type_livraison_id, nom_livreur)
+    const response = await productDeliveries.updateLivraison(id, produitsLivre, commentaire, statut_livraison, type_livraison_id, user_id)
     console.log(response);
     console.log('Formulaire modifié')
     Swal.fire({
@@ -194,26 +254,10 @@ export default function ModifyLivraisonChargeurInputs() {
                             <span className="text-xs">Modifiez une livraison de chargeur</span>
                             <span className="text-3xl"><PencilIcon /></span> 
                         </div>
-
-                        <div>
-                          <Label htmlFor="input">Numéro de série</Label>
-                          <Input type="text" id="input" value={terminalSN} onChange={(e) => setTerminalSN(e.target.value)}
-                          error={errorAjout}/>
+                        <div className="pb-3 text-center">
+                            <span className="text-sm font-semibold">Informations générales</span>
                         </div>
-                        <div>
-                          <Label>Point Marchand</Label>
-                          <Input type="text" id="input"
-                                  className="cursor-default"
-                                  value={filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(",")}
-                                  readOnly
-                                  />
-                        </div>
-                        <div>
-                          <Input type="text" id="input" 
-                                  value={filteredPointMarchand.map((terminal) => terminal.TPE).join(",")}
-                                  className="hidden"/>
-                        </div>
-                        <div>
+                         <div>
                           <Label>Description</Label>
                           <TextArea
                             value={message}
@@ -222,8 +266,47 @@ export default function ModifyLivraisonChargeurInputs() {
                             placeholder="Ajoutez un commentaire"
                           />
                         </div>
+                        <div className="pb-3 text-center">
+                            <span className="text-sm font-semibold">Informations sur produits</span>
+                        </div>
+
                         <div>
-                          <button onClick={handleAjout} className="w-full bg-green-400 rounded-2xl h-10 flex items-center justify-center">
+                          <Label htmlFor="input">Numéro de série *</Label>
+                          <Input type="text" id="input" value={terminalSN} onChange={(e) =>{
+                            const value = e.target.value
+                            // Allow only digits
+                            if (/^\d*$/.test(value)){
+                            // Only allow up to 10 characters
+                              if (value.length <= 10) {
+                                setTerminalSN(value);
+                              }} 
+                              }}
+                            />
+                        </div>
+                        <div>
+                          <Label>Point Marchand</Label>
+                          <Input type="text" id="input"
+                                  className="cursor-default"
+                                  value={filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(" - ")}
+                                  readOnly
+                                  />
+                        </div>
+                         <div>
+                            <Label>Commentaire pour terminal</Label>
+                            <TextArea
+                              value={messageTPE}
+                              onChange={(value) => setMessageTPE(value)}
+                              rows={2}
+                              placeholder="Ajoutez un commentaire"
+                            />
+                        </div>
+                        <div>
+                          <Input type="text" id="input" 
+                                  value={filteredPointMarchand.map((terminal) => terminal.TPE).join(" - ")}
+                                  className="hidden"/>
+                        </div>
+                        <div>
+                          <button onClick={handleConfirm} className="w-full bg-green-400 rounded-2xl h-10 flex items-center justify-center">
                             <span>Ajouter</span>
                             <span className="text-2xl"><PlusIcon /></span>
                           </button>
@@ -358,6 +441,56 @@ export default function ModifyLivraisonChargeurInputs() {
             }
         </div>
       </div>
+      <Modal isOpen={isConfirmModalOpen} onClose={() => setIsConfirmModalOpen(false)} className="p-4 max-w-xl">
+        <div className="p-6 mt-5">
+          <div>
+            <span>Vous allez ajouter un terminal pour livraison :  <span className="font-bold text-red-700">{typeLivraison}</span></span>
+          </div>
+          <div>
+            <div>
+              <span>S/N terminal : <span className="font-bold text-red-700">{terminalSN}</span></span>
+            </div>
+            <div>
+              <span>Point Marchand : <span className="font-bold text-red-700">{filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join("%")}</span></span>
+            </div>
+            {/* <div>
+              <span> Banque : <span className="font-bold text-red-700">{filteredPointMarchand.map((terminal) => terminal.BANQUE).join("%")}</span></span>
+            </div> */}
+            {/* <div className="flex flex-col">
+              <span>Mobile Money : </span>
+              <ul>
+                <li className="font-bold text-red-700">
+                  {isOrangeChecked ? 
+                    (<> Orange Money </>):
+                    (<></>)
+                  }
+                </li>
+                <li className="font-bold text-red-700">
+                  {isMTNChecked ? 
+                    (<> MTN Money </>):
+                    (<></>)
+                  }
+                </li>
+                <li className="font-bold text-red-700">
+                  {isMOOVChecked ? 
+                    (<> MOOV Money </>):
+                    (<></>)
+                  }
+                </li>
+              </ul>
+              
+              
+            </div> */}
+          </div>
+        </div>
+        <div className='w-full mt-6 flex justify-center items-center'>
+          <button
+            onClick={handleAjout}
+            className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
+            Valider
+          </button>
+        </div>
+      </Modal>
     </>
   );
 }

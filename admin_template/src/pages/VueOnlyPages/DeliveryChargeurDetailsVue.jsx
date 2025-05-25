@@ -16,7 +16,7 @@ import { ProductDeliveries } from '../../backend/livraisons/productDeliveries';
 
 
 
-export default function DeliveryChargeurDetails () {
+export default function DeliveryChargeurDetailsVue () {
     
     const productDeliveries = new ProductDeliveries()
     const { id } = useParams();
@@ -124,15 +124,8 @@ export default function DeliveryChargeurDetails () {
                             </div>
 
                         ) : (
-                            <>  
-                                {recu ? 
-                                (
-                                    <></>
-                                ) : (
-                                    <Link to={`/form-modify-nouvelle-livraison/${deliveryDetails.id_livraison}`}>
-                                        <button className='m-3 text-2xl'><span><i className="pi pi-pencil"></i></span></button>
-                                    </Link>
-                                )}
+                            <>
+                                
                             </>
                         )}
                     </div>

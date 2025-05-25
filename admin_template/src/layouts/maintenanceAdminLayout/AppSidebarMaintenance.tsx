@@ -14,10 +14,9 @@ import {
   PlugInIcon,
   TableIcon,
   UserCircleIcon,
-  CableDataIcon,
 } from "../../icons";
 import { useSidebar } from "../../context/SidebarContext";
-import SidebarWidget from "./SidebarWidgetDelivery";
+import SidebarWidget from "./SidebarWidgetMaintenance";
 
 type NavItem = {
   name: string;
@@ -30,11 +29,7 @@ const navItems: NavItem[] = [
   {
     icon: <GridIcon />,
     name: "Dashboard",
-    subItems: [
-      { name: "Semaine en cours", path: "/", pro: false },
-      // { name: "Statistiques livraisons", path: "/statistiques-livraisons", pro: false },
-      { name: "Stock chargeur", path: "/gestion-stock-chargeur", pro: false },
-    ],
+    subItems: [{ name: "Semaine en cours", path: "/", pro: false }],
   },
   // {
   //   icon: <CalenderIcon />,
@@ -50,22 +45,11 @@ const navItems: NavItem[] = [
     name: "Formulaire",
     icon: <ListIcon />,
     subItems: [
-      {name: "Toutes les livraisons", path:"/toutes-les-livraisons", pro: false},
-      { name: "Nouvelle Livraison TPE", path: "/form-livraison", pro: false },
-      { name: "Ancienne Livraison", path: "/form-ancienne-livraison", pro: false },
-      {name: "Livraison chargeur", path:"/form-livraison-chargeur", pro: false},
-      // { name: "Form", path: "/form-elements", pro: false },
+      {name: "Livraisons Maintenance", path:"/toutes-les-livraisons-maintenance", pro: false},
+      // { name: "Form", path: "/form-elements", pro: false }
     ],
     
   },
-  // {
-  //   name: "Stock Chargeurs",
-  //   icon: <CableDataIcon />,
-  //   subItems: [
-  //     { name: "Ajout et Retour", path: "/gestion-stock-chargeur", pro: false },
-  //   ],
-    
-  // },
   // {
   //   name: "Tables",
   //   icon: <TableIcon />,

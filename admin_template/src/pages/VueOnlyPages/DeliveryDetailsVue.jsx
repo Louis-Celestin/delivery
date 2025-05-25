@@ -16,7 +16,7 @@ import { ProductDeliveries } from '../../backend/livraisons/productDeliveries';
 
 
 
-export default function DeliveryChargeurDetails () {
+export default function DeliveryDetailVue() {
     
     const productDeliveries = new ProductDeliveries()
     const { id } = useParams();
@@ -31,7 +31,7 @@ export default function DeliveryChargeurDetails () {
     const [statutLivraison, setStatutLivraison] = useState('en attente');
     const [statutClass, setStatutClass] = useState('text-sm rounded-xl p-1 bg-orange-100 text-orange-500 font-bold')
     const [recu, setRecu] = useState(false);
-
+    
     const formatDate = (date) => {
         const d = new Date(date);
         return d.toLocaleDateString('fr-FR'); // or use any locale you want
@@ -60,7 +60,10 @@ export default function DeliveryChargeurDetails () {
                         setTypeLivraison("TPE MOBILE")
                       } else if(data.type_livraison_id == 5){
                         setTypeLivraison("CHARGEUR")
+                      } else if(data.type_livraison_id == 6){
+                        setTypeLivraison("TPE ECOBANK")
                       }
+                      
                       setDateLivraison(formatDate(data.date_livraison))
                       setCommentaire(data.commentaire)
                       if(data.statut_livraison == 'livre'){
@@ -105,7 +108,7 @@ export default function DeliveryChargeurDetails () {
             {loading ?
                 (<>Loading...</>) :
             (<>
-                <PageBreadcrumb pageTitle="Livraison | CHARGEUR"/>
+                <PageBreadcrumb pageTitle={`Livraison | ${typeLivraison}`}/>
                 <div>
                     <div className='my-3 flex justify-between items-center'>
                         <span>{`Livraison du ${dateLivraison}`}</span>
@@ -124,15 +127,8 @@ export default function DeliveryChargeurDetails () {
                             </div>
 
                         ) : (
-                            <>  
-                                {recu ? 
-                                (
-                                    <></>
-                                ) : (
-                                    <Link to={`/form-modify-nouvelle-livraison/${deliveryDetails.id_livraison}`}>
-                                        <button className='m-3 text-2xl'><span><i className="pi pi-pencil"></i></span></button>
-                                    </Link>
-                                )}
+                            <>
+                                
                             </>
                         )}
                     </div>
@@ -185,7 +181,7 @@ export default function DeliveryChargeurDetails () {
                                     className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                                     S/N
                                 </TableCell>
-                                {/* <TableCell
+                                <TableCell
                                     isHeader
                                     className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                                     Banque
@@ -204,7 +200,7 @@ export default function DeliveryChargeurDetails () {
                                     isHeader
                                     className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                                     MOOV
-                                </TableCell> */}
+                                </TableCell>
                                 </TableRow>
                             </TableHeader>
                             {/* Table Body */}
@@ -227,10 +223,10 @@ export default function DeliveryChargeurDetails () {
                                         )}
                                     </TableCell>
                                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                                        {item.serialNumber}
+                                    {item.serialNumber}
                                     </TableCell>
-                                    {/* <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                                        {item.banque}
+                                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                                    {item.banque}
                                     </TableCell>
                                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                                     {item.mobile_money.includes("OM") ?
@@ -243,7 +239,7 @@ export default function DeliveryChargeurDetails () {
                                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                                     {item.mobile_money.includes("MOOV") ?
                                         ( <i className="pi pi-check" style={{ color: 'green' }}></i> ) : ""}
-                                    </TableCell> */}
+                                    </TableCell>
                                 </TableRow>
                                 ))}
                             </TableBody>

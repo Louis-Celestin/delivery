@@ -60,6 +60,9 @@ import { ReactComponent as TransferIcon } from "./arrow-transfer-diagonal-3-soli
 import { ReactComponent as ReceiveBoxIcon } from  "./package-receive.svg?react"
 import { ReactComponent as RefreshTimeIcon } from "./refresh-time.svg?react"
 import { ReactComponent as BaselineSearch } from "./baseline-search.svg?react"
+import { ReactComponent as ReturnArrow } from "./return-2-solid.svg?react"
+import { ReactComponent as MaintenanceCircle } from "./maintenance-warning.svg?react"
+import { ReactComponent as SimpleInfo } from "./outline-info.svg?react"
 export {
   ErrorHexaIcon,
   AlertHexaIcon,
@@ -122,4 +125,7 @@ export {
   ReceiveBoxIcon,
   RefreshTimeIcon,
   BaselineSearch,
+  ReturnArrow,
+  MaintenanceCircle,
+  SimpleInfo,
 };

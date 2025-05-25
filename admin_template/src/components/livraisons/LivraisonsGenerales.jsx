@@ -9,7 +9,7 @@ import { ProductDeliveries } from "../../backend/livraisons/ProductDeliveries.js
 import DatePicker from "../form/date-picker.tsx"
 import { startOfWeek, endOfWeek, format, getWeek } from "date-fns";
 
-export default function LivraisonsGenerales() {
+export default function LivraisonsGenerales({ startDate, endDate }) {
     
 
     const [loading, setLoading] = useState(false);
@@ -25,8 +25,8 @@ export default function LivraisonsGenerales() {
 
     const currentWeek = getWeek(new Date(), { weekStartsOn: 1 });
     const getFormattedDate = (date) => format(date, 'yyyy-MM-dd');
-    const startDate = startOfWeek(new Date(), { weekStartsOn: 1 });
-    const endDate = endOfWeek(new Date(), { weekStartsOn: 1 })
+    // const startDate = startOfWeek(new Date(), { weekStartsOn: 1 });
+    // const endDate = endOfWeek(new Date(), { weekStartsOn: 1 })
     
 
     useEffect(() => {
@@ -34,8 +34,10 @@ export default function LivraisonsGenerales() {
 
             setLoading(true);
             try {
-                const startDate = startOfWeek(new Date(), { weekStartsOn: 1 });
-                const endDate = endOfWeek(new Date(), { weekStartsOn: 1 });
+                // const startDate = startOfWeek(new Date(), { weekStartsOn: 1 });
+                // const endDate = endOfWeek(new Date(), { weekStartsOn: 1 });
+
+                console.log("Livraison gen date :  ",startDate)
                 const allData = await productDeliveries.getAllLivraisons();
 
                 const filtered = allData.filter(item => {
@@ -78,7 +80,7 @@ export default function LivraisonsGenerales() {
         };
 
     fetchFilteredData();
-}, []);
+}, [startDate,endDate]);
 
 
     return (

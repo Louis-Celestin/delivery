@@ -6,13 +6,13 @@ import { startOfWeek, endOfWeek, format, getWeek, formatDate } from "date-fns";
 import { ListIcon, CableDataIcon, PhoneSetting } from "../../icons/index.ts";
 import { ProgressSpinner } from 'primereact/progressspinner';
 
-export default function LivraisonsPieStats() {
+export default function LivraisonsPieStats({ startDate, endDate }) {
 
     const productDeliveries = new ProductDeliveries();
     const [chartData, setChartData] = useState({});
     const [chartOptions, setChartOptions] = useState({});
-    const startDate = startOfWeek(new Date(), { weekStartsOn: 1 });
-    const endDate = endOfWeek(new Date(), { weekStartsOn: 1 })
+    // const startDate = startOfWeek(new Date(), { weekStartsOn: 1 });
+    // const endDate = endOfWeek(new Date(), { weekStartsOn: 1 })
     const [loading, setLoading] = useState(false);
 
     const [tpeGIM, setTPEGIM] = useState(0)
@@ -23,7 +23,6 @@ export default function LivraisonsPieStats() {
     const [tpeEcobank, setTPEEcobank] = useState(0)
 
     useEffect(() => {
-
         const fetchStatsTPE = async () =>{
             if (!startDate || !endDate) return;
             setLoading(true);
@@ -142,7 +141,7 @@ export default function LivraisonsPieStats() {
                 setLoading(false)
             }
         }; fetchStatsTPE();
-    }, []);
+    }, [startDate,endDate]);
     return (
         <>
             <div className="grid grid-cols-1">

@@ -12,9 +12,6 @@ export default function GestionStockChargeur() {
                     <div className="col-span-3">
                         <ChargeurInfos />
                     </div>
-                    <div className="col-span-9">
-                        <AjoutRetourChargeur />
-                    </div>
                 </div>
             </div>
         </>

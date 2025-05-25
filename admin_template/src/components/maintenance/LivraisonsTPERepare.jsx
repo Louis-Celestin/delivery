@@ -1,51 +1,49 @@
 import { useEffect, useState } from "react"
-import { InfoIcon, ReceiveBoxIcon } from "../../icons"
+import { MaintenanceCircle, PhoneSetting } from "../../icons"
 
 import { ProductDeliveries } from "../../backend/livraisons/productDeliveries"
-import { startOfWeek, endOfWeek, format, getWeek } from "date-fns";
 
 import { ProgressSpinner } from 'primereact/progressspinner';
 
 
-export default function LivraisonsRecu({ startDate, endDate }) {
+export default function LivraisonsTPERepare() {
 
     const delivery = new ProductDeliveries()
     const [loading, setLoading] = useState(false)
     const [count, setCount] = useState(0);
 
-    useEffect( () =>{
-        const fetchLivraisonsRecues = async () =>{
-            try{
-                setLoading(true);
-                // const startDate = startOfWeek(new Date(), { weekStartsOn: 1 });
-                // const endDate = endOfWeek(new Date(), { weekStartsOn: 1 });
 
+    useEffect( () =>{
+        const fetchLivraisonsTPERepare = async ({ startDate, endDate }) =>{
+            try{
+                setLoading(true)
                 let data = await delivery.getAllLivraisons()
 
-                const livraisonsRecues = data.filter(item => {
+                const livraisonsTPERepare = data.filter(item => {
                     let deliveryDate
                     if(item.validations.length > 0){
                         deliveryDate = new Date(item.validations[0].date_validation);
                     }
                     return  deliveryDate >= startDate && 
                             deliveryDate <= endDate &&
-                            item.statut_livraison === "livre";
+                            item.statut_livraison === "livre" &&
+                            item.type_livraison_id === 2;
                 });
-                setCount(livraisonsRecues.length);
+                setCount(livraisonsTPERepare.length);
             } catch(error){
                 console.log(error)
             } finally{
                 setLoading(false)
             }
-        }; fetchLivraisonsRecues();
-    },[startDate,endDate]);
+        }; fetchLivraisonsTPERepare();
+    },[]);
     return (
         <>
-            <div className="rounded-2xl border border-blue-300 bg-white px-4 pb-3 pt-4 dark:border-gray-800">
+            <div className="rounded-2xl border border-slate-400  bg-white px-4 pb-3 pt-4 dark:border-gray-800">
                 <div>
                     <div className="flex items-center border-b pb-3 mb-3">
-                        <span><InfoIcon /></span>
-                        <span>Livraisons Reçues</span>
+                        <span><MaintenanceCircle /></span>
+                        <span>Livraisons TPE réparés</span>
                     </div>
                     <div className="flex justify-between items-center text-title-md">
                         <>
@@ -54,7 +52,7 @@ export default function LivraisonsRecu({ startDate, endDate }) {
                                 (<span>{count}</span>)
                             }
                         </>
-                        <span className="text-blue-400"><ReceiveBoxIcon /></span>
+                        <span className="text-slate-500"><PhoneSetting /></span>
                     </div>
                 </div>
             </div>

@@ -1,7 +1,7 @@
 import {useState, useEffect} from "react";
 import { Link } from "react-router";
 
-import { ProductDeliveries } from "../../backend/livraisons/productDeliveries"
+import { ProductDeliveries } from "../../backend/livraisons/ProductDeliveries"
 import { generatePdf } from "../../backend/receptions/GeneratePDF";
 
 import Input from "../form/input/InputField";
@@ -13,7 +13,7 @@ import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Dropdown } from 'primereact/dropdown';
 
-export default function AllReceptionsList() {
+export default function AllDeliveriesVueList({ filterType }) {
 
     const productDeliveries = new ProductDeliveries();
     const [deliveryForms, setDeliveryForms] = useState([]);
@@ -24,7 +24,7 @@ export default function AllReceptionsList() {
     const statusOptions = [
         { label: 'En cours', value: 'en_cours' },
         { label: 'Livré', value: 'livre' },
-        { label: 'Retourné', value: 'en_attente' }
+        { label : 'Retourné', value: 'en_attente'},
     ];
     const [selectedType, setSelectedType] = useState(null)
     const typeOptions = [
@@ -37,7 +37,7 @@ export default function AllReceptionsList() {
     ]
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
- 
+
     useEffect( ()=>{
         const fetchDeliveryForms = async () =>{
             setLoading(true);
@@ -57,25 +57,23 @@ export default function AllReceptionsList() {
     const formatDate = (date) => {
         const d = new Date(date);
         return d.toLocaleDateString('fr-FR'); // or use any locale you want
-    };
+      };
 
-    const handleGeneratePdf = async (id) =>{
-            setPrintingId(id);
-            try{
-                const blob = await generatePdf(id);
-                const fileURL = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
-                window.open(fileURL, '_blank');
-            }catch(error){
-                console.log(error)
-            }finally{
-                setPrintingId(null);
-            }
-    }
-
+      const handleGeneratePdf = async (id) =>{
+                  setPrintingId(id);
+                  try{
+                      const blob = await generatePdf(id);
+                      const fileURL = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+                      window.open(fileURL, '_blank');
+                  }catch(error){
+                      console.log(error)
+                  }finally{
+                      setPrintingId(null);
+                  }
+      }
     const titleTemplate = (deliveryForms) =>{
         let title = '';
-        let linkSee = `/formulaire-recu/${deliveryForms.id_livraison}`;
-
+        let link = `/formulaire-vue/${deliveryForms.id_livraison}`;
         if (deliveryForms.type_livraison_id === 1) {
             title = 'Livraison TPE GIM';
         } else if (deliveryForms.type_livraison_id === 2) {
@@ -86,16 +84,15 @@ export default function AllReceptionsList() {
             title = 'Livraison TPE MOBILE'; // fallback or other types
         } else if (deliveryForms.type_livraison_id === 5) {
             title = 'Livraison CHARGEUR'; // fallback or other types
-            linkSee = `/formulaire-chargeur-recu/${deliveryForms.id_livraison}`
+            link = `/formulaire-chargeur-vue/${deliveryForms.id_livraison}`
         } else if (deliveryForms.type_livraison_id === 6) {
-            title = 'Livraison TPE ECOBANK'; // fallback or other types
+            title = 'Livraison TPE ECOBANK'
         }
         return (
             <span className="flex flex-col">
-                <Link key={deliveryForms.id_livraison}
-                    to={linkSee} >
-                    <span className="font-bold text-sm">{title}</span>
-                </Link>
+              <Link to={link}>
+                <span className="font-bold text-sm">{title}</span>
+              </Link>
               <span className="text-xs font-extralight">#{deliveryForms.id_livraison}</span>
             </span>
           );
@@ -117,7 +114,7 @@ export default function AllReceptionsList() {
             statut = 'en cours';
             statutClass = 'text-xs border rounded-xl p-0.5 bg-orange-300'
         } else if (deliveryForms.statut_livraison == 'livre'){
-            statut = 'Reçu';
+            statut = 'Livré';
             statutClass = 'text-xs border rounded-xl p-0.5 px-1 bg-green-300'
         } else if (deliveryForms.statut_livraison == 'en_attente'){
             statut = 'retourné';
@@ -128,10 +125,12 @@ export default function AllReceptionsList() {
         )
     }
     const actionTemplate = (deliveryForms) =>{
-        let linkSee = `/formulaire-recu/${deliveryForms.id_livraison}`;
+        let linkSee = `/formulaire-vue/${deliveryForms.id_livraison}`;
+        // let linkModify = `/form-modify-nouvelle-livraison/${deliveryForms.id_livraison}`
 
         if (deliveryForms.type_livraison_id === 5) {
-            linkSee = `/formulaire-chargeur-recu/${deliveryForms.id_livraison}`
+            linkSee = `/formulaire-chargeur-vue/${deliveryForms.id_livraison}`
+            // linkModify = `/form-modify-livraison-chargeur/${deliveryForms.id_livraison}`
         }
         return(
             <span className="flex items-center">
@@ -143,18 +142,13 @@ export default function AllReceptionsList() {
                 {deliveryForms.statut_livraison == 'livre' ? 
                 (
                     <>
-                        <>
-                            {printingId === deliveryForms.id_livraison ? (
-                                <span className='mx-1'>
-                                    <ProgressSpinner style={{width: '15px', height: '15px'}} strokeWidth="8" animationDuration=".5s" />
-                                </span>
-                            ) : (
-                                <button onClick={() => handleGeneratePdf(deliveryForms.id_livraison)}><span className="mx-1"><i className="pi pi-print"></i></span></button>
-                            )}
-                        </>
-                        {/* <button className="mx-1">
-                            <i className="pi pi-pencil"></i>
-                        </button> */}
+                        {printingId === deliveryForms.id_livraison ? (
+                            <span className='mx-1'>
+                                <ProgressSpinner style={{width: '15px', height: '15px'}} strokeWidth="8" animationDuration=".5s" />
+                            </span>
+                        ) : (
+                            <button onClick={() => handleGeneratePdf(deliveryForms.id_livraison)}><span className="mx-1 text-gray-500 text-theme-sm dark:text-gray-400"><i className="pi pi-print"></i></span></button>
+                        )}
                     </>
                 ) : (
                     <></>
@@ -173,7 +167,6 @@ export default function AllReceptionsList() {
           : true;
         return matchesStatus && matchesType && matchesStartDate && matchesEndDate && matchesGlobalFilter;
       });
-
 
 
     return(
@@ -220,6 +213,14 @@ export default function AllReceptionsList() {
                         showIcon
                         />
                     </div>
+                    {/* <div className="flex items-center">
+                        <span>
+                            <Link to={"/form-livraison"} className="bg-green-400 p-3 rounded-2xl ">
+                                Nouvelle livraison
+                            </Link>
+                        </span>
+                    </div> */}
+                    
                 </div>
                 <div className="p-6 pt-0">
                     <span className="text-md text-gray-600 dark:text-gray-300">

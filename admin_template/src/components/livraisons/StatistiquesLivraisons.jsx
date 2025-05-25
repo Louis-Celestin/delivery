@@ -109,7 +109,7 @@ export default function StatistiquesLivraisons() {
                     />
                   </div>
                 </div>
-              </div>
+            </div>
             <div className="grid grid-cols-1 gap-2">
                 <div className="grid grid-cols-4 gap-2 md:gap-6 mb-6">
                     <div className="col-span-2 space-y-6">
