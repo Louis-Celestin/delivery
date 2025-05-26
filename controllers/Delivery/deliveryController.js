@@ -135,6 +135,7 @@ const deliver = async (req, res) => {
         
       }
 
+      
       // Fonction de génération de mail
       const sendMail = require("../../utils/emailSender");
       const receivers = await prisma.users.findMany({
@@ -158,13 +159,13 @@ const deliver = async (req, res) => {
       `;
 
       // 3. Send email to each receiver
-      // for (const receiver of receivers) {
-      //   await sendMail({
-      //     to: receiver.email,
-      //     subject,
-      //     html,
-      //   });
-      // }
+      for (const receiver of receivers) {
+        await sendMail({
+          to: receiver.email,
+          subject,
+          html,
+        });
+      }
       }
   
       res.status(201).json({
