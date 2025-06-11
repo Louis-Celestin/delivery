@@ -20,6 +20,7 @@ import { useNavigate } from "react-router";
 import { Merchants } from "../../../backend/livraisons/Merchants.js";
 import { ProductDeliveries } from "../../../backend/livraisons/productDeliveries.js";
 import Swal from 'sweetalert2'
+import { Modal } from "../../ui/modal/index.tsx";
 
 
 export default function LivraisonChargeurInputs(){
@@ -47,6 +48,7 @@ export default function LivraisonChargeurInputs(){
   const [errorDeliver, setErrorDeliver] = useState(null);
 
   const [messageTPE, setMessageTPE] = useState('')
+  const [isConfirmModalOpen , setIsConfirmModalOpen] = useState(false)
   
   useEffect( ()=>{
     const fetchTerminalInfos = async () => {
@@ -65,6 +67,61 @@ export default function LivraisonChargeurInputs(){
       }
     };fetchTerminalInfos();
   },[])
+
+  const handleConfirm = () => {
+    
+    // let banque = ''
+    // banque = filteredPointMarchand.map((terminal) => terminal.BANQUE).join("-");
+    // console.log(banque)
+
+    // if(!livraisonID){
+    //   setErrorAjout("Vous devez choisir le type de livraison !");
+    //   return;
+    // }
+    if (!filteredPointMarchand || filteredPointMarchand.length === 0 || terminalSN.length < 10) {
+      setErrorAjout("S/N invalide !");
+      return;
+    }
+    const isDuplicate = produitsLivre.some(prod => prod.serialNumber === terminalSN);
+    if (isDuplicate) {
+      setErrorAjout("Ce numéro de série a déjà été ajouté !");
+      return;
+    }
+    // if (livraisonID == 1 && !banque){
+    //   setErrorAjout("Ce Terminal n'est pas bancaire !");
+    //   return;
+    // }
+    // if (livraisonID == 6 && !banque){
+    //   setErrorAjout("Ce Terminal n'est pas bancaire !");
+    //   return;
+    // }
+    // if (livraisonID == 6 && !(banque === 'ECOBANK' || banque === 'ECOBANK CI')){
+    //   setErrorAjout("Ce Terminal n'est pas ecobank !");
+    //   return;
+    // }
+    // if (livraisonID == 1 && (banque === 'ECOBANK' || banque === 'ECOBANK CI')){
+    //   setErrorAjout("Ce Terminal n'est pas GIM !");
+    //   return;
+    // }
+    // if(livraisonID == 4 && banque){
+    //   setErrorAjout("Ce terminal est bancaire.");
+    //   return;
+    // }
+    const localMobileMoney = [];
+     if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_ORANGE?.startsWith("07"))){
+      setOrangeChecked(true)};
+    if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_MTN?.startsWith("05"))){
+      setMTNChecked(true)};
+    if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_MOOV?.startsWith("01"))){
+      setMOOVChecked(true)};
+    
+    // if (isOrangeChecked) localMobileMoney.push("OM");
+    // if (isMTNChecked) localMobileMoney.push("MTN");
+    // if (isMOOVChecked) localMobileMoney.push("MOOV");
+    
+    setErrorAjout('')
+    setIsConfirmModalOpen(true)
+  }
 
   const handleAjout = (e) => {
     e.preventDefault(); // prevent page reload
@@ -95,6 +152,7 @@ export default function LivraisonChargeurInputs(){
     setMessageTPE('')
 
     setErrorAjout('')
+    setIsConfirmModalOpen(false)
   }
     
 
@@ -186,8 +244,15 @@ export default function LivraisonChargeurInputs(){
                         </div>
                         <div>
                           <Label htmlFor="input">Numéro de série *</Label>
-                          <Input type="text" id="input" value={terminalSN} onChange={(e) => setTerminalSN(e.target.value)}
-                          error={errorAjout}/>
+                          <Input type="text" id="input" value={terminalSN} onChange={(e) =>{
+                            const value = e.target.value
+                            // Allow only digits
+                            if (/^\d*$/.test(value)){
+                            // Only allow up to 10 characters
+                              if (value.length <= 10) {
+                                setTerminalSN(value);
+                              }} 
+                              }}/>
                         </div>
                         <div>
                           <Label>Commentaire pour terminal</Label>
@@ -212,7 +277,7 @@ export default function LivraisonChargeurInputs(){
                                   className="hidden"/>
                         </div>
                         <div>
-                          <button onClick={handleAjout} className="w-full bg-green-400 rounded-2xl h-10 flex items-center justify-center">
+                          <button onClick={handleConfirm} className="w-full bg-green-400 rounded-2xl h-10 flex items-center justify-center">
                             <span>Ajouter</span>
                             <span className="text-2xl"><PlusIcon /></span>
                           </button>
@@ -346,6 +411,56 @@ export default function LivraisonChargeurInputs(){
             }
         </div>
       </div>
+      <Modal isOpen={isConfirmModalOpen} onClose={() => setIsConfirmModalOpen(false)} className="p-4 max-w-xl">
+        <div className="p-6 mt-5">
+          <div>
+            <span>Vous allez ajouter un terminal pour livraison :  <span className="font-bold text-red-700">CHARGEUR</span></span>
+          </div>
+          <div>
+            <div>
+              <span>S/N terminal : <span className="font-bold text-red-700">{terminalSN}</span></span>
+            </div>
+            <div>
+              <span>Point Marchand : <span className="font-bold text-red-700">{filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join("%")}</span></span>
+            </div>
+            {/* <div>
+              <span> Banque : <span className="font-bold text-red-700">{filteredPointMarchand.map((terminal) => terminal.BANQUE).join("%")}</span></span>
+            </div>
+            <div className="flex flex-col">
+              <span>Mobile Money : </span>
+              <ul>
+                <li className="font-bold text-red-700">
+                  {isOrangeChecked ? 
+                    (<> Orange Money </>):
+                    (<></>)
+                  }
+                </li>
+                <li className="font-bold text-red-700">
+                  {isMTNChecked ? 
+                    (<> MTN Money </>):
+                    (<></>)
+                  }
+                </li>
+                <li className="font-bold text-red-700">
+                  {isMOOVChecked ? 
+                    (<> MOOV Money </>):
+                    (<></>)
+                  }
+                </li>
+              </ul>
+              
+              
+            </div> */}
+          </div>
+        </div>
+        <div className='w-full mt-6 flex justify-center items-center'>
+          <button
+            onClick={handleAjout}
+            className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
+            Valider
+          </button>
+        </div>
+      </Modal>
     </>
   );
 }

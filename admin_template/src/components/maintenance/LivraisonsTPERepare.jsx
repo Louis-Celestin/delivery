@@ -6,7 +6,7 @@ import { ProductDeliveries } from "../../backend/livraisons/productDeliveries"
 import { ProgressSpinner } from 'primereact/progressspinner';
 
 
-export default function LivraisonsTPERepare() {
+export default function LivraisonsTPERepare({ startDate, endDate }) {
 
     const delivery = new ProductDeliveries()
     const [loading, setLoading] = useState(false)
@@ -14,7 +14,7 @@ export default function LivraisonsTPERepare() {
 
 
     useEffect( () =>{
-        const fetchLivraisonsTPERepare = async ({ startDate, endDate }) =>{
+        const fetchLivraisonsTPERepare = async () =>{
             try{
                 setLoading(true)
                 let data = await delivery.getAllLivraisons()

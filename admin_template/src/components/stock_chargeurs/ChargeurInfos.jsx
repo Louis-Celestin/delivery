@@ -5,6 +5,10 @@ import { ProgressSpinner } from "primereact/progressspinner"
 export default function ChargeurInfos() {
 
     const [loading, setLoading] = useState(false)
+
+    useEffect( ()=>{
+        
+    })
     return (
         <>
             <div>

@@ -48,6 +48,8 @@ import DeliveryChargeurDetailsVue from "./pages/VueOnlyPages/DeliveryChargeurDet
 
 import AllMaintenanceDeliveries from "./pages/MaintenancePages/AllMaintenanceDeliveries";
 
+import DonneeGenerales from "./pages/DeliveryPages/DonneeGenerales"
+
 export default function App() {
   return (
     <>
@@ -60,6 +62,7 @@ export default function App() {
               {/* Dashboard */}
               <Route index element={<DashboardRedirector />} />
               <Route path="/statistiques-livraisons" element={<StatistiquesLivraisons />} />
+              <Route path="/donnees-generales" element={<DonneeGenerales />} />
               {/* Others Page */}
               <Route path="/profile" element={<UserProfiles />} />
               <Route path="/calendar" element={<Calendar />} />

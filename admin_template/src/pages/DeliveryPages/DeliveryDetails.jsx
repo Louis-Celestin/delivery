@@ -12,11 +12,13 @@ import {
 
 import 'primeicons/primeicons.css';
 
-import { ProductDeliveries } from '../../backend/livraisons/productDeliveries';
+import { ProductDeliveries } from '../../backend/livraisons/ProductDeliveries';
+import { generatePdf } from '../../backend/receptions/GeneratePDF';
+import { ProgressSpinner } from 'primereact/progressspinner';
 
 
 
-export default function DeliveryDetail() {
+export default function DeliveryDetails() {
     
     const productDeliveries = new ProductDeliveries()
     const { id } = useParams();

@@ -113,6 +113,26 @@ export default function LivraisonsGenerales({ startDate, endDate }) {
                             <div>
                                 <div className="flex items-center justify-between">
                                     <h3 className="text-sm dark:text-white/90">
+                                        TPE MAJ GIM
+                                    </h3>
+                                    <span className="text-3xl p-1 rounded-xl bg-purple-500 ">
+                                        <BaseLinePhoneIcon />
+                                    </span>
+                                </div>
+                                <div>
+                                    {loading ? 
+                                    (<ProgressSpinner style={{width: '15px', height: '15px'}} strokeWidth="8" animationDuration=".5s" />):
+                                    (<span className="text-3xl font-bold my-3 dark:text-white">{tpeMAJ}</span>)}
+                                    
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="col-span-2 space-y-6">
+                        <div className="rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800 dark:bg-gray-800">
+                            <div>
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-sm dark:text-white/90">
                                         TPE MOBILE
                                     </h3>
                                     <span className="text-3xl p-1 rounded-xl bg-green-300 ">
@@ -133,16 +153,16 @@ export default function LivraisonsGenerales({ startDate, endDate }) {
                             <div>
                                 <div className="flex items-center justify-between">
                                     <h3 className="text-sm dark:text-white/90">
-                                        TPE MAJ
+                                        TPE ECOBANK
                                     </h3>
-                                    <span className="text-3xl p-1 rounded-xl bg-purple-500 ">
+                                    <span className="text-3xl p-1 rounded-xl bg-cyan-200 ">
                                         <BaseLinePhoneIcon />
                                     </span>
                                 </div>
                                 <div>
                                     {loading ? 
                                     (<ProgressSpinner style={{width: '15px', height: '15px'}} strokeWidth="8" animationDuration=".5s" />):
-                                    (<span className="text-3xl font-bold my-3 dark:text-white">{tpeMAJ}</span>)}
+                                    (<span className="text-3xl font-bold my-3 dark:text-white">{tpeEcobank}</span>)}
                                     
                                 </div>
                             </div>
@@ -188,26 +208,7 @@ export default function LivraisonsGenerales({ startDate, endDate }) {
                             </div>
                         </div>
                     </div>
-                    <div className="col-span-2 space-y-6">
-                        <div className="rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800 dark:bg-gray-800">
-                            <div>
-                                <div className="flex items-center justify-between">
-                                    <h3 className="text-sm dark:text-white/90">
-                                        TPE ECOBANK
-                                    </h3>
-                                    <span className="text-3xl p-1 rounded-xl bg-cyan-200 ">
-                                        <BaseLinePhoneIcon />
-                                    </span>
-                                </div>
-                                <div>
-                                    {loading ? 
-                                    (<ProgressSpinner style={{width: '15px', height: '15px'}} strokeWidth="8" animationDuration=".5s" />):
-                                    (<span className="text-3xl font-bold my-3 dark:text-white">{tpeEcobank}</span>)}
-                                    
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    
                 </div>
             </div>
            

@@ -13,6 +13,9 @@ import {
 import 'primeicons/primeicons.css';
 
 import { ProductDeliveries } from '../../backend/livraisons/productDeliveries';
+import { generatePdf } from '../../backend/receptions/GeneratePDF';
+import { ProgressSpinner } from 'primereact/progressspinner';
+
 
 
 
@@ -45,7 +48,7 @@ export default function DeliveryChargeurDetails () {
                     setLoading(true);
                     let data;
                     data = await productDeliveries.getOneLivraison(id);
-                    console.log(data)
+                    // console.log(data)
                     setDeliveryDetails({
                         ...data,
                         produitsLivre: JSON.parse(data.produitsLivre)

@@ -20,6 +20,7 @@ import { useNavigate } from "react-router";
 import { Merchants } from "../../../backend/livraisons/Merchants.js";
 import { ProductDeliveries } from "../../../backend/livraisons/productDeliveries.js";
 import Swal from 'sweetalert2'
+import { Modal } from "../../ui/modal/index.tsx";
 
 
 export default function AncienneLivraisonInputs() {
@@ -50,6 +51,9 @@ export default function AncienneLivraisonInputs() {
     const [errorFrom, setErrorForm] = useState(null);
     const [errorAjout, setErrorAjout] = useState(null);
     const [errorDeliver, setErrorDeliver] = useState(null);
+    const [messageTPE, setMessageTPE] = useState('');
+    const [isConfirmModalOpen , setIsConfirmModalOpen] = useState(false);
+    const [validateurName, setValidateurName] = useState('');
 
     const formatDate = (date) => {
         const d = new Date(date);
@@ -63,13 +67,15 @@ export default function AncienneLivraisonInputs() {
         setLivraisonID(1);
       }else if(value == 'TPE REPARE'){
         setLivraisonID(2);
-      }else if(value == 'TPE MAJ'){
+      }else if(value == 'TPE MAJ GIM'){
         setLivraisonID(3)
       }else if(value == 'TPE MOBILE'){
         setLivraisonID(4)
       }else if(value == 'CHARGEUR'){
         setLivraisonID(5)
-      }
+      }else if(value == 'TPE ECOBANK'){
+      setLivraisonID(6)
+    }
     };
     
     // useEffect( ()=>{
@@ -89,6 +95,85 @@ export default function AncienneLivraisonInputs() {
     //     }
     //   };fetchTerminalInfos();
     // },[])
+
+    const handleConfirm = () => {
+    
+      // let banque = ''
+      // banque = filteredPointMarchand.map((terminal) => terminal.BANQUE).join("-");
+      // console.log(banque)
+
+      if(!livraisonID){
+        setErrorAjout("Vous devez choisir le type de livraison !");
+        return;
+      }
+      // if (!filteredPointMarchand || filteredPointMarchand.length === 0 || terminalSN.length < 10) {
+      //   setErrorAjout("S/N invalide !");
+      //   return;
+      // }
+      const isDuplicate = produitsLivre.some(prod => prod.serialNumber === terminalSN);
+      if (isDuplicate) {
+        setErrorAjout("Ce numéro de série a déjà été ajouté !");
+        return;
+      }
+      if (livraisonID == 1 && !banque){
+        setErrorAjout("Ce Terminal n'est pas bancaire !");
+        return;
+      }
+      if (livraisonID == 6 && !banque){
+        setErrorAjout("Ce Terminal n'est pas bancaire !");
+        return;
+      }
+      if (livraisonID == 6 && !(banque === 'ECOBANK' || banque === 'ECOBANK CI')){
+        setErrorAjout("Ce Terminal n'est pas Ecobank !");
+        return;
+      }
+      if (livraisonID == 1 && (banque === 'ECOBANK' || banque === 'ECOBANK CI')){
+        setErrorAjout("Ce Terminal n'est pas GIM !");
+        return;
+      }
+      if(livraisonID == 4 && banque){
+        setErrorAjout("Ce terminal est bancaire.");
+        return;
+      }
+      if(!livreurName){
+        setErrorAjout("Vous devez préciser le nom du livreur !")
+        return;
+      }
+      if(!validateurName){
+        setErrorAjout("Vous devez préciser le nom du receveur !")
+        return;
+      }
+      if(!dateLivraison){
+        setErrorAjout("Vous devez préciser la date de livraison !")
+        return;
+      }
+      if(!pointMarchand){
+        setErrorAjout("Vous devez préciser le nom du point marchand !")
+        return;
+      }
+      if(!caisse){
+        setErrorAjout("Vous devez préciser la caisse TPE !")
+        return;
+      }
+      if(livraisonID == 4 && banque){
+        setErrorAjout("Ce terminal est bancaire.");
+        return;
+      }
+      // const localMobileMoney = [];
+      // if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_ORANGE?.startsWith("07"))){
+      //   setOrangeChecked(true)};
+      // if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_MTN?.startsWith("05"))){
+      //   setMTNChecked(true)};
+      // if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_MOOV?.startsWith("01"))){
+      //   setMOOVChecked(true)};
+      
+      // if (isOrangeChecked) localMobileMoney.push("OM");
+      // if (isMTNChecked) localMobileMoney.push("MTN");
+      // if (isMOOVChecked) localMobileMoney.push("MOOV");
+      
+      setErrorAjout('')
+      setIsConfirmModalOpen(true)
+    }
   
     const handleAjout = (e) => {
       e.preventDefault(); // prevent page reload
@@ -98,82 +183,80 @@ export default function AncienneLivraisonInputs() {
       if (isOrangeChecked) localMobileMoney.push("OM");
       if (isMTNChecked) localMobileMoney.push("MTN");
       if (isMOOVChecked) localMobileMoney.push("MOOV");
-      if (!terminalSN){
-        setErrorAjout("S/N invalide")
-      }else{
-          const newProduitLivreTable = {
-            pointMarchand: pointMarchand,
-            caisse: caisse,
-            serialNumber: terminalSN,
-            banque: banque,
-            isOrangeChecked,
-            isMTNChecked,
-            isMOOVChecked,
-          };
-          const newProduitLivre = {
-            pointMarchand: pointMarchand,
-            caisse: caisse,
-            serialNumber: terminalSN,
-            banque: banque,
-            mobile_money: localMobileMoney,
-          };
-        
-          setProduitsLivresTable((prev) => [...prev, newProduitLivreTable]);
-          setProduitsLivres((prev) => [...prev, newProduitLivre]);
-        
-          // Optional: Reset form fields
-          setTerminalSN('');
-          setPointMarchand('');
-          setBanque('');
-          setCaisse('');
-          setOrangeChecked(false);
-          setMTNChecked(false);
-          setMOOVChecked(false);
-          setMessage('');
-          setMobileMoney([]);
-        };
-      }
+
+      const newProduit = {
+        pointMarchand: pointMarchand,
+        caisse: caisse,
+        serialNumber: terminalSN,
+        banque: banque,
+        mobile_money: localMobileMoney,
+        commentaireTPE: messageTPE,
+      };
+  
+      setProduitsLivresTable((prev) => [...prev, newProduit]);
+      setProduitsLivres((prev) => [...prev, newProduit]);
+  
+      // Optional: Reset form fields
+      setTerminalSN('');
+      setMessageTPE('');
+      setPointMarchand('')
+      setCaisse('');
+      setBanque('');
+      setOrangeChecked(false);
+      setMTNChecked(false);
+      setMOOVChecked(false);
+      setMobileMoney([]);
+
+      setErrorAjout('')
+      setIsConfirmModalOpen(false)
+    }
       
   
     const handleDeliver = async (e) => {
       e.preventDefault();
       if(produitsLivre.length == 0){
-        setErrorDeliver("Veuillez ajouter des produits")
-      }else{
-        setLoadingDelivery(true);
-        const commentaire = message;
-        const type_livraison_id = livraisonID
-        const user_id = userId;
-        const isAncienne = true;
-        const nom_livreur = livreurName
-    
-        console.log('Trying to create form...')
-        console.log('Commentaire : ',commentaire)
-        console.log('ID Livraison : ',type_livraison_id)
-        console.log('ID User : ', user_id)
-        console.log('Ancienne ? ', isAncienne)
-        console.log('Nom livreur : ', nom_livreur)
-        console.log('Date livraison : ', dateLivraison)
-        console.log('Produits livrés : ',produitsLivre)
-    
-        try{
-        const response = await productDeliveries.deliverOld(commentaire, type_livraison_id, isAncienne, dateLivraison, nom_livreur, produitsLivre)
-        console.log(response);
-        console.log('Formulaire créé')
         Swal.fire({
-          title: "Succès",
-          text: "Formulaire créé avec succès",
-          icon: "success"
+        title: "Error",
+        text: "Vous devez ajouter au moins un TPE.",
+        icon: "error"
         });
-        navigate('/toutes-les-livraisons');
-        }catch (error) {
-          console.log('error')
-          setError('Erreur lors de la génération du formulaire');
-        }finally{
-          setProduitsLivres([])
-          setProduitsLivresTable([])
-          setLoadingDelivery(false)
-        }
+        return;
+      }
+      
+      setLoadingDelivery(true);
+      const commentaire = message;
+      const type_livraison_id = livraisonID
+      const user_id = userId;
+      const isAncienne = true;
+      const nom_livreur = livreurName
+      const nom_validateur = validateurName
+  
+      console.log('Trying to create form...')
+      console.log('Commentaire : ',commentaire)
+      console.log('ID Livraison : ',type_livraison_id)
+      console.log('ID User : ', user_id)
+      console.log('Ancienne ? ', isAncienne)
+      console.log('Nom livreur : ', nom_livreur)
+      console.log('Date livraison : ', dateLivraison)
+      console.log('Produits livrés : ',produitsLivre)
+  
+      try{
+      const response = await productDeliveries.deliverOld(commentaire, type_livraison_id, user_id, isAncienne, dateLivraison, nom_livreur, nom_validateur, produitsLivre)
+      console.log(response);
+      console.log('Formulaire créé')
+      Swal.fire({
+        title: "Succès",
+        text: "Formulaire créé avec succès",
+        icon: "success"
+      });
+      navigate('/toutes-les-livraisons');
+      }catch (error) {
+        console.log('error')
+        setError('Erreur lors de la génération du formulaire');
+      }finally{
+        setProduitsLivres([])
+        setProduitsLivresTable([])
+        setLoadingDelivery(false)
       }
     }
     
@@ -185,9 +268,10 @@ export default function AncienneLivraisonInputs() {
     const options_livraison = [
       { value: "TPE GIM", label: "TPE GIM" },
       { value: "TPE MOBILE", label: "TPE MOBILE" },
-      { value: "MISE A JOUR", label: "MISE A JOUR" },
+      { value: "TPE MAJ GIM", label: "MISE A JOUR GIM" },
       { value: "TPE REPARE", label: "TPE REPARE" },
       { value: "CHARGEUR", label: "CHARGEUR" },
+      { value: "TPE ECOBANK", label: "TPE ECOBANK" },
     ];
   
     const handleDelete = (indexToRemove) => {
@@ -211,7 +295,7 @@ export default function AncienneLivraisonInputs() {
                 </div>
               ) : (
                     <>
-                      <ComponentCard className="w-1/2 border-green-500" title={`Ancienne Livraison ${typeLivraison}`}>
+                      <ComponentCard className="md:w-1/2 w-full border-green-500" title={`Ancienne Livraison ${typeLivraison}`}>
                         <div className="flex items-center justify-between border-b pb-3 text-green-600">
                             <span className="text-xs">Rédigez une ancienne livraison</span>
                            <span className="text-3xl"><RefreshTimeIcon /></span> 
@@ -221,7 +305,7 @@ export default function AncienneLivraisonInputs() {
                         </div>
                         <div className="space-y-6">
                           <div>
-                            <Label>Type de Livraison</Label>
+                            <Label>Type de Livraison *</Label>
                             <Select
                               options={options_livraison}
                               placeholder="Select an option"
@@ -230,39 +314,68 @@ export default function AncienneLivraisonInputs() {
                             />
                           </div>
                           <div>
-                            <Label>Nom du Livreur</Label>
+                            <Label>Nom du Livreur *</Label>
                             <Input type="text" id="input"
                                     value={livreurName} onChange={(e) => setLivreurName(e.target.value)}
                                     />
                           </div>
                           <div>
+                            <Label>Nom du Receveur *</Label>
+                            <Input type="text" id="input"
+                                    value={validateurName} onChange={(e) => setValidateurName(e.target.value)}
+                                    />
+                          </div>
+                          <div>
                             <DatePicker
-                                id="date-picker"
-                                label="Date Livraison"
-                                placeholder="Select a date"
-                                onChange={(dates, currentDateString) => {
-                                // Handle your logic
-                                    console.log(currentDateString)
-                                    setDateLivraison(currentDateString)
-                                }}
+                              id="date-picker"
+                              label="Date Livraison *"
+                              placeholder="Select a date"
+                              onChange={(dates, currentDateString) => {
+                              // Handle your logic
+                                  console.log(currentDateString)
+                                  setDateLivraison(currentDateString)
+                              }}
                             />
-                            </div>
+                          </div>
+                          <div>
+                            <Label>Description</Label>
+                            <TextArea
+                              value={message}
+                              onChange={(value) => setMessage(value)}
+                              rows={4}
+                              placeholder="Ajoutez un commentaire"
+                            />
+                          </div>
                         <div className="pb-3 text-center">
                             <span className="text-sm font-semibold">Informations sur produits</span>
                         </div>
                           <div>
-                            <Label htmlFor="input">Numéro de série</Label>
-                            <Input type="text" id="input" value={terminalSN} onChange={(e) => setTerminalSN(e.target.value)}
-                            error={errorAjout}/>
+                            <Label htmlFor="input">Numéro de série *</Label>
+                            <Input type="text" id="input" value={terminalSN} onChange={(e) =>{
+                            const value = e.target.value
+                            // Allow only digits
+                            if (/^\d*$/.test(value)){
+                            // Only allow up to 10 characters
+                              if (value.length <= 10) {
+                                setTerminalSN(value);}}}}/>
                           </div>
                           <div>
-                            <Label>Point Marchand</Label>
+                            <Label>Commentaire pour terminal</Label>
+                            <TextArea
+                              value={messageTPE}
+                              onChange={(value) => setMessageTPE(value)}
+                              rows={2}
+                              placeholder="Ajoutez un commentaire"
+                            />
+                          </div>
+                          <div>
+                            <Label>Point Marchand *</Label>
                             <Input type="text" id="input"
                                     value={pointMarchand} onChange={(e) => setPointMarchand(e.target.value)}
                                     />
                           </div>
                           <div>
-                            <Label>Caisse</Label>
+                            <Label>Caisse *</Label>
                             <Input type="text" id="input"
                                     value={caisse} onChange={(e) => setCaisse(e.target.value)}
                                     />
@@ -284,17 +397,9 @@ export default function AncienneLivraisonInputs() {
                               <Checkbox checked={isMOOVChecked} onChange={setMOOVChecked} label="MOOV Money" />
                             </div>
                           </div>
+                          
                           <div>
-                            <Label>Description</Label>
-                            <TextArea
-                              value={message}
-                              onChange={(value) => setMessage(value)}
-                              rows={4}
-                              placeholder="Ajoutez un commentaire"
-                            />
-                          </div>
-                          <div>
-                            <button onClick={handleAjout} className="w-full bg-green-400 rounded-2xl h-10 flex items-center justify-center">
+                            <button onClick={handleConfirm} className="w-full bg-green-400 rounded-2xl h-10 flex items-center justify-center">
                               <span>Ajouter</span>
                               <span className="text-2xl"><PlusIcon /></span>
                             </button>
@@ -366,6 +471,13 @@ export default function AncienneLivraisonInputs() {
                         <span className="block text-gray-500 text-theme-xs dark:text-gray-400">
                           {item.caisse}
                         </span>
+                        {item.commentaireTPE ? (
+                          <span className="block text-gray-700 text-theme-xs dark:text-gray-400">
+                          « {item.commentaireTPE} » 
+                          </span>
+                        ) : (
+                          <></>
+                        )}
                       </TableCell>
                       <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                         {item.serialNumber}
@@ -374,13 +486,16 @@ export default function AncienneLivraisonInputs() {
                         {item.banque}
                       </TableCell>
                       <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                        {item.isOrangeChecked ? <i className="pi pi-check" style={{ color: 'green' }}></i> : ""}
+                      {item.mobile_money.includes("OM") ?
+                        ( <i className="pi pi-check" style={{ color: 'green' }}></i> ) : ""}
                       </TableCell>
                       <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                        {item.isMTNChecked ? <i className="pi pi-check" style={{ color: 'green' }}></i> : ""}
+                        {item.mobile_money.includes("MTN") ?
+                          ( <i className="pi pi-check" style={{ color: 'green' }}></i> ) : ""}
                       </TableCell>
                       <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                        {item.isMOOVChecked ? <i className="pi pi-check" style={{ color: 'green' }}></i> : ""}
+                        {item.mobile_money.includes("MOOV") ?
+                          ( <i className="pi pi-check" style={{ color: 'green' }}></i> ) : ""}
                       </TableCell>
                       <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                         <button
@@ -417,6 +532,56 @@ export default function AncienneLivraisonInputs() {
               }
           </div>
         </div>
+        <Modal isOpen={isConfirmModalOpen} onClose={() => setIsConfirmModalOpen(false)} className="p-4 max-w-xl">
+          <div className="p-6 mt-5">
+            <div>
+              <span>Vous allez ajouter un terminal pour livraison :  <span className="font-bold text-red-700">{typeLivraison}</span></span>
+            </div>
+            <div>
+              <div>
+                <span>S/N terminal : <span className="font-bold text-red-700">{terminalSN}</span></span>
+              </div>
+              <div>
+                <span>Point Marchand : <span className="font-bold text-red-700">{pointMarchand}</span></span>
+              </div>
+              <div>
+                <span> Banque : <span className="font-bold text-red-700">{banque}</span></span>
+              </div>
+              <div className="flex flex-col">
+                <span>Mobile Money : </span>
+                <ul>
+                  <li className="font-bold text-red-700">
+                    {isOrangeChecked ? 
+                      (<> Orange Money </>):
+                      (<></>)
+                    }
+                  </li>
+                  <li className="font-bold text-red-700">
+                    {isMTNChecked ? 
+                      (<> MTN Money </>):
+                      (<></>)
+                    }
+                  </li>
+                  <li className="font-bold text-red-700">
+                    {isMOOVChecked ? 
+                      (<> MOOV Money </>):
+                      (<></>)
+                    }
+                  </li>
+                </ul>
+                
+                
+              </div>
+            </div>
+          </div>
+          <div className='w-full mt-6 flex justify-center items-center'>
+            <button
+              onClick={handleAjout}
+              className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
+              Valider
+            </button>
+          </div>
+        </Modal>
       </>
     );
 }

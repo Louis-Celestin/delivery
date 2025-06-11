@@ -13,6 +13,7 @@ import LivraisonsRecu from "../../components/receptions/LivraisonsRecu"
 import LivraisonsGenerales from "../../components/livraisons/LivraisonsGenerales"
 import LivraisonsPieStats from "../../components/livraisons/LivraisonsPieStats"
 import LivraisonsReturn from "../../components/receptions/LivraisonsReturn"
+import { RefreshTimeIcon } from "../../icons";
 
 import DatePicker from "../../components/form/date-picker";
 
@@ -26,6 +27,7 @@ export default function ReceiveDashboard() {
   const getFormattedDate = (date) => format(date, 'yyyy-MM-dd');
   const [startDate, setStartDate] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [endDate, setEndDate] = useState(endOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [isDateChanged, setIsDateChanged] = useState(false);
 
   return (
     <>
@@ -35,23 +37,45 @@ export default function ReceiveDashboard() {
             DASHBOARD RECEPTION
           </span>
           <div className="flex flex-col">
-            <span className="text-2xl">
-              Semaine {currentWeek}
-            </span>
+            {isDateChanged ? 
+            (
+              <></>
+            ) : (
+              <>
+                <span className="text-2xl">
+                  Semaine {currentWeek}
+                </span>
+              </>
+            )}
+            
             <span className="text-xs opacity-40">
               Du {getFormattedDate(startDate)} au {getFormattedDate(endDate)}
             </span>
           </div>
         </div>
         <div className="my-2">
-          <span className="border p-1 rounded-xl bg-green-300">
-            Cumul de la semaine
-          </span>
+          {isDateChanged ? 
+          (
+            <>
+              <div>
+                <button className="p-2 rounded-full bg-cyan-200 hover:bg-cyan-300" onClick={() => window.location.reload()}>
+                  <span className="text-blue-400 text-2xl">
+                    <RefreshTimeIcon />
+                  </span>
+                </button>
+              </div>
+            </>
+          ) :
+          (
+            <span className="border p-1 rounded-xl bg-green-300">
+              Cumul de la semaine
+            </span>
+          )}
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-6 space-y-3">
+      <div className="grid lg:grid-cols-2 md:grid-cols-2 gap-6 space-3 my-6">
         <div>
-            <div className="mb-6 p-6 flex justify-center border bg-white rounded-2xl">
+            <div className="p-6 flex justify-center border bg-white rounded-2xl">
               <div className="mx-3">
                 <DatePicker
                   id="date-picker-debut"
@@ -59,8 +83,9 @@ export default function ReceiveDashboard() {
                   placeholder={getFormattedDate(startDate)}
                   value={getFormattedDate(startDate)}
                   onChange={(dates, currentDateString) => {
-                      console.log("Date début changée : ",currentDateString)
-                      setStartDate(new Date(currentDateString));
+                    console.log("Date début changée : ",currentDateString)
+                    setStartDate(new Date(currentDateString))
+                    setIsDateChanged(true)
                   }}
                 />
               </div>
@@ -71,14 +96,15 @@ export default function ReceiveDashboard() {
                   placeholder={getFormattedDate(endDate)}
                   value={getFormattedDate(endDate)}
                   onChange={(dates, currentDateString) => {
-                      console.log("Date fin changée : ",currentDateString)
-                      setEndDate(new Date(currentDateString));
-                  }}
+                    console.log("Date fin changée : ",currentDateString)
+                    setEndDate(new Date(currentDateString))
+                    setIsDateChanged(true)
+                }}
                 />
               </div>
             </div>
         </div>
-        <div className="grid grid-cols-2 space-y-3 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
           <div className="">
             <LivraisonsAttente />
           </div>
@@ -88,7 +114,7 @@ export default function ReceiveDashboard() {
         </div>
       </div>
       
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid xl:grid-cols-2 gap-6 my-6">
         <div className="grid grid-cols-1">
           <LivraisonsGenerales startDate={startDate} endDate={endDate} />
         </div>
@@ -98,7 +124,7 @@ export default function ReceiveDashboard() {
       </div>
 
       <div className="grid grid-cols-2 gap-6">
-        <div className="grid grid-cols-2">
+        <div className="grid lg:grid-cols-2">
           <LivraisonsReturn startDate={startDate} endDate={endDate} />
         </div>
       </div>

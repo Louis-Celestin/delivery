@@ -18,7 +18,7 @@ import {Modal} from "../../components/ui/modal/index"
 import 'primeicons/primeicons.css';
 import { ProgressSpinner } from 'primereact/progressspinner';
 
-import { ProductDeliveries } from '../../backend/livraisons/productDeliveries';
+import { ProductDeliveries } from '../../backend/livraisons/ProductDeliveries';
 import { Reception } from '../../backend/receptions/Reception';
 import { generatePdf } from '../../backend/receptions/GeneratePDF';
 import Swal from 'sweetalert2'
@@ -178,10 +178,12 @@ export default function ReceptionDetails() {
         setLoadingValidate(true);
         const commentaire_return = message
         const livraison_id = id
+        const type_livraison_id = livraisonID
         
         console.log('Commentaire de retour : ', commentaire_return)
         console.log('id livraison : ', livraison_id)
         console.log('user id : ', user_id)
+        console.log('Type livraison : ', livraisonID)
 
         if(!commentaire_return){
             setErrorReturn("Ajoutez un commentaire avant de retourner une livraison!")
@@ -190,7 +192,7 @@ export default function ReceptionDetails() {
 
         try{
             setLoadingReturn(true)
-            const response = await reception.returnDelivery(livraison_id, commentaire_return, user_id);
+            const response = await reception.returnDelivery(livraison_id, commentaire_return, user_id, type_livraison_id);
             Swal.fire({
                     title: "Succès",
                     text: "Livraison retournée avec succès",

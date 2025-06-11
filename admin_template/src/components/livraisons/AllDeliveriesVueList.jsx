@@ -6,6 +6,7 @@ import { generatePdf } from "../../backend/receptions/GeneratePDF";
 
 import Input from "../form/input/InputField";
 import { Calendar } from 'primereact/calendar';
+import DatePicker from "../../components/form/date-picker";
 
 import 'primeicons/primeicons.css';
 import { ProgressSpinner } from 'primereact/progressspinner';
@@ -198,6 +199,25 @@ export default function AllDeliveriesVueList({ filterType }) {
                         className="w-full sm:w-64"
                     />
                     <div className="flex gap-2">
+                        <DatePicker
+                            id="date-picker-debut"
+                            label="Date de début"
+                            placeholder="Date de début"
+                            value={startDate}
+                            onChange={(dates, currentDateString) => {
+                                setStartDate(dates[0])}}
+                            dateFormat="dd/mm/yy"/>
+                        <DatePicker
+                            id="date-picker-fin"
+                            label="Date de fin"
+                            placeholder="Date de fin"
+                            value={endDate}
+                            onChange={(dates, currentDateString) => {
+                                console.log(dates[0])
+                                setEndDate(dates[0])}}
+                            dateFormat="dd/mm/yy"/>
+                    </div>
+                    {/* <div className="flex gap-2">
                         <Calendar
                         value={startDate}
                         onChange={(e) => setStartDate(e.value)}
@@ -212,7 +232,7 @@ export default function AllDeliveriesVueList({ filterType }) {
                         dateFormat="dd/mm/yy"
                         showIcon
                         />
-                    </div>
+                    </div> */}
                     {/* <div className="flex items-center">
                         <span>
                             <Link to={"/form-livraison"} className="bg-green-400 p-3 rounded-2xl ">

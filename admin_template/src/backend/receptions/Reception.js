@@ -18,13 +18,14 @@ export class Reception{
     }
   };
 
-  async returnDelivery(livraison_id, commentaire_return, user_id){
+  async returnDelivery(livraison_id, commentaire_return, user_id, type_livraison_id){
     try{
       const response = await axios.post(`${urlBase}/api/receive/returnDelivery`,
         {
           livraison_id,
           commentaire_return,
           user_id,
+          type_livraison_id,
         }
       )
       console.log(response)

@@ -1,11 +1,12 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import LivraisonsGenerales from "../../components/livraisons/LivraisonsGenerales"
 import LivraisonsPieStats from "../../components/livraisons/LivraisonsPieStats"
 import ChargeursReturn from "../../components/livraisons/ChargeursReturn"
 import LivraisonsReturn from "../../components/receptions/LivraisonsReturn"
 import DatePicker from "../../components/form/date-picker";
 import { startOfWeek, endOfWeek, format, getWeek, formatDate } from "date-fns";
+import { RefreshTimeIcon } from "../../icons";
 
 export default function DeliveryDashboard() {
 
@@ -13,6 +14,18 @@ export default function DeliveryDashboard() {
   const getFormattedDate = (date) => format(date, 'yyyy-MM-dd');
   const [startDate, setStartDate] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [endDate, setEndDate] = useState(endOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [isDateChanged, setIsDateChanged] = useState(false);
+
+  // useEffect( ()=>{
+  //   const checkDateWeek = () =>{
+  //     if(startDate != startOfWeek(new Date(), { weekStartsOn: 1 }) || endDate != endOfWeek(new Date(), { weekStartsOn: 1 }) ){
+  //       setIsDateChanged(true)
+  //       console.log('La date change')
+  //       console.log("Startdate : ",startDate)
+  //       console.log("Start of week : ",startOfWeek(new Date(), { weekStartsOn: 1 }))
+  //     }
+  //   }; checkDateWeek();
+  // },[])
 
   return (
     <>
@@ -22,21 +35,43 @@ export default function DeliveryDashboard() {
             DASHBOARD LIVRAISON
           </span>
           <div className="flex flex-col">
-            <span className="text-2xl">
-              Semaine {currentWeek}
-            </span>
+            {isDateChanged ? 
+            (
+              <></>
+            ) : (
+              <>
+                <span className="text-2xl">
+                  Semaine {currentWeek}
+                </span>
+              </>
+            )}
+            
             <span className="text-xs opacity-40">
               Du {getFormattedDate(startDate)} au {getFormattedDate(endDate)}
             </span>
           </div>
         </div>
         <div className="my-2">
-          <span className="border p-1 rounded-xl bg-green-300">
-            Cumul de la semaine
-          </span>
+          {isDateChanged ? 
+          (
+            <>
+              <div>
+                <button className="p-2 rounded-full bg-cyan-200 hover:bg-cyan-300" onClick={() => window.location.reload()}>
+                  <span className="text-blue-400 text-2xl">
+                    <RefreshTimeIcon />
+                  </span>
+                </button>
+              </div>
+            </>
+          ) :
+          (
+            <span className="border p-1 rounded-xl bg-green-300">
+              Cumul de la semaine
+            </span>
+          )}
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-6 space-y-6">
+      <div className="grid lg:grid-cols-2 md:grid-cols-2 gap-6 space-y-6">
         <div className="grid grid-cols-1">
           <div className="p-6 flex justify-center border bg-white rounded-2xl">
             <div className="mx-3">
@@ -47,7 +82,8 @@ export default function DeliveryDashboard() {
                 value={getFormattedDate(startDate)}
                 onChange={(dates, currentDateString) => {
                     console.log("Date début changée : ",currentDateString)
-                    setStartDate(new Date(currentDateString));
+                    setStartDate(new Date(currentDateString))
+                    setIsDateChanged(true)
                 }}
               />
             </div>
@@ -59,19 +95,20 @@ export default function DeliveryDashboard() {
                 value={getFormattedDate(endDate)}
                 onChange={(dates, currentDateString) => {
                     console.log("Date fin changée : ",currentDateString)
-                    setEndDate(new Date(currentDateString));
+                    setEndDate(new Date(currentDateString))
+                    setIsDateChanged(true)
                 }}
               />
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-6 mb-6">
+        <div className="grid sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2  gap-6 mb-6">
           <LivraisonsReturn startDate={startDate} endDate={endDate} />
-          <ChargeursReturn startDate={startDate} endDate={endDate} />
+          {/* <ChargeursReturn startDate={startDate} endDate={endDate} /> */}
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid xl:grid-cols-2 gap-6">
         <div className="grid grid-cols-1">
           <LivraisonsGenerales startDate={startDate} endDate={endDate} />
         </div>

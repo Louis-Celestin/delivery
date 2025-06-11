@@ -11,23 +11,25 @@ export class ProductDeliveries{
             user_id,
             isAncienne,
             produitsLivre});
-        console.log(response)
+        // console.log(response)
         return response.data;
       } catch (error) {
         throw error.response.data;
       }
     };
 
-    async deliverOld(commentaire, type_livraison_id, isAncienne, date_livraison, nom_livreur, produitsLivre){
+    async deliverOld(commentaire, type_livraison_id, user_id, isAncienne, date_livraison, nom_livreur, nom_validateur, produitsLivre){
       try {
-        const response = await axios.post(`${urlBase}/api/delivery/deliver`,
+        const response = await axios.post(`${urlBase}/api/delivery/deliverOld`,
            {commentaire,
             type_livraison_id,
+            user_id,
             isAncienne,
             date_livraison,
             nom_livreur,
+            nom_validateur,
             produitsLivre});
-        console.log(response)
+        // console.log(response)
         return response.data;
       } catch (error) {
         throw error.response.data;
@@ -37,7 +39,7 @@ export class ProductDeliveries{
     async getAllLivraisons(){
       try{
         const response = await axios.get(`${urlBase}/api/delivery/getAllLivraisons`)
-        console.log(response)
+        // console.log(response)
         return response.data;
       } catch(error){
         throw error.response.data
@@ -47,7 +49,7 @@ export class ProductDeliveries{
     async getOneLivraison(id){
       try{
         const response = await axios.get(`${urlBase}/api/delivery/getOneLivraison/${id}`)
-        console.log(response)
+        // console.log(response)
         return response.data;
       } catch(error){
         throw error.response.data
@@ -64,7 +66,7 @@ export class ProductDeliveries{
         user_id,
         });
 
-        console.log(response)
+        // console.log(response)
         return response.data;
       } catch(error){
         throw error.response.data

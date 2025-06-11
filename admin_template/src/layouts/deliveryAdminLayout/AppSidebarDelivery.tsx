@@ -32,8 +32,9 @@ const navItems: NavItem[] = [
     name: "Dashboard",
     subItems: [
       { name: "Semaine en cours", path: "/", pro: false },
+      // { name: "Données Générales", path:"/donnees-generales", pro: false},
       // { name: "Statistiques livraisons", path: "/statistiques-livraisons", pro: false },
-      { name: "Stock chargeur", path: "/gestion-stock-chargeur", pro: false },
+      // { name: "Stock chargeur", path: "/gestion-stock-chargeur", pro: false },
     ],
   },
   // {
@@ -51,9 +52,9 @@ const navItems: NavItem[] = [
     icon: <ListIcon />,
     subItems: [
       {name: "Toutes les livraisons", path:"/toutes-les-livraisons", pro: false},
-      { name: "Nouvelle Livraison TPE", path: "/form-livraison", pro: false },
+      { name: "Nouvelle Livraison", path: "/form-livraison", pro: false },
       { name: "Ancienne Livraison", path: "/form-ancienne-livraison", pro: false },
-      {name: "Livraison chargeur", path:"/form-livraison-chargeur", pro: false},
+      // {name: "Livraison chargeur", path:"/form-livraison-chargeur", pro: false},
       // { name: "Form", path: "/form-elements", pro: false },
     ],
     
