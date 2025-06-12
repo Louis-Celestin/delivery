@@ -121,7 +121,7 @@ const deliver = async (req, res) => {
           livraisonTypeName = 'TPE REPARE';
           break;
         case 3 :
-          livraisonTypeName = 'TPE MAJ';
+          livraisonTypeName = 'TPE MAJ GIM';
           break;
         case 4 :
           livraisonTypeName = 'TPE MOBILE';
@@ -135,12 +135,11 @@ const deliver = async (req, res) => {
         
       }
 
-      
       // Fonction de génération de mail
       const sendMail = require("../../utils/emailSender");
       const receivers = await prisma.users.findMany({
         where: {
-        role_id: 4,
+        role_id: 2,
         },
       });
       if (receivers && receivers.length > 0) {
@@ -221,9 +220,8 @@ const getOneLivraison = async (req, res) => {
   
   /* 
     Modification de la fonction updateLivraison.
-    Les données à update: produitsLivre, commentaire, type_livraison_id, date_livraison, qte_totale_livraison
-
-
+    Les données à update: produitsLivre, commentaire, type_livraison_id, 
+    date_livraison, qte_totale_livraison
   */
 const updateLivraison = async (req, res) => {
     const { id } = req.params;
@@ -409,7 +407,7 @@ const deleteLivraison = async (req, res) => {
         .replace("{{nom_expediteur}}", expediteurNom)
         .replace("{{nom_recepteur}}", livraison.validations[0].nom_recepteur || "Receveur")
         .replace("{{produitsRows}}", produitsRows)
-        .replace("{{signature}}", livraison.validations[0].signature)
+        .replace("{{signature}}", livraison.validations[0].signature || "Validé")
         .replace("{{date_validation}}", livraison.validations[0].date_validation ? formatDate(livraison.validations[0].date_validation) : "N/A");
         
   
@@ -438,11 +436,141 @@ const deleteLivraison = async (req, res) => {
     }
   };
   
+
+  /* Ajout d'une fonction deliverOld specialement pour les livraisons anciennes */
+const deliverOld = async (req, res) => {
+    const {
+      produitsLivre,
+      commentaire,
+      user_id,
+      nom_livreur,
+      nom_validateur,
+      type_livraison_id,
+      isAncienne,
+      date_livraison
+    } = req.body;
+  
+    try {
+
+      // Verification de l'agent livreur
+      const produits = typeof produitsLivre === "string"
+        ? JSON.parse(produitsLivre)
+        : produitsLivre;
+  
+      const typeLivraison = await prisma.typeLivraison.findUnique({
+        where: {
+          id_type_livraison: parseInt(type_livraison_id)
+        }
+      });
+  
+      if (!typeLivraison) {
+        return res.status(404).json({ message: "Type de livraison non trouvé" });
+      }  
+      let utilisateur = null;
+      if (!isAncienne) {
+        utilisateur = await prisma.users.findUnique({
+          where: {
+            id_user: parseInt(user_id)
+          }
+        });
+  
+        if (!utilisateur) {
+          return res.status(404).json({ message: "Utilisateur non trouvé" });
+        }
+      }
+  
+      const nouvelleLivraison = await prisma.livraison.create({
+        data: {
+          statut_livraison: "livre",
+          qte_totale_livraison: produits.length,
+          produitsLivre: JSON.stringify(produits),
+          commentaire,
+          nom_livreur: nom_livreur || null,
+          date_livraison: isAncienne && date_livraison
+            ? new Date(date_livraison)
+            : new Date(),
+          deleted: false,
+          type_livraison_id: parseInt(type_livraison_id),
+          user_id: utilisateur ? utilisateur.id_user : null
+        }
+      });
+  
+      // Si c’est une livraison de chargeurs, on traite les transactions
+      if (parseInt(type_livraison_id) === 5) {
+        for (const item of produits) {
+          const chargeur = await prisma.chargeurs.findUnique({
+            where: {
+              id_chargeur: parseInt(1)
+            }
+          });
+  
+          if (!chargeur) {
+            continue; // on ignore les chargeurs non trouvés
+          }
+  
+          const quantite = parseInt(item.quantite || 1);
+  
+          // Créer la transaction (type sortie)
+          await prisma.transactions.create({
+            data: {
+              type_transaction: "sortie",
+              quantite,
+              date_transaction: new Date(),
+              chargeurs : {connect : {
+                id_chargeur : parseInt(1)
+              }},
+              users: utilisateur ? {connect : {
+                id_user : parseInt(utilisateur.id_user)
+              }} : null
+            }
+          }).then((resultats)=>{
+            console.log(resultats)
+          }).catch(err=>{console.log(err)})
+  
+          // Mettre à jour le stock
+          await prisma.chargeurs.update({
+            where: { id_chargeur: parseInt(1) },
+            data: {
+              stock: {
+                decrement: quantite
+              }
+            }
+          });
+        }
+      }
+
+      let final_nom_validateur = nom_validateur;
+      let final_date_validation = new Date(date_livraison);
+
+      const newValidation = await prisma.validations.create({
+      data: {
+        livraison_id: parseInt(nouvelleLivraison.id_livraison),
+        commentaire,
+        user_id: null,
+        nom_recepteur: final_nom_validateur,
+        date_validation: final_date_validation,
+        signature: null,
+      },
+    });
+
+      res.status(201).json({
+        message: "Livraison enregistrée avec succès",
+        livraison: nouvelleLivraison,
+        newValidation
+      });
+  
+    } catch (error) {
+      console.error("Erreur lors de la livraison :", error);
+      res.status(500).json({ message: "Erreur interne", error });
+    }
+  };
+
 module.exports = {
     deliver,
     getAllLivraisons,
     getOneLivraison,
     updateLivraison,
     deleteLivraison,
-    generateLivraisonPDF
+    generateLivraisonPDF,
+    deliverOld,
 }

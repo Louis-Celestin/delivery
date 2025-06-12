@@ -195,6 +195,7 @@ const returnDelivery = async (req, res) => {
     livraison_id,
     commentaire_return,
     user_id,
+    type_livraison_id,
   } = req.body;
   try {
     const livraison = await prisma.livraison.findUnique({
@@ -243,6 +244,72 @@ const returnDelivery = async (req, res) => {
       where: { id_livraison: parseInt(livraison_id) },
       data: { statut_livraison: 'en_attente' },
     });
+
+    const livraisonProduits = await prisma.livraison.findUnique({
+      where: {
+        id_livraison: parseInt(livraison_id)
+      }
+    });
+
+    const produits = typeof livraisonProduits.produitsLivre === "string"
+        ? JSON.parse(livraisonProduits.produitsLivre)
+        : livraisonProduits.produitsLivre;
+
+    let livraisonTypeName = ''
+      switch(type_livraison_id){
+        case 1 :
+          livraisonTypeName = 'TPE GIM';
+          break;
+        case 2 :
+          livraisonTypeName = 'TPE REPARE';
+          break;
+        case 3 :
+          livraisonTypeName = 'TPE MAJ';
+          break;
+        case 4 :
+          livraisonTypeName = 'TPE MOBILE';
+          break;
+        case 5 :
+          livraisonTypeName = 'CHARGEUR';
+          break;
+        case 6 :
+          livraisonTypeName = 'TPE ECOBANK'; // Ajout du type ECOBANK.
+          break;
+        
+      }
+
+    // Fonction de génération de mail
+    const sendMail = require("../../utils/emailSender");
+    const livreurs = await prisma.users.findMany({
+      where: {
+      role_id: 4,
+      },
+    });
+    if (livreurs && livreurs.length > 0) {
+    // 2. Prepare email content
+    const subject = `LIVRAISON RETOURNÉE ${livraisonTypeName}`;
+    const html = `
+      <p>Bonjour,</p>
+      <p>Une livraison a été retournée.</p>
+      <ul>
+        <li><strong>Type de livraison:</strong> ${livraisonTypeName}</li>
+        <li><strong>Nombre de produits:</strong> ${produits.length}</li>
+      </ul>
+      <p>Pour raison : <strong>${commentaire_return}</strong></p>
+      </br>
+      </br>
+      <p>Green - Pay vous remercie.</p>
+    `;
+
+    // 3. Send email to each receiver
+    for (const livreur of livreurs) {
+      await sendMail({
+        to: livreur.email,
+        subject,
+        html,
+      });
+    }
+    }
 
     return res.status(201).json(newValidation);
   } catch (error) {
