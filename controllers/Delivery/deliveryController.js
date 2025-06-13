@@ -3,6 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
+const cloudinary = require("../../config/clouddinaryConifg");
 
 const formatDate = (isoDate) => {
   const date = new Date(isoDate);
@@ -10,6 +11,7 @@ const formatDate = (isoDate) => {
 };
 
 const deliver = async (req, res) => {
+  try {
     const {
       produitsLivre,
       commentaire,
@@ -19,131 +21,127 @@ const deliver = async (req, res) => {
       isAncienne,
       date_livraison
     } = req.body;
-  
-    try {
 
-      // Verification de l'agent livreur
-      const produits = typeof produitsLivre === "string"
-        ? JSON.parse(produitsLivre)
-        : produitsLivre;
-  
-      const typeLivraison = await prisma.typeLivraison.findUnique({
+    // Correction ici : gestion de produitsLivre (string JSON venant de form-data)
+    const produits = typeof produitsLivre === "string"
+      ? JSON.parse(produitsLivre)
+      : produitsLivre;
+
+    // Correction ici : isAncienne arrive en string depuis form-data => on convertit en bool
+    const isAncienneBool = (isAncienne === 'true' || isAncienne === true);
+
+    const typeLivraison = await prisma.typeLivraison.findUnique({
+      where: {
+        id_type_livraison: parseInt(type_livraison_id)
+      }
+    });
+
+    if (!typeLivraison) {
+      return res.status(404).json({ message: "Type de livraison non trouvé" });
+    }
+
+    let utilisateur = null;
+    if (!isAncienneBool) {
+      utilisateur = await prisma.users.findUnique({
         where: {
-          id_type_livraison: parseInt(type_livraison_id)
+          id_user: parseInt(user_id)
         }
       });
-  
-      if (!typeLivraison) {
-        return res.status(404).json({ message: "Type de livraison non trouvé" });
-      }  
-      let utilisateur = null;
-      if (!isAncienne) {
-        utilisateur = await prisma.users.findUnique({
+
+      if (!utilisateur) {
+        return res.status(404).json({ message: "Utilisateur non trouvé" });
+      }
+    }
+
+    // Gestion de l'upload Cloudinary
+    const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+      folder: "greenpay/signatures",
+    });
+
+    const signature_expediteur = uploadResult.secure_url;
+
+    if (!signature_expediteur) {
+      return res.status(400).json({ message: "Vous devez fournir une signature d'expéditeur." });
+    }
+
+    const nouvelleLivraison = await prisma.livraison.create({
+      data: {
+        statut_livraison: "en_cours",
+        qte_totale_livraison: produits.length,
+        produitsLivre: JSON.stringify(produits),
+        commentaire,
+        nom_livreur: nom_livreur || null,
+        date_livraison: isAncienneBool && date_livraison
+          ? new Date(date_livraison)
+          : new Date(),
+        deleted: false,
+        type_livraison_id: parseInt(type_livraison_id),
+        user_id: utilisateur ? utilisateur.id_user : null,
+        signature_expediteur: signature_expediteur || null
+      }
+    });
+
+    // Traitement spécifique pour les chargeurs (type 5)
+    if (parseInt(type_livraison_id) === 5) {
+      for (const item of produits) {
+        const chargeur = await prisma.chargeurs.findUnique({
           where: {
-            id_user: parseInt(user_id)
+            id_chargeur: 1
           }
         });
-  
-        if (!utilisateur) {
-          return res.status(404).json({ message: "Utilisateur non trouvé" });
+
+        if (!chargeur) {
+          continue;
         }
-      }
-  
-      const nouvelleLivraison = await prisma.livraison.create({
-        data: {
-          statut_livraison: "en_cours",
-          qte_totale_livraison: produits.length,
-          produitsLivre: JSON.stringify(produits),
-          commentaire,
-          nom_livreur: nom_livreur || null,
-          date_livraison: isAncienne && date_livraison
-            ? new Date(date_livraison)
-            : new Date(),
-          deleted: false,
-          type_livraison_id: parseInt(type_livraison_id),
-          user_id: utilisateur ? utilisateur.id_user : null
-        }
-      });
-  
-      // Si c’est une livraison de chargeurs, on traite les transactions
-      if (parseInt(type_livraison_id) === 5) {
-        for (const item of produits) {
-          const chargeur = await prisma.chargeurs.findUnique({
-            where: {
-              id_chargeur: parseInt(1)
-            }
-          });
-  
-          if (!chargeur) {
-            continue; // on ignore les chargeurs non trouvés
+
+        const quantite = parseInt(item.quantite || 1);
+
+        await prisma.transactions.create({
+          data: {
+            type_transaction: "sortie",
+            quantite,
+            date_transaction: new Date(),
+            chargeurs: { connect: { id_chargeur: 1 } },
+            users: utilisateur ? { connect: { id_user: utilisateur.id_user } } : null
           }
-  
-          const quantite = parseInt(item.quantite || 1);
-  
-          // Créer la transaction (type sortie)
-          await prisma.transactions.create({
-            data: {
-              type_transaction: "sortie",
-              quantite,
-              date_transaction: new Date(),
-              chargeurs : {connect : {
-                id_chargeur : parseInt(1)
-              }},
-              users: utilisateur ? {connect : {
-                id_user : parseInt(utilisateur.id_user)
-              }} : null
-            }
-          }).then((resultats)=>{
-            console.log(resultats)
-          }).catch(err=>{console.log(err)})
-  
-          // Mettre à jour le stock
-          await prisma.chargeurs.update({
-            where: { id_chargeur: parseInt(1) },
-            data: {
-              stock: {
-                decrement: quantite
-              }
-            }
-          });
-        }
+        }).catch(err => console.log(err));
+
+        await prisma.chargeurs.update({
+          where: { id_chargeur: 1 },
+          data: { stock: { decrement: quantite } }
+        });
       }
+    }
 
-      // GENERATION DE MAIL POUR RECEVEUR 
+    // Gestion des mails
+    let livraisonTypeName = '';
+    switch (parseInt(type_livraison_id)) {
+      case 1:
+        livraisonTypeName = 'TPE GIM';
+        break;
+      case 2:
+        livraisonTypeName = 'TPE REPARE';
+        break;
+      case 3:
+        livraisonTypeName = 'TPE MAJ GIM';
+        break;
+      case 4:
+        livraisonTypeName = 'TPE MOBILE';
+        break;
+      case 5:
+        livraisonTypeName = 'CHARGEUR';
+        break;
+      case 6:
+        livraisonTypeName = 'TPE ECOBANK';
+        break;
+    }
 
-      // Récupération du type de livraison
-      let livraisonTypeName = ''
-      switch(type_livraison_id){
-        case 1 :
-          livraisonTypeName = 'TPE GIM';
-          break;
-        case 2 :
-          livraisonTypeName = 'TPE REPARE';
-          break;
-        case 3 :
-          livraisonTypeName = 'TPE MAJ GIM';
-          break;
-        case 4 :
-          livraisonTypeName = 'TPE MOBILE';
-          break;
-        case 5 :
-          livraisonTypeName = 'CHARGEUR';
-          break;
-        case 6 :
-          livraisonTypeName = 'TPE ECOBANK'; // Ajout du type ECOBANK.
-          break;
-        
-      }
+    const sendMail = require("../../utils/emailSender");
+    const receivers = await prisma.users.findMany({
+      where: { role_id: 2 },
+    });
 
-      // Fonction de génération de mail
-      const sendMail = require("../../utils/emailSender");
-      const receivers = await prisma.users.findMany({
-        where: {
-        role_id: 2,
-        },
-      });
-      if (receivers && receivers.length > 0) {
-      // 2. Prepare email content
+    if (receivers && receivers.length > 0) {
       const subject = `NOUVELLE LIVRAISON ${livraisonTypeName}`;
       const html = `
         <p>Bonjour,</p>
@@ -152,12 +150,10 @@ const deliver = async (req, res) => {
           <li><strong>Type de livraison:</strong> ${livraisonTypeName}</li>
           <li><strong>Nombre de produits:</strong> ${produits.length}</li>
         </ul>
-        </br>
-        </br>
+        <br><br>
         <p>Green - Pay vous remercie.</p>
       `;
 
-      // 3. Send email to each receiver
       for (const receiver of receivers) {
         await sendMail({
           to: receiver.email,
@@ -165,19 +161,20 @@ const deliver = async (req, res) => {
           html,
         });
       }
-      }
-  
-      res.status(201).json({
-        message: "Livraison enregistrée avec succès",
-        livraison: nouvelleLivraison
-      });
-  
-    } catch (error) {
-      console.error("Erreur lors de la livraison :", error);
-      res.status(500).json({ message: "Erreur interne", error });
     }
-  };
-  
+
+    res.status(201).json({
+      message: "Livraison enregistrée avec succès",
+      livraison: nouvelleLivraison
+    });
+
+  } catch (error) {
+    console.error("Erreur lors de la livraison :", error);
+    res.status(500).json({ message: "Erreur interne", error });
+  }
+};
+
+
 const getAllLivraisons = async (req, res) => {
     try {
       const livraisons = await prisma.livraison.findMany({
@@ -408,9 +405,9 @@ const deleteLivraison = async (req, res) => {
         .replace("{{nom_recepteur}}", livraison.validations[0].nom_recepteur || "Receveur")
         .replace("{{produitsRows}}", produitsRows)
         .replace("{{signature}}", livraison.validations[0].signature || "Validé")
-        .replace("{{date_validation}}", livraison.validations[0].date_validation ? formatDate(livraison.validations[0].date_validation) : "N/A");
-        
-  
+        .replace("{{date_validation}}", livraison.validations[0].date_validation ? formatDate(livraison.validations[0].date_validation) : "N/A")
+        .replace("{{signature_expediteur}}", livraison.signature_expediteur || "Signé")
+
       // 🖨️ Génération PDF
       const browser = await puppeteer.launch({ headless: "new", args : ["--no-sandbox", "--disable-setuid-sandbox"] });
       const page = await browser.newPage();

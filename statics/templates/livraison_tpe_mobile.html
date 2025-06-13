@@ -129,8 +129,12 @@
     <div style="margin-top: 15px;"><strong>Total :</strong> {{qte_totale_livraison}}</div>
     <div class="footer">
       <div>
+        <div>
         <strong>Expéditeur :</strong> {{nom_expediteur}}
-
+        <!-- <div class="footer-signature">Signature</div> -->
+          <img src="{{signature_expediteur}}" alt="Signature de l'expéditeur" class="signature-image"/>
+          <!-- <div class="date-validation"><strong>Date d'expédition :</strong> {{date_livraison}}</div> -->
+      </div>
       </div>
       <div>
         <strong>Récepteur :</strong> {{nom_recepteur}}

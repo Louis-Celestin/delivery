@@ -47,6 +47,7 @@ model livraison {
   deleted              Boolean                    @default(false)
   date_deleted         DateTime?                  @db.DateTime(0)
   user_id              Int?
+  signature_expediteur String                     @db.VarChar(255)
   nom_livreur          String?                    @db.VarChar(255)
   type_livraison_id    Int?
   users                users?                     @relation(fields: [user_id], references: [id_user], onDelete: Restrict, onUpdate: Restrict, map: "livraison_ibfk_1")
@@ -169,6 +170,7 @@ enum livraison_statut_livraison {
   en_cours
   livre
   en_attente
+  refuse
 }
 
 enum validations_etat_validation {
