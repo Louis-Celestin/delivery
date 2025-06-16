@@ -475,9 +475,12 @@ const deliverOld = async (req, res) => {
           return res.status(404).json({ message: "Utilisateur non trouvé" });
         }
       }
+
+      const signature_expediteur = null
   
       const nouvelleLivraison = await prisma.livraison.create({
         data: {
+          signature_expediteur: 'Validé',
           statut_livraison: "livre",
           qte_totale_livraison: produits.length,
           produitsLivre: JSON.stringify(produits),
@@ -488,7 +491,7 @@ const deliverOld = async (req, res) => {
             : new Date(),
           deleted: false,
           type_livraison_id: parseInt(type_livraison_id),
-          user_id: utilisateur ? utilisateur.id_user : null
+          user_id: utilisateur ? utilisateur.id_user : null,
         }
       });
   
