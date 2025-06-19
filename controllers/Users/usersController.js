@@ -58,7 +58,7 @@ const login = async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(401).json({ message: "Identifiants invalides." });
 
-        const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+        const token = jwt.sign({ id_user: user.id_user }, process.env.JWT_SECRET, { expiresIn: "2h" });
 
         res.status(200).json({ message: "Connexion réussie.", token, user });
     } catch (error) {
@@ -174,6 +174,48 @@ const resetPassword = async (req, res) => {
     }
 };
 
+const changePassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        const userId = req.user.id_user; // Assuming you're using auth middleware that sets req.user
+
+        if (!userId) {
+            return res.status(401).json({ message: "Utilisateur non authentifié." });
+        }
+
+        // 🔹 Find the user
+        const user = await prisma.users.findUnique({
+            where: { id_user: parseInt(userId) },
+        });
+
+        if (!user) {
+            return res.status(404).json({ message: "Utilisateur introuvable." });
+        }
+
+        // 🔹 Compare current password with stored hash
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: "Mot de passe actuel incorrect." });
+        }
+
+        // 🔹 Hash new password
+        const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+        // 🔹 Update password in DB
+        await prisma.users.update({
+            where: { id_user: parseInt(userId) },
+            data: { password: hashedNewPassword },
+        });
+
+        res.status(200).json({ message: "Mot de passe changé avec succès." });
+
+    } catch (error) {
+        console.error("Erreur lors du changement de mot de passe:", error);
+        res.status(500).json({ message: "Erreur serveur.", error });
+    }
+};
+
+
 
 module.exports ={
     register,
@@ -181,5 +223,6 @@ module.exports ={
     forgotPassword,
     resetPassword,
     updateUser,
-    deleteUser
+    deleteUser,
+    changePassword,
 }

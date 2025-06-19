@@ -229,16 +229,16 @@ const returnDelivery = async (req, res) => {
       final_nom_validateur = user.agents.nom;
       final_date_validation = new Date();
 
-      const newValidation = await prisma.validations.create({
-      data: {
-        livraison_id: parseInt(livraison_id),
-        etat_validation: 'refuse',
-        commentaire: commentaire_return,
-        user_id: user_id ? parseInt(user_id) : null,
-        nom_recepteur: final_nom_validateur,
-        date_validation: final_date_validation,
-      },
-    });
+    //   const newValidation = await prisma.validations.create({
+    //   data: {
+    //     livraison_id: parseInt(livraison_id),
+    //     etat_validation: 'refuse',
+    //     commentaire: commentaire_return,
+    //     user_id: user_id ? parseInt(user_id) : null,
+    //     nom_recepteur: final_nom_validateur,
+    //     date_validation: final_date_validation,
+    //   },
+    // });
 
     await prisma.livraison.update({
       where: { id_livraison: parseInt(livraison_id) },
@@ -278,11 +278,15 @@ const returnDelivery = async (req, res) => {
         
       }
 
+    const baseUrl = process.env.FRONTEND_BASE_URL || "https://livraisons.greenpayci.com";
+    const localUrl = "http://localhost:5173"
+    const deliveryLink = `${baseUrl}/formulaire/${livraison.id_livraison}`;
+
     // Fonction de génération de mail
     const sendMail = require("../../utils/emailSender");
     const livreurs = await prisma.users.findMany({
       where: {
-      role_id: 4,
+      role_id: 1,
       },
     });
     if (livreurs && livreurs.length > 0) {
@@ -297,6 +301,13 @@ const returnDelivery = async (req, res) => {
       </ul>
       <p>Pour raison : <strong>${commentaire_return}</strong></p>
       </br>
+      <p>Retrouvez la livraison à ce lien : 
+        <span>
+          <a href="${deliveryLink}" target="_blank" style="background-color: #73dced; color: white; padding: 7px 12px; text-decoration: none; border-radius: 5px;">
+            Cliquez ici !
+          </a>
+        </span>
+      </p>
       </br>
       <p>Green - Pay vous remercie.</p>
     `;
@@ -311,7 +322,7 @@ const returnDelivery = async (req, res) => {
     }
     }
 
-    return res.status(201).json(newValidation);
+    return res.status(201).json({ message: "Livraison retournée avec succès." });;
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Erreur serveur." });

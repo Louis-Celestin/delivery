@@ -135,7 +135,10 @@ const deliver = async (req, res) => {
         livraisonTypeName = 'TPE ECOBANK';
         break;
     }
-
+    const baseUrl = process.env.FRONTEND_BASE_URL || "https://livraisons.greenpayci.com";
+    const localUrl = "http://localhost:5173"
+    const deliveryLink = `${baseUrl}/formulaire-recu/${nouvelleLivraison.id_livraison}`;
+    // const deliveryLink = `https://livraisons.greenpayci.com/formulaire-recu/${nouvelleLivraison.id_livraison}`
     const sendMail = require("../../utils/emailSender");
     const receivers = await prisma.users.findMany({
       where: { role_id: 2 },
@@ -150,6 +153,14 @@ const deliver = async (req, res) => {
           <li><strong>Type de livraison:</strong> ${livraisonTypeName}</li>
           <li><strong>Nombre de produits:</strong> ${produits.length}</li>
         </ul>
+        <br>
+        <p>Retrouvez la livraison à ce lien : 
+          <span>
+            <a href="${deliveryLink}" target="_blank" style="background-color: #73dced; color: white; padding: 7px 12px; text-decoration: none; border-radius: 5px;">
+              Cliquez ici !
+            </a>
+          </span>
+        </p>
         <br><br>
         <p>Green - Pay vous remercie.</p>
       `;
@@ -273,6 +284,67 @@ const updateLivraison = async (req, res) => {
             where: { id_livraison: parseInt(id) },
             data: dataToUpdate
         });
+
+        // Gestion des mails
+    let livraisonTypeName = '';
+    switch (parseInt(type_livraison_id)) {
+      case 1:
+        livraisonTypeName = 'TPE GIM';
+        break;
+      case 2:
+        livraisonTypeName = 'TPE REPARE';
+        break;
+      case 3:
+        livraisonTypeName = 'TPE MAJ GIM';
+        break;
+      case 4:
+        livraisonTypeName = 'TPE MOBILE';
+        break;
+      case 5:
+        livraisonTypeName = 'CHARGEUR';
+        break;
+      case 6:
+        livraisonTypeName = 'TPE ECOBANK';
+        break;
+    }
+    const baseUrl = process.env.FRONTEND_BASE_URL || "https://livraisons.greenpayci.com";
+    const localUrl = "http://localhost:5173"
+    const deliveryLink = `${baseUrl}/formulaire-recu/${updated.id_livraison}`;
+    // const deliveryLink = `https://livraisons.greenpayci.com/formulaire-recu/${nouvelleLivraison.id_livraison}`
+    const sendMail = require("../../utils/emailSender");
+    const receivers = await prisma.users.findMany({
+      where: { role_id: 2 },
+    });
+
+    if (receivers && receivers.length > 0) {
+      const subject = `MODIFICATION LIVRAISON`;
+      const html = `
+        <p>Bonjour,</p>
+        <p>La livraison ${updated.id_livraison} a été modifiée.</p>
+        <ul>
+          <li><strong>Type de livraison:</strong> ${livraisonTypeName}</li>
+          <li><strong>Nombre de produits:</strong> ${produits.length}</li>
+        </ul>
+        <br>
+        <p>Retrouvez la livraison à ce lien : 
+          <span>
+            <a href="${deliveryLink}" target="_blank" style="background-color: #73dced; color: white; padding: 7px 12px; text-decoration: none; border-radius: 5px;">
+              Cliquez ici !
+            </a>
+          </span>
+        </p>
+        <br><br>
+        <p>Green - Pay vous remercie.</p>
+      `;
+
+      for (const receiver of receivers) {
+        await sendMail({
+          to: receiver.email,
+          subject,
+          html,
+        });
+      }
+    }
 
         return res.status(200).json(updated);
     } catch (error) {
