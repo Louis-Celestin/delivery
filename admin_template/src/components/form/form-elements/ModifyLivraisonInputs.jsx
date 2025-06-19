@@ -26,7 +26,8 @@ export default function ModifyLivraisonInputs() {
 
   const merchants = new Merchants();
   const productDeliveries = new ProductDeliveries();
-  const userId = window.sessionStorage.getItem('id');
+  const userId = localStorage.getItem('id');
+  const role = localStorage.getItem("role_id")
   const { id } = useParams();
   const navigate = useNavigate();
   const [isOrangeChecked, setOrangeChecked] = useState(false);
@@ -47,15 +48,16 @@ export default function ModifyLivraisonInputs() {
   const [errorFrom, setErrorForm] = useState(null);
   const [errorAjout, setErrorAjout] = useState(null);
   const [errorDeliver, setErrorDeliver] = useState(null);
-  const [isConfirmModalOpen , setIsConfirmModalOpen] = useState(false)
-  const [messageTPE, setMessageTPE] = useState('')
+  const [isConfirmModalOpen , setIsConfirmModalOpen] = useState(false);
+  const [messageTPE, setMessageTPE] = useState('');
+  const [selectedChargeur, setSelectedChargeur] = useState(false);
 
   const options_livraison = [
     { value: "TPE GIM", label: "TPE GIM" },
     { value: "TPE MOBILE", label: "TPE MOBILE" },
     { value: "TPE MAJ GIM", label: "TPE MAJ GIM" },
     { value: "TPE REPARE", label: "TPE REPARE" },
-    // { value: "CHARGEUR", label: "CHARGEUR" },
+    { value: "CHARGEUR", label: "CHARGEUR" },
     { value: "TPE ECOBANK", label: "TPE ECOBANK" },
   ];
 
@@ -64,17 +66,23 @@ export default function ModifyLivraisonInputs() {
     setTypeLivraison(value);
     if(value == 'TPE GIM'){
       setLivraisonID(1);
+      setSelectedChargeur(false)
     }else if(value == 'TPE REPARE'){
       setLivraisonID(2);
+      setSelectedChargeur(false)
     }else if(value == 'TPE MAJ GIM'){
       setLivraisonID(3)
+      setSelectedChargeur(false)
     }else if(value == 'TPE MOBILE'){
       setLivraisonID(4)
+      setSelectedChargeur(false)
     }else if(value == 'CHARGEUR'){
       setLivraisonID(5)
+      setSelectedChargeur(true)
     }else if(value == 'TPE ECOBANK'){
       setLivraisonID(6)
-    };
+      setSelectedChargeur(false)
+    } 
   }
   
   useEffect( ()=>{
@@ -107,7 +115,8 @@ export default function ModifyLivraisonInputs() {
           break;
         case 5: 
           setTypeLivraison("CHARGEUR");
-          setLivraisonID(5) 
+          setLivraisonID(5)
+          setSelectedChargeur(true)
           break;
         case 6:
           setTypeLivraison("TPE ECOBANK");
@@ -145,6 +154,18 @@ export default function ModifyLivraisonInputs() {
     },[id])
 
   const handleConfirm = () => {
+
+    if(role != 1){
+      Swal.fire({
+          title: "Error",
+          text: "Vous n'êtes pas authorisé à faire cette action !",
+          icon: "error"
+      });
+      localStorage.removeItem('token');
+      localStorage.removeItem('username');
+      navigate('/signin');
+      return
+    }
     
     let banque = ''
     banque = filteredPointMarchand.map((terminal) => terminal.BANQUE).join("-");
@@ -176,6 +197,10 @@ export default function ModifyLivraisonInputs() {
     }
     if (livraisonID == 1 && (banque === 'ECOBANK' || banque === 'ECOBANK CI')){
       setErrorAjout("Ce Terminal n'est pas GIM !");
+      return;
+    }
+    if(livraisonID == 4 && banque){
+      setErrorAjout("Ce terminal est bancaire.");
       return;
     }
     const localMobileMoney = [];
@@ -240,6 +265,17 @@ export default function ModifyLivraisonInputs() {
 
   const handleDeliver = async (e) => {
     e.preventDefault();
+    if(role != 1){
+      Swal.fire({
+          title: "Error",
+          text: "Vous n'êtes pas authorisé à faire cette action !",
+          icon: "error"
+      });
+      localStorage.removeItem('token');
+      localStorage.removeItem('username');
+      navigate('/signin');
+      return
+    }
 
     if(produitsLivre.length == 0){
       Swal.fire({
@@ -299,6 +335,17 @@ export default function ModifyLivraisonInputs() {
         terminal.SERIAL_NUMBER.includes(terminalSN)) : [];
 
   const handleDelete = (indexToRemove) => {
+    if(role != 1){
+      Swal.fire({
+          title: "Error",
+          text: "Vous n'êtes pas authorisé à faire cette action !",
+          icon: "error"
+      });
+      localStorage.removeItem('token');
+      localStorage.removeItem('username');
+      navigate('/signin');
+      return
+    }
     setProduitsLivresTable((prev) =>
       prev.filter((_, index) => index !== indexToRemove)
     );
@@ -374,66 +421,63 @@ export default function ModifyLivraisonInputs() {
                                   readOnly
                                   />
                         </div>
-                        <div>
-                          <Label>Commentaire pour terminal</Label>
-                          <TextArea
-                          value={messageTPE}
-                          onChange={(value) => setMessageTPE(value)}
-                          rows={2}
-                          placeholder="Ajoutez un commentaire"
-                          />
-                        </div>
-                        <div>
-                          <Label>Banque</Label>
-                          <Input type="text" id="input" 
-                                  className="cursor-default"
-                                  value={filteredPointMarchand.map((terminal) => terminal.BANQUE).join(" - ")}
+                        {selectedChargeur ? 
+                        (<></>) : 
+                        (
+                          <>
+                            <div>
+                              <Label>Banque</Label>
+                              <Input type="text" id="input" 
+                                      className="cursor-default"
+                                      value={filteredPointMarchand.map((terminal) => terminal.BANQUE).join(" - ")}
+                                      readOnly
+                                      />
+                            </div>
+                            <div>
+                              <Input type="text" id="input" 
+                                      value={filteredPointMarchand.map((terminal) => terminal.TPE).join(" - ")}
+                                      className="hidden"/>
+                            </div>
+                            <div className="flex flex-col">
+                              <div className="flex items-center gap-3 my-2">
+                                <Checkbox
+                                checked={
+                                    filteredPointMarchand.length > 0 &&
+                                    filteredPointMarchand.some((terminal) =>
+                                      terminal.NUM_ORANGE?.startsWith("07")
+                                    )
+                                  }
+                                  onChange={(e)=>{}}
                                   readOnly
-                                  />
-                        </div>
-                        <div>
-                          <Input type="text" id="input" 
-                                  value={filteredPointMarchand.map((terminal) => terminal.TPE).join(" - ")}
-                                  className="hidden"/>
-                        </div>
-                        <div className="flex flex-col">
-                          <div className="flex items-center gap-3 my-2">
-                            <Checkbox
-                              checked={
-                                filteredPointMarchand.length > 0 &&
-                                filteredPointMarchand.some((terminal) =>
-                                  terminal.NUM_ORANGE?.startsWith("07")
-                                )
-                              }
-                              onChange={(e)=>{}}
-                              readOnly
-                                label="Orange Money" />
-                          </div>
-                          <div className="flex items-center gap-3 my-2">
-                            <Checkbox 
-                            checked={
-                                filteredPointMarchand.length > 0 &&
-                                filteredPointMarchand.some((terminal) =>
-                                  terminal.NUM_MTN?.startsWith("05")
-                                )
-                              }
-                              onChange={(e)=>{}}
-                              readOnly
-                            label="MTN Money" />
-                          </div>
-                          <div className="flex items-center gap-3 my-2">
-                            <Checkbox 
-                            checked={
-                                filteredPointMarchand.length > 0 &&
-                                filteredPointMarchand.some((terminal) =>
-                                  terminal.NUM_MOOV?.startsWith("01")
-                                )
-                              }
-                              onChange={(e)=>{}}
-                              readOnly 
-                            label="MOOV Money" />
-                          </div>
-                        </div>
+                                  label="Orange Money" />
+                              </div>
+                              <div className="flex items-center gap-3 my-2">
+                                <Checkbox 
+                                checked={
+                                    filteredPointMarchand.length > 0 &&
+                                    filteredPointMarchand.some((terminal) =>
+                                      terminal.NUM_MTN?.startsWith("05")
+                                    )
+                                  }
+                                  onChange={(e)=>{}}
+                                  readOnly
+                                label="MTN Money" />
+                              </div>
+                              <div className="flex items-center gap-3 my-2">
+                                <Checkbox 
+                                checked={
+                                    filteredPointMarchand.length > 0 &&
+                                    filteredPointMarchand.some((terminal) =>
+                                      terminal.NUM_MOOV?.startsWith("01")
+                                    )
+                                  }
+                                  onChange={(e)=>{}}
+                                  readOnly 
+                                label="MOOV Money" />
+                              </div>
+                            </div>
+                          </>
+                        )}
                         <div>
                           <button onClick={handleConfirm} className="w-full bg-green-400 rounded-2xl h-10 flex items-center justify-center">
                             <span>Ajouter</span>

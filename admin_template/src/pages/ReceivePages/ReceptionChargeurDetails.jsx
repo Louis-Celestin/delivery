@@ -30,7 +30,8 @@ export default function ReceptionChargeurDetails() {
     const productDeliveries = new ProductDeliveries();
     const reception = new Reception();
     const { id } = useParams();
-    const user_id = window.sessionStorage.getItem("id")
+    const user_id = localStorage.getItem("id")
+    const role = localStorage.getItem("role_id")
     const navigate = useNavigate();
     // const signatureRef = useRef(null);
     // const fd = new window.FormData()
@@ -171,6 +172,18 @@ export default function ReceptionChargeurDetails() {
     }
     const handleReturn = async (e) =>{
         e.preventDefault();
+        e.preventDefault();
+        if(role != 2){
+            Swal.fire({
+                title: "Error",
+                text: "Vous n'êtes pas authorisé à faire cette action !",
+                icon: "error"
+            });
+            localStorage.removeItem('token');
+            localStorage.removeItem('username');
+            navigate('/signin');
+            return
+        }
         setLoadingValidate(true);
         const commentaire_return = message
         const livraison_id = id
@@ -364,11 +377,37 @@ export default function ReceptionChargeurDetails() {
                         {showSignButton ? 
                         ( 
                             <div className='flex'>
-                                <button onClick={() => setIsModalReturnOpen(true)}
+                                <button onClick={() => {
+                                    if(role != 2){
+                                        Swal.fire({
+                                            title: "Error",
+                                            text: "Vous n'êtes pas authorisé à faire cette action !",
+                                            icon: "error"
+                                        });
+                                        localStorage.removeItem('token');
+                                        localStorage.removeItem('username');
+                                        navigate('/signin');
+                                        return
+                                    }
+                                    setIsModalReturnOpen(true)
+                                    }}
                                     className='w-48 my-10 mx-3 bg-red-400 rounded-2xl h-10 flex justify-center items-center'>
                                     Retourner
                                 </button>
-                                <button onClick={() => setIsModalOpen(true)}
+                                <button onClick={() => {
+                                    if(role != 2){
+                                        Swal.fire({
+                                            title: "Error",
+                                            text: "Vous n'êtes pas authorisé à faire cette action !",
+                                            icon: "error"
+                                        });
+                                        localStorage.removeItem('token');
+                                        localStorage.removeItem('username');
+                                        navigate('/signin');
+                                        return
+                                    }
+                                    setIsModalOpen(true)
+                                    }}
                                     className='w-48 my-10 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
                                     Réceptionner
                                 </button>

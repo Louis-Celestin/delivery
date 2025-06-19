@@ -17,38 +17,54 @@ import FormElements from "./pages/Forms/FormElements";
 import Blank from "./pages/Blank";
 // import AppLayout from "./layouts/deliveryAdminLayout/AppLayoutDelivery";
 import { ScrollToTop } from "./components/common/ScrollToTop";
+// import DeliveryDashboard from "./pages/Dashboards/DeliveryDashboard";
 
-import DeliveryDashboard from "./pages/Dashboards/DeliveryDashboard";
-
+// @ts-ignore
 import DashboardRedirector from "./DashboardRedirector";
+// @ts-ignore
 import AdminRenderer from "./AdminRenderer";
-
+// @ts-ignore
 import LivraisonForm from "./pages/Forms/LivraisonForms/LivraisonForm";
+// @ts-ignore
 import AncienneLivraisonForm from "./pages/Forms/LivraisonForms/AncienneLivraisonForm";
+// @ts-ignore
 import ModifyLivraisonForm from "./pages/Forms/LivraisonForms/ModifyLivraisonForm";
+// @ts-ignore
 import LivraisonChargeurForm from "./pages/Forms/LivraisonForms/LivraisonChargeurForm";
+// @ts-ignore
 import ModifyLivraisonChargeurForm from "./pages/Forms/LivraisonForms/ModifyLivraisonChargeurForm";
-
+// @ts-ignore
 import AllDeliveries from "./pages/DeliveryPages/AllDeliveries";
+// @ts-ignore
 import DeliveryDetails from "./pages/DeliveryPages/DeliveryDetails";
+// @ts-ignore
 import DeliveryChargeurDetails from "./pages/DeliveryPages/DeliveryChargeurDetails"
-
+// @ts-ignore
 import ProtectedRoutes from "./ProtectedRoutes";
-
+// @ts-ignore
 import AllReceptions from "./pages/ReceivePages/AllReceptions";
+// @ts-ignore
 import ReceptionDetails from "./pages/ReceivePages/ReceptionDetails";
+// @ts-ignore
 import ReceptionChargeurDetails from "./pages/ReceivePages/ReceptionChargeurDetails"
-
+// @ts-ignore
 import StatistiquesLivraisons from "./components/livraisons/StatistiquesLivraisons"
+// @ts-ignore
 import GestionStockChargeur from "./pages/GestionStock/GestionStockChargeur";
-
+// @ts-ignore
 import AllDeliveriesVue from "./pages/VueOnlyPages/AllDeliveriesVue";
+// @ts-ignore
 import DeliveryDetailsVue from "./pages/VueOnlyPages/DeliveryDetailsVue";
+// @ts-ignore
 import DeliveryChargeurDetailsVue from "./pages/VueOnlyPages/DeliveryChargeurDetailsVue";
-
+// @ts-ignore
 import AllMaintenanceDeliveries from "./pages/MaintenancePages/AllMaintenanceDeliveries";
-
+// @ts-ignore
 import DonneeGenerales from "./pages/DeliveryPages/DonneeGenerales"
+
+// @ts-ignore
+import ResetPassword from "./pages/AuthPages/ResetPassword"
+
 
 export default function App() {
   return (
@@ -97,6 +113,9 @@ export default function App() {
               {/* Maintenance */}
               <Route path="/toutes-les-livraisons-maintenance" element={<AllMaintenanceDeliveries />} />
 
+              {/* Reset Password */}
+              <Route path="/modifier-mot-de-passe" element={<ResetPassword />} />
+
               {/* Tables */}
               <Route path="/basic-tables" element={<BasicTables />} />
 
@@ -116,6 +135,7 @@ export default function App() {
           {/* Auth Layout */}
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
+          
 
           {/* Fallback Route */}
           <Route path="*" element={<NotFound />} />

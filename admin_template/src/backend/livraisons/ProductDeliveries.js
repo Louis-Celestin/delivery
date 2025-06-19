@@ -3,14 +3,12 @@
 
 
 export class ProductDeliveries{
-  async deliver(commentaire, type_livraison_id, user_id, isAncienne, produitsLivre){
+  async deliver(formData){
       try {
-        const response = await axios.post(`${urlBase}/api/delivery/deliver`,
-           {commentaire,
-            type_livraison_id,
-            user_id,
-            isAncienne,
-            produitsLivre});
+        const response = await axios.post(`${urlBase}/api/delivery/deliver`, formData,
+           {headers: {
+              'Content-Type': 'multipart/form-data'
+          }});
         // console.log(response)
         return response.data;
       } catch (error) {
@@ -21,7 +19,8 @@ export class ProductDeliveries{
     async deliverOld(commentaire, type_livraison_id, user_id, isAncienne, date_livraison, nom_livreur, nom_validateur, produitsLivre){
       try {
         const response = await axios.post(`${urlBase}/api/delivery/deliverOld`,
-           {commentaire,
+           {
+            commentaire,
             type_livraison_id,
             user_id,
             isAncienne,

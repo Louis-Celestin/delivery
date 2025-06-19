@@ -3,8 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { useSidebar } from "../../context/SidebarContext";
 import { ThemeToggleButton } from "../../components/common/ThemeToggleButton";
-import NotificationDropdown from "../../components/header/headerSuperviseur/NotificationDropdownSupervisor";
-import UserDropdown from "../../components/header/headerSuperviseur/UserDropdownSupervisor";
+import NotificationDropdown from "../../components/header/headerMaintenance/NotificationDropdownMaintenance";
+import UserDropdown from "../../components/header/headerMaintenance/UserDropdownMaintenance";
 
 const AppHeader: React.FC = () => {
   const [isApplicationMenuOpen, setApplicationMenuOpen] = useState(false);

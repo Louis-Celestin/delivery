@@ -1,9 +1,7 @@
-
-
-
 export const useAuth = () => {
-    const role = window.sessionStorage.getItem('role');
-    
-    return { role };
-  };
+  const role = window.localStorage.getItem('role');
+  // const adminRole = 'livreur';
+  
+  return { role };
+};
   

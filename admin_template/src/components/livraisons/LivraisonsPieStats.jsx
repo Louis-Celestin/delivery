@@ -30,7 +30,7 @@ export default function LivraisonsPieStats({ startDate, endDate }) {
             try{
                 setLoading(true)
                 const allData = await productDeliveries.getAllLivraisons();
-                console.log(allData)
+                // console.log(allData)
 
                 const livraisonGIM = allData.filter(item => {
                     let deliveryDate
@@ -39,8 +39,10 @@ export default function LivraisonsPieStats({ startDate, endDate }) {
                     }
                     return  deliveryDate >= startDate && 
                             deliveryDate <= endDate &&
-                            item.type_livraison_id === 1;
+                            item.type_livraison_id === 1 &&
+                            item.statut_livraison === 'livre';
                 });
+                console.log(livraisonGIM)
                 setTPEGIM(livraisonGIM.length)
 
                 const livraisonRepare = allData.filter(item => {
@@ -50,7 +52,8 @@ export default function LivraisonsPieStats({ startDate, endDate }) {
                     }
                     return  deliveryDate >= startDate && 
                             deliveryDate <= endDate &&
-                            item.type_livraison_id === 2;
+                            item.type_livraison_id === 2 &&
+                            item.statut_livraison === 'livre';
                 });
                 setTPERepare(livraisonRepare.length)
 
@@ -61,7 +64,8 @@ export default function LivraisonsPieStats({ startDate, endDate }) {
                     }
                     return  deliveryDate >= startDate && 
                             deliveryDate <= endDate &&
-                            item.type_livraison_id === 3;
+                            item.type_livraison_id === 3 &&
+                            item.statut_livraison === 'livre';
                 });
                 setTPEMAJ(livraisonMAJ.length)
 
@@ -72,7 +76,8 @@ export default function LivraisonsPieStats({ startDate, endDate }) {
                     }
                     return  deliveryDate >= startDate && 
                             deliveryDate <= endDate &&
-                            item.type_livraison_id === 4;
+                            item.type_livraison_id === 4 &&
+                            item.statut_livraison === 'livre';
                 });
                 setTPEMobile(livraisonMobile.length)
 
@@ -83,7 +88,8 @@ export default function LivraisonsPieStats({ startDate, endDate }) {
                     }
                     return  deliveryDate >= startDate && 
                             deliveryDate <= endDate &&
-                            item.type_livraison_id === 5;
+                            item.type_livraison_id === 5 &&
+                            item.statut_livraison === 'livre';
                 });
                 setChargeurs(livraisonChargeur.length)
 
@@ -94,7 +100,8 @@ export default function LivraisonsPieStats({ startDate, endDate }) {
                     }
                     return  deliveryDate >= startDate && 
                             deliveryDate <= endDate &&
-                            item.type_livraison_id === 6;
+                            item.type_livraison_id === 6 &&
+                            item.statut_livraison === 'livre';
                 });
                 setTPEEcobank(livraisonEcobank.length)
 

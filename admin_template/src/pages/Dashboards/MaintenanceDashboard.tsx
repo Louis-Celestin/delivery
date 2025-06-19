@@ -1,14 +1,17 @@
 import { useState } from "react";
+// @ts-ignore
 import LivraisonsTPERepare from "../../components/maintenance/LivraisonsTPERepare"
+// @ts-ignore
 import LivraisonsChargeur from "../../components/maintenance/LivraisonsChargeur"
 
 import DatePicker from "../../components/form/date-picker";
-import { startOfWeek, endOfWeek, format, getWeek, formatDate } from "date-fns";
+import { startOfWeek, endOfWeek, format, getWeek} from "date-fns";
 import { RefreshTimeIcon } from "../../icons";
 
 export default function MaintenanceDashboard() {
 
   const currentWeek = getWeek(new Date(), { weekStartsOn: 1 });
+  // @ts-ignore
   const getFormattedDate = (date) => format(date, 'yyyy-MM-dd');
   const [startDate, setStartDate] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [endDate, setEndDate] = useState(endOfWeek(new Date(), { weekStartsOn: 1 }));
@@ -66,9 +69,11 @@ export default function MaintenanceDashboard() {
                         id="date-picker-debut"
                         label="Date début"
                         placeholder={getFormattedDate(startDate)}
+                        // @ts-ignore
                         value={getFormattedDate(startDate)}
-                        onChange={(dates, currentDateString) => {
+                        onChange={(currentDateString) => {
                           console.log("Date début changée : ",currentDateString)
+                          // @ts-ignore
                           setStartDate(new Date(currentDateString))
                           setIsDateChanged(true)
                         }}
@@ -79,12 +84,16 @@ export default function MaintenanceDashboard() {
                         id="date-picker"
                         label="Date fin"
                         placeholder={getFormattedDate(endDate)}
+                        // @ts-ignore
                         value={getFormattedDate(endDate)}
-                        onChange={(dates, currentDateString) => {
-                          console.log("Date fin changée : ",currentDateString)
-                          setEndDate(new Date(currentDateString))
-                          setIsDateChanged(true)
-                        }}
+                        onChange={(dates) => {
+                          if (dates && dates[0]) {
+                          let selectedDate = new Date(dates[0]);
+                          let nextDay = new Date(selectedDate);
+                          nextDay.setDate(selectedDate.getDate() + 1);
+                          setEndDate(nextDay);
+                          setIsDateChanged(true);
+                        }}}
                         />
                     </div>
                 </div>

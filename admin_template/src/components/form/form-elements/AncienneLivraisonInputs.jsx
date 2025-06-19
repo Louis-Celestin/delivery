@@ -18,7 +18,7 @@ import 'primeicons/primeicons.css';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { useNavigate } from "react-router";
 import { Merchants } from "../../../backend/livraisons/Merchants.js";
-import { ProductDeliveries } from "../../../backend/livraisons/productDeliveries.js";
+import { ProductDeliveries } from "../../../backend/livraisons/ProductDeliveries.js";
 import Swal from 'sweetalert2'
 import { Modal } from "../../ui/modal/index.tsx";
 
@@ -27,7 +27,7 @@ export default function AncienneLivraisonInputs() {
 
     const merchants = new Merchants();
     const productDeliveries = new ProductDeliveries();
-    const userId = window.sessionStorage.getItem('id');
+    const userId = window.localStorage.getItem('id');
     const navigate = useNavigate();
     const [isOrangeChecked, setOrangeChecked] = useState(false);
     const [isMTNChecked, setMTNChecked] = useState(false);
@@ -43,7 +43,7 @@ export default function AncienneLivraisonInputs() {
     const [loadingDelivery, setLoadingDelivery] = useState(false);
     const [typeLivraison, setTypeLivraison] = useState('');
     const [livraisonID, setLivraisonID] = useState(null);
-    const [message, setMessage] = useState("");
+    const [message, setMessage] = useState("Ancienne livraison.");
     const [mobileMoney, setMobileMoney] = useState([]);
     const [produitsLivreTable, setProduitsLivresTable] = useState([]);
     const [produitsLivre, setProduitsLivres] = useState([]);
@@ -101,9 +101,19 @@ export default function AncienneLivraisonInputs() {
       // let banque = ''
       // banque = filteredPointMarchand.map((terminal) => terminal.BANQUE).join("-");
       // console.log(banque)
+      let dateToday = new Date()
+      let date = new Date(dateLivraison)
+
+      console.log("date today : ",dateToday.getDate())
+      console.log("date livraison : ",date.getDate())
 
       if(!livraisonID){
         setErrorAjout("Vous devez choisir le type de livraison !");
+        return;
+      }
+
+      if(date.getDate() >= dateToday.getDate()){
+        setErrorAjout("Date de livraison invalide !")
         return;
       }
       // if (!filteredPointMarchand || filteredPointMarchand.length === 0 || terminalSN.length < 10) {
@@ -177,7 +187,7 @@ export default function AncienneLivraisonInputs() {
   
     const handleAjout = (e) => {
       e.preventDefault(); // prevent page reload
-  
+
       console.log('Trying to ADD.....')
       const localMobileMoney = [];
       if (isOrangeChecked) localMobileMoney.push("OM");

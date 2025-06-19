@@ -1,18 +1,24 @@
 import { useState } from "react";
+// @ts-ignore
 import LivraisonsGenerales from "../../components/livraisons/LivraisonsGenerales"
+// @ts-ignore
 import LivraisonsPieStats from "../../components/livraisons/LivraisonsPieStats"
+// @ts-ignore
 import LivraisonsAttente from "../../components/receptions/LivraisonsAttente"
+// @ts-ignore
 import LivraisonsRecu from "../../components/receptions/LivraisonsRecu"
+// @ts-ignore
 import LivraisonsReturn from "../../components/receptions/LivraisonsReturn"
 
 import DatePicker from "../../components/form/date-picker";
-import { startOfWeek, endOfWeek, format, getWeek, formatDate } from "date-fns";
+import { startOfWeek, endOfWeek, format, getWeek } from "date-fns";
 
 import { RefreshTimeIcon } from "../../icons";
 
 export default function SuperviseurDashboard() {
 
   const currentWeek = getWeek(new Date(), { weekStartsOn: 1 });
+  // @ts-ignore
   const getFormattedDate = (date) => format(date, 'yyyy-MM-dd');
   const [startDate, setStartDate] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [endDate, setEndDate] = useState(endOfWeek(new Date(), { weekStartsOn: 1 }));
@@ -70,9 +76,11 @@ export default function SuperviseurDashboard() {
                       id="date-picker-debut"
                       label="Date début"
                       placeholder={getFormattedDate(startDate)}
+                      // @ts-ignore
                       value={getFormattedDate(startDate)}
-                      onChange={(dates, currentDateString) => {
+                      onChange={(currentDateString) => {
                         console.log("Date début changée : ",currentDateString)
+                        // @ts-ignore
                         setStartDate(new Date(currentDateString))
                         setIsDateChanged(true)
                       }}
@@ -83,17 +91,38 @@ export default function SuperviseurDashboard() {
                       id="date-picker"
                       label="Date fin"
                       placeholder={getFormattedDate(endDate)}
+                      // @ts-ignore
                       value={getFormattedDate(endDate)}
-                      onChange={(dates, currentDateString) => {
-                        console.log("Date fin changée : ",currentDateString)
-                        setEndDate(new Date(currentDateString))
-                        setIsDateChanged(true)
-                      }}
+                      onChange={(dates) => {
+                        if (dates && dates[0]) {
+                        let selectedDate = new Date(dates[0]);
+                        let nextDay = new Date(selectedDate);
+                        nextDay.setDate(selectedDate.getDate() + 1);
+                        setEndDate(nextDay);
+                        setIsDateChanged(true);
+                      }}}
                     />
                 </div>
             </div>
           </div>
       </div>
+       <div className="grid grid-cols-2 gap-6">
+        <div className="mb-6">
+          <span className="font-bold text-2xl text-neutral-400">Informations Réceptions</span>
+        </div>
+      </div>
+
+       <div className="grid lg:grid-cols-3 space-y-3 mb-3 gap-4 md:gap-6">
+          <div className="">
+            <LivraisonsAttente />
+          </div>
+          <div className="">
+            <LivraisonsRecu startDate={startDate} endDate={endDate} />
+          </div>
+          <div>
+            <LivraisonsReturn startDate={startDate} endDate={endDate} />
+          </div>
+        </div>
 
       <div className="grid grid-cols-2 gap-6">
         <div className="mb-6">
@@ -110,23 +139,7 @@ export default function SuperviseurDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
-        <div className="mb-6">
-          <span className="font-bold text-2xl text-neutral-400">Informations Réceptions</span>
-        </div>
-      </div>
-
-       <div className="grid lg:grid-cols-3 space-y-3 gap-4 md:gap-6">
-          <div className="">
-            <LivraisonsAttente />
-          </div>
-          <div className="">
-            <LivraisonsRecu startDate={startDate} endDate={endDate} />
-          </div>
-          <div>
-            <LivraisonsReturn startDate={startDate} endDate={endDate} />
-          </div>
-        </div>
+     
   
       <div className="grid grid-cols-12 gap-4 md:gap-6">
         {/* <div className="col-span-4 space-y-6">

@@ -8,7 +8,8 @@ import Button from "../ui/button/Button";
 import { ProgressSpinner } from 'primereact/progressspinner';
 
 import { login } from '../../backend/services/authService';
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
+import { useAuth } from "../../context/AuthContext";
 
 
 export default function SignInForm() {
@@ -19,7 +20,10 @@ export default function SignInForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
+
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || "/";
 
   const handleLogin = async (event) => {
     event.preventDefault();
@@ -29,23 +33,24 @@ export default function SignInForm() {
       const response = await login(email, password);
       console.log('API Response:', response);
       const connectMessage = response.message;
-      window.sessionStorage.setItem('token', response.token);
-      window.sessionStorage.setItem('id', response.user.id_user);
-      window.sessionStorage.setItem('email', response.user.email);
-      window.sessionStorage.setItem('name', response.user.agents.nom);
-      window.sessionStorage.setItem('fonction', response.user.agents.fonction);
-      window.sessionStorage.setItem('user_id', response.user.agent_id);
-      window.sessionStorage.setItem('role', response.user.roles.designation_role );
-      const name = window.sessionStorage.getItem('name');
-      const user_id = window.sessionStorage.getItem('user_id');
-      const user_fonction = window.sessionStorage.getItem('fonction');
-      const user_role = window.sessionStorage.getItem('role');
+      localStorage.setItem('token', response.token);
+      localStorage.setItem('id', response.user.id_user);
+      localStorage.setItem('email', response.user.email);
+      localStorage.setItem('name', response.user.agents.nom);
+      localStorage.setItem('fonction', response.user.agents.fonction);
+      localStorage.setItem('user_id', response.user.agent_id);
+      localStorage.setItem('role', response.user.roles.designation_role );
+      localStorage.setItem('role_id',response.user.roles.id_role);
+      const name = localStorage.getItem('name');
+      const user_id = localStorage.getItem('user_id');
+      const user_fonction = localStorage.getItem('fonction');
+      const user_role = localStorage.getItem('role');
       console.log(name)
       console.log('fonction : ', user_fonction)
       console.log('USER ID : ', user_id)
       console.log('ROLE :', user_role)
       console.log(connectMessage)
-      navigate('/');
+      navigate(from, { replace: true });
     } catch (error) {
       console.log('error')
       setError('Utilisateur ou mot de passe incorrects');
@@ -70,7 +75,7 @@ export default function SignInForm() {
         <div>
           <div className="mb-5 sm:mb-8">
             <h1 className="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">
-              Sign In
+              Connexion
             </h1>
             {error ?(
                 <>
@@ -82,7 +87,7 @@ export default function SignInForm() {
             (
               <>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Enter your email and password to sign in!
+                 Entrez votre email et mot de passe pour vous connecter!
                 </p>
               </>
             )}
@@ -160,7 +165,7 @@ export default function SignInForm() {
                   <div className="relative">
                     <Input
                       type={showPassword ? "text" : "password"}
-                      placeholder="Enter your password"
+                      placeholder="Mot de passe"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       error={error}
@@ -178,12 +183,12 @@ export default function SignInForm() {
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                  {/* <div className="flex items-center gap-3">
                     <Checkbox checked={isChecked} onChange={setIsChecked} />
                     <span className="block font-normal text-gray-700 text-theme-sm dark:text-gray-400">
                       Keep me logged in
                     </span>
-                  </div>
+                  </div> */}
                   {/* <Link
                     to="/reset-password"
                     className="text-sm text-brand-500 hover:text-brand-600 dark:text-brand-400"
@@ -198,7 +203,7 @@ export default function SignInForm() {
                     </span>)
                     :
                     (<Button type="submit" className="w-full" size="sm">
-                      Sign in
+                      Connexion
                     </Button>)
                     }
                 </div>

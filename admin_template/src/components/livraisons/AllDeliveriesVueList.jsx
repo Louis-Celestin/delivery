@@ -158,7 +158,10 @@ export default function AllDeliveriesVueList({ filterType }) {
         )
     }
     const filteredDeliveryForms = deliveryForms.filter((item) => {
-        const itemDate = new Date(item.date_livraison);
+        let itemDate = new Date(item.date_livraison);
+        if(item.validations.length > 0){
+            itemDate = new Date(item.validations[0].date_validation)
+        }
         const matchesStatus = selectedStatus ? item.statut_livraison === selectedStatus : true;
         const matchesType = selectedType ? item.type_livraison_id === selectedType : true;
         const matchesStartDate = startDate ? itemDate >= startDate : true;
@@ -213,8 +216,13 @@ export default function AllDeliveriesVueList({ filterType }) {
                             placeholder="Date de fin"
                             value={endDate}
                             onChange={(dates, currentDateString) => {
-                                console.log(dates[0])
-                                setEndDate(dates[0])}}
+                                if (dates && dates[0]) {
+                                let selectedDate = new Date(dates[0]);
+                                let nextDay = new Date(selectedDate);
+                                nextDay.setDate(selectedDate.getDate() + 1);
+                                setEndDate(nextDay);
+                                console.log(nextDay)
+                            }}}
                             dateFormat="dd/mm/yy"/>
                     </div>
                     {/* <div className="flex gap-2">

@@ -76,26 +76,33 @@ export default function AllReceptionsList() {
     const titleTemplate = (deliveryForms) =>{
         let title = '';
         let linkSee = `/formulaire-recu/${deliveryForms.id_livraison}`;
+        let titleClass = 'font-bold text-sm'
 
         if (deliveryForms.type_livraison_id === 1) {
             title = 'Livraison TPE GIM';
+            titleClass = "font-bold text-sm text-fuchsia-400"
         } else if (deliveryForms.type_livraison_id === 2) {
             title = 'Livraison TPE REPARE'; // fallback or other types
+            titleClass = "font-bold text-sm text-red-400"
         } else if (deliveryForms.type_livraison_id === 3) {
             title = 'Livraison TPE MAJ GIM'; // fallback or other types
+            titleClass = "font-bold text-sm text-purple-400"
         } else if (deliveryForms.type_livraison_id === 4) {
             title = 'Livraison TPE MOBILE'; // fallback or other types
+            titleClass = "font-bold text-sm text-green-400"
         } else if (deliveryForms.type_livraison_id === 5) {
             title = 'Livraison CHARGEUR'; // fallback or other types
+            titleClass = "font-bold text-sm text-yellow-400"
             linkSee = `/formulaire-chargeur-recu/${deliveryForms.id_livraison}`
         } else if (deliveryForms.type_livraison_id === 6) {
             title = 'Livraison TPE ECOBANK'; // fallback or other types
+            titleClass = "font-bold text-sm text-cyan-400"
         }
         return (
             <span className="flex flex-col">
                 <Link key={deliveryForms.id_livraison}
                     to={linkSee} >
-                    <span className="font-bold text-sm">{title}</span>
+                    <span className={titleClass}>{title}</span>
                 </Link>
               <span className="text-xs font-extralight">#{deliveryForms.id_livraison}</span>
             </span>
@@ -164,11 +171,17 @@ export default function AllReceptionsList() {
         )
     }
     const filteredDeliveryForms = deliveryForms.filter((item) => {
-        const itemDate = new Date(item.date_livraison);
+        let itemDate = new Date(item.date_livraison);
+        // let itemReceiveDate = itemDate
+        if(item.validations.length > 0){
+            itemDate = new Date(item.validations[0].date_validation)
+        }
         const matchesStatus = selectedStatus ? item.statut_livraison === selectedStatus : true;
         const matchesType = selectedType ? item.type_livraison_id === selectedType : true;
         const matchesStartDate = startDate ? itemDate >= startDate : true;
         const matchesEndDate = endDate ? itemDate <= endDate : true;
+        // const matchesStartDateValidate = startDate ? itemReceiveDate >= startDate : true;
+        // const matchesEndDateValidate = endDate ? itemReceiveDate <= endDate : true;
         const matchesGlobalFilter = globalFilter
           ? JSON.stringify(item).toLowerCase().includes(globalFilter.toLowerCase())
           : true;
@@ -220,8 +233,13 @@ export default function AllReceptionsList() {
                             placeholder="Date de fin"
                             value={endDate}
                             onChange={(dates, currentDateString) => {
-                                console.log(dates[0])
-                                setEndDate(dates[0])}}
+                                if (dates && dates[0]) {
+                                let selectedDate = new Date(dates[0]);
+                                let nextDay = new Date(selectedDate);
+                                nextDay.setDate(selectedDate.getDate() + 1);
+                                setEndDate(nextDay);
+                                console.log(nextDay)
+                            }}}
                             dateFormat="dd/mm/yy"/>
                     </div>
                     {/* <div className="flex gap-2">

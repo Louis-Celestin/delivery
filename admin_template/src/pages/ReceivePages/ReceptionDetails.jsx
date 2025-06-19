@@ -31,7 +31,8 @@ export default function ReceptionDetails() {
     const productDeliveries = new ProductDeliveries();
     const reception = new Reception();
     const { id } = useParams();
-    const user_id = window.sessionStorage.getItem("id")
+    const user_id = localStorage.getItem("id")
+    const role = localStorage.getItem("role_id")
     const navigate = useNavigate();
     // const signatureRef = useRef(null);
     // const fd = new window.FormData()
@@ -57,6 +58,7 @@ export default function ReceptionDetails() {
     const [errorReturn, setErrorReturn] = useState('');
     const [loadingReturn, setLoadingReturn] = useState(false);
     const [recu, setRecu] = useState(false);
+    const [errorSign, setErrorSign] = useState('')
 
     
 
@@ -120,6 +122,11 @@ export default function ReceptionDetails() {
         }
     },[id]);
     const handleSignature = () =>{
+        if(signature.isEmpty()){
+            setErrorSign('Vous devez signer pour valider !')
+            return;
+        }
+        console.log(signature)
         setSignUrl(signature.toDataURL('image/png'))
         setIsModalOpen(false)
         setShowSignButton(false)
@@ -137,10 +144,21 @@ export default function ReceptionDetails() {
     }
     const handleValidate = async (e) =>{
         e.preventDefault();
-        
+        if(role != 2){
+            Swal.fire({
+                title: "Error",
+                text: "Vous n'êtes pas authorisé à faire cette action !",
+                icon: "error"
+            });
+            localStorage.removeItem('token');
+            localStorage.removeItem('username');
+            navigate('/signin');
+            return
+        }
         setLoadingValidate(true);
         let commentaire = message
         let is_old_validation = false
+
 
         try{
             const fd = new FormData();
@@ -175,6 +193,17 @@ export default function ReceptionDetails() {
 
     const handleReturn = async (e) =>{
         e.preventDefault();
+        if(role != 2){
+            Swal.fire({
+                title: "Error",
+                text: "Vous n'êtes pas authorisé à faire cette action !",
+                icon: "error"
+            });
+            localStorage.removeItem('token');
+            localStorage.removeItem('username');
+            navigate('/signin');
+            return
+        }
         setLoadingValidate(true);
         const commentaire_return = message
         const livraison_id = id
@@ -368,11 +397,37 @@ export default function ReceptionDetails() {
                         {showSignButton ? 
                         ( 
                             <div className='flex'>
-                                <button onClick={() => setIsModalReturnOpen(true)}
+                                <button onClick={() => {
+                                    if(role != 2){
+                                        Swal.fire({
+                                            title: "Error",
+                                            text: "Vous n'êtes pas authorisé à faire cette action !",
+                                            icon: "error"
+                                        });
+                                        localStorage.removeItem('token');
+                                        localStorage.removeItem('username');
+                                        navigate('/signin');
+                                        return
+                                    }
+                                    setIsModalReturnOpen(true)
+                                    }}
                                     className='w-48 my-10 mx-3 bg-red-400 rounded-2xl h-10 flex justify-center items-center'>
                                     Retourner
                                 </button>
-                                <button onClick={() => setIsModalOpen(true)}
+                                <button onClick={() => {
+                                    if(role != 2){
+                                        Swal.fire({
+                                            title: "Error",
+                                            text: "Vous n'êtes pas authorisé à faire cette action !",
+                                            icon: "error"
+                                        });
+                                        localStorage.removeItem('token');
+                                        localStorage.removeItem('username');
+                                        navigate('/signin');
+                                        return
+                                    }
+                                    setIsModalOpen(true)
+                                    }}
                                     className='w-48 my-10 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
                                     Réceptionner
                                 </button>
@@ -445,6 +500,11 @@ export default function ReceptionDetails() {
                                 Valider
                             </button>
                         </div>  
+                    </div>
+                    <div className="text-center">
+                        <span className="text-error-500 text-xs">
+                            {errorSign}
+                        </span>
                     </div>
                 </div>
             </Modal>

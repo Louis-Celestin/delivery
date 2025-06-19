@@ -74,26 +74,35 @@ export default function AllDeliveriesList({ filterType }) {
       }
     const titleTemplate = (deliveryForms) =>{
         let title = '';
-        let link = `/formulaire/${deliveryForms.id_livraison}`;
+        let linkSee = `/formulaire/${deliveryForms.id_livraison}`;
+        let titleClass = 'font-bold text-sm'
+
         if (deliveryForms.type_livraison_id === 1) {
             title = 'Livraison TPE GIM';
+            titleClass = "font-bold text-sm text-fuchsia-400"
         } else if (deliveryForms.type_livraison_id === 2) {
             title = 'Livraison TPE REPARE'; // fallback or other types
+            titleClass = "font-bold text-sm text-red-400"
         } else if (deliveryForms.type_livraison_id === 3) {
             title = 'Livraison TPE MAJ GIM'; // fallback or other types
+            titleClass = "font-bold text-sm text-purple-400"
         } else if (deliveryForms.type_livraison_id === 4) {
             title = 'Livraison TPE MOBILE'; // fallback or other types
+            titleClass = "font-bold text-sm text-green-400"
         } else if (deliveryForms.type_livraison_id === 5) {
             title = 'Livraison CHARGEUR'; // fallback or other types
-            link = `/formulaire-chargeur/${deliveryForms.id_livraison}`
+            titleClass = "font-bold text-sm text-yellow-400"
+            linkSee = `/formulaire-chargeur/${deliveryForms.id_livraison}`
         } else if (deliveryForms.type_livraison_id === 6) {
-            title = 'Livraison TPE ECOBANK'
+            title = 'Livraison TPE ECOBANK'; // fallback or other types
+            titleClass = "font-bold text-sm text-cyan-400"
         }
         return (
             <span className="flex flex-col">
-              <Link to={link}>
-                <span className="font-bold text-sm">{title}</span>
-              </Link>
+                <Link key={deliveryForms.id_livraison}
+                    to={linkSee} >
+                    <span className={titleClass}>{title}</span>
+                </Link>
               <span className="text-xs font-extralight">#{deliveryForms.id_livraison}</span>
             </span>
           );
@@ -131,7 +140,7 @@ export default function AllDeliveriesList({ filterType }) {
 
         if (deliveryForms.type_livraison_id === 5) {
             linkSee = `/formulaire-chargeur/${deliveryForms.id_livraison}`
-            linkModify = `/form-modify-livraison-chargeur/${deliveryForms.id_livraison}`
+            // linkModify = `/form-modify-livraison-chargeur/${deliveryForms.id_livraison}`
         }
         return(
             <span className="flex items-center">
@@ -153,7 +162,12 @@ export default function AllDeliveriesList({ filterType }) {
                     </>
                 ) : (
                     <>
-                        {deliveryForms.statut_livraison == 'en_attente' ? 
+                        <Link to={linkModify}>
+                                <button className="mx-1 text-gray-500 text-theme-sm dark:text-gray-400">
+                                    <i className="pi pi-pencil"></i>
+                                </button>
+                        </Link>
+                        {/* {deliveryForms.statut_livraison == 'en_attente' ? 
                         (<></>) :
                         (
                             <Link to={linkModify}>
@@ -161,7 +175,7 @@ export default function AllDeliveriesList({ filterType }) {
                                     <i className="pi pi-pencil"></i>
                                 </button>
                             </Link>
-                        )}
+                        )} */}
                     </>
                     
                 )}
@@ -169,7 +183,10 @@ export default function AllDeliveriesList({ filterType }) {
         )
     }
     const filteredDeliveryForms = deliveryForms.filter((item) => {
-        const itemDate = new Date(item.date_livraison);
+        let itemDate = new Date(item.date_livraison);
+        if(item.validations.length > 0){
+            itemDate = new Date(item.validations[0].date_validation)
+        }
         const matchesStatus = selectedStatus ? item.statut_livraison === selectedStatus : true;
         const matchesType = selectedType ? item.type_livraison_id === selectedType : true;
         const matchesStartDate = startDate ? itemDate >= startDate : true;
@@ -224,8 +241,12 @@ export default function AllDeliveriesList({ filterType }) {
                             placeholder="Date de fin"
                             value={endDate}
                             onChange={(dates, currentDateString) => {
-                                console.log(dates[0])
-                                setEndDate(dates[0])}}
+                                if (dates && dates[0]) {
+                                let selectedDate = new Date(dates[0]);
+                                let nextDay = new Date(selectedDate);
+                                nextDay.setDate(selectedDate.getDate() + 1);
+                                setEndDate(nextDay);
+                            }}}
                             dateFormat="dd/mm/yy"/>
                     </div>
                                 {/* <Calendar

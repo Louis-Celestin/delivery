@@ -23,15 +23,18 @@ export default function LivraisonReturn({ startDate, endDate }) {
                 let data = await delivery.getAllLivraisons()
 
                 const livraisonsReturn = data.filter(item => {
-                    let deliveryDate
-                    if(item.validations.length > 0){
-                        deliveryDate = new Date(item.validations[0].date_validation);
-                    }
+                    let deliveryDate = new Date(item.date_livraison)
+                    // if(item.validations.length > 0){
+                    //     deliveryDate = new Date(item.validations[0].date_validation);
+                    // }
                     return  deliveryDate >= startDate && 
                             deliveryDate <= endDate &&
                             item.statut_livraison === "en_attente";
                 });
                 setCount(livraisonsReturn.length);
+                console.log("date début : ",startDate)
+                console.log("date fin : ",endDate)
+                console.log("Livraisons retournées : ",livraisonsReturn)
             } catch(error){
                 console.log(error)
             } finally{

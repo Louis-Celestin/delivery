@@ -1,16 +1,23 @@
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+// @ts-ignore
 import LivraisonsGenerales from "../../components/livraisons/LivraisonsGenerales"
+// @ts-ignore
 import LivraisonsPieStats from "../../components/livraisons/LivraisonsPieStats"
+// @ts-ignore
 import ChargeursReturn from "../../components/livraisons/ChargeursReturn"
+// @ts-ignore
 import LivraisonsReturn from "../../components/receptions/LivraisonsReturn"
+// @ts-ignore
+import LivraisonsLivrees from "../../components/livraisons/LivraisonsLivrees"
 import DatePicker from "../../components/form/date-picker";
-import { startOfWeek, endOfWeek, format, getWeek, formatDate } from "date-fns";
+import { startOfWeek, endOfWeek, format, getWeek } from "date-fns";
 import { RefreshTimeIcon } from "../../icons";
 
 export default function DeliveryDashboard() {
 
   const currentWeek = getWeek(new Date(), { weekStartsOn: 1 });
+  // @ts-ignore
   const getFormattedDate = (date) => format(date, 'yyyy-MM-dd');
   const [startDate, setStartDate] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [endDate, setEndDate] = useState(endOfWeek(new Date(), { weekStartsOn: 1 }));
@@ -79,9 +86,10 @@ export default function DeliveryDashboard() {
                 id="date-picker-debut"
                 label="Date début"
                 placeholder={getFormattedDate(startDate)}
+                // @ts-ignore
                 value={getFormattedDate(startDate)}
-                onChange={(dates, currentDateString) => {
-                    console.log("Date début changée : ",currentDateString)
+                onChange={(currentDateString) => {
+                    // @ts-ignore
                     setStartDate(new Date(currentDateString))
                     setIsDateChanged(true)
                 }}
@@ -92,17 +100,22 @@ export default function DeliveryDashboard() {
                 id="date-picker"
                 label="Date fin"
                 placeholder={getFormattedDate(endDate)}
+                // @ts-ignore
                 value={getFormattedDate(endDate)}
-                onChange={(dates, currentDateString) => {
-                    console.log("Date fin changée : ",currentDateString)
-                    setEndDate(new Date(currentDateString))
-                    setIsDateChanged(true)
-                }}
+                onChange={(dates) => {
+                  if (dates && dates[0]) {
+                  let selectedDate = new Date(dates[0]);
+                  let nextDay = new Date(selectedDate);
+                  nextDay.setDate(selectedDate.getDate() + 1);
+                  setEndDate(nextDay);
+                  setIsDateChanged(true);
+                }}}
               />
             </div>
           </div>
         </div>
         <div className="grid sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2  gap-6 mb-6">
+          <LivraisonsLivrees startDate={startDate} endDate={endDate} />
           <LivraisonsReturn startDate={startDate} endDate={endDate} />
           {/* <ChargeursReturn startDate={startDate} endDate={endDate} /> */}
         </div>

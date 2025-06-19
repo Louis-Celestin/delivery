@@ -22,12 +22,14 @@ import { ProductDeliveries } from "../../../backend/livraisons/ProductDeliveries
 import Swal from 'sweetalert2'
 import { Modal } from "../../ui/modal/index.tsx";
 
+import SignatureCanvas from 'react-signature-canvas'
 
 export default function LivraisonInputs() {
 
   const merchants = new Merchants();
   const productDeliveries = new ProductDeliveries();
-  const userId = window.sessionStorage.getItem('id');
+  const userId = localStorage.getItem('id');
+  const role = localStorage.getItem("role_id")
   const navigate = useNavigate();
   const [isOrangeChecked, setOrangeChecked] = useState(false);
   const [isMTNChecked, setMTNChecked] = useState(false);
@@ -50,6 +52,10 @@ export default function LivraisonInputs() {
   const [messageTPE, setMessageTPE] = useState('');
   const [isConfirmModalOpen , setIsConfirmModalOpen] = useState(false);
   const [selectedChargeur, setSelectedChargeur] = useState(false);
+  const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
+  const [signature, setSignature] = useState();
+  const [signUrl, setSignUrl] = useState();
+  const [errorSign, setErrorSign] = useState('');
 
 
   const ChangeTypeLivraison = (value) => {
@@ -97,6 +103,17 @@ export default function LivraisonInputs() {
   },[])
 
   const handleConfirm = () => {
+    if(role != 1){
+      Swal.fire({
+          title: "Error",
+          text: "Vous n'êtes pas authorisé à faire cette action !",
+          icon: "error"
+      });
+      localStorage.removeItem('token');
+      localStorage.removeItem('username');
+      navigate('/signin');
+      return
+    }
     
     let banque = ''
     banque = filteredPointMarchand.map((terminal) => terminal.BANQUE).join("-");
@@ -123,11 +140,19 @@ export default function LivraisonInputs() {
       setErrorAjout("Ce Terminal n'est pas bancaire !");
       return;
     }
-    if (livraisonID == 6 && !(banque === 'ECOBANK' || banque === 'ECOBANK CI')){
+    if (livraisonID == 3 && !banque){
+      setErrorAjout("Ce Terminal n'est pas bancaire !");
+      return;
+    }
+    if (livraisonID == 6 && !(banque === 'ECOBANK' || banque === 'ECOBANK ACI')){
       setErrorAjout("Ce Terminal n'est pas ecobank !");
       return;
     }
-    if (livraisonID == 1 && (banque === 'ECOBANK' || banque === 'ECOBANK CI')){
+    if (livraisonID == 1 && (banque === 'ECOBANK' || banque === 'ECOBANK ACI')){
+      setErrorAjout("Ce Terminal n'est pas GIM !");
+      return;
+    }
+    if (livraisonID == 3 && (banque === 'ECOBANK' || banque === 'ECOBANK ACI')){
       setErrorAjout("Ce Terminal n'est pas GIM !");
       return;
     }
@@ -208,6 +233,7 @@ export default function LivraisonInputs() {
 
   const handleDeliver = async (e) => {
     e.preventDefault();
+
     if(produitsLivre.length == 0){
        Swal.fire({
       title: "Error",
@@ -216,21 +242,47 @@ export default function LivraisonInputs() {
       });
       return;
     }
+
+    if(signature.isEmpty()){
+      setErrorSign('Vous devez signer pour valider !')
+      return;
+    }
     setLoadingDelivery(true);
+    setIsSignatureModalOpen(false)
+    // setSignUrl(signature.toDataURL('image/png'))
+    const sign = signature.toDataURL('image/png')
+
+    const fd = new FormData();
+
     const commentaire = message;
     const type_livraison_id = livraisonID
     const user_id = userId;
     const isAncienne = false;
+    
+    
+    fd.append('commentaire',commentaire);
+    fd.append('type_livraison_id',livraisonID);
+    fd.append('user_id',userId);
+    fd.append('isAncienne',isAncienne)
+    fd.append('produitsLivre',JSON.stringify(produitsLivre))
+    if (sign) {
+      const blob = await fetch(sign).then(res => res.blob());
+      fd.append('signature_expediteur', blob, 'signature.png');
+    }
 
+    // console.log(blob)
     console.log('Trying to create form...')
     console.log('Commentaire : ',commentaire)
     console.log('ID Livraison : ',type_livraison_id)
     console.log('ID User', user_id)
     console.log('Ancienne ? ', isAncienne)
     console.log('Produits livrés : ',produitsLivre)
+    
 
     try{
-    const response = await productDeliveries.deliver(commentaire, type_livraison_id, user_id, isAncienne, produitsLivre)
+    // const response = await productDeliveries.deliver(commentaire, type_livraison_id, user_id, isAncienne, produitsLivre)
+    const response = await productDeliveries.deliver(fd)
+
     console.log(response);
     console.log('Formulaire créé')
     Swal.fire({
@@ -271,6 +323,41 @@ export default function LivraisonInputs() {
       prev.filter((_, index) => index !== indexToRemove)
     );
   };
+
+  const handleValidate = () =>{
+    if(role != 1){
+      Swal.fire({
+          title: "Error",
+          text: "Vous n'êtes pas authorisé à faire cette action !",
+          icon: "error"
+      });
+      localStorage.removeItem('token');
+      localStorage.removeItem('username');
+      navigate('/signin');
+      return
+    }
+    if(produitsLivre.length == 0){
+       Swal.fire({
+      title: "Error",
+      text: "Vous devez ajouter au moins un TPE.",
+      icon: "error"
+      });
+      return;
+    }
+    setIsSignatureModalOpen(true)
+  }
+
+  // const handleSignature = () =>{
+  //   setSignUrl(signature.toDataURL('image/png'))
+  //   setIsModalOpen(false)
+  //   setShowSignButton(false)
+  //   setShowValidateButton(true)
+  // }
+
+  const handleClear = () =>{
+    console.log(signUrl)
+    signature.clear()
+  }
 
   
   return (
@@ -518,8 +605,8 @@ export default function LivraisonInputs() {
               <ProgressSpinner style={{width: '50px', height: '50px'}} strokeWidth="8" animationDuration=".5s" />
             </span>
           :
-            <button onClick={handleDeliver} className="w-1/4 mt-20 bg-green-400 rounded-2xl h-10 flex justify-center items-center">
-              <span>Créer formulaire</span>
+            <button onClick={handleValidate} className="w-1/4 mt-20 bg-green-400 rounded-2xl h-10 flex justify-center items-center">
+              <span>Valider formulaire</span>
               <span className="text-2xl"><ListIcon /></span>
             </button> 
             }
@@ -582,6 +669,36 @@ export default function LivraisonInputs() {
           </button>
         </div>
       </Modal>
+      <Modal isOpen={isSignatureModalOpen} onClose={() => setIsSignatureModalOpen(false)} className="p-4 max-w-md">
+        <div className='p-1'>
+          <div className='text-center mb-3 text-sm'>
+              <span>Signez manuellement pour valider la livraison</span>
+          </div>
+          <div className='flex flex-col justify-center items-center'>
+              <SignatureCanvas
+                  ref={data=>setSignature(data)}
+                  canvasProps={{ width: 300, height: 250, className: 'sigCanvas border border-gray-300 rounded' }}
+              />
+              <div className='w-full mt-6 flex justify-center items-center'>
+                  <button
+                    onClick={handleClear}
+                    className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
+                    Clear
+                  </button>
+                  <button
+                    onClick={handleDeliver}
+                    className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
+                    Valider
+                  </button>
+              </div>  
+          </div>
+          <div className="text-center">
+            <span className="text-error-500 text-xs">
+              {errorSign}
+            </span>
+          </div>
+        </div>
+    </Modal>
     </>
   );
 }

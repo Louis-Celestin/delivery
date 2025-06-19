@@ -13,7 +13,8 @@ import {
 import 'primeicons/primeicons.css';
 
 import { ProductDeliveries } from '../../backend/livraisons/productDeliveries';
-
+import { generatePdf } from '../../backend/receptions/GeneratePDF';
+import { ProgressSpinner } from 'primereact/progressspinner';
 
 
 export default function DeliveryChargeurDetailsVue () {

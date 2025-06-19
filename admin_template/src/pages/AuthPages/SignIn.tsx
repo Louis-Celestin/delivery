@@ -1,5 +1,6 @@
 import PageMeta from "../../components/common/PageMeta";
 import AuthLayout from "./AuthPageLayout";
+// @ts-ignore
 import SignInForm from "../../components/auth/SignInForm";
 
 export default function SignIn() {
