@@ -45,7 +45,11 @@ export default function AllReceptionsList() {
             try{
                 let response = await productDeliveries.getAllLivraisons();
                 console.log(response)
-                setDeliveryForms(response)
+                const livraisonsCommercial = response.filter(item => {
+                    return  item.type_livraison_id !== 7
+                });
+                setDeliveryForms(livraisonsCommercial)
+                // setDeliveryForms(response)
                 
             } catch(error){
                 console.log('Error fetching data ',error)

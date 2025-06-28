@@ -12,11 +12,11 @@ import LivraisonsAttente from "../../components/receptions/LivraisonsAttente"
 // @ts-ignore
 import LivraisonsRecu from "../../components/receptions/LivraisonsRecu"
 // @ts-ignore
-import LivraisonsGenerales from "../../components/livraisons/LivraisonsGenerales"
+import LivraisonsGeneralesCommercial from "../../components/receptions/LivraisonsGeneralesCommercial"
 // @ts-ignore
-import LivraisonsPieStats from "../../components/livraisons/LivraisonsPieStats"
+import LivraisonsPieStatsCommercial from "../../components/receptions/LivraisonsPieStatsCommercial"
 // @ts-ignore
-import LivraisonsReturn from "../../components/receptions/LivraisonsReturn"
+import LivraisonsReturnCommercial from "../../components/receptions/LivraisonsReturnCommercial"
 import { RefreshTimeIcon } from "../../icons";
 
 import DatePicker from "../../components/form/date-picker";
@@ -127,16 +127,16 @@ export default function ReceiveDashboard() {
       
       <div className="grid xl:grid-cols-2 gap-6 my-6">
         <div className="grid grid-cols-1">
-          <LivraisonsGenerales startDate={startDate} endDate={endDate} />
+          <LivraisonsGeneralesCommercial startDate={startDate} endDate={endDate} />
         </div>
         <div>
-          <LivraisonsPieStats startDate={startDate} endDate={endDate} />
+          <LivraisonsPieStatsCommercial startDate={startDate} endDate={endDate} />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-6">
         <div className="grid lg:grid-cols-2">
-          <LivraisonsReturn startDate={startDate} endDate={endDate} />
+          <LivraisonsReturnCommercial startDate={startDate} endDate={endDate} />
         </div>
       </div>
 

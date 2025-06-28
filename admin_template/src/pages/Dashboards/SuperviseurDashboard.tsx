@@ -8,7 +8,12 @@ import LivraisonsAttente from "../../components/receptions/LivraisonsAttente"
 // @ts-ignore
 import LivraisonsRecu from "../../components/receptions/LivraisonsRecu"
 // @ts-ignore
-import LivraisonsReturn from "../../components/receptions/LivraisonsReturn"
+import LivraisonsReturnCommercial from "../../components/receptions/LivraisonsReturnCommercial"
+// @ts-ignore
+import LivraisonsAttenteMaintenance from "../../components/maintenance/LivraisonsAttenteMaintenance"
+// @ts-ignore
+import LivraisonsReturnMaintenance from "../../components/maintenance/LivraisonsReturnMaintenance"
+
 
 import DatePicker from "../../components/form/date-picker";
 import { startOfWeek, endOfWeek, format, getWeek } from "date-fns";
@@ -120,9 +125,24 @@ export default function SuperviseurDashboard() {
             <LivraisonsRecu startDate={startDate} endDate={endDate} />
           </div>
           <div>
-            <LivraisonsReturn startDate={startDate} endDate={endDate} />
+            <LivraisonsReturnCommercial startDate={startDate} endDate={endDate} />
           </div>
         </div>
+
+      <div className="grid grid-cols-2 gap-6">
+        <div className="mb-6">
+          <span className="font-bold text-2xl text-neutral-400">Informations Maintenance</span>
+        </div>
+      </div>
+
+      <div className="grid lg:grid-cols-3 space-y-3 mb-3 gap-4 md:gap-6">
+        <div className="">
+          <LivraisonsAttenteMaintenance />
+        </div>
+        <div>
+          <LivraisonsReturnMaintenance startDate={startDate} endDate={endDate} />
+        </div>
+      </div>
 
       <div className="grid grid-cols-2 gap-6">
         <div className="mb-6">

@@ -27,7 +27,8 @@ export default function AncienneLivraisonInputs() {
 
     const merchants = new Merchants();
     const productDeliveries = new ProductDeliveries();
-    const userId = window.localStorage.getItem('id');
+    const userId = localStorage.getItem('id');
+    const role = localStorage.getItem("role_id")
     const navigate = useNavigate();
     const [isOrangeChecked, setOrangeChecked] = useState(false);
     const [isMTNChecked, setMTNChecked] = useState(false);
@@ -97,6 +98,18 @@ export default function AncienneLivraisonInputs() {
     // },[])
 
     const handleConfirm = () => {
+
+      if(role != 1){
+        Swal.fire({
+            title: "Error",
+            text: "Vous n'êtes pas authorisé à faire cette action !",
+            icon: "error"
+        });
+        localStorage.removeItem('token');
+        localStorage.removeItem('username');
+        navigate('/signin');
+        return
+      }
     
       // let banque = ''
       // banque = filteredPointMarchand.map((terminal) => terminal.BANQUE).join("-");
@@ -166,8 +179,8 @@ export default function AncienneLivraisonInputs() {
         return;
       }
       if(livraisonID == 4 && banque){
-        setErrorAjout("Ce terminal est bancaire.");
-        return;
+      setErrorAjout("Ce terminal est bancaire.");
+      return;
       }
       // const localMobileMoney = [];
       // if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_ORANGE?.startsWith("07"))){
@@ -224,6 +237,17 @@ export default function AncienneLivraisonInputs() {
   
     const handleDeliver = async (e) => {
       e.preventDefault();
+      if(role != 1){
+        Swal.fire({
+            title: "Error",
+            text: "Vous n'êtes pas authorisé à faire cette action !",
+            icon: "error"
+        });
+        localStorage.removeItem('token');
+        localStorage.removeItem('username');
+        navigate('/signin');
+        return
+      }
       if(produitsLivre.length == 0){
         Swal.fire({
         title: "Error",
@@ -315,7 +339,7 @@ export default function AncienneLivraisonInputs() {
                         </div>
                         <div className="space-y-6">
                           <div>
-                            <Label>Type de Livraison *</Label>
+                            <Label>Type de Livraison <span className="text-red-700">*</span></Label>
                             <Select
                               options={options_livraison}
                               placeholder="Select an option"
@@ -324,13 +348,13 @@ export default function AncienneLivraisonInputs() {
                             />
                           </div>
                           <div>
-                            <Label>Nom du Livreur *</Label>
+                            <Label>Nom du Livreur <span className="text-red-700">*</span></Label>
                             <Input type="text" id="input"
                                     value={livreurName} onChange={(e) => setLivreurName(e.target.value)}
                                     />
                           </div>
                           <div>
-                            <Label>Nom du Receveur *</Label>
+                            <Label>Nom du Receveur <span className="text-red-700">*</span></Label>
                             <Input type="text" id="input"
                                     value={validateurName} onChange={(e) => setValidateurName(e.target.value)}
                                     />
@@ -360,7 +384,7 @@ export default function AncienneLivraisonInputs() {
                             <span className="text-sm font-semibold">Informations sur produits</span>
                         </div>
                           <div>
-                            <Label htmlFor="input">Numéro de série *</Label>
+                            <Label htmlFor="input">Numéro de série <span className="text-red-700">*</span></Label>
                             <Input type="text" id="input" value={terminalSN} onChange={(e) =>{
                             const value = e.target.value
                             // Allow only digits
@@ -379,13 +403,13 @@ export default function AncienneLivraisonInputs() {
                             />
                           </div>
                           <div>
-                            <Label>Point Marchand *</Label>
+                            <Label>Point Marchand <span className="text-red-700">*</span></Label>
                             <Input type="text" id="input"
                                     value={pointMarchand} onChange={(e) => setPointMarchand(e.target.value)}
                                     />
                           </div>
                           <div>
-                            <Label>Caisse *</Label>
+                            <Label>Caisse <span className="text-red-700">*</span></Label>
                             <Input type="text" id="input"
                                     value={caisse} onChange={(e) => setCaisse(e.target.value)}
                                     />
@@ -419,6 +443,11 @@ export default function AncienneLivraisonInputs() {
                               </span>
                             </div>
                           </div>
+                        </div>
+                        <div className="text-right text-gray-500">
+                          <span className="text-xs font-medium">
+                            Les champs suivis par un <span className="text-red-700">*</span> sont obligatoires
+                          </span>
                         </div>
                       </ComponentCard>
                     </>

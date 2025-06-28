@@ -27,10 +27,13 @@ export default function LivraisonsRecu({ startDate, endDate }) {
                     if(item.validations.length > 0){
                         deliveryDate = new Date(item.validations[0].date_validation);
                     }
+                    const isCommercial = item.type_livraison_id != 7;
                     return  deliveryDate >= startDate && 
                             deliveryDate <= endDate &&
+                            isCommercial &&
                             item.statut_livraison === "livre";
                 });
+                console.log(livraisonsRecues)
                 setCount(livraisonsRecues.length);
             } catch(error){
                 console.log(error)

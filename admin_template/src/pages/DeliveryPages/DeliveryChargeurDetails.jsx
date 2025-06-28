@@ -61,7 +61,7 @@ export default function DeliveryChargeurDetails () {
                         setTypeLivraison("TPE MAJ")
                       } else if(data.type_livraison_id == 4){
                         setTypeLivraison("TPE MOBILE")
-                      } else if(data.type_livraison_id == 5){
+                      } else if(data.type_livraison_id == 5 || data.type_livraison_id == 7){
                         setTypeLivraison("CHARGEUR")
                       }
                       setDateLivraison(formatDate(data.date_livraison))

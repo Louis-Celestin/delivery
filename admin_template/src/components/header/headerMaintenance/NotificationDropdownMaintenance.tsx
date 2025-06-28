@@ -1,13 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dropdown } from "../../ui/dropdown/Dropdown";
-// import { DropdownItem } from "../../ui/dropdown/DropdownItem";
-import { Link } from "react-router";
+import { DropdownItem } from "../../ui/dropdown/DropdownItem";
+import { Link, useNavigate } from "react-router";
 
-// import { BaseLinePhoneIcon } from "../../../icons";
+import { PaperPlaneIcon } from "../../../icons";
+// @ts-ignore
+import { ProductDeliveries } from "../../../backend/livraisons/productDeliveries"
+import { formatDistanceToNow, parseISO } from 'date-fns';
 
 export default function NotificationDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const [notifying, setNotifying] = useState(false);
+
+  const [livraisonEnAttente, setLivraisonEnAttente] = useState([])
+  const productDeliveries = new ProductDeliveries();
+  const navigate = useNavigate()
 
   function toggleDropdown() {
     setIsOpen(!isOpen);
@@ -16,11 +23,41 @@ export default function NotificationDropdown() {
   function closeDropdown() {
     setIsOpen(false);
   }
+  
+
 
   const handleClick = () => {
     toggleDropdown();
     setNotifying(false);
   };
+
+  useEffect( ()=>{
+    const fetchLivraisons = async () =>{
+      try{
+        let data = await productDeliveries.getAllLivraisons()
+        console.log(data)
+        const enAttente = data
+        // @ts-ignore
+        .filter(item => {
+          return item.statut_livraison === 'en_cours' && item.type_livraison_id === 7
+        })
+        // @ts-ignore
+        .map(item => ({
+          ...item,
+          timeAgo: formatDistanceToNow(parseISO(item.date_livraison), { addSuffix: true })
+        }));
+        if (enAttente.length > 0){
+          setNotifying(true)
+        }
+
+        setLivraisonEnAttente(enAttente)
+
+      } catch(error){
+        console.error('Error fetching livraisons:', error);
+      }
+    };fetchLivraisons();
+  },[]);
+
   return (
     <div className="relative">
       <button
@@ -80,31 +117,68 @@ export default function NotificationDropdown() {
         </div>
         <ul className="flex flex-col h-auto overflow-y-auto custom-scrollbar">
           {/* Example notification items */}
-          {/* <li>
-            <DropdownItem
-              onItemClick={closeDropdown}
-              className="flex gap-3 rounded-lg border-b border-gray-100 p-3 px-4.5 py-3 hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-white/5"
-              >
-              <div className=" flex justify-center items-center bg-gray-100 w-full h-10 rounded-full z-1 max-w-10">
-                <span className="text-2xl"><BaseLinePhoneIcon /></span>
-              </div>
+          {livraisonEnAttente.map(livraison =>{
 
-              <span className="block">
-                <span className="mb-1.5 block  text-theme-sm text-gray-500 dark:text-gray-400 space-x-1">
-                  <span>Livraison TPE GIM</span>
-                  <span className="font-medium text-gray-800 dark:text-white/90">
-                    5 produits
+            let livraisonTitle = ''
+            // @ts-ignore
+            if (livraison.type_livraison_id === 1) {
+              livraisonTitle = 'Livraison TPE GIM';
+              // @ts-ignore
+          } else if (livraison.type_livraison_id === 2) {
+              livraisonTitle = 'Livraison TPE REPARE'; // fallback or other types
+              // @ts-ignore
+          } else if (livraison.type_livraison_id === 3) {
+              livraisonTitle = 'Livraison TPE MAJ GIM'; // fallback or other types
+              // @ts-ignore
+          } else if (livraison.type_livraison_id === 4) {
+              livraisonTitle = 'Livraison TPE MOBILE'; // fallback or other types
+              // @ts-ignore
+          } else if (livraison.type_livraison_id === 5) {
+              livraisonTitle = 'Livraison CHARGEUR'; // fallback or other types
+              // @ts-ignore
+          } else if (livraison.type_livraison_id === 7) {
+              livraisonTitle = 'Livraison CHARGEUR (TPE décom RI OK)'; // fallback or other types
+          }
+            return(
+              <li>
+                <DropdownItem
+                  onItemClick={() =>{
+                    closeDropdown
+                    // @ts-ignore
+                    navigate(`/formulaire-recu/${livraison.id_livraison}`)
+                  }}
+                  className="flex gap-3 rounded-lg border-b border-gray-100 p-3 px-4.5 py-3 hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-white/5"
+                  >
+                  <div className=" flex justify-center items-center bg-gray-100 w-full h-10 rounded-full z-1 max-w-10">
+                    <span className="text-2xl"><PaperPlaneIcon /></span>
+                  </div>
+
+                  <span className="block">
+                    <span className="mb-1.5 flex flex-col  text-theme-sm text-gray-500 dark:text-gray-400 space-x-1">
+                      <span>
+                        <span>{livraisonTitle}</span>
+                        {/* @ts-ignore */}
+                        <span className="ms-2.5 font-bold">#{livraison.id_livraison}</span>
+                        
+                      </span>
+                      <span className="font-medium text-gray-800 dark:text-white/90">
+                      {/* @ts-ignore */}
+                        {livraison.qte_totale_livraison}
+                      </span>
+                    </span>
+
+                    <span className="flex items-center gap-2 text-gray-500 text-theme-xs dark:text-gray-400">
+                      <span className="text-warning-300">en attente</span>
+                      <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
+                      {/* @ts-ignore */}
+                      <span>{livraison.timeAgo}</span>
+                    </span>
                   </span>
-                </span>
-
-                <span className="flex items-center gap-2 text-gray-500 text-theme-xs dark:text-gray-400">
-                  <span className="text-warning-300">en attente</span>
-                  <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
-                  <span>5 min ago</span>
-                </span>
-              </span>
-            </DropdownItem>
-          </li> */}
+                </DropdownItem>
+              </li>
+            )
+          }
+          )}
           {/* Add more items as needed */}
         </ul>
         <Link

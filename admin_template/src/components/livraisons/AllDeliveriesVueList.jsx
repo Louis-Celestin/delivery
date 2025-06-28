@@ -29,12 +29,12 @@ export default function AllDeliveriesVueList({ filterType }) {
     ];
     const [selectedType, setSelectedType] = useState(null)
     const typeOptions = [
-        {label: 'TPE GIM', value:1},
-        {label: 'TPE Réparé', value:2},
-        {label: 'MAJ GIM', value:3},
-        {label: 'TPE MOBILE', value:4},
-        {label: 'TPE ECOBANK', value:6},
-        {label: 'Chargeur', value:5},
+        {label: 'TPE GIM', value:[1]},
+        {label: 'TPE Réparé', value:[2]},
+        {label: 'MAJ GIM', value:[3]},
+        {label: 'TPE MOBILE', value:[4]},
+        {label: 'TPE ECOBANK', value:[6]},
+        {label: 'Chargeur', value:[5, 7]},
     ]
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
@@ -83,8 +83,9 @@ export default function AllDeliveriesVueList({ filterType }) {
             title = 'Livraison TPE MAJ GIM'; // fallback or other types
         } else if (deliveryForms.type_livraison_id === 4) {
             title = 'Livraison TPE MOBILE'; // fallback or other types
-        } else if (deliveryForms.type_livraison_id === 5) {
+        } else if (deliveryForms.type_livraison_id === 5 || deliveryForms.type_livraison_id === 7) {
             title = 'Livraison CHARGEUR'; // fallback or other types
+            // titleClass = "font-bold text-sm text-yellow-400"
             link = `/formulaire-chargeur-vue/${deliveryForms.id_livraison}`
         } else if (deliveryForms.type_livraison_id === 6) {
             title = 'Livraison TPE ECOBANK'
@@ -129,7 +130,7 @@ export default function AllDeliveriesVueList({ filterType }) {
         let linkSee = `/formulaire-vue/${deliveryForms.id_livraison}`;
         // let linkModify = `/form-modify-nouvelle-livraison/${deliveryForms.id_livraison}`
 
-        if (deliveryForms.type_livraison_id === 5) {
+        if (deliveryForms.type_livraison_id === 5 || deliveryForms.type_livraison_id === 7) {
             linkSee = `/formulaire-chargeur-vue/${deliveryForms.id_livraison}`
             // linkModify = `/form-modify-livraison-chargeur/${deliveryForms.id_livraison}`
         }

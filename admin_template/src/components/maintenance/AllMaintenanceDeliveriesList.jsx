@@ -35,6 +35,7 @@ export default function AllMaintenanceDeliveriesList({ filterType }) {
         // {label: 'TPE MOBILE', value:4},
         // {label: 'TPE ECOBANK', value:6},
         {label: 'Chargeur', value:5},
+        {label: 'Chargeur (TPE DECOM RI OK)', value:7},
     ]
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
@@ -47,7 +48,8 @@ export default function AllMaintenanceDeliveriesList({ filterType }) {
                 console.log(response)
                 const livraisonsMaintenance = response.filter(item => {
                     return  item.type_livraison_id === 2 ||
-                            item.type_livraison_id === 5;
+                            item.type_livraison_id === 5 ||
+                            item.type_livraison_id === 7;
                 });
                 setDeliveryForms(livraisonsMaintenance)
                 
@@ -92,6 +94,9 @@ export default function AllMaintenanceDeliveriesList({ filterType }) {
             link = `/formulaire-chargeur-vue/${deliveryForms.id_livraison}`
         } else if (deliveryForms.type_livraison_id === 6) {
             title = 'Livraison TPE ECOBANK'
+        } else if (deliveryForms.type_livraison_id === 7) {
+            title = 'Livraison CHARGEUR (TPE DECOM RI OK)'
+            link = `/formulaire-maintenance-chargeur-recu/${deliveryForms.id_livraison}`
         }
         return (
             <span className="flex flex-col">
@@ -135,6 +140,10 @@ export default function AllMaintenanceDeliveriesList({ filterType }) {
 
         if (deliveryForms.type_livraison_id === 5) {
             linkSee = `/formulaire-chargeur-vue/${deliveryForms.id_livraison}`
+            // linkModify = `/form-modify-livraison-chargeur/${deliveryForms.id_livraison}`
+        }
+        if (deliveryForms.type_livraison_id === 7) {
+            linkSee = `/formulaire-maintenance-chargeur-recu/${deliveryForms.id_livraison}`
             // linkModify = `/form-modify-livraison-chargeur/${deliveryForms.id_livraison}`
         }
         return(

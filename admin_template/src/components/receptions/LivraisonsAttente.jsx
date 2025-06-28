@@ -19,9 +19,11 @@ export default function LivraisonsAttente() {
                 setLoading(true)
                 let data = await delivery.getAllLivraisons()
 
-                const livraisonsAttente = data.filter(
-                    data => data.statut_livraison === "en_cours"
-                );
+                const livraisonsAttente = data.filter(data => {
+                    const isEnCours = data.statut_livraison === "en_cours";
+                    const isCommercial = data.type_livraison_id != 7
+                    return isEnCours && isCommercial;
+                });
                 setCount(livraisonsAttente.length);
             } catch(error){
                 console.log(error)

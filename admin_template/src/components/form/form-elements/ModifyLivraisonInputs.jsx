@@ -59,6 +59,7 @@ export default function ModifyLivraisonInputs() {
     { value: "TPE REPARE", label: "TPE REPARE" },
     { value: "CHARGEUR", label: "CHARGEUR" },
     { value: "TPE ECOBANK", label: "TPE ECOBANK" },
+    { value: "CHARGEUR (TPE DECOM RI OK)", label: "CHARGEUR (TPE DECOM RI OK)"},
   ];
 
   const ChangeTypeLivraison = (value) => {
@@ -82,7 +83,10 @@ export default function ModifyLivraisonInputs() {
     }else if(value == 'TPE ECOBANK'){
       setLivraisonID(6)
       setSelectedChargeur(false)
-    } 
+    } else if(value == 'CHARGEUR (TPE DECOM RI OK)'){
+      setLivraisonID(7)
+      setSelectedChargeur(true)
+    }
   }
   
   useEffect( ()=>{
@@ -121,6 +125,11 @@ export default function ModifyLivraisonInputs() {
         case 6:
           setTypeLivraison("TPE ECOBANK");
           setLivraisonID(6);
+          break;
+        case 7: 
+          setTypeLivraison("CHARGEUR (TPE DECOM RI OK)");
+          setLivraisonID(7)
+          setSelectedChargeur(true)
           break;
 
         default: setTypeLivraison("Inconnu"); break;

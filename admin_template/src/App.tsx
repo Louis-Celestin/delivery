@@ -61,9 +61,10 @@ import DeliveryChargeurDetailsVue from "./pages/VueOnlyPages/DeliveryChargeurDet
 import AllMaintenanceDeliveries from "./pages/MaintenancePages/AllMaintenanceDeliveries";
 // @ts-ignore
 import DonneeGenerales from "./pages/DeliveryPages/DonneeGenerales"
-
 // @ts-ignore
 import ResetPassword from "./pages/AuthPages/ResetPassword"
+// @ts-ignore
+import ReceptionMaintenanceDetails from "./pages/MaintenancePages/ReceptionMaintenanceDetails"
 
 
 export default function App() {
@@ -112,6 +113,7 @@ export default function App() {
 
               {/* Maintenance */}
               <Route path="/toutes-les-livraisons-maintenance" element={<AllMaintenanceDeliveries />} />
+              <Route path="/formulaire-maintenance-chargeur-recu/:id" element={<ReceptionMaintenanceDetails />} />
 
               {/* Reset Password */}
               <Route path="/modifier-mot-de-passe" element={<ResetPassword />} />

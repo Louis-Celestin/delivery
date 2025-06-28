@@ -57,6 +57,7 @@ export default function LivraisonsGenerales({ startDate, endDate }) {
                     4: 0, // TPE MOBILE
                     5: 0,  // CHARGEUR
                     6: 0, // TPE ECOBANK
+                    7: 0, // CHARGEUR ( TPE DECOM RI OK )
                 };
 
                 filtered.forEach(item => {
@@ -70,7 +71,7 @@ export default function LivraisonsGenerales({ startDate, endDate }) {
                 setTPERepare(sums[2]);
                 setTPEMAJ(sums[3]);
                 setTPEMobile(sums[4]);
-                setNbeChargeur(sums[5]);
+                setNbeChargeur(sums[5]+sums[7]);
                 setTPEEcobank(sums[6])
             } catch (error) {
                 console.error("Error fetching deliveries:", error);

@@ -27,7 +27,8 @@ export default function LivraisonsChargeur({ startDate, endDate }) {
                     return  deliveryDate >= startDate && 
                             deliveryDate <= endDate &&
                             item.statut_livraison === "livre" &&
-                            item.type_livraison_id === 5;
+                            (item.type_livraison_id === 5 ||
+                            item.type_livraison_id === 7);
                 });
                 setCount(livraisonsChargeur.length);
             } catch(error){

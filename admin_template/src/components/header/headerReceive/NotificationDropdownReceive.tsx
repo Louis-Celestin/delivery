@@ -38,7 +38,9 @@ export default function NotificationDropdown() {
         console.log(data)
         const enAttente = data
         // @ts-ignore
-        .filter(item => item.statut_livraison === 'en_cours')
+        .filter(item => {
+          return item.statut_livraison === 'en_cours' && item.type_livraison_id != 7
+        })
         // @ts-ignore
         .map(item => ({
           ...item,

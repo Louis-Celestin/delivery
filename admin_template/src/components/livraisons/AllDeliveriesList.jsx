@@ -29,12 +29,12 @@ export default function AllDeliveriesList({ filterType }) {
     ];
     const [selectedType, setSelectedType] = useState(null)
     const typeOptions = [
-        {label: 'TPE GIM', value:1},
-        {label: 'TPE Réparé', value:2},
-        {label: 'MAJ GIM', value:3},
-        {label: 'TPE MOBILE', value:4},
-        {label: 'TPE ECOBANK', value:6},
-        {label: 'Chargeur', value:5},
+        {label: 'TPE GIM', value:[1]},
+        {label: 'TPE Réparé', value:[2]},
+        {label: 'MAJ GIM', value:[3]},
+        {label: 'TPE MOBILE', value:[4]},
+        {label: 'TPE ECOBANK', value:[6]},
+        {label: 'Chargeur', value:[5, 7]}, 
     ]
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
@@ -89,7 +89,7 @@ export default function AllDeliveriesList({ filterType }) {
         } else if (deliveryForms.type_livraison_id === 4) {
             title = 'Livraison TPE MOBILE'; // fallback or other types
             titleClass = "font-bold text-sm text-green-400"
-        } else if (deliveryForms.type_livraison_id === 5) {
+        } else if (deliveryForms.type_livraison_id === 5 || deliveryForms.type_livraison_id === 7) {
             title = 'Livraison CHARGEUR'; // fallback or other types
             titleClass = "font-bold text-sm text-yellow-400"
             linkSee = `/formulaire-chargeur/${deliveryForms.id_livraison}`
@@ -138,7 +138,7 @@ export default function AllDeliveriesList({ filterType }) {
         let linkSee = `/formulaire/${deliveryForms.id_livraison}`;
         let linkModify = `/form-modify-nouvelle-livraison/${deliveryForms.id_livraison}`
 
-        if (deliveryForms.type_livraison_id === 5) {
+        if (deliveryForms.type_livraison_id === 5 || deliveryForms.type_livraison_id === 7) {
             linkSee = `/formulaire-chargeur/${deliveryForms.id_livraison}`
             // linkModify = `/form-modify-livraison-chargeur/${deliveryForms.id_livraison}`
         }
@@ -188,14 +188,14 @@ export default function AllDeliveriesList({ filterType }) {
             itemDate = new Date(item.validations[0].date_validation)
         }
         const matchesStatus = selectedStatus ? item.statut_livraison === selectedStatus : true;
-        const matchesType = selectedType ? item.type_livraison_id === selectedType : true;
+        const matchesType = selectedType ? selectedType.includes(item.type_livraison_id) : true;
         const matchesStartDate = startDate ? itemDate >= startDate : true;
         const matchesEndDate = endDate ? itemDate <= endDate : true;
         const matchesGlobalFilter = globalFilter
           ? JSON.stringify(item).toLowerCase().includes(globalFilter.toLowerCase())
           : true;
         return matchesStatus && matchesType && matchesStartDate && matchesEndDate && matchesGlobalFilter;
-      });
+    });
 
 
     return(

@@ -79,6 +79,9 @@ export default function LivraisonInputs() {
     }else if(value == 'TPE ECOBANK'){
       setLivraisonID(6)
       setSelectedChargeur(false)
+    }else if(value == 'CHARGEUR (TPE DECOM RI OK)'){
+      setLivraisonID(7)
+      setSelectedChargeur(true)
     }
     
   };
@@ -95,12 +98,27 @@ export default function LivraisonInputs() {
       }catch(error){
         console.log('Error fetching data ',error)
         setErrorForm('Erreur lors de la génération du formulaire')
-
+        
       }finally{
         setLoadingMerchant(false)
       }
     };fetchTerminalInfos();
   },[])
+  
+
+  const filteredPointMarchand = terminalSN ? 
+  terminals.filter((terminal) => 
+        terminal.SERIAL_NUMBER.includes(terminalSN)) : [];
+
+  const options_livraison = [
+    { value: "TPE GIM", label: "TPE GIM" },
+    { value: "TPE MOBILE", label: "TPE MOBILE" },
+    { value: "TPE MAJ GIM", label: "MISE A JOUR GIM" },
+    { value: "TPE REPARE", label: "TPE REPARE" },
+    { value: "TPE ECOBANK", label: "TPE ECOBANK" },
+    { value: "CHARGEUR", label: "CHARGEUR" },
+    { value: "CHARGEUR (TPE DECOM RI OK)", label: "CHARGEUR (TPE DECOM RI OK)"},
+  ];
 
   const handleConfirm = () => {
     if(role != 1){
@@ -302,18 +320,6 @@ export default function LivraisonInputs() {
   }
   
 
-  const filteredPointMarchand = terminalSN ? 
-  terminals.filter((terminal) => 
-        terminal.SERIAL_NUMBER.includes(terminalSN)) : [];
-
-  const options_livraison = [
-    { value: "TPE GIM", label: "TPE GIM" },
-    { value: "TPE MOBILE", label: "TPE MOBILE" },
-    { value: "TPE MAJ GIM", label: "MISE A JOUR GIM" },
-    { value: "TPE REPARE", label: "TPE REPARE" },
-    { value: "TPE ECOBANK", label: "TPE ECOBANK" },
-    { value: "CHARGEUR", label: "CHARGEUR" },
-  ];
 
   const handleDelete = (indexToRemove) => {
     setProduitsLivresTable((prev) =>
@@ -377,7 +383,7 @@ export default function LivraisonInputs() {
                       </div>
                       <div className="space-y-6">
                         <div>
-                          <Label>Type de Livraison *</Label>
+                          <Label>Type de Livraison <span className="text-red-700">*</span></Label>
                           <Select
                             options={options_livraison}
                             placeholder="Select an option"
@@ -399,7 +405,7 @@ export default function LivraisonInputs() {
                             <span className="text-sm font-semibold">Informations sur produits</span>
                         </div>
                         <div>
-                          <Label htmlFor="input">Numéro de série *</Label>
+                          <Label htmlFor="input">Numéro de série <span className="text-red-700">*</span></Label>
                           <Input type="text" id="input" value={terminalSN} onChange={(e) =>{
                             const value = e.target.value
                             // Allow only digits
@@ -495,6 +501,11 @@ export default function LivraisonInputs() {
                             </span>
                           </div>
                         </div>
+                      </div>
+                      <div className="text-right text-gray-500">
+                        <span className="text-xs font-medium">
+                          Les champs suivis par un <span className="text-red-700">*</span> sont obligatoires
+                        </span>
                       </div>
                     </ComponentCard>
                   </>

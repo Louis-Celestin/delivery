@@ -7,7 +7,7 @@ import LivraisonsPieStats from "../../components/livraisons/LivraisonsPieStats"
 // @ts-ignore
 import ChargeursReturn from "../../components/livraisons/ChargeursReturn"
 // @ts-ignore
-import LivraisonsReturn from "../../components/receptions/LivraisonsReturn"
+import LivraisonsReturn from "../../components/livraisons/LivraisonsReturn"
 // @ts-ignore
 import LivraisonsLivrees from "../../components/livraisons/LivraisonsLivrees"
 import DatePicker from "../../components/form/date-picker";

@@ -88,7 +88,8 @@ export default function LivraisonsPieStats({ startDate, endDate }) {
                     }
                     return  deliveryDate >= startDate && 
                             deliveryDate <= endDate &&
-                            item.type_livraison_id === 5 &&
+                            (item.type_livraison_id === 5 ||
+                            item.type_livraison_id === 7) &&
                             item.statut_livraison === 'livre';
                 });
                 setChargeurs(livraisonChargeur.length)
