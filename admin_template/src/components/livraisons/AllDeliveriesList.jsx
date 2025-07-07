@@ -34,7 +34,8 @@ export default function AllDeliveriesList({ filterType }) {
         {label: 'MAJ GIM', value:[3]},
         {label: 'TPE MOBILE', value:[4]},
         {label: 'TPE ECOBANK', value:[6]},
-        {label: 'Chargeur', value:[5, 7]}, 
+        {label: 'Chargeur', value:[5, 7]},
+        {label: 'Chargeur (DECOM RI NOK)', value:[8]} 
     ]
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
@@ -96,6 +97,10 @@ export default function AllDeliveriesList({ filterType }) {
         } else if (deliveryForms.type_livraison_id === 6) {
             title = 'Livraison TPE ECOBANK'; // fallback or other types
             titleClass = "font-bold text-sm text-cyan-400"
+        } else if (deliveryForms.type_livraison_id === 8) {
+            title = 'Livraison CHARGEUR (DECOM RI NOK)'; // fallback or other types
+            titleClass = "font-bold text-sm text-yellow-600";
+            linkSee = `/formulaire-chargeur-decom/${deliveryForms.id_livraison}`;
         }
         return (
             <span className="flex flex-col">
@@ -141,7 +146,10 @@ export default function AllDeliveriesList({ filterType }) {
         if (deliveryForms.type_livraison_id === 5 || deliveryForms.type_livraison_id === 7) {
             linkSee = `/formulaire-chargeur/${deliveryForms.id_livraison}`
             // linkModify = `/form-modify-livraison-chargeur/${deliveryForms.id_livraison}`
+        } else if (deliveryForms.type_livraison_id === 8){
+            linkSee = `/formulaire-chargeur-decom/${deliveryForms.id_livraison}`;
         }
+
         return(
             <span className="flex items-center">
                 <Link to={linkSee}>
@@ -162,11 +170,17 @@ export default function AllDeliveriesList({ filterType }) {
                     </>
                 ) : (
                     <>
-                        <Link to={linkModify}>
-                                <button className="mx-1 text-gray-500 text-theme-sm dark:text-gray-400">
-                                    <i className="pi pi-pencil"></i>
-                                </button>
-                        </Link>
+                        {deliveryForms.type_livraison_id == 8 ? (
+                            <></>
+                        ) : (
+                            <>    
+                                <Link to={linkModify}>
+                                        <button className="mx-1 text-gray-500 text-theme-sm dark:text-gray-400">
+                                            <i className="pi pi-pencil"></i>
+                                        </button>
+                                </Link>
+                            </>
+                        )}
                         {/* {deliveryForms.statut_livraison == 'en_attente' ? 
                         (<></>) :
                         (

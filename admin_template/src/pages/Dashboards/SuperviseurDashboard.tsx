@@ -14,6 +14,25 @@ import LivraisonsAttenteMaintenance from "../../components/maintenance/Livraison
 // @ts-ignore
 import LivraisonsReturnMaintenance from "../../components/maintenance/LivraisonsReturnMaintenance"
 
+// @ts-ignore
+import DemandesLivraisons from "../../components/livraisons/DemandesLivraisons"
+
+// @ts-ignore
+// import LivraisonsReturn from "../../components/supervision/LivraisonsReturn"
+// @ts-ignore
+import DemandesAttentes from "../../components/supervision/DemandesAttentes"
+// @ts-ignore
+import DemandesValidees from "../../components/supervision/DemandesValidees"
+// @ts-ignore
+import DemandesReturn from "../../components/supervision/DemandesReturn"
+// @ts-ignore
+import DemandesCancel from "../../components/supervision/DemandesCancel"
+
+// @ts-ignore
+import LivraisonsAttentesSupport from "../../components/support/LivraisonsAttentesSupport"
+// @ts-ignore
+import LivraisonsReturnSupport from "../../components/support/LivraisonsReturnSupport"
+
 
 import DatePicker from "../../components/form/date-picker";
 import { startOfWeek, endOfWeek, format, getWeek } from "date-fns";
@@ -111,9 +130,23 @@ export default function SuperviseurDashboard() {
             </div>
           </div>
       </div>
+
+      <div className="grid grid-cols-2 gap-6">
+        <div className="mb-6">
+          <span className="font-bold text-2xl text-neutral-400">Demandes Globales</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-6 mb-6">
+        <DemandesAttentes />
+        <DemandesValidees startDate={startDate} endDate={endDate} />
+        <DemandesReturn startDate={startDate} endDate={endDate} />
+        <DemandesCancel startDate={startDate} endDate={endDate} />
+      </div>
+
        <div className="grid grid-cols-2 gap-6">
         <div className="mb-6">
-          <span className="font-bold text-2xl text-neutral-400">Informations Réceptions</span>
+          <span className="font-bold text-2xl text-neutral-400">Livraisons Commerciales</span>
         </div>
       </div>
 
@@ -131,7 +164,7 @@ export default function SuperviseurDashboard() {
 
       <div className="grid grid-cols-2 gap-6">
         <div className="mb-6">
-          <span className="font-bold text-2xl text-neutral-400">Informations Maintenance</span>
+          <span className="font-bold text-2xl text-neutral-400">Livraisons Maintenance</span>
         </div>
       </div>
 
@@ -146,7 +179,22 @@ export default function SuperviseurDashboard() {
 
       <div className="grid grid-cols-2 gap-6">
         <div className="mb-6">
-          <span className="font-bold text-2xl text-neutral-400">Informations Livraisons</span>
+          <span className="font-bold text-2xl text-neutral-400">Livraisons Support</span>
+        </div>
+      </div>
+
+      <div className="grid lg:grid-cols-3 space-y-3 mb-3 gap-4 md:gap-6">
+        <div className="">
+          <LivraisonsAttentesSupport />
+        </div>
+        <div>
+          <LivraisonsReturnSupport startDate={startDate} endDate={endDate} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-6">
+        <div className="mb-6">
+          <span className="font-bold text-2xl text-neutral-400">Livraisons Globales</span>
         </div>
       </div>
 
@@ -158,7 +206,11 @@ export default function SuperviseurDashboard() {
           <LivraisonsPieStats startDate={startDate} endDate={endDate} />
         </div>
       </div>
-
+      <div className="grid xl:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1">
+          <DemandesLivraisons />
+        </div>
+      </div>
      
   
       <div className="grid grid-cols-12 gap-4 md:gap-6">

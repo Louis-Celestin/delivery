@@ -26,7 +26,8 @@ export default function ModifyLivraisonChargeurInputs() {
 
   const merchants = new Merchants();
   const productDeliveries = new ProductDeliveries();
-  const userId = window.sessionStorage.getItem('id');
+  const userId = localStorage.getItem('id');
+  const role = localStorage.getItem("role_id")
   const { id } = useParams();
   const navigate = useNavigate();
   const [isOrangeChecked, setOrangeChecked] = useState(false);

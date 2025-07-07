@@ -37,7 +37,7 @@ export default function LivraisonsChargeur({ startDate, endDate }) {
                 setLoading(false)
             }
         }; fetchLivraisonsChargeur();
-    },[]);
+    },[startDate,endDate]);
     return (
         <>
             <div className="rounded-2xl border border-emerald-400  bg-white px-4 pb-3 pt-4 dark:border-gray-800">

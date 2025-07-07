@@ -39,7 +39,7 @@ export default function ReceiveDashboard() {
       <div className="mb-6">
         <div className="mb-2 flex justify-between">
           <span className="text-xl font-bold">
-            DASHBOARD RECEPTION
+            DASHBOARD COMMERCIAL
           </span>
           <div className="flex flex-col">
             {isDateChanged ? 

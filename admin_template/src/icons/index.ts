@@ -52,6 +52,7 @@ import { ReactComponent as ChatIcon } from "./chat.svg?react";
 import { ReactComponent as MoreDotIcon } from "./moredot.svg?react";
 import { ReactComponent as AlertHexaIcon } from "./alert-hexa.svg?react";
 import { ReactComponent as ErrorHexaIcon } from "./info-hexa.svg?react";
+import { ReactComponent as CheckSimple } from "./check-circle-simple.svg?react";
 
 import { ReactComponent as BaseLinePhoneIcon } from "./baseline-smartphone.svg?react";
 import { ReactComponent as CableDataIcon } from "./cable-data.svg?react";
@@ -63,6 +64,7 @@ import { ReactComponent as BaselineSearch } from "./baseline-search.svg?react"
 import { ReactComponent as ReturnArrow } from "./return-2-solid.svg?react"
 import { ReactComponent as MaintenanceCircle } from "./maintenance-warning.svg?react"
 import { ReactComponent as SimpleInfo } from "./outline-info.svg?react"
+import { ReactComponent as ClipboardCheck } from "./clipboard-check-form.svg?react"
 export {
   ErrorHexaIcon,
   AlertHexaIcon,
@@ -128,4 +130,6 @@ export {
   ReturnArrow,
   MaintenanceCircle,
   SimpleInfo,
+  ClipboardCheck,
+  CheckSimple,
 };

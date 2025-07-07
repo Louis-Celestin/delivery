@@ -21,7 +21,7 @@ export default function LivraisonsAttente() {
 
                 const livraisonsAttente = data.filter(data => {
                     const isEnCours = data.statut_livraison === "en_cours";
-                    const isCommercial = data.type_livraison_id != 7
+                    const isCommercial = data.type_livraison_id != 7 && data.type_livraison_id != 8;
                     return isEnCours && isCommercial;
                 });
                 setCount(livraisonsAttente.length);

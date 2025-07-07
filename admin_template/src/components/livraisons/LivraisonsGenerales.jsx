@@ -20,6 +20,7 @@ export default function LivraisonsGenerales({ startDate, endDate }) {
     const [tpeRepare, setTPERepare] = useState(0)
     const [tpeEcobank, setTPEEcobank] = useState(0)
     const [nbeChargeur, setNbeChargeur] = useState(0);
+    const [nbeChargeurDecom, setNbeChargeurDecom] = useState(0);
 
     const productDeliveries = new ProductDeliveries();
 
@@ -58,6 +59,7 @@ export default function LivraisonsGenerales({ startDate, endDate }) {
                     5: 0,  // CHARGEUR
                     6: 0, // TPE ECOBANK
                     7: 0, // CHARGEUR ( TPE DECOM RI OK )
+                    8: 0,
                 };
 
                 filtered.forEach(item => {
@@ -72,7 +74,8 @@ export default function LivraisonsGenerales({ startDate, endDate }) {
                 setTPEMAJ(sums[3]);
                 setTPEMobile(sums[4]);
                 setNbeChargeur(sums[5]+sums[7]);
-                setTPEEcobank(sums[6])
+                setTPEEcobank(sums[6]);
+                setNbeChargeurDecom(sums[8]);
             } catch (error) {
                 console.error("Error fetching deliveries:", error);
             } finally {
@@ -204,6 +207,26 @@ export default function LivraisonsGenerales({ startDate, endDate }) {
                                     {loading ? 
                                     (<ProgressSpinner style={{width: '15px', height: '15px'}} strokeWidth="8" animationDuration=".5s" />):
                                     (<span className="text-3xl font-bold my-3 dark:text-white">{nbeChargeur}</span>)}
+                                    
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="col-span-2 space-y-6">
+                        <div className="rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800 dark:bg-gray-800">
+                            <div>
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-sm dark:text-white/90">
+                                        CHARGEUR DECOM
+                                    </h3>
+                                    <span className="text-3xl p-1 rounded-xl bg-orange-300 ">
+                                        <CableDataIcon />
+                                    </span>
+                                </div>
+                                <div>
+                                    {loading ? 
+                                    (<ProgressSpinner style={{width: '15px', height: '15px'}} strokeWidth="8" animationDuration=".5s" />):
+                                    (<span className="text-3xl font-bold my-3 dark:text-white">{nbeChargeurDecom}</span>)}
                                     
                                 </div>
                             </div>

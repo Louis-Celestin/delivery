@@ -10,6 +10,8 @@ import ChargeursReturn from "../../components/livraisons/ChargeursReturn"
 import LivraisonsReturn from "../../components/livraisons/LivraisonsReturn"
 // @ts-ignore
 import LivraisonsLivrees from "../../components/livraisons/LivraisonsLivrees"
+// @ts-ignore
+import DemandesLivraisons from "../../components/livraisons/DemandesLivraisons"
 import DatePicker from "../../components/form/date-picker";
 import { startOfWeek, endOfWeek, format, getWeek } from "date-fns";
 import { RefreshTimeIcon } from "../../icons";
@@ -129,7 +131,10 @@ export default function DeliveryDashboard() {
           <LivraisonsPieStats startDate={startDate} endDate={endDate} />
         </div>
       </div>
-      <div className="grid grid-cols-2">
+      <div className="grid xl:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1">
+          <DemandesLivraisons />
+        </div>
       </div>
   
       <div className="grid grid-cols-12 gap-4 md:gap-6">

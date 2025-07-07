@@ -21,6 +21,7 @@ export default function LivraisonsPieStats({ startDate, endDate }) {
     const [tpeRepare, setTPERepare] = useState(0)
     const [chargeurs, setChargeurs] = useState(0)
     const [tpeEcobank, setTPEEcobank] = useState(0)
+    const [chargeursDecom, setChargeursDecom] = useState(0)
 
     useEffect(() => {
         const fetchStatsTPE = async () =>{
@@ -81,18 +82,17 @@ export default function LivraisonsPieStats({ startDate, endDate }) {
                 });
                 setTPEMobile(livraisonMobile.length)
 
-                const livraisonChargeur = allData.filter(item => {
+                const livraisonChargeurDecom = allData.filter(item => {
                     let deliveryDate
                     if(item.validations.length > 0){
                         deliveryDate = new Date(item.validations[0].date_validation);
                     }
                     return  deliveryDate >= startDate && 
                             deliveryDate <= endDate &&
-                            (item.type_livraison_id === 5 ||
-                            item.type_livraison_id === 7) &&
+                            item.type_livraison_id === 8 &&
                             item.statut_livraison === 'livre';
                 });
-                setChargeurs(livraisonChargeur.length)
+                setChargeursDecom(livraisonChargeurDecom.length)
 
                 const livraisonEcobank = allData.filter(item => {
                     let deliveryDate
@@ -106,23 +106,38 @@ export default function LivraisonsPieStats({ startDate, endDate }) {
                 });
                 setTPEEcobank(livraisonEcobank.length)
 
+                const livraisonChargeur = allData.filter(item => {
+                    let deliveryDate
+                    if(item.validations.length > 0){
+                        deliveryDate = new Date(item.validations[0].date_validation);
+                    }
+                    return  deliveryDate >= startDate && 
+                            deliveryDate <= endDate &&
+                            (item.type_livraison_id === 5 ||
+                            item.type_livraison_id === 7) &&
+                            item.statut_livraison === 'livre';
+                });
+                setChargeurs(livraisonChargeur.length)
+
                 const piedata = {
-                    labels: ['TPE GIM', 'TPE MOBILE', 'TPE REPARE', 'TPE MAJ', 'CHARGEURS', 'TPE ECOBANK'],
+                    labels: ['TPE GIM', 'TPE MOBILE', 'TPE REPARE', 'TPE MAJ','TPE ECOBANK', 'CHARGEURS', 'CHARGEURS DECOM'],
                     datasets: [
                         {
-                            data: [livraisonGIM.length, livraisonMobile.length, livraisonRepare.length, livraisonMAJ.length, livraisonChargeur.length, livraisonEcobank.length],
+                            data: [livraisonGIM.length, livraisonMobile.length, livraisonRepare.length, livraisonMAJ.length, livraisonEcobank.length, livraisonChargeur.length, livraisonChargeurDecom.length],
                             // datacharts: [100, 23, 34, 200],
                             backgroundColor: [
                                 'rgba(217, 135, 255, 0.5)', 
                                 'rgba(109, 199, 105, 0.62)', 
                                 'rgba(176, 84, 86, 0.5)',
                                 'rgba(143, 105, 199, 0.62)',
-                                'rgba(212, 212, 89, 0.62)',
                                 'rgba(105, 201, 207, 0.62)',
+                                'rgba(212, 212, 89, 0.62)',
+                                'rgba(212, 141, 19, 0.5)',
                             ],
                             hoverBackgroundColor: [
                                 'rgba(0, 0, 0, 1)', 
                                 'rgba(0, 0, 0, 1)', 
+                                'rgba(0, 0, 0, 1)',
                                 'rgba(0, 0, 0, 1)',
                                 'rgba(0, 0, 0, 1)',
                                 'rgba(0, 0, 0, 1)',
@@ -186,12 +201,16 @@ export default function LivraisonsPieStats({ startDate, endDate }) {
                                                 <span> : {tpeMAJ}</span>
                                             </div>
                                             <div className="my-1">
+                                                <span className="p-1 text-sm rounded-3xl bg-cyan-200 text-cyan-600 font-bold">TPE Ecobank</span>
+                                                <span> : {tpeEcobank}</span>
+                                            </div>
+                                            <div className="my-1">
                                                 <span className="p-1 text-sm rounded-3xl bg-yellow-200 text-yellow-600 font-bold">Chargeurs</span>
                                                 <span> : {chargeurs}</span>
                                             </div>
                                             <div className="my-1">
-                                                <span className="p-1 text-sm rounded-3xl bg-cyan-200 text-cyan-600 font-bold">TPE Ecobank</span>
-                                                <span> : {tpeEcobank}</span>
+                                                <span className="p-1 text-sm rounded-3xl bg-orange-200 text-orange-600 font-bold">Chargeurs DECO</span>
+                                                <span> : {chargeursDecom}</span>
                                             </div>
                                         </div>
                                     </div>

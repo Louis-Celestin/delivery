@@ -101,7 +101,6 @@ export default function ReceptionDetails() {
                         setRecu(true)
                         setStatutLivraison('Livré')
                         setStatutClass('text-sm border rounded-xl p-1 bg-green-100 text-green-500 font-bold')
-
                         setCommentaireReception(data.validations[0].commentaire)
                       }else if(data.statut_livraison == 'en_attente'){
                         setShowSignButton(false)
@@ -389,7 +388,6 @@ export default function ReceptionDetails() {
                                 </TableRow>
                                 ))}
                             </TableBody>
-
                             </Table>
                         </div>
                     </div>

@@ -1,0 +1,547 @@
+import { useEffect, useState, useRef } from "react";
+import ComponentCard from "../../common/ComponentCard.tsx";
+import Label from "../Label.tsx";
+import Input from "../input/InputField.tsx";
+import Checkbox from "../input/Checkbox";
+import Select from "../Select.tsx";
+import TextArea from "../input/TextArea";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHeader,
+  TableRow,
+} from "../../ui/table";
+import { PlusIcon } from "../../../icons/index.ts";
+import { ListIcon } from "../../../icons/index.ts";
+import 'primeicons/primeicons.css'; 
+import { ProgressSpinner } from 'primereact/progressspinner';
+import { useNavigate } from "react-router";
+import { Merchants } from "../../../backend/livraisons/Merchants.js";
+import { Demandes } from "../../../backend/demandes/Demandes.js";
+import Swal from 'sweetalert2'
+import { Modal } from "../../ui/modal/index.tsx";
+
+import SignatureCanvas from 'react-signature-canvas'
+
+export default function DemandeSupportInputs() {
+
+  const merchants = new Merchants();
+  const demandes = new Demandes();
+  const userId = localStorage.getItem('id');
+  const role = localStorage.getItem("role_id")
+  const navigate = useNavigate();
+
+  const [terminals, setTerminals] = useState([]);
+  const [terminalSN, setTerminalSN] = useState('');
+  const [loadingMerchant, setLoadingMerchant] = useState(false);
+  const [loadingDemande, setLoadingDemande] = useState(false);
+  const [livraisonID, setLivraisonID] = useState(null);
+  const [message, setMessage] = useState("");
+  const [produitsDemandesTable, setProduitsDemandesTable] = useState([]);
+  const [produitsDemande, setProduitsDemandes] = useState([]);
+  const [error, setError] = useState(null);
+  const [errorFrom, setErrorForm] = useState(null);
+  const [errorAjout, setErrorAjout] = useState(null);
+  const [errorDeliver, setErrorDeliver] = useState(null);
+  const [messageTPE, setMessageTPE] = useState('');
+  const [isConfirmModalOpen , setIsConfirmModalOpen] = useState(false);
+  const [selectedChargeur, setSelectedChargeur] = useState(false);
+  const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
+  const [signature, setSignature] = useState();
+  const [signUrl, setSignUrl] = useState();
+  const [errorSign, setErrorSign] = useState('');
+
+  const [typeDemande, setTypeDemande] = useState('');
+  const [demandeID, setDemandeID] = useState(null);
+
+  const [qteProduits, setQteProduits] = useState(0)
+
+
+  const ChangeDemandeType = (value) => {
+    console.log("Selected value:", value);
+    setTypeDemande(value);
+    if(value == 'CHARGEUR DECOMMISSIONNE'){
+      setDemandeID(1);
+      setSelectedChargeur(true)
+    }
+    
+  };
+  
+
+  useEffect( ()=>{
+    const fetchTerminalInfos = async () => {
+      setLoadingMerchant(true)
+      try{
+        let data;
+        data = await merchants.findMerchant();
+        // console.log(data)
+        setTerminals(data)
+      }catch(error){
+        console.log('Error fetching data ',error)
+        setErrorForm('Erreur lors de la génération du formulaire')
+        
+      }finally{
+        setLoadingMerchant(false)
+      }
+    };fetchTerminalInfos();
+  },[])
+  
+
+  const filteredPointMarchand = terminalSN ? 
+  terminals.filter((terminal) => 
+        terminal.SERIAL_NUMBER.includes(terminalSN)) : [];
+
+  const options_demande = [
+    { value: "CHARGEUR DECOMMISSIONNE", label: "CHARGEUR DECOMMISSIONNE" },
+  ];
+
+  const handleConfirm = () => {
+    if(role != 7){
+      Swal.fire({
+          title: "Error",
+          text: "Vous n'êtes pas authorisé à faire cette action !",
+          icon: "error"
+      });
+      localStorage.removeItem('token');
+      localStorage.removeItem('username');
+      navigate('/signin');
+      return
+    }
+
+    if(!demandeID){
+      setErrorAjout("Vous devez choisir le type de demande !");
+      return;
+    }
+    if (!filteredPointMarchand || filteredPointMarchand.length === 0 || terminalSN.length < 10) {
+      setErrorAjout("S/N invalide !");
+      return;
+    }
+    const isDuplicate = produitsDemande.some(prod => prod.serialNumber === terminalSN);
+    if (isDuplicate) {
+      setErrorAjout("Ce numéro de série a déjà été ajouté !");
+      return;
+    }
+    
+    setErrorAjout('')
+    setIsConfirmModalOpen(true)
+  }
+
+  const handleAjout = (e) => {
+    e.preventDefault(); // prevent page reload
+
+    console.log('Trying to ADD.....')
+    
+    const newProduit = {
+      pointMarchand: filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(","),
+      caisse: filteredPointMarchand.map((terminal) => terminal.TPE).join(","),
+      serialNumber: terminalSN,
+      commentaireTPE: messageTPE,
+    };
+  
+    setProduitsDemandesTable((prev) => [...prev, newProduit]);
+    setProduitsDemandes((prev) => [...prev, newProduit]);
+  
+    // Optional: Reset form fields
+    setTerminalSN('');
+    setMessageTPE('')
+
+    setErrorAjout('')
+    setIsConfirmModalOpen(false)
+
+    setQteProduits(qteProduits+1)
+  }
+    
+
+  const handleDemande = async (e) => {
+    e.preventDefault();
+    if(role != 7){
+      Swal.fire({
+          title: "Error",
+          text: "Vous n'êtes pas authorisé à faire cette action !",
+          icon: "error"
+      });
+      localStorage.removeItem('token');
+      localStorage.removeItem('username');
+      navigate('/signin');
+      return
+    }
+    if(produitsDemande.length == 0){
+       Swal.fire({
+      title: "Error",
+      text: "Vous devez ajouter au moins un TPE.",
+      icon: "error"
+      });
+      return;
+    }
+
+    // if(signature.isEmpty()){
+    //   setErrorSign('Vous devez signer pour valider !')
+    //   return;
+    // }
+    setLoadingDemande(true);
+    // setIsSignatureModalOpen(false)
+    // setSignUrl(signature.toDataURL('image/png'))
+    // const sign = signature.toDataURL('image/png')
+
+    const fd = new FormData();
+
+    const commentaire = message;
+    const type_demande_id = demandeID
+    const user_id = userId;
+    const role_demandeur = role;
+    const role_validateur = 3
+    
+    fd.append('produitsDemandes',JSON.stringify(produitsDemande));
+    fd.append('commentaire',commentaire);
+    fd.append('user_id',userId);
+    fd.append('type_demande_id',type_demande_id);
+    // if (sign) {
+    //   const blob = await fetch(sign).then(res => res.blob());
+    //   fd.append('signature_demandeur', blob, 'signature.png');
+    // }
+    fd.append('role_demandeur', role_demandeur);
+    fd.append('role_validateur', role_validateur);
+
+    // console.log(blob)
+    console.log('DEMANDE')
+    console.log('ID DEMANDE : ',type_demande_id)
+    console.log('ID User : ', user_id)
+    console.log('Produits demandés : ',produitsDemande)
+    // console.log('Signature : ', fd.get('signature_demandeur'))
+
+    try{
+    // const response = await productDeliveries.deliver(commentaire, type_livraison_id, user_id, isAncienne, produitsDemande)
+    const response = await demandes.faireDemande(fd)
+
+    console.log(response);
+    console.log('Demande créée')
+    Swal.fire({
+      title: "Succès",
+      text: "Demande créée avec succès",
+      icon: "success"
+    });
+    navigate('/toutes-les-demandes-support');
+    }catch (error) {
+      console.log('error')
+      setError('Erreur lors de la génération du formulaire');
+    }finally{
+      setProduitsDemandes([])
+      setProduitsDemandesTable([])
+      setLoadingDemande(false)
+    } 
+  }
+  
+
+
+  const handleDelete = (indexToRemove) => {
+    setProduitsDemandesTable((prev) =>
+      prev.filter((_, index) => index !== indexToRemove)
+    );
+    setProduitsDemandes((prev) =>
+      prev.filter((_, index) => index !== indexToRemove)
+    );
+    setQteProduits(qteProduits-1)
+  };
+
+  const handleValidate = () =>{
+    if(role != 7){
+      Swal.fire({
+          title: "Error",
+          text: "Vous n'êtes pas authorisé à faire cette action !",
+          icon: "error"
+      });
+      localStorage.removeItem('token');
+      localStorage.removeItem('username');
+      navigate('/signin');
+      return
+    }
+    if(produitsDemande.length == 0){
+       Swal.fire({
+      title: "Error",
+      text: "Vous devez ajouter au moins un TPE.",
+      icon: "error"
+      });
+      return;
+    }
+    setIsSignatureModalOpen(true)
+  }
+
+  // const handleSignature = () =>{
+  //   setSignUrl(signature.toDataURL('image/png'))
+  //   setIsModalOpen(false)
+  //   setShowSignButton(false)
+  //   setShowValidateButton(true)
+  // }
+
+  const handleClear = () =>{
+    console.log(signUrl)
+    signature.clear()
+  }
+
+  
+  return (
+    <>
+      <div className="flex justify-center mb-6 bg-blue-300 rounded-2xl p-3">
+        {loadingMerchant ? (<>Loading...</>) :
+          (
+            errorFrom ? (
+              <div className="text-error-600 bg-error-300 font-medium flex items-center justify-center rounded-3xl text-sm p-4">
+                {errorFrom}
+              </div>
+            ) : (
+                  <>
+                    <ComponentCard className="md:w-1/2 w-full" title={`Demande ${typeDemande}`}>
+                      <div className="pb-3 text-center">
+                            <span className="text-sm font-semibold">Informations générales</span>
+                      </div>
+                      <div className="space-y-6">
+                        <div>
+                          <Label>Type de demande <span className="text-red-700">*</span></Label>
+                          <Select
+                            options={options_demande}
+                            placeholder="Choisir une option"
+                            onChange={ChangeDemandeType}
+                            className="dark:bg-dark-900"
+                            
+                          />
+                        </div>
+                        <div>
+                          <Label>Description</Label>
+                          <TextArea
+                            value={message}
+                            onChange={(value) => setMessage(value)}
+                            rows={4}
+                            placeholder="Ajoutez un commentaire"
+                          />
+                        </div>
+                        <div className="pb-3 text-center">
+                            <span className="text-sm font-semibold">Informations sur produits</span>
+                        </div>
+                        <div>
+                          <Label htmlFor="input">Numéro de série <span className="text-red-700">*</span></Label>
+                          <Input type="text" id="input" value={terminalSN} onChange={(e) =>{
+                            const value = e.target.value
+                            // Allow only digits
+                            if (/^\d*$/.test(value)){
+                            // Only allow up to 10 characters
+                              if (value.length <= 10) {
+                                setTerminalSN(value);
+                              }} 
+                              }}/>
+                        </div>
+                        <div>
+                          <Label>Commentaire pour terminal</Label>
+                          <TextArea
+                          value={messageTPE}
+                          onChange={(value) => setMessageTPE(value)}
+                          rows={2}
+                          placeholder="Ajoutez un commentaire"
+                          />
+                        </div>
+                        <div>
+                          <Label>Point Marchand</Label>
+                          <Input type="text" id="input"
+                                  className="cursor-default"
+                                  value={filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(" - ")}
+                                  readOnly
+                                  />
+                        </div>
+                        <div>
+                          <button onClick={handleConfirm} className="w-full bg-green-400 rounded-2xl h-10 flex items-center justify-center">
+                            <span>Ajouter</span>
+                            <span className="text-2xl"><PlusIcon /></span>
+                          </button>
+                          <div>
+                            <span className="text-error-600 font-medium flex items-center justify-center text-sm p-1 mt-4">
+                              {errorAjout}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right text-gray-500">
+                        <span className="text-xs font-medium">
+                          Les champs suivis par un <span className="text-red-700">*</span> sont obligatoires
+                        </span>
+                      </div>
+                    </ComponentCard>
+                  </>
+            )
+          )
+        }
+      </div>
+      <div>
+        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
+          <div className="pl-5 pt-3 text-theme-xs text-gray-500 ">
+            <span>Nombre de produits demandés : {qteProduits}</span>
+          </div>
+          <div className="max-w-full overflow-x-auto">
+            <Table>
+              {/* Table Header */}
+              <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
+                <TableRow>
+                  <TableCell
+                    isHeader
+                    className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    Point Marchand
+                  </TableCell>
+                  <TableCell
+                    isHeader
+                    className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    S/N
+                  </TableCell>
+                  {/* <TableCell
+                    isHeader
+                    className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    Banque
+                  </TableCell>
+                  <TableCell
+                    isHeader
+                    className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    OM
+                  </TableCell>
+                  <TableCell
+                    isHeader
+                    className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    MTN
+                  </TableCell>
+                  <TableCell
+                    isHeader
+                    className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    MOOV
+                  </TableCell> */}
+                  <TableCell
+                    isHeader
+                    className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    Supprimer
+                  </TableCell>
+                </TableRow>
+              </TableHeader>
+              {/* Table Body */}
+              <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
+                {produitsDemandesTable.map((item, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="px-5 py-4 sm:px-6 text-start">
+                      <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
+                        {item.pointMarchand}
+                      </span>
+                      <span className="block text-gray-500 text-theme-xs dark:text-gray-400">
+                        {item.caisse}
+                      </span>
+                      {item.commentaireTPE ? (
+                        <span className="block text-gray-700 text-theme-xs dark:text-gray-400">
+                         « {item.commentaireTPE} » 
+                        </span>
+                      ) : (
+                        <></>
+                      )}
+                      
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                      {item.serialNumber}
+                    </TableCell>
+                    {/* <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                      {item.banque}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                      {item.mobile_money.includes("OM") ?
+                        ( <i className="pi pi-check" style={{ color: 'green' }}></i> ) : ""}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                      {item.mobile_money.includes("MTN") ?
+                        ( <i className="pi pi-check" style={{ color: 'green' }}></i> ) : ""}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                      {item.mobile_money.includes("MOOV") ?
+                        ( <i className="pi pi-check" style={{ color: 'green' }}></i> ) : ""}
+                    </TableCell> */}
+                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                      <button
+                        className="text-red-500 hover:text-red-700"
+                        onClick={() => handleDelete(index)}
+                        >
+                        <i className="pi pi-trash" style={{ color: 'black' }}></i>
+                      </button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+
+            </Table>
+          </div>
+        </div>
+        <div className="w-full flex flex-col justify-center items-center">
+          {loadingDemande? 
+            <span className="mt-20">
+              <ProgressSpinner style={{width: '50px', height: '50px'}} strokeWidth="8" animationDuration=".5s" />
+            </span>
+          :
+            <button onClick={handleDemande} className="w-1/4 mt-20 bg-green-400 rounded-2xl h-10 flex justify-center items-center">
+              <span>Valider demande</span>
+              <span className="text-2xl"><ListIcon /></span>
+            </button> 
+            }
+            {errorDeliver?
+              <span className="text-error-600 font-medium flex items-center justify-center text-sm p-1 mt-4">
+                {errorDeliver}
+              </span>
+            :
+              <></>
+            }
+        </div>
+      </div>
+      <Modal isOpen={isConfirmModalOpen} onClose={() => setIsConfirmModalOpen(false)} className="p-4 max-w-xl">
+        <div className="p-6 mt-5">
+          <div>
+            <span>Vous allez ajouter un terminal pour demande :  <span className="font-bold text-red-700">{typeDemande}</span></span>
+          </div>
+          <div>
+            <div>
+              <span>S/N terminal : <span className="font-bold text-red-700">{terminalSN}</span></span>
+            </div>
+            <div>
+              <span>Point Marchand : <span className="font-bold text-red-700">{filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join("%")}</span></span>
+            </div>
+          </div>
+        </div>
+        <div className='w-full mt-6 flex justify-center items-center'>
+          <button
+            onClick={handleAjout}
+            className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
+            Valider
+          </button>
+        </div>
+      </Modal>
+      {/* <Modal isOpen={isSignatureModalOpen} onClose={() => setIsSignatureModalOpen(false)} className="p-4 max-w-md">
+        <div className='p-1'>
+          <div className='text-center mb-3 text-sm'>
+              <span>Signez manuellement pour valider la demande</span>
+          </div>
+          <div className='flex flex-col justify-center items-center'>
+              <SignatureCanvas
+                  ref={data=>setSignature(data)}
+                  canvasProps={{ width: 300, height: 250, className: 'sigCanvas border border-gray-300 rounded' }}
+              />
+              <div className='w-full mt-6 flex justify-center items-center'>
+                  <button
+                    onClick={handleClear}
+                    className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
+                    Clear
+                  </button>
+                  <button
+                    onClick={handleDemande}
+                    className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
+                    Valider
+                  </button>
+              </div>  
+          </div>
+          <div className="text-center">
+            <span className="text-error-500 text-xs">
+              {errorSign}
+            </span>
+          </div>
+        </div>
+      </Modal> */}
+    </>
+  );
+}

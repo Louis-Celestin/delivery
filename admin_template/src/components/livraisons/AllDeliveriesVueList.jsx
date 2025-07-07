@@ -89,6 +89,9 @@ export default function AllDeliveriesVueList({ filterType }) {
             link = `/formulaire-chargeur-vue/${deliveryForms.id_livraison}`
         } else if (deliveryForms.type_livraison_id === 6) {
             title = 'Livraison TPE ECOBANK'
+        } else if (deliveryForms.type_livraison_id === 8) {
+            title = 'Livraison CHARGEUR (DECOM RI NOK)'
+            link = `/formulaire-chargeur-vue/${deliveryForms.id_livraison}`
         }
         return (
             <span className="flex flex-col">
@@ -130,7 +133,7 @@ export default function AllDeliveriesVueList({ filterType }) {
         let linkSee = `/formulaire-vue/${deliveryForms.id_livraison}`;
         // let linkModify = `/form-modify-nouvelle-livraison/${deliveryForms.id_livraison}`
 
-        if (deliveryForms.type_livraison_id === 5 || deliveryForms.type_livraison_id === 7) {
+        if (deliveryForms.type_livraison_id === 5 || deliveryForms.type_livraison_id === 7 || deliveryForms.type_livraison_id === 8 ) {
             linkSee = `/formulaire-chargeur-vue/${deliveryForms.id_livraison}`
             // linkModify = `/form-modify-livraison-chargeur/${deliveryForms.id_livraison}`
         }

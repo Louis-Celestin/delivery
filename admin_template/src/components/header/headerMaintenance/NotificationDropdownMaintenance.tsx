@@ -121,31 +121,16 @@ export default function NotificationDropdown() {
 
             let livraisonTitle = ''
             // @ts-ignore
-            if (livraison.type_livraison_id === 1) {
-              livraisonTitle = 'Livraison TPE GIM';
-              // @ts-ignore
-          } else if (livraison.type_livraison_id === 2) {
-              livraisonTitle = 'Livraison TPE REPARE'; // fallback or other types
-              // @ts-ignore
-          } else if (livraison.type_livraison_id === 3) {
-              livraisonTitle = 'Livraison TPE MAJ GIM'; // fallback or other types
-              // @ts-ignore
-          } else if (livraison.type_livraison_id === 4) {
-              livraisonTitle = 'Livraison TPE MOBILE'; // fallback or other types
-              // @ts-ignore
-          } else if (livraison.type_livraison_id === 5) {
-              livraisonTitle = 'Livraison CHARGEUR'; // fallback or other types
-              // @ts-ignore
-          } else if (livraison.type_livraison_id === 7) {
+            if (livraison.type_livraison_id === 7) {
               livraisonTitle = 'Livraison CHARGEUR (TPE décom RI OK)'; // fallback or other types
-          }
+            }
             return(
               <li>
                 <DropdownItem
                   onItemClick={() =>{
                     closeDropdown
                     // @ts-ignore
-                    navigate(`/formulaire-recu/${livraison.id_livraison}`)
+                    navigate(`/formulaire-maintenance-chargeur-recu/${livraison.id_livraison}`)
                   }}
                   className="flex gap-3 rounded-lg border-b border-gray-100 p-3 px-4.5 py-3 hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-white/5"
                   >
@@ -182,7 +167,7 @@ export default function NotificationDropdown() {
           {/* Add more items as needed */}
         </ul>
         <Link
-          to="/toutes-les-receptions"
+          to="/toutes-les-livraisons-maintenance"
           className="block px-4 py-2 mt-3 text-sm font-medium text-center text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
         >
           Voir toutes les livraisons

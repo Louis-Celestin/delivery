@@ -162,15 +162,15 @@ export default function LivraisonInputs() {
       setErrorAjout("Ce Terminal n'est pas bancaire !");
       return;
     }
-    if (livraisonID == 6 && !(banque === 'ECOBANK' || banque === 'ECOBANK ACI')){
+    if (livraisonID == 6 && !(banque === 'ECOBANK' || banque === 'ECOBANK ACI' || banque === 'ECOBANK CI')){
       setErrorAjout("Ce Terminal n'est pas ecobank !");
       return;
     }
-    if (livraisonID == 1 && (banque === 'ECOBANK' || banque === 'ECOBANK ACI')){
+    if (livraisonID == 1 && (banque === 'ECOBANK' || banque === 'ECOBANK ACI' || banque === 'ECOBANK CI')){
       setErrorAjout("Ce Terminal n'est pas GIM !");
       return;
     }
-    if (livraisonID == 3 && (banque === 'ECOBANK' || banque === 'ECOBANK ACI')){
+    if (livraisonID == 3 && (banque === 'ECOBANK' || banque === 'ECOBANK ACI' || banque === 'ECOBANK CI')){
       setErrorAjout("Ce Terminal n'est pas GIM !");
       return;
     }

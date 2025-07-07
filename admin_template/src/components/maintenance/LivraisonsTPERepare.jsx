@@ -36,7 +36,7 @@ export default function LivraisonsTPERepare({ startDate, endDate }) {
                 setLoading(false)
             }
         }; fetchLivraisonsTPERepare();
-    },[]);
+    },[startDate,endDate]);
     return (
         <>
             <div className="rounded-2xl border border-slate-400  bg-white px-4 pb-3 pt-4 dark:border-gray-800">

@@ -22,7 +22,7 @@ export default function LivraisonsLivrees({ startDate, endDate }) {
 
                 let data = await delivery.getAllLivraisons()
 
-                const livraisonsRecues = data.filter(item => {
+                const livraisonsLivrees = data.filter(item => {
                     let deliveryDate
                     if(item.validations.length > 0){
                         deliveryDate = new Date(item.validations[0].date_validation);
@@ -31,7 +31,7 @@ export default function LivraisonsLivrees({ startDate, endDate }) {
                             deliveryDate <= endDate &&
                             item.statut_livraison === "livre";
                 });
-                setCount(livraisonsRecues.length);
+                setCount(livraisonsLivrees.length);
             } catch(error){
                 console.log(error)
             } finally{

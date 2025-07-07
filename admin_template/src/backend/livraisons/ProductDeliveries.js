@@ -71,4 +71,17 @@ export class ProductDeliveries{
         throw error.response.data
       }
     };
+
+    async deliverDemande(formData){
+      try {
+        const response = await axios.post(`${urlBase}/api/delivery/deliverDemande`, formData,
+           {headers: {
+              'Content-Type': 'multipart/form-data'
+          }});
+        // console.log(response)
+        return response.data;
+      } catch (error) {
+        throw error.response.data;
+      }
+    }
 }

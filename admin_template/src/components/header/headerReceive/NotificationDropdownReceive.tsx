@@ -39,7 +39,7 @@ export default function NotificationDropdown() {
         const enAttente = data
         // @ts-ignore
         .filter(item => {
-          return item.statut_livraison === 'en_cours' && item.type_livraison_id != 7
+          return item.statut_livraison === 'en_cours' && item.type_livraison_id != 7 && item.type_livraison_id != 8
         })
         // @ts-ignore
         .map(item => ({
@@ -135,7 +135,11 @@ export default function NotificationDropdown() {
               // @ts-ignore
           } else if (livraison.type_livraison_id === 5) {
               livraisonTitle = 'Livraison CHARGEUR'; // fallback or other types
+              // @ts-ignore
+          } else if (livraison.type_livraison_id === 6) {
+              livraisonTitle = 'Livraison TPE ECOBANK'; // fallback or other types
           }
+
             return(
               <li>
                 <DropdownItem

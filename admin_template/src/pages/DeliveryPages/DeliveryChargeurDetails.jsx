@@ -63,6 +63,8 @@ export default function DeliveryChargeurDetails () {
                         setTypeLivraison("TPE MOBILE")
                       } else if(data.type_livraison_id == 5 || data.type_livraison_id == 7){
                         setTypeLivraison("CHARGEUR")
+                      } else if(data.type_livraison_id == 8){
+                        setTypeLivraison("CHARGEUR (DECOM RI NOK)")
                       }
                       setDateLivraison(formatDate(data.date_livraison))
                       setCommentaire(data.commentaire)

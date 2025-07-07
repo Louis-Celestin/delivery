@@ -9,6 +9,7 @@ import {
   GridIcon,
   HorizontaLDots,
   ListIcon,
+  ClipboardCheck,
   // PageIcon,
   // PieChartIcon,
   // PlugInIcon,
@@ -56,6 +57,14 @@ const navItems: NavItem[] = [
       { name: "Ancienne Livraison", path: "/form-ancienne-livraison", pro: false },
       // {name: "Livraison chargeur", path:"/form-livraison-chargeur", pro: false},
       // { name: "Form", path: "/form-elements", pro: false },
+    ],
+    
+  },
+  {
+    name: "Demandes",
+    icon: <ClipboardCheck />,
+    subItems: [
+      { name: "Toutes les demandes", path: "/toutes-les-demandes-livraison", pro: false }
     ],
     
   },

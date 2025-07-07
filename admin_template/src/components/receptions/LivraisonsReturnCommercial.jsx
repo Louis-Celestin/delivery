@@ -30,6 +30,7 @@ export default function LivraisonReturnCommercial({ startDate, endDate }) {
                     return  deliveryDate >= startDate && 
                             deliveryDate <= endDate &&
                             item.type_livraison_id !== 7 &&
+                            item.type_livraison_id !== 8 &&
                             item.statut_livraison === "en_attente";
                 });
                 setCount(livraisonsReturn.length);

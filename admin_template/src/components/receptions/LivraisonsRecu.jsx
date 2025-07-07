@@ -27,7 +27,7 @@ export default function LivraisonsRecu({ startDate, endDate }) {
                     if(item.validations.length > 0){
                         deliveryDate = new Date(item.validations[0].date_validation);
                     }
-                    const isCommercial = item.type_livraison_id != 7;
+                    const isCommercial = item.type_livraison_id != 7 && item.type_livraison_id != 8;
                     return  deliveryDate >= startDate && 
                             deliveryDate <= endDate &&
                             isCommercial &&

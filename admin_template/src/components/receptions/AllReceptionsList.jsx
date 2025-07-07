@@ -46,7 +46,7 @@ export default function AllReceptionsList() {
                 let response = await productDeliveries.getAllLivraisons();
                 console.log(response)
                 const livraisonsCommercial = response.filter(item => {
-                    return  item.type_livraison_id !== 7
+                    return  item.type_livraison_id !== 7 && item.type_livraison_id !== 8
                 });
                 setDeliveryForms(livraisonsCommercial)
                 // setDeliveryForms(response)
