@@ -4,11 +4,16 @@ const path = require("path");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const cloudinary = require("../../config/clouddinaryConifg");
+const { type } = require("os");
 
 const formatDate = (isoDate) => {
   const date = new Date(isoDate);
   return date.toLocaleDateString("fr-FR");
 };
+
+const baseUrl = process.env.FRONTEND_BASE_URL || "https://livraisons.greenpayci.com";
+const localUrl = "http://localhost:5173"
+const GENERAL_URL = baseUrl 
 
 const deliver = async (req, res) => {
   try {
@@ -64,6 +69,11 @@ const deliver = async (req, res) => {
       return res.status(400).json({ message: "Vous devez fournir une signature d'expéditeur." });
     }
 
+    let final_type_livraison_id = type_livraison_id
+    // if (type_livraison_id == 7){
+    //   final_type_livraison_id = 5
+    // }
+
     const nouvelleLivraison = await prisma.livraison.create({
       data: {
         statut_livraison: "en_cours",
@@ -75,7 +85,7 @@ const deliver = async (req, res) => {
           ? new Date(date_livraison)
           : new Date(),
         deleted: false,
-        type_livraison_id: parseInt(type_livraison_id),
+        type_livraison_id: parseInt(final_type_livraison_id),
         user_id: utilisateur ? utilisateur.id_user : null,
         signature_expediteur: signature_expediteur || null
       }
@@ -115,62 +125,130 @@ const deliver = async (req, res) => {
 
     // Gestion des mails
     let livraisonTypeName = '';
+    let livraisonCommerciale = false;
     switch (parseInt(type_livraison_id)) {
       case 1:
         livraisonTypeName = 'TPE GIM';
+        livraisonCommerciale = true;
         break;
       case 2:
         livraisonTypeName = 'TPE REPARE';
+        livraisonCommerciale = true;
         break;
       case 3:
         livraisonTypeName = 'TPE MAJ GIM';
+        livraisonCommerciale = true;
         break;
       case 4:
         livraisonTypeName = 'TPE MOBILE';
+        livraisonCommerciale = true;
         break;
       case 5:
         livraisonTypeName = 'CHARGEUR';
+        livraisonCommerciale = true;
         break;
       case 6:
         livraisonTypeName = 'TPE ECOBANK';
+        livraisonCommerciale = true;
+        break;
+      case 7:
+        livraisonTypeName = 'CHARGEUR (TPE décommissionné RI OK)';
+        livraisonCommerciale = false;
+        break;
+      case 8:
+        livraisonTypeName = 'CHARGEUR (TPE décommissionné RI NOK)';
+        livraisonCommerciale = false;
         break;
     }
-    const baseUrl = process.env.FRONTEND_BASE_URL || "https://livraisons.greenpayci.com";
-    const localUrl = "http://localhost:5173"
-    const deliveryLink = `${baseUrl}/formulaire-recu/${nouvelleLivraison.id_livraison}`;
-    // const deliveryLink = `https://livraisons.greenpayci.com/formulaire-recu/${nouvelleLivraison.id_livraison}`
-    const sendMail = require("../../utils/emailSender");
-    const receivers = await prisma.users.findMany({
-      where: { role_id: 2 },
-    });
 
-    if (receivers && receivers.length > 0) {
-      const subject = `NOUVELLE LIVRAISON ${livraisonTypeName}`;
-      const html = `
-        <p>Bonjour,</p>
-        <p>Une nouvelle livraison a été enregistrée.</p>
-        <ul>
-          <li><strong>Type de livraison:</strong> ${livraisonTypeName}</li>
-          <li><strong>Nombre de produits:</strong> ${produits.length}</li>
-        </ul>
-        <br>
-        <p>Retrouvez la livraison à ce lien : 
-          <span>
-            <a href="${deliveryLink}" target="_blank" style="background-color: #73dced; color: white; padding: 7px 12px; text-decoration: none; border-radius: 5px;">
-              Cliquez ici !
-            </a>
-          </span>
-        </p>
-        <br><br>
-        <p>Green - Pay vous remercie.</p>
-      `;
+    // LIVRAISON NORMALE AU SERVICE COMMERCIAL
 
-      for (const receiver of receivers) {
-        await sendMail({
-          to: receiver.email,
-          subject,
-          html,
-        });
+    if(livraisonCommerciale){
+      // const baseUrl = process.env.FRONTEND_BASE_URL || "https://livraisons.greenpayci.com";
+      // const localUrl = "http://localhost:5173"
+      const url = GENERAL_URL
+      let deliveryLink = `${url}/formulaire-recu/${nouvelleLivraison.id_livraison}`;
+      if(type_livraison_id == 5){
+        deliveryLink = `${url}/formulaire-chargeur-recu/${nouvelleLivraison.id_livraison}`;
+      }
+      // const deliveryLink = `https://livraisons.greenpayci.com/formulaire-recu/${nouvelleLivraison.id_livraison}`
+      const sendMail = require("../../utils/emailSender");
+      const receivers = await prisma.users.findMany({
+        where: { role_id: 2 },
+      });
+  
+      if (receivers && receivers.length > 0) {
+        const subject = `NOUVELLE LIVRAISON ${livraisonTypeName}`;
+        const html = `
+          <p>Bonjour,</p>
+          <p>Une nouvelle livraison a été enregistrée.</p>
+          <ul>
+            <li><strong>Type de livraison:</strong> ${livraisonTypeName}</li>
+            <li><strong>Nombre de produits:</strong> ${produits.length}</li>
+          </ul>
+          <br>
+          <p>Retrouvez la livraison à ce lien : 
+            <span>
+              <a href="${deliveryLink}" target="_blank" style="background-color: #73dced; color: white; padding: 7px 12px; text-decoration: none; border-radius: 5px;">
+                Cliquez ici !
+              </a>
+            </span>
+          </p>
+          <br><br>
+          <p>Green - Pay vous remercie.</p>
+        `;
+  
+        for (const receiver of receivers) {
+          await sendMail({
+            to: receiver.email,
+            subject,
+            html,
+          });
+        }
+      }
+    }
+
+    // LIVRAISON CHARGEUR POUR TPE DECOMMISSIONNE AVEC RI OK AU SERVICE MAINTENANCE
+
+    if(type_livraison_id == 7){
+      // const baseUrl = process.env.FRONTEND_BASE_URL || "https://livraisons.greenpayci.com";
+      // const localUrl = "http://localhost:5173"
+      const url = GENERAL_URL
+      const deliveryLink = `${url}/formulaire-maintenance-chargeur-recu/${nouvelleLivraison.id_livraison}`;
+      // const deliveryLink = `https://livraisons.greenpayci.com/formulaire-recu/${nouvelleLivraison.id_livraison}`
+      const sendMail = require("../../utils/emailSender");
+      const receivers = await prisma.users.findMany({
+        where: { role_id: 6 },
+      });
+  
+      if (receivers && receivers.length > 0) {
+        const subject = `NOUVELLE LIVRAISON ${livraisonTypeName}`;
+        const html = `
+          <p>Bonjour,</p>
+          <p>Une nouvelle livraison a été enregistrée.</p>
+          <ul>
+            <li><strong>Type de livraison:</strong> ${livraisonTypeName}</li>
+            <li><strong>Nombre de produits:</strong> ${produits.length}</li>
+          </ul>
+          <br>
+          <p>Retrouvez la livraison à ce lien : 
+            <span>
+              <a href="${deliveryLink}" target="_blank" style="background-color: #73dced; color: white; padding: 7px 12px; text-decoration: none; border-radius: 5px;">
+                Cliquez ici !
+              </a>
+            </span>
+          </p>
+          <br><br>
+          <p>Green - Pay vous remercie.</p>
+        `;
+  
+        for (const receiver of receivers) {
+          await sendMail({
+            to: receiver.email,
+            subject,
+            html,
+          });
+        }
       }
     }
 
@@ -223,9 +301,6 @@ const getOneLivraison = async (req, res) => {
       res.status(500).json({ message: "Erreur serveur", error });
     }
   };
-
-
-  
   /* 
     Modification de la fonction updateLivraison.
     Les données à update: produitsLivre, commentaire, type_livraison_id, 
@@ -307,44 +382,95 @@ const updateLivraison = async (req, res) => {
         livraisonTypeName = 'TPE ECOBANK';
         break;
     }
-    const baseUrl = process.env.FRONTEND_BASE_URL || "https://livraisons.greenpayci.com";
-    const localUrl = "http://localhost:5173"
-    const deliveryLink = `${baseUrl}/formulaire-recu/${updated.id_livraison}`;
-    // const deliveryLink = `https://livraisons.greenpayci.com/formulaire-recu/${nouvelleLivraison.id_livraison}`
-    const sendMail = require("../../utils/emailSender");
-    const receivers = await prisma.users.findMany({
-      where: { role_id: 2 },
-    });
-
-    if (receivers && receivers.length > 0) {
-      const subject = `MODIFICATION LIVRAISON`;
-      const html = `
-        <p>Bonjour,</p>
-        <p>La livraison ${updated.id_livraison} a été modifiée.</p>
-        <ul>
-          <li><strong>Type de livraison:</strong> ${livraisonTypeName}</li>
-          <li><strong>Nombre de produits:</strong> ${produits.length}</li>
-        </ul>
-        <br>
-        <p>Retrouvez la livraison à ce lien : 
-          <span>
-            <a href="${deliveryLink}" target="_blank" style="background-color: #73dced; color: white; padding: 7px 12px; text-decoration: none; border-radius: 5px;">
-              Cliquez ici !
-            </a>
-          </span>
-        </p>
-        <br><br>
-        <p>Green - Pay vous remercie.</p>
-      `;
-
-      for (const receiver of receivers) {
-        await sendMail({
-          to: receiver.email,
-          subject,
-          html,
-        });
+    // MAIL DE MODIFICATION D'UNE LIVRAISON AU SERVICE COMMERCIAL
+    if(type_livraison_id != 7){
+      // const baseUrl = process.env.FRONTEND_BASE_URL || "https://livraisons.greenpayci.com";
+      // const localUrl = "http://localhost:5173"
+      const url = GENERAL_URL
+      let deliveryLink = `${url}/formulaire-recu/${updated.id_livraison}`;
+      if(type_livraison_id == 5){
+        deliveryLink = `${url}/formulaire-chargeur-recu/${updated.id_livraison}`;
+      }
+      // const deliveryLink = `https://livraisons.greenpayci.com/formulaire-recu/${nouvelleLivraison.id_livraison}`
+      const sendMail = require("../../utils/emailSender");
+      const receivers = await prisma.users.findMany({
+        where: { role_id: 2 },
+      });
+  
+      if (receivers && receivers.length > 0) {
+        const subject = `MODIFICATION LIVRAISON`;
+        const html = `
+          <p>Bonjour,</p>
+          <p>La livraison ${updated.id_livraison} a été modifiée.</p>
+          <ul>
+            <li><strong>Type de livraison:</strong> ${livraisonTypeName}</li>
+            <li><strong>Nombre de produits:</strong> ${produits.length}</li>
+          </ul>
+          <br>
+          <p>Retrouvez la livraison à ce lien : 
+            <span>
+              <a href="${deliveryLink}" target="_blank" style="background-color: #73dced; color: white; padding: 7px 12px; text-decoration: none; border-radius: 5px;">
+                Cliquez ici !
+              </a>
+            </span>
+          </p>
+          <br><br>
+          <p>Green - Pay vous remercie.</p>
+        `;
+  
+        for (const receiver of receivers) {
+          await sendMail({
+            to: receiver.email,
+            subject,
+            html,
+          });
+        }
       }
     }
+
+    //MAIL D'UNE MODIFICATION D'UNE LIVRAISON DE CHARGEUR DE TPE DECOM AVEC RI OK AU SERVICE MANTENANCE
+    if(type_livraison_id == 7){
+      // const baseUrl = process.env.FRONTEND_BASE_URL || "https://livraisons.greenpayci.com";
+      // const localUrl = "http://localhost:5173"
+      const url = GENERAL_URL
+      const deliveryLink = `${url}/formulaire-maintenance-chargeur-recu/${updated.id_livraison}`;
+      // const deliveryLink = `https://livraisons.greenpayci.com/formulaire-recu/${nouvelleLivraison.id_livraison}`
+      const sendMail = require("../../utils/emailSender");
+      const receivers = await prisma.users.findMany({
+        where: { role_id: 6 },
+      });
+  
+      if (receivers && receivers.length > 0) {
+        const subject = `MODIFICATION LIVRAISON`;
+        const html = `
+          <p>Bonjour,</p>
+          <p>La livraison ${updated.id_livraison} a été modifiée.</p>
+          <ul>
+            <li><strong>Type de livraison:</strong> ${livraisonTypeName}</li>
+            <li><strong>Nombre de produits:</strong> ${produits.length}</li>
+          </ul>
+          <br>
+          <p>Retrouvez la livraison à ce lien : 
+            <span>
+              <a href="${deliveryLink}" target="_blank" style="background-color: #73dced; color: white; padding: 7px 12px; text-decoration: none; border-radius: 5px;">
+                Cliquez ici !
+              </a>
+            </span>
+          </p>
+          <br><br>
+          <p>Green - Pay vous remercie.</p>
+        `;
+  
+        for (const receiver of receivers) {
+          await sendMail({
+            to: receiver.email,
+            subject,
+            html,
+          });
+        }
+      }
+    }
+
 
         return res.status(200).json(updated);
     } catch (error) {
@@ -369,10 +495,10 @@ const deleteLivraison = async (req, res) => {
     } catch (error) {
       res.status(500).json({ message: "Erreur lors de la suppression", error });
     }
-  };
+};
 
 
-  const generateLivraisonPDF = async (req, res) => {
+const generateLivraisonPDF = async (req, res) => {
     const { id } = req.params;
   
     try {
@@ -424,6 +550,8 @@ const deleteLivraison = async (req, res) => {
         4: "livraison_tpe_mobile.html",
         5: "livraison_chargeur_tpe.html",
         6: "livraison_tpe_ecobank.html", // Type Ecobank ajouté aux templates
+        7: "livraison_chargeur_tpe.html",
+        8: "livraison_chargeur_decom.html",
       };
   
       const templateFile = templatesMap[livraison.type_livraison_id];
@@ -454,6 +582,12 @@ const deleteLivraison = async (req, res) => {
             break;
           case 6:
             row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${p.banque}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
+            break;
+          case 7:
+            row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td></tr>`;
+            break;
+          case 8:
+            row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td></tr>`;
             break;
           default:
             row = "";
@@ -503,8 +637,7 @@ const deleteLivraison = async (req, res) => {
       console.error(err);
       return res.status(500).json({ message: "Erreur lors de la génération du PDF" });
     }
-  };
-  
+};
 
   /* Ajout d'une fonction deliverOld specialement pour les livraisons anciennes */
 const deliverOld = async (req, res) => {
@@ -635,7 +768,214 @@ const deliverOld = async (req, res) => {
       console.error("Erreur lors de la livraison :", error);
       res.status(500).json({ message: "Erreur interne", error });
     }
-  };
+};
+
+const deliverDemande = async (req, res) => {
+  try {
+    const {
+      produitsLivre,
+      commentaire,
+      user_id,
+      nom_livreur,
+      type_livraison_id,
+      isAncienne,
+      date_livraison,
+      demande_id,
+    } = req.body;
+
+    // Correction ici : gestion de produitsLivre (string JSON venant de form-data)
+    const produits = typeof produitsLivre === "string"
+      ? JSON.parse(produitsLivre)
+      : produitsLivre;
+
+    // Correction ici : isAncienne arrive en string depuis form-data => on convertit en bool
+    const isAncienneBool = (isAncienne === 'true' || isAncienne === true);
+
+    const typeLivraison = await prisma.typeLivraison.findUnique({
+      where: {
+        id_type_livraison: parseInt(type_livraison_id)
+      }
+    });
+
+    if (!typeLivraison) {
+      return res.status(404).json({ message: "Type de livraison non trouvé" });
+    }
+
+    let utilisateur = null;
+    if (!isAncienneBool) {
+      utilisateur = await prisma.users.findUnique({
+        where: {
+          id_user: parseInt(user_id)
+        }
+      });
+
+      if (!utilisateur) {
+        return res.status(404).json({ message: "Utilisateur non trouvé" });
+      }
+    }
+
+    // Gestion de l'upload Cloudinary
+    const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+      folder: "greenpay/signatures",
+    });
+
+    const signature_expediteur = uploadResult.secure_url;
+
+    if (!signature_expediteur) {
+      return res.status(400).json({ message: "Vous devez fournir une signature d'expéditeur." });
+    }
+
+    let final_type_livraison_id = type_livraison_id
+    // if (type_livraison_id == 7){
+    //   final_type_livraison_id = 5
+    // }
+
+    const nouvelleLivraison = await prisma.livraison.create({
+      data: {
+        statut_livraison: "en_cours",
+        qte_totale_livraison: produits.length,
+        produitsLivre: JSON.stringify(produits),
+        commentaire,
+        nom_livreur: nom_livreur || null,
+        date_livraison: isAncienneBool && date_livraison
+          ? new Date(date_livraison)
+          : new Date(),
+        deleted: false,
+        type_livraison_id: parseInt(final_type_livraison_id),
+        user_id: utilisateur ? utilisateur.id_user : null,
+        signature_expediteur: signature_expediteur || null
+      }
+    });
+
+    // Traitement spécifique pour les chargeurs (type 5)
+    if (parseInt(type_livraison_id) === 5) {
+      for (const item of produits) {
+        const chargeur = await prisma.chargeurs.findUnique({
+          where: {
+            id_chargeur: 1
+          }
+        });
+
+        if (!chargeur) {
+          continue;
+        }
+
+        const quantite = parseInt(item.quantite || 1);
+
+        await prisma.transactions.create({
+          data: {
+            type_transaction: "sortie",
+            quantite,
+            date_transaction: new Date(),
+            chargeurs: { connect: { id_chargeur: 1 } },
+            users: utilisateur ? { connect: { id_user: utilisateur.id_user } } : null
+          }
+        }).catch(err => console.log(err));
+
+        await prisma.chargeurs.update({
+          where: { id_chargeur: 1 },
+          data: { stock: { decrement: quantite } }
+        });
+      }
+    }
+
+    await prisma.demandes.update({
+        where: { id_demande: parseInt(demande_id)},
+        data: { demande_livree : true},
+    })
+
+    // Gestion des mails
+    let livraisonTypeName = '';
+    let livraisonCommerciale = false;
+    switch (parseInt(type_livraison_id)) {
+      case 1:
+        livraisonTypeName = 'TPE GIM';
+        livraisonCommerciale = true;
+        break;
+      case 2:
+        livraisonTypeName = 'TPE REPARE';
+        livraisonCommerciale = true;
+        break;
+      case 3:
+        livraisonTypeName = 'TPE MAJ GIM';
+        livraisonCommerciale = true;
+        break;
+      case 4:
+        livraisonTypeName = 'TPE MOBILE';
+        livraisonCommerciale = true;
+        break;
+      case 5:
+        livraisonTypeName = 'CHARGEUR';
+        livraisonCommerciale = true;
+        break;
+      case 6:
+        livraisonTypeName = 'TPE ECOBANK';
+        livraisonCommerciale = true;
+        break;
+      case 7:
+        livraisonTypeName = 'CHARGEUR (TPE décommissionné RI OK)';
+        livraisonCommerciale = false;
+        break;
+      case 8:
+        livraisonTypeName = 'CHARGEUR (TPE décommissionné RI NOK)';
+        livraisonCommerciale = false;
+        break;
+    }
+
+    // LIVRAISON CHARGEUR DECOM RI NOK AU SERVICE SUPPORT 
+    if(type_livraison_id == 8){
+      // const baseUrl = process.env.FRONTEND_BASE_URL || "https://livraisons.greenpayci.com";
+      // const localUrl = "http://localhost:5173"
+      const url = GENERAL_URL
+      const deliveryLink = `${url}/formulaire-support-chargeur-recu/${nouvelleLivraison.id_livraison}`;
+      // const deliveryLink = `https://livraisons.greenpayci.com/formulaire-recu/${nouvelleLivraison.id_livraison}`
+      const sendMail = require("../../utils/emailSender");
+      const receivers = await prisma.users.findMany({
+        where: { role_id: 7 },
+      });
+  
+      if (receivers && receivers.length > 0) {
+        const subject = `NOUVELLE LIVRAISON ${livraisonTypeName}`;
+        const html = `
+          <p>Bonjour,</p>
+          <p>Une nouvelle livraison a été enregistrée.</p>
+          <ul>
+            <li><strong>Type de livraison:</strong> ${livraisonTypeName}</li>
+            <li><strong>Nombre de produits:</strong> ${produits.length}</li>
+          </ul>
+          <br>
+          <p>Retrouvez la livraison à ce lien : 
+            <span>
+              <a href="${deliveryLink}" target="_blank" style="background-color: #73dced; color: white; padding: 7px 12px; text-decoration: none; border-radius: 5px;">
+                Cliquez ici !
+              </a>
+            </span>
+          </p>
+          <br><br>
+          <p>Green - Pay vous remercie.</p>
+        `;
+  
+        for (const receiver of receivers) {
+          await sendMail({
+            to: receiver.email,
+            subject,
+            html,
+          });
+        }
+      }
+    }
+
+
+    res.status(201).json({
+      message: "Livraison enregistrée avec succès",
+      livraison: nouvelleLivraison
+    });
+
+  } catch (error) {
+    console.error("Erreur lors de la livraison :", error);
+    res.status(500).json({ message: "Erreur interne", error });
+  }
+};
 
 module.exports = {
     deliver,
@@ -645,4 +985,5 @@ module.exports = {
     deleteLivraison,
     generateLivraisonPDF,
     deliverOld,
+    deliverDemande,
 }

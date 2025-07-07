@@ -8,16 +8,14 @@ const generateDemandePaiementPDF = async (livraison, outputPath) => {
     const page = await browser.newPage();
 
     if(livraison.type_livraison_id === 1) {
-
         let template = fs.readFileSync(path.join(__dirname, "../statics/templates/livraison_tpe_gim.html"), "utf8");
     }else if(livraison.type_livraison_id === 2) {
         let template = fs.readFileSync(path.join(__dirname, "../statics/templates/livraison_tpe_repare.html"), "utf8");
     }else if(livraison.type_livraison_id === 3) {
         let template = fs.readFileSync(path.join(__dirname, "../statics/templates/livraison_mj_gim.html"), "utf8");
-    }
-    else if(livraison.type_livraison_id === 4) {
+    }else if(livraison.type_livraison_id === 4) {
         let template = fs.readFileSync(path.join(__dirname, "../statics/templates/livraison_tpe_mobile.html"), "utf8");
-    }else if(livraison.type_livraison_id === 5) {
+    }else if(livraison.type_livraison_id === 5 || livraison.type_livraison_id === 7) {
         let template = fs.readFileSync(path.join(__dirname, "../statics/templates/livraison_chargeur_tpe.html"), "utf8");
     }else if(livraison.type_livraison_id === 6) {
         let template = fs.readFileSync(path.join(__dirname, "../statics/templates/livraison_tpe_ecobank.html"), "utf8");

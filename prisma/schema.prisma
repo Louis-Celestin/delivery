@@ -30,6 +30,32 @@ model chargeurs {
   transactions   transactions[]
 }
 
+model demandes {
+  id_demande                              Int                     @id @default(autoincrement())
+  nom_demandeur                           String?                 @db.VarChar(255)
+  date_demande                            DateTime                @db.DateTime(0)
+  commentaire                             String?                 @db.VarChar(255)
+  signature_demandeur                     String                  @db.VarChar(255)
+  qte_total_demande                       Int
+  produit_demande                         String                  @db.LongText
+  statut_demande                          demandes_statut_demande
+  user_id                                 Int?
+  type_demande_id                         Int?
+  role_id_recepteur                       Int?
+  role_id_demandeur                       Int?
+  demande_livree                          Boolean?                @default(false)
+  type_demande                            type_demande?           @relation(fields: [type_demande_id], references: [id_type_demande], onDelete: Restrict, onUpdate: Restrict, map: "demandes_ibfk_1")
+  users                                   users?                  @relation(fields: [user_id], references: [id_user], onDelete: Restrict, onUpdate: Restrict, map: "demandes_ibfk_2")
+  roles_demandes_role_id_recepteurToroles roles?                  @relation("demandes_role_id_recepteurToroles", fields: [role_id_recepteur], references: [id_role], onDelete: Restrict, onUpdate: Restrict, map: "demandes_ibfk_3")
+  roles_demandes_role_id_demandeurToroles roles?                  @relation("demandes_role_id_demandeurToroles", fields: [role_id_demandeur], references: [id_role], onDelete: Restrict, onUpdate: Restrict, map: "demandes_ibfk_4")
+  validation_demande                      validation_demande[]
+
+  @@index([role_id_demandeur], map: "role_id_demandeur")
+  @@index([type_demande_id], map: "type_demande_id")
+  @@index([user_id], map: "user_id")
+  @@index([role_id_recepteur], map: "role_id_recepteur")
+}
+
 model entites {
   id       Int        @id @default(autoincrement())
   nom      String     @db.VarChar(100)
@@ -76,11 +102,13 @@ model role_permissions {
 }
 
 model roles {
-  id_role          Int                @id @default(autoincrement())
-  designation_role String?            @db.VarChar(255)
-  role_permissions role_permissions[]
-  user_roles       user_roles[]
-  users            users[]
+  id_role                                    Int                @id @default(autoincrement())
+  designation_role                           String?            @db.VarChar(255)
+  demandes_demandes_role_id_recepteurToroles demandes[]         @relation("demandes_role_id_recepteurToroles")
+  demandes_demandes_role_id_demandeurToroles demandes[]         @relation("demandes_role_id_demandeurToroles")
+  role_permissions                           role_permissions[]
+  user_roles                                 user_roles[]
+  users                                      users[]
 }
 
 model sections {
@@ -113,6 +141,12 @@ model typeLivraison {
   livraison          livraison[]
 }
 
+model type_demande {
+  id_type_demande  Int        @id @default(autoincrement())
+  nom_type_demande String     @db.VarChar(255)
+  demandes         demandes[]
+}
+
 model user_roles {
   id      Int    @id @default(autoincrement())
   user_id Int?
@@ -125,23 +159,41 @@ model user_roles {
 }
 
 model users {
-  id_user       Int            @id @default(autoincrement())
-  username      String?        @db.VarChar(255)
-  password      String?        @db.VarChar(255)
-  email         String?        @db.VarChar(255)
-  agent_id      Int?
-  reset_token   String?        @db.VarChar(255)
-  reset_expires DateTime?      @db.DateTime(0)
-  role_id       Int?
-  livraison     livraison[]
-  transactions  transactions[]
-  user_roles    user_roles[]
-  roles         roles?         @relation(fields: [role_id], references: [id_role], onDelete: Restrict, onUpdate: Restrict, map: "fk_role_id")
-  agents        agents?        @relation(fields: [agent_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "users_ibfk_1")
-  validations   validations[]
+  id_user            Int                  @id @default(autoincrement())
+  username           String?              @db.VarChar(255)
+  password           String?              @db.VarChar(255)
+  email              String?              @db.VarChar(255)
+  agent_id           Int?
+  reset_token        String?              @db.VarChar(255)
+  reset_expires      DateTime?            @db.DateTime(0)
+  role_id            Int?
+  demandes           demandes[]
+  livraison          livraison[]
+  transactions       transactions[]
+  user_roles         user_roles[]
+  roles              roles?               @relation(fields: [role_id], references: [id_role], onDelete: Restrict, onUpdate: Restrict, map: "fk_role_id")
+  agents             agents?              @relation(fields: [agent_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "users_ibfk_1")
+  validation_demande validation_demande[]
+  validations        validations[]
 
   @@index([agent_id], map: "agent_id")
   @@index([role_id], map: "fk_role_id")
+}
+
+model validation_demande {
+  id_validation_demande     Int                                          @id @default(autoincrement())
+  nom_validateur            String?                                      @db.VarChar(255)
+  date_validation_demande   DateTime                                     @db.DateTime(0)
+  commentaire               String?                                      @db.VarChar(255)
+  signature                 String?                                      @db.VarChar(255)
+  statut_validation_demande validation_demande_statut_validation_demande
+  id_user                   Int?
+  id_demande                Int
+  demandes                  demandes                                     @relation(fields: [id_demande], references: [id_demande], onUpdate: Restrict, map: "validation_demande_ibfk_1")
+  users                     users?                                       @relation(fields: [id_user], references: [id_user], onDelete: Restrict, onUpdate: Restrict, map: "validation_demande_ibfk_2")
+
+  @@index([id_demande], map: "id_demande")
+  @@index([id_user], map: "id_user")
 }
 
 model validations {
@@ -176,5 +228,19 @@ enum livraison_statut_livraison {
 enum validations_etat_validation {
   valide
   partiel
+  refuse
+}
+
+enum validation_demande_statut_validation_demande {
+  valide
+  refuse
+  partiel
+}
+
+enum demandes_statut_demande {
+  en_cours
+  valide
+  partiel
+  retourne
   refuse
 }
