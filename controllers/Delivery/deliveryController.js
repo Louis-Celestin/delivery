@@ -8,12 +8,29 @@ const { type } = require("os");
 
 const formatDate = (isoDate) => {
   const date = new Date(isoDate);
-  return date.toLocaleDateString("fr-FR");
+  return date.toLocaleString("fr-FR", {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
 };
 
 const baseUrl = process.env.FRONTEND_BASE_URL || "https://livraisons.greenpayci.com";
 const localUrl = "http://localhost:5173"
-const GENERAL_URL = baseUrl 
+const GENERAL_URL = baseUrl
+
+let test_env = false
+let support = 7;
+let livraison = 1;
+let commercial = 2;
+let superviseur = 3;
+let maintenance = 6;
+if (test_env){
+  support = livraison = commercial = superviseur = maintenance = 4;
+} 
 
 const deliver = async (req, res) => {
   try {
@@ -174,7 +191,7 @@ const deliver = async (req, res) => {
       // const deliveryLink = `https://livraisons.greenpayci.com/formulaire-recu/${nouvelleLivraison.id_livraison}`
       const sendMail = require("../../utils/emailSender");
       const receivers = await prisma.users.findMany({
-        where: { role_id: 2 },
+        where: { role_id: commercial },
       });
   
       if (receivers && receivers.length > 0) {
@@ -218,7 +235,7 @@ const deliver = async (req, res) => {
       // const deliveryLink = `https://livraisons.greenpayci.com/formulaire-recu/${nouvelleLivraison.id_livraison}`
       const sendMail = require("../../utils/emailSender");
       const receivers = await prisma.users.findMany({
-        where: { role_id: 6 },
+        where: { role_id: maintenance },
       });
   
       if (receivers && receivers.length > 0) {
@@ -394,7 +411,7 @@ const updateLivraison = async (req, res) => {
       // const deliveryLink = `https://livraisons.greenpayci.com/formulaire-recu/${nouvelleLivraison.id_livraison}`
       const sendMail = require("../../utils/emailSender");
       const receivers = await prisma.users.findMany({
-        where: { role_id: 2 },
+        where: { role_id: commercial },
       });
   
       if (receivers && receivers.length > 0) {
@@ -437,7 +454,7 @@ const updateLivraison = async (req, res) => {
       // const deliveryLink = `https://livraisons.greenpayci.com/formulaire-recu/${nouvelleLivraison.id_livraison}`
       const sendMail = require("../../utils/emailSender");
       const receivers = await prisma.users.findMany({
-        where: { role_id: 6 },
+        where: { role_id: maintenance },
       });
   
       if (receivers && receivers.length > 0) {
@@ -931,7 +948,7 @@ const deliverDemande = async (req, res) => {
       // const deliveryLink = `https://livraisons.greenpayci.com/formulaire-recu/${nouvelleLivraison.id_livraison}`
       const sendMail = require("../../utils/emailSender");
       const receivers = await prisma.users.findMany({
-        where: { role_id: 7 },
+        where: { role_id: support },
       });
   
       if (receivers && receivers.length > 0) {

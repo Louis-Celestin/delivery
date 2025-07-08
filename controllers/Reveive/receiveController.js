@@ -4,7 +4,17 @@ const cloudinary = require("../../config/clouddinaryConifg");
 
 const baseUrl = process.env.FRONTEND_BASE_URL || "https://livraisons.greenpayci.com";
 const localUrl = "http://localhost:5173"
-const GENERAL_URL = baseUrl 
+const GENERAL_URL = baseUrl
+
+let test_env = false
+let support = 7;
+let livraison = 1;
+let commercial = 2;
+let superviseur = 3;
+let maintenance = 6;
+if (test_env){
+  support = livraison = commercial = superviseur = maintenance = 4;
+}
 
 // ✅ Créer une validation (ancienne ou nouvelle)
 const createValidation = async (req, res) => {
@@ -128,7 +138,7 @@ const createValidation = async (req, res) => {
     // const deliveryLink = `https://livraisons.greenpayci.com/formulaire-recu/${nouvelleLivraison.id_livraison}`
     const sendMail = require("../../utils/emailSender");
     const delivers = await prisma.users.findMany({
-      where: { role_id: 1 },
+      where: { role_id: livraison },
     });
 
     if (delivers && delivers.length > 0) {
@@ -171,7 +181,7 @@ const createValidation = async (req, res) => {
       const url = GENERAL_URL
       const deliveryLink = `${url}/formulaire-vue/${livraison.id_livraison}`;
       const maintenancers = await prisma.users.findMany({
-        where: { role_id: 6 },
+        where: { role_id: maintenance },
       });
   
       if (maintenancers && maintenancers.length > 0) {
@@ -424,7 +434,7 @@ const returnDelivery = async (req, res) => {
     const sendMail = require("../../utils/emailSender");
     const livreurs = await prisma.users.findMany({
       where: {
-      role_id: 1,
+      role_id: livraison,
       },
     });
     if (livreurs && livreurs.length > 0) {
@@ -765,7 +775,7 @@ const returnDemandeDelivery = async (req, res) => {
     const sendMail = require("../../utils/emailSender");
     const livreurs = await prisma.users.findMany({
       where: {
-      role_id: 1,
+      role_id: livraison,
       },
     });
     if (livreurs && livreurs.length > 0) {
