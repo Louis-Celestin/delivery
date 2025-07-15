@@ -4,9 +4,9 @@ const cloudinary = require("../../config/clouddinaryConifg");
 
 const baseUrl = process.env.FRONTEND_BASE_URL || "https://livraisons.greenpayci.com";
 const localUrl = "http://localhost:5173"
-const GENERAL_URL = localUrl
+const GENERAL_URL = baseUrl
 
-let test_env = true
+let test_env = false
 let support_role = 7;
 let livraison_role = 1;
 let commercial_role = 2;
@@ -214,9 +214,27 @@ const createValidation = async (req, res) => {
         }
       }
     }
+    let updated_piece = null
+    if(type_livraison_id == 5 || type_livraison_id == 7 || type_livraison_id == 8){
+      const stockChargeur = await prisma.stock_dt.findUnique({
+        where: {
+          id_piece: 1
+        }
+      })
+
+      stockInitial = stockChargeur.quantite
+      const dataToUpdate = {
+        quantite : stockInitial - produits.length
+      }
+
+      updated_piece = await prisma.stock_dt.update({
+        where: {id_piece: 1},
+        data: dataToUpdate
+      })
+    }
 
 
-    return res.status(201).json(newValidation);
+    return res.status(201).json(newValidation,updated_piece);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Erreur serveur." });

@@ -13,9 +13,9 @@ const formatDate = (isoDate) => {
 
 const baseUrl = process.env.FRONTEND_BASE_URL || "https://livraisons.greenpayci.com";
 const localUrl = "http://localhost:5173"
-const GENERAL_URL = localUrl 
+const GENERAL_URL = baseUrl 
 
-let test_env = true
+let test_env = false
 let support_role = 7;
 let livraison_role = 1;
 let commercial_role = 2;
@@ -131,6 +131,10 @@ const faireDemande = async (req, res) =>{
           case 6:
             serviceDemandeur = 'MAINTENANCE'
             roleService = maintenance_role
+            break;
+          case 1:
+            serviceDemandeur = 'LIVRAISON'
+            roleService = livraison_role
             break;
         }
 
@@ -353,6 +357,10 @@ const validateDemande = async (req, res) => {
         serviceDemandeur = 'MAINTENANCE'
         roleService = maintenance_role
         break;
+      case 1:
+        serviceDemandeur = 'LIVRAISON'
+        roleService = livraison_role
+        break;
     }
 
     let quantite = demande.qte_total_demande;
@@ -527,6 +535,10 @@ const returnDemande = async (req, res) => {
       case 6:
         serviceDemandeur = 'MAINTENANCE'
         roleService = maintenance_role
+        break;
+      case 1:
+        serviceDemandeur = 'LIVRAISON'
+        roleService = livraison_role
         break;
     }
 
@@ -704,6 +716,10 @@ const cancelDemande = async (req, res) => {
         serviceDemandeur = 'MAINTENANCE'
         roleService = maintenance_role
         break;
+      case 1:
+        serviceDemandeur = 'LIVRAISON'
+        roleService = livraison_role
+        break;
     }
 
     let quantite = demande.qte_total_demande;
@@ -876,6 +892,10 @@ const updateDemande = async (req, res) => {
       case 6:
         serviceDemandeur = 'MAINTENANCE'
         roleService = maintenance_role
+        break;
+      case 1:
+        serviceDemandeur = 'LIVRAISON'
+        roleService = livraison_role
         break;
     }
 
