@@ -35,6 +35,7 @@ export default function AllDeliveriesVueList({ filterType }) {
         {label: 'TPE MOBILE', value:[4]},
         {label: 'TPE ECOBANK', value:[6]},
         {label: 'Chargeur', value:[5, 7]},
+        {label: 'Chargeur (DECOM RI NOK)', value:[8]},
     ]
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
@@ -107,7 +108,8 @@ export default function AllDeliveriesVueList({ filterType }) {
     }
     const receiveDateTemplate = (deliveryForms) =>{
         if(deliveryForms.validations.length>0){
-            return (<span className="text-gray-500 text-theme-sm dark:text-gray-400">{formatDate(deliveryForms.validations[0].date_validation)}</span>) 
+            let index = deliveryForms.validations.length-1
+            return (<span className="text-gray-500 text-theme-sm dark:text-gray-400">{formatDate(deliveryForms.validations[index].date_validation)}</span>) 
         }else{
             return (<></>)
         }
@@ -164,10 +166,11 @@ export default function AllDeliveriesVueList({ filterType }) {
     const filteredDeliveryForms = deliveryForms.filter((item) => {
         let itemDate = new Date(item.date_livraison);
         if(item.validations.length > 0){
-            itemDate = new Date(item.validations[0].date_validation)
+            let index = item.validations.length-1
+            itemDate = new Date(item.validations[index].date_validation)
         }
         const matchesStatus = selectedStatus ? item.statut_livraison === selectedStatus : true;
-        const matchesType = selectedType ? item.type_livraison_id === selectedType : true;
+        const matchesType = selectedType ? selectedType.includes(item.type_livraison_id) : true;
         const matchesStartDate = startDate ? itemDate >= startDate : true;
         const matchesEndDate = endDate ? itemDate <= endDate : true;
         const matchesGlobalFilter = globalFilter

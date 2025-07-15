@@ -33,6 +33,7 @@ const navItems: NavItem[] = [
     name: "Dashboard",
     subItems: [
       { name: "Semaine en cours", path: "/", pro: false },
+      { name: "Gestion Stock", path: "/gestion-stock", pro: false },
       // { name: "Données Générales", path:"/donnees-generales", pro: false},
       // { name: "Statistiques livraisons", path: "/statistiques-livraisons", pro: false },
       // { name: "Stock chargeur", path: "/gestion-stock-chargeur", pro: false },
@@ -64,7 +65,8 @@ const navItems: NavItem[] = [
     name: "Demandes",
     icon: <ClipboardCheck />,
     subItems: [
-      { name: "Toutes les demandes", path: "/toutes-les-demandes-livraison", pro: false }
+      {name: "Nouvelle Demande", path:"/nouvelle-demande", pro: false},
+      { name: "Toutes les demandes", path: "/toutes-les-demandes", pro: false },
     ],
     
   },

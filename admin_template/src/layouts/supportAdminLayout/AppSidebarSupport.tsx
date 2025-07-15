@@ -7,6 +7,7 @@ import {
   GridIcon,
   HorizontaLDots,
   ListIcon,
+  // @ts-ignore
   ClipboardCheck,
 } from "../../icons";
 import { useSidebar } from "../../context/SidebarContext";
@@ -40,6 +41,7 @@ const navItems: NavItem[] = [
     icon: <ListIcon />,
     subItems: [
       {name: "Livraisons Support", path:"/toutes-les-livraisons-support", pro: false},
+      {name: "Livraisons Commerciales", path:"/toutes-les-livraisons-vue", pro: false},
       // { name: "Form", path: "/form-elements", pro: false }
     ],
     
@@ -48,7 +50,6 @@ const navItems: NavItem[] = [
     name: "Demandes",
     icon: <ClipboardCheck />,
     subItems: [
-      {name: "Nouvelle Demande", path:"/nouvelle-demande-support", pro: false},
       { name: "Toutes les demandes", path: "/toutes-les-demandes-support", pro: false }
     ],
     

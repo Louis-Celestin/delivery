@@ -74,6 +74,7 @@ export default function ReceptionDetails() {
                     setLoading(true);
                     let data;
                     data = await productDeliveries.getOneLivraison(id);
+                    let index;
                     console.log(data)
                     setDeliveryDetails({
                         ...data,
@@ -101,15 +102,16 @@ export default function ReceptionDetails() {
                         setRecu(true)
                         setStatutLivraison('Livré')
                         setStatutClass('text-sm border rounded-xl p-1 bg-green-100 text-green-500 font-bold')
-                        setCommentaireReception(data.validations[0].commentaire)
+                        index = data.validations.length-1
+                        setCommentaireReception(data.validations[index].commentaire)
                       }else if(data.statut_livraison == 'en_attente'){
                         setShowSignButton(false)
                         setActionButtons(false)
                         setRecu(true)
                         setStatutLivraison('Retourné')
                         setStatutClass('text-sm border rounded-xl p-1 bg-red-100 text-red-500 font-bold')
-
-                        setCommentaireReception(data.validations[0].commentaire)
+                        index = data.validations.length-1
+                        setCommentaireReception(data.validations[index].commentaire)
                       }
                 } catch(error){
                     console.log("Error fetchind data ", error)

@@ -50,7 +50,7 @@ import ReceptionChargeurDetails from "./pages/ReceivePages/ReceptionChargeurDeta
 // @ts-ignore
 import StatistiquesLivraisons from "./components/livraisons/StatistiquesLivraisons"
 // @ts-ignore
-import GestionStockChargeur from "./pages/GestionStock/GestionStockChargeur";
+import GestionStockChargeur from "./pages/GestionStock/GestionStock";
 // @ts-ignore
 import AllDeliveriesVue from "./pages/VueOnlyPages/AllDeliveriesVue";
 // @ts-ignore
@@ -66,17 +66,30 @@ import ResetPassword from "./pages/AuthPages/ResetPassword"
 // @ts-ignore
 import ReceptionMaintenanceDetails from "./pages/MaintenancePages/ReceptionMaintenanceDetails"
 
+
+
 // @ts-ignore
-import DemandeFormSupport from "./pages/Forms/DemandesForms/DemandeFormSupport"
+import DemandeForm from "./pages/Forms/DemandesForms/DemandeForm"
+// @ts-ignore
+import AllDemandes from "./pages/DemandesPages/AllDemandes"
+// @ts-ignore
+import DemandeDetails from "./pages/DemandesPages/DemandeDetails"
+// @ts-ignore
+import ModifyDemandeForm from "./pages/Forms/DemandesForms/ModifyDemandeForm"
+// @ts-ignore
+import DemandeVueDetails from "./pages/DemandesPages/DemandeVueDetails"
+
+
+
+// @ts-ignore
+import AllDemandesSupervision from "./pages/SuperviseurPages/AllDemandesSupervision"
+// @ts-ignore
+import DemandeSupervisionDetails from "./pages/SuperviseurPages/DemandeSupervisionDetails"
 // @ts-ignore
 import AllDemandesSupport from "./pages/SupportPages/AllDemandesSupport"
 // @ts-ignore
-import DemandeSupportDetails from "./pages/SupportPages/DemandeSupportDetails"
+import AllDemandesMaintenance from "./pages/MaintenancePages/AllDemandesMaintenance"
 
-// @ts-ignore
-import AllDemandes from "./pages/SuperviseurPages/AllDemandes"
-// @ts-ignore
-import DemandeSupportSupervisionDetails from "./pages/SuperviseurPages/DemandeSupportSupervisionDetails"
 
 // @ts-ignore
 import AllDemandesDeliveries from "./pages/DeliveryPages/AllDemandesDeliveries"
@@ -93,7 +106,8 @@ import AllSupportDeliveries from "./pages/SupportPages/AllSupportDeliveries"
 import ReceptionSupportDetails from "./pages/SupportPages/ReceptionSupportDetails"
 
 // @ts-ignore
-import ModifyDemandeFormSupport from "./pages/Forms/DemandesForms/ModifyDemandeFormSupport"
+import ModifyStockForm from "./pages/Forms/StockForms/ModifyStockForm"
+
 
 
 export default function App() {
@@ -141,27 +155,33 @@ export default function App() {
               <Route path="/toutes-les-livraisons-vue" element={<AllDeliveriesVue />} />
               <Route path="/formulaire-vue/:id" element={<DeliveryDetailsVue/>} />
               <Route path="/formulaire-chargeur-vue/:id" element={<DeliveryChargeurDetailsVue />} />
-              <Route path="/toutes-les-demandes" element={<AllDemandes />} />
-              <Route path="/voir-demande-support-details/:id" element={<DemandeSupportSupervisionDetails />} />
+              <Route path="/toutes-les-demandes-supervision" element={<AllDemandesSupervision />} />
+              <Route path="/demande-supervision-details/:id" element={<DemandeSupervisionDetails />} />
 
-              {/* Stock chargeurs */}
-              <Route path="/gestion-stock-chargeur" element={<GestionStockChargeur />} />
+              {/* Stock DT */}
+              <Route path="/gestion-stock" element={<GestionStockChargeur />} />
+              <Route path="/modifier-stock" element={<ModifyStockForm />} />
 
               {/* Maintenance */}
               <Route path="/toutes-les-livraisons-maintenance" element={<AllMaintenanceDeliveries />} />
               <Route path="/formulaire-maintenance-chargeur-recu/:id" element={<ReceptionMaintenanceDetails />} />
+              <Route path="/toutes-les-demandes-maintenance" element={<AllDemandesMaintenance />} />
 
 
               {/* Support */}
-              <Route path="/nouvelle-demande-support" element={<DemandeFormSupport />} />
-              <Route path="/toutes-les-demandes-support" element={<AllDemandesSupport />} />
-              <Route path="/demande-support-details/:id" element={<DemandeSupportDetails />} />
               <Route path="/toutes-les-livraisons-support" element={<AllSupportDeliveries />} />
               <Route path="/formulaire-support-chargeur-recu/:id" element={<ReceptionSupportDetails />} />
-              <Route path="/modifier-demande-support/:id" element={<ModifyDemandeFormSupport />} />
-              
+              <Route path="/toutes-les-demandes-support" element={<AllDemandesSupport />} />
 
               
+
+              {/* Demandes */}
+              <Route path="/nouvelle-demande" element={<DemandeForm />} />
+              <Route path="/toutes-les-demandes" element={<AllDemandes />} />
+              <Route path="/demande-details/:id" element={<DemandeDetails />} />
+              <Route path="/modifier-demande/:id" element={<ModifyDemandeForm />} />
+              <Route path="/demande-vue-details/:id" element={<DemandeVueDetails />} />
+
 
               {/* Reset Password */}
               <Route path="/modifier-mot-de-passe" element={<ResetPassword />} />

@@ -89,7 +89,8 @@ export default function AllDemandesDeliveriesList() {
     }
     const receiveDateTemplate = (demandeForms) =>{
         if(demandeForms.validation_demande.length>0){
-            return (<span className="text-gray-500 text-theme-sm dark:text-gray-400">{formatDate(demandeForms.validation_demande[0].date_validation_demande)}</span>) 
+            let index = demandeForms.validations.length-1
+            return (<span className="text-gray-500 text-theme-sm dark:text-gray-400">{formatDate(demandeForms.validation_demande[index].date_validation_demande)}</span>) 
         }else{
             return (<></>)
         }
@@ -165,7 +166,8 @@ export default function AllDemandesDeliveriesList() {
     const filteredDemandeForms = demandeForms.filter((item) => {
         let itemDate = new Date(item.date_demande);
         if(item.validation_demande.length > 0){
-            itemDate = new Date(item.validation_demande[0].date_validation_demande)
+            let index = item.validations.length-1
+            itemDate = new Date(item.validation_demande[index].date_validation_demande)
         }
         const matchesStatus = selectedStatus ? item.statut_demande === selectedStatus : true;
         const matchesType = selectedType ? selectedType.includes(item.type_demande_id) : true;

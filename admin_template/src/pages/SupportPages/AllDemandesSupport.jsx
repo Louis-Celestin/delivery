@@ -1,5 +1,5 @@
 import PageBreadcrumb from "../../components/common/PageBreadCrumb"
-import AllDemandesSupportList from "../../components/support/AllDemandesSupportList"
+import AllDemandesSupportList from "../../components/mouvement_stock/AllDemandesSupportList"
 
 export default function AllDemandesSupport() {
     

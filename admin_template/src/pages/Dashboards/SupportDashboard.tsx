@@ -31,7 +31,7 @@ export default function SupportDashboard() {
 
   return (
     <>
-      <div className="mb-6">
+      <div className="my-3">
         <div className="mb-2 flex justify-between">
           <span className="text-xl font-bold">
             DASHBOARD SUPPORT
@@ -73,8 +73,8 @@ export default function SupportDashboard() {
           )}
         </div>
       </div>
-      <div className="grid md:grid-cols-2 gap-6 mb-6">
-        <div>
+      <div className="grid lg:grid-cols-2 md:grid-cols-2 gap-6 mt-6 my-3">
+        <div className="grid grid-cols-1">
           <div className="p-6 flex justify-center border bg-white rounded-2xl">
             <div className="mx-3">
                 <DatePicker
@@ -110,17 +110,17 @@ export default function SupportDashboard() {
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2 gap-6">
          <LivraisonsAttenteSupport /> 
          <LivraisonsReturnSupport startDate={startDate} endDate={endDate} />
         </div>
       </div>
-      <div className="grid grid-cols-1 gap-6 space-y-6 mb-6">
+      <div className="grid grid-cols-1 gap-6 my-6">
           <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 grid-cols-1 gap-6">
               <LivraisonsChargeurSupport startDate={startDate} endDate={endDate} />
           </div>
       </div>
-      <div className="grid grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 my-3">
        <DemandesAttentesSupport />
        <DemandesValideesSupport startDate={startDate} endDate={endDate} />
        <DemandesReturnSupport startDate={startDate} endDate={endDate} />

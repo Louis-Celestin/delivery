@@ -6,7 +6,7 @@ import { generatePdf } from "../../backend/receptions/GeneratePDF";
 
 import Input from "../form/input/InputField";
 import { Calendar } from 'primereact/calendar';
-import DatePicker from "../../components/form/date-picker";
+import DatePicker from "../form/date-picker";
 
 import 'primeicons/primeicons.css';
 import { ProgressSpinner } from 'primereact/progressspinner';
@@ -114,7 +114,8 @@ export default function AllSupportDeliveriesList({ filterType }) {
     }
     const receiveDateTemplate = (deliveryForms) =>{
         if(deliveryForms.validations.length>0){
-            return (<span className="text-gray-500 text-theme-sm dark:text-gray-400">{formatDate(deliveryForms.validations[0].date_validation)}</span>) 
+            let index = deliveryForms.validations.length-1
+            return (<span className="text-gray-500 text-theme-sm dark:text-gray-400">{formatDate(deliveryForms.validations[index].date_validation)}</span>) 
         }else{
             return (<></>)
         }
@@ -179,7 +180,8 @@ export default function AllSupportDeliveriesList({ filterType }) {
     const filteredDeliveryForms = deliveryForms.filter((item) => {
         let itemDate = new Date(item.date_livraison);
         if(item.validations.length > 0){
-            itemDate = new Date(item.validations[0].date_validation)
+            let index = item.validations.length-1
+            itemDate = new Date(item.validations[index].date_validation)
         }
         const matchesStatus = selectedStatus ? item.statut_livraison === selectedStatus : true;
         const matchesType = selectedType ? item.type_livraison_id === selectedType : true;

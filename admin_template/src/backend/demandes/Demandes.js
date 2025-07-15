@@ -84,14 +84,20 @@ export class Demandes{
         }
     };
 
-    async updateDemande(id, produitsDemandes, commentaire, statut_demande, type_demande_id, user_id){
+    async updateDemande(id, produitsDemandes, commentaire, type_demande_id, user_id, nom_demandeur, role_demandeur, role_validateur, id_demandeur, qte_total_demande, motif_demande){
       try{
         const response = await axios.put(`${urlBase}/api/demandes/updateDemande/${id}`,
-        {produitsDemandes,
-        commentaire,
-        statut_demande,
-        type_demande_id,
-        user_id,
+        {
+          produitsDemandes,
+          commentaire,
+          type_demande_id,
+          user_id,
+          nom_demandeur,
+          role_demandeur,
+          role_validateur,
+          id_demandeur,
+          qte_total_demande,
+          motif_demande, 
         });
 
         // console.log(response)

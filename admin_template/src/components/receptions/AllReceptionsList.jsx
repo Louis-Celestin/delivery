@@ -117,7 +117,8 @@ export default function AllReceptionsList() {
     }
     const receiveDateTemplate = (deliveryForms) =>{
         if(deliveryForms.validations.length>0){
-            return (<span className="text-gray-500 text-theme-sm dark:text-gray-400">{formatDate(deliveryForms.validations[0].date_validation)}</span>) 
+            let index = deliveryForms.validations.length-1
+            return (<span className="text-gray-500 text-theme-sm dark:text-gray-400">{formatDate(deliveryForms.validations[index].date_validation)}</span>) 
         }else{
             return (<></>)
         }
@@ -178,7 +179,8 @@ export default function AllReceptionsList() {
         let itemDate = new Date(item.date_livraison);
         // let itemReceiveDate = itemDate
         if(item.validations.length > 0){
-            itemDate = new Date(item.validations[0].date_validation)
+            let index = item.validations.length-1
+            itemDate = new Date(item.validations[index].date_validation)
         }
         const matchesStatus = selectedStatus ? item.statut_livraison === selectedStatus : true;
         const matchesType = selectedType ? item.type_livraison_id === selectedType : true;

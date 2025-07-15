@@ -27,12 +27,13 @@ export default function DeliveryDetails() {
     const [deliveryDetails, setDeliveryDetails] = useState('')
     const [typeLivraison, setTypeLivraison] = useState('')
     const [dateLivraison, setDateLivraison] = useState('')
-    const [actionButtons, setActionButtons] = useState(false);
     const [commentaire, setCommentaire] = useState('');
     const [commentaireReception, setCommentaireReception] = useState('');
     const [statutLivraison, setStatutLivraison] = useState('en attente');
     const [statutClass, setStatutClass] = useState('text-sm rounded-xl p-1 bg-orange-100 text-orange-500 font-bold')
     const [recu, setRecu] = useState(false);
+    const [actionButtons, setActionButtons] = useState(false);
+    const [attente, setAttente] = useState(true)
 
     const formatDate = (date) => {
         const d = new Date(date);
@@ -47,6 +48,7 @@ export default function DeliveryDetails() {
                     setLoading(true);
                     let data;
                     data = await productDeliveries.getOneLivraison(id);
+                    let index;
                     console.log(data)
                     setDeliveryDetails({
                         ...data,
@@ -71,17 +73,20 @@ export default function DeliveryDetails() {
                       if(data.statut_livraison == 'livre'){
                         setActionButtons(true)
                         setStatutLivraison('Livré')
+                        setAttente(false)
                         setStatutClass('text-sm border rounded-xl p-1 bg-green-100 text-green-500 font-bold')
                         setRecu(true)
-                        setCommentaireReception(data.validations[0].commentaire)
+                        index = data.validations.length-1
+                        setCommentaireReception(data.validations[index].commentaire)
                       }
                       else if(data.statut_livraison == 'en_attente'){
-                        // setActionButtons(false)
-                        // setRecu(true)
+                        setActionButtons(false)
+                        setRecu(true)
+                        setAttente(true)
                         setStatutLivraison('Retourné')
                         setStatutClass('text-sm border rounded-xl p-1 bg-red-100 text-red-500 font-bold')
-
-                        // setCommentaireReception(data.validations[0].commentaire)
+                        index = data.validations.length-1
+                        setCommentaireReception(data.validations[index].commentaire)
                       }
                 } catch(error){
                     console.log("Error fetchind data ", error)
@@ -131,13 +136,14 @@ export default function DeliveryDetails() {
 
                         ) : (
                             <>  
-                                {recu ? 
+                                {attente ? 
                                 (
-                                    <></>
-                                ) : (
-                                    <Link to={`/form-modify-nouvelle-livraison/${deliveryDetails.id_livraison}`}>
+                                   <Link to={`/form-modify-nouvelle-livraison/${deliveryDetails.id_livraison}`}>
                                         <button className='m-3 text-2xl'><span><i className="pi pi-pencil"></i></span></button>
-                                    </Link>
+                                   </Link>
+                                ) : (
+                                    
+                                    <></>
                                 )}
                             </>
                         )}

@@ -82,6 +82,9 @@ export default function LivraisonInputs() {
     }else if(value == 'CHARGEUR (TPE DECOM RI OK)'){
       setLivraisonID(7)
       setSelectedChargeur(true)
+    }else if(value == 'CHARGEUR (TPE DECOM RI NOK)'){
+      setLivraisonID(8)
+      setSelectedChargeur(true)
     }
     
   };
@@ -118,6 +121,7 @@ export default function LivraisonInputs() {
     { value: "TPE ECOBANK", label: "TPE ECOBANK" },
     { value: "CHARGEUR", label: "CHARGEUR" },
     { value: "CHARGEUR (TPE DECOM RI OK)", label: "CHARGEUR (TPE DECOM RI OK)"},
+    { value: "CHARGEUR (TPE DECOM RI NOK)", label: "CHARGEUR (TPE DECOM RI NOK)"},
   ];
 
   const handleConfirm = () => {

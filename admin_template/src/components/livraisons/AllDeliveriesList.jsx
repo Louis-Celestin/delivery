@@ -100,7 +100,7 @@ export default function AllDeliveriesList({ filterType }) {
         } else if (deliveryForms.type_livraison_id === 8) {
             title = 'Livraison CHARGEUR (DECOM RI NOK)'; // fallback or other types
             titleClass = "font-bold text-sm text-yellow-600";
-            linkSee = `/formulaire-chargeur-decom/${deliveryForms.id_livraison}`;
+            linkSee = `/formulaire-chargeur/${deliveryForms.id_livraison}`;
         }
         return (
             <span className="flex flex-col">
@@ -117,7 +117,8 @@ export default function AllDeliveriesList({ filterType }) {
     }
     const receiveDateTemplate = (deliveryForms) =>{
         if(deliveryForms.validations.length>0){
-            return (<span className="text-gray-500 text-theme-sm dark:text-gray-400">{formatDate(deliveryForms.validations[0].date_validation)}</span>) 
+            let index = deliveryForms.validations.length-1
+            return (<span className="text-gray-500 text-theme-sm dark:text-gray-400">{formatDate(deliveryForms.validations[index].date_validation)}</span>) 
         }else{
             return (<></>)
         }
@@ -147,7 +148,7 @@ export default function AllDeliveriesList({ filterType }) {
             linkSee = `/formulaire-chargeur/${deliveryForms.id_livraison}`
             // linkModify = `/form-modify-livraison-chargeur/${deliveryForms.id_livraison}`
         } else if (deliveryForms.type_livraison_id === 8){
-            linkSee = `/formulaire-chargeur-decom/${deliveryForms.id_livraison}`;
+            linkSee = `/formulaire-chargeur/${deliveryForms.id_livraison}`;
         }
 
         return(
@@ -170,26 +171,13 @@ export default function AllDeliveriesList({ filterType }) {
                     </>
                 ) : (
                     <>
-                        {deliveryForms.type_livraison_id == 8 ? (
-                            <></>
-                        ) : (
-                            <>    
-                                <Link to={linkModify}>
-                                        <button className="mx-1 text-gray-500 text-theme-sm dark:text-gray-400">
-                                            <i className="pi pi-pencil"></i>
-                                        </button>
-                                </Link>
-                            </>
-                        )}
-                        {/* {deliveryForms.statut_livraison == 'en_attente' ? 
-                        (<></>) :
-                        (
+                        <>    
                             <Link to={linkModify}>
-                                <button className="mx-1 text-gray-500 text-theme-sm dark:text-gray-400">
-                                    <i className="pi pi-pencil"></i>
-                                </button>
+                                    <button className="mx-1 text-gray-500 text-theme-sm dark:text-gray-400">
+                                        <i className="pi pi-pencil"></i>
+                                    </button>
                             </Link>
-                        )} */}
+                        </>
                     </>
                     
                 )}
@@ -199,7 +187,8 @@ export default function AllDeliveriesList({ filterType }) {
     const filteredDeliveryForms = deliveryForms.filter((item) => {
         let itemDate = new Date(item.date_livraison);
         if(item.validations.length > 0){
-            itemDate = new Date(item.validations[0].date_validation)
+            let index = item.validations.length-1
+            itemDate = new Date(item.validations[index].date_validation)
         }
         const matchesStatus = selectedStatus ? item.statut_livraison === selectedStatus : true;
         const matchesType = selectedType ? selectedType.includes(item.type_livraison_id) : true;

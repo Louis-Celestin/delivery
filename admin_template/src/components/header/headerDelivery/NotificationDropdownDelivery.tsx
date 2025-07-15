@@ -11,7 +11,7 @@ import { formatDistanceToNow, parseISO } from 'date-fns';
 export default function NotificationDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const [notifying, setNotifying] = useState(false);
-
+  // @ts-ignore
   const [demandesEnAttentes, setDemandesEnAttentes] = useState([])
   const demandes = new Demandes();
   const navigate = useNavigate()
@@ -36,6 +36,7 @@ export default function NotificationDropdown() {
       try{
         let data = await demandes.getAllDemandes()
         console.log(data)
+        // @ts-ignore
         const enAttente = data
         // @ts-ignore
         .filter(item => {
@@ -46,11 +47,11 @@ export default function NotificationDropdown() {
           ...item,
           timeAgo: formatDistanceToNow(parseISO(item.date_demande), { addSuffix: true })
         }));
-        if (enAttente.length > 0){
-          setNotifying(true)
-        }
+        // if (enAttente.length > 0){
+        //   setNotifying(true)
+        // }
 
-        setDemandesEnAttentes(enAttente)
+        // setDemandesEnAttentes(enAttente)
 
       } catch(error){
         console.error('Error fetching demandes:', error);

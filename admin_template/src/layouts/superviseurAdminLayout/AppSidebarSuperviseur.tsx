@@ -53,7 +53,7 @@ const navItems: NavItem[] = [
   {
     icon: <ClipboardCheck />,
     name: "Demandes",
-    subItems: [{ name: "Toutes les demandes", path: "/toutes-les-demandes", pro: false }],
+    subItems: [{ name: "Toutes les demandes", path: "/toutes-les-demandes-supervision", pro: false }],
   },
   // {
   //   name: "Tables",

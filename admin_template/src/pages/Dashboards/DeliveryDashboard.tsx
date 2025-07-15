@@ -12,6 +12,15 @@ import LivraisonsReturn from "../../components/livraisons/LivraisonsReturn"
 import LivraisonsLivrees from "../../components/livraisons/LivraisonsLivrees"
 // @ts-ignore
 import DemandesLivraisons from "../../components/livraisons/DemandesLivraisons"
+// @ts-ignore
+import DemandesAttentes from "../../components/mouvement_stock/DemandesAttentes"
+// @ts-ignore
+import DemandesValidees from "../../components/mouvement_stock/DemandesValidees"
+// @ts-ignore
+import DemandesReturn from "../../components/mouvement_stock/DemandesReturn"
+// @ts-ignore
+import DemandesCancel from "../../components/mouvement_stock/DemandesCancel"
+
 import DatePicker from "../../components/form/date-picker";
 import { startOfWeek, endOfWeek, format, getWeek } from "date-fns";
 import { RefreshTimeIcon } from "../../icons";
@@ -38,7 +47,7 @@ export default function DeliveryDashboard() {
 
   return (
     <>
-      <div className="mb-6">
+      <div className="mb-3">
         <div className="mb-2 flex justify-between">
           <span className="text-xl font-bold">
             DASHBOARD LIVRAISON
@@ -80,7 +89,7 @@ export default function DeliveryDashboard() {
           )}
         </div>
       </div>
-      <div className="grid lg:grid-cols-2 md:grid-cols-2 gap-6 space-y-6">
+      <div className="grid lg:grid-cols-2 md:grid-cols-2 gap-6 mt-6 my-3">
         <div className="grid grid-cols-1">
           <div className="p-6 flex justify-center border bg-white rounded-2xl">
             <div className="mx-3">
@@ -116,14 +125,14 @@ export default function DeliveryDashboard() {
             </div>
           </div>
         </div>
-        <div className="grid sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2  gap-6 mb-6">
+        <div className="grid sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2 gap-6">
           <LivraisonsLivrees startDate={startDate} endDate={endDate} />
           <LivraisonsReturn startDate={startDate} endDate={endDate} />
           {/* <ChargeursReturn startDate={startDate} endDate={endDate} /> */}
         </div>
       </div>
 
-      <div className="grid xl:grid-cols-2 gap-6">
+      <div className="grid xl:grid-cols-2 gap-6 my-6">
         <div className="grid grid-cols-1">
           <LivraisonsGenerales startDate={startDate} endDate={endDate} />
         </div>
@@ -131,11 +140,17 @@ export default function DeliveryDashboard() {
           <LivraisonsPieStats startDate={startDate} endDate={endDate} />
         </div>
       </div>
-      <div className="grid xl:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 my-3">
+        <DemandesAttentes />
+        <DemandesValidees startDate={startDate} endDate={endDate} />
+        <DemandesReturn startDate={startDate} endDate={endDate} />
+        <DemandesCancel startDate={startDate} endDate={endDate} />
+      </div>
+      {/* <div className="grid xl:grid-cols-2 gap-6 my-3">
         <div className="grid grid-cols-1">
           <DemandesLivraisons />
         </div>
-      </div>
+      </div> */}
   
       <div className="grid grid-cols-12 gap-4 md:gap-6">
         {/* <div className="col-span-4 space-y-6">

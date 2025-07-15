@@ -15,18 +15,15 @@ import LivraisonsAttenteMaintenance from "../../components/maintenance/Livraison
 import LivraisonsReturnMaintenance from "../../components/maintenance/LivraisonsReturnMaintenance"
 
 // @ts-ignore
-import DemandesLivraisons from "../../components/livraisons/DemandesLivraisons"
-
-// @ts-ignore
 // import LivraisonsReturn from "../../components/supervision/LivraisonsReturn"
 // @ts-ignore
-import DemandesAttentes from "../../components/supervision/DemandesAttentes"
+import DemandesAttentes from "../../components/mouvement_stock/DemandesAttentes"
 // @ts-ignore
-import DemandesValidees from "../../components/supervision/DemandesValidees"
+import DemandesValidees from "../../components/mouvement_stock/DemandesValidees"
 // @ts-ignore
-import DemandesReturn from "../../components/supervision/DemandesReturn"
+import DemandesReturn from "../../components/mouvement_stock/DemandesReturn"
 // @ts-ignore
-import DemandesCancel from "../../components/supervision/DemandesCancel"
+import DemandesCancel from "../../components/mouvement_stock/DemandesCancel"
 
 // @ts-ignore
 import LivraisonsAttentesSupport from "../../components/support/LivraisonsAttentesSupport"
@@ -50,7 +47,7 @@ export default function SuperviseurDashboard() {
 
   return (
     <>
-      <div className="mb-6">
+      <div className="mb-3">
         <div className="mb-2 flex justify-between">
           <span className="text-xl font-bold">
             DASHBOARD SUPERVISION
@@ -92,52 +89,52 @@ export default function SuperviseurDashboard() {
           )}
         </div>
       </div>
-      <div className="grid lg:grid-cols-2 md:grid-cols-2 gap-6 space-y-6">
+      <div className="grid lg:grid-cols-2 md:grid-cols-2 gap-6 mt-6 my-3">
         <div>
-            <div className="mb-6 p-6 flex justify-center border bg-white rounded-2xl">
-                <div className="mx-3">
-                    <DatePicker
-                      id="date-picker-debut"
-                      label="Date début"
-                      placeholder={getFormattedDate(startDate)}
+            <div className="p-6 flex justify-center border bg-white rounded-2xl">
+              <div className="mx-3">
+                  <DatePicker
+                    id="date-picker-debut"
+                    label="Date début"
+                    placeholder={getFormattedDate(startDate)}
+                    // @ts-ignore
+                    value={getFormattedDate(startDate)}
+                    onChange={(currentDateString) => {
+                      console.log("Date début changée : ",currentDateString)
                       // @ts-ignore
-                      value={getFormattedDate(startDate)}
-                      onChange={(currentDateString) => {
-                        console.log("Date début changée : ",currentDateString)
-                        // @ts-ignore
-                        setStartDate(new Date(currentDateString))
-                        setIsDateChanged(true)
-                      }}
-                    />
-                </div>
-                <div className="mx-3">
-                    <DatePicker
-                      id="date-picker"
-                      label="Date fin"
-                      placeholder={getFormattedDate(endDate)}
-                      // @ts-ignore
-                      value={getFormattedDate(endDate)}
-                      onChange={(dates) => {
-                        if (dates && dates[0]) {
-                        let selectedDate = new Date(dates[0]);
-                        let nextDay = new Date(selectedDate);
-                        nextDay.setDate(selectedDate.getDate() + 1);
-                        setEndDate(nextDay);
-                        setIsDateChanged(true);
-                      }}}
-                    />
-                </div>
+                      setStartDate(new Date(currentDateString))
+                      setIsDateChanged(true)
+                    }}
+                  />
+              </div>
+              <div className="mx-3">
+                  <DatePicker
+                    id="date-picker"
+                    label="Date fin"
+                    placeholder={getFormattedDate(endDate)}
+                    // @ts-ignore
+                    value={getFormattedDate(endDate)}
+                    onChange={(dates) => {
+                      if (dates && dates[0]) {
+                      let selectedDate = new Date(dates[0]);
+                      let nextDay = new Date(selectedDate);
+                      nextDay.setDate(selectedDate.getDate() + 1);
+                      setEndDate(nextDay);
+                      setIsDateChanged(true);
+                    }}}
+                  />
+              </div>
             </div>
           </div>
       </div>
 
       <div className="grid grid-cols-2 gap-6">
-        <div className="mb-6">
-          <span className="font-bold text-2xl text-neutral-400">Demandes Globales</span>
+        <div className="my-3">
+          <span className="font-bold text-2xl text-neutral-400">Mouvement de stock</span>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 my-3">
         <DemandesAttentes />
         <DemandesValidees startDate={startDate} endDate={endDate} />
         <DemandesReturn startDate={startDate} endDate={endDate} />
@@ -145,12 +142,12 @@ export default function SuperviseurDashboard() {
       </div>
 
        <div className="grid grid-cols-2 gap-6">
-        <div className="mb-6">
+        <div className="my-3">
           <span className="font-bold text-2xl text-neutral-400">Livraisons Commerciales</span>
         </div>
       </div>
 
-       <div className="grid lg:grid-cols-3 space-y-3 mb-3 gap-4 md:gap-6">
+       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 my-3 gap-6">
           <div className="">
             <LivraisonsAttente />
           </div>
@@ -163,12 +160,12 @@ export default function SuperviseurDashboard() {
         </div>
 
       <div className="grid grid-cols-2 gap-6">
-        <div className="mb-6">
+        <div className="my-3">
           <span className="font-bold text-2xl text-neutral-400">Livraisons Maintenance</span>
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-3 space-y-3 mb-3 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 my-3 gap-6">
         <div className="">
           <LivraisonsAttenteMaintenance />
         </div>
@@ -178,12 +175,12 @@ export default function SuperviseurDashboard() {
       </div>
 
       <div className="grid grid-cols-2 gap-6">
-        <div className="mb-6">
+        <div className="my-3">
           <span className="font-bold text-2xl text-neutral-400">Livraisons Support</span>
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-3 space-y-3 mb-3 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 my-3 gap-6">
         <div className="">
           <LivraisonsAttentesSupport />
         </div>
@@ -193,12 +190,12 @@ export default function SuperviseurDashboard() {
       </div>
 
       <div className="grid grid-cols-2 gap-6">
-        <div className="mb-6">
+        <div className="my-3">
           <span className="font-bold text-2xl text-neutral-400">Livraisons Globales</span>
         </div>
       </div>
 
-      <div className="grid xl:grid-cols-2 gap-6">
+      <div className="grid xl:grid-cols-2 gap-6 my-3">
         <div className="grid grid-cols-1">
           <LivraisonsGenerales startDate={startDate} endDate={endDate} />
         </div>
@@ -206,12 +203,6 @@ export default function SuperviseurDashboard() {
           <LivraisonsPieStats startDate={startDate} endDate={endDate} />
         </div>
       </div>
-      <div className="grid xl:grid-cols-2 gap-6">
-        <div className="grid grid-cols-1">
-          <DemandesLivraisons />
-        </div>
-      </div>
-     
   
       <div className="grid grid-cols-12 gap-4 md:gap-6">
         {/* <div className="col-span-4 space-y-6">

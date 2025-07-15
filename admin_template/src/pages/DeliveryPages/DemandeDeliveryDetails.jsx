@@ -48,6 +48,7 @@ export default function DemandeDeliveryDetails() {
                     setLoading(true);
                     let data;
                     data = await demandes.getOneDemande(id);
+                    let index;
                     console.log(data)
                     setDemandeDetails({
                         ...data,
@@ -61,17 +62,28 @@ export default function DemandeDeliveryDetails() {
                     setCommentaire(data.commentaire)
                     setQteDemande(data.qte_total_demande)
                     if(data.statut_demande == 'valide'){
-                    setActionButtons(true)
-                    setStatutDemande('Validée')
-                    setStatutClass('text-sm border rounded-xl p-1 bg-green-100 text-green-500 font-bold')
-                    setRecu(true)
-                    setCommentaireValidation(data.validation_demande[0].commentaire)
+                        setActionButtons(true)
+                        setStatutDemande('Validée')
+                        setStatutClass('text-sm border rounded-xl p-1 bg-green-100 text-green-500 font-bold')
+                        setRecu(true)
+                        index = data.validation_demande.length-1
+                        setCommentaireValidation(data.validation_demande[index].commentaire)
                     }
                     else if(data.statut_demande == 'retourne'){
-                    // setActionButtons(false)
-                    // setRecu(true)
-                    setStatutDemande('Retourné')
-                    setStatutClass('text-sm border rounded-xl p-1 bg-red-100 text-red-500 font-bold')
+                        // setActionButtons(false)
+                        setRecu(true)
+                        setStatutDemande('Retourné')
+                        setStatutClass('text-sm border rounded-xl p-1 bg-red-100 text-red-500 font-bold')
+                        index = data.validation_demande.length-1
+                        setCommentaireValidation(data.validation_demande[index].commentaire)
+                    } else if(data.statut_demande == 'refuse'){
+                    setActionButtons(false)
+                    setRecu(true)
+                    setStatutDemande('Refusée')
+                    setStatutClass('text-sm rounded-xl p-1 bg-gray-dark text-white font-bold')
+                    index = data.validation_demande.length-1
+                    setCommentaireValidation(data.validation_demande[index].commentaire)
+
                     // setCommentaireValidation(data.validations[0].commentaire)
                     }
                     if(data.demande_livree){

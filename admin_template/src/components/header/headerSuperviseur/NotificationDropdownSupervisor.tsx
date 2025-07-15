@@ -6,6 +6,8 @@ import { Link, useNavigate } from "react-router";
 import { ClipboardCheck } from "../../../icons";
 // @ts-ignore
 import { Demandes } from "../../../backend/demandes/Demandes"
+// @ts-ignore
+import { Stock } from "../../../backend/stock/Stock"
 import { formatDistanceToNow, parseISO } from 'date-fns';
 
 export default function NotificationDropdown() {
@@ -14,7 +16,11 @@ export default function NotificationDropdown() {
 
   const [demandesEnAttentes, setDemandesEnAttentes] = useState([])
   const demandes = new Demandes();
+  const stock = new Stock();
   const navigate = useNavigate()
+
+
+  const [stockDT, setStockDT] = useState([])
 
   function toggleDropdown() {
     setIsOpen(!isOpen);
@@ -51,6 +57,24 @@ export default function NotificationDropdown() {
         }
 
         setDemandesEnAttentes(enAttente)
+
+
+        let stockData;
+        stockData = await stock.getAllStock()
+        // console.log(stockData)
+        //@ts-ignore 
+        const piecesA920 = stockData.filter(item =>{
+          return item.model_id == 1;
+        });
+        setStockDT(piecesA920)
+        // const pieceDemande = piecesA920.find(
+        //     (item) =>{
+        //         return item.id_piece == demandeData.type_demande_id
+        //     }
+        // )
+        // if(pieceDemande){
+        //     setTypeDemande(pieceDemande.nom_piece.toUpperCase())
+        // }
 
       } catch(error){
         console.error('Error fetching demandes:', error);
@@ -121,17 +145,27 @@ export default function NotificationDropdown() {
 
             let demandeTitle = ''
             // @ts-ignore
-            if (demande.type_demande_id === 1) {
-              demandeTitle = 'Demande CHARGEUR (DECOM RI NOK)';
-              // @ts-ignore
-          }
+            const selectedStockItem = stockDT.find(
+              (item) => {
+                 // @ts-ignore
+                  return item.id_piece == parseInt(demande.type_demande_id)
+              } 
+            );
+            if (selectedStockItem) {
+               // @ts-ignore
+                const nomPiece = selectedStockItem.nom_piece
+                demandeTitle = nomPiece.toUpperCase();
+
+            } else {
+                demandeTitle = '';
+            }
             return(
               <li>
                 <DropdownItem
                   onItemClick={() =>{
                     closeDropdown
                     // @ts-ignore
-                    navigate(`/voir-demande-support-details/${demande.id_demande}`)
+                    navigate(`/demande-supervision-details/${demande.id_demande}`)
                   }}
                   className="flex gap-3 rounded-lg border-b border-gray-100 p-3 px-4.5 py-3 hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-white/5"
                   >
@@ -168,7 +202,7 @@ export default function NotificationDropdown() {
           {/* Add more items as needed */}
         </ul>
         <Link
-          to="/toutes-les-demandes"
+          to="/toutes-les-demandes-supervision"
           className="block px-4 py-2 mt-3 text-sm font-medium text-center text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
         >
           Voir toutes les demandes
