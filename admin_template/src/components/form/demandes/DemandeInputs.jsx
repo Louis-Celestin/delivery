@@ -90,6 +90,8 @@ export default function DemandeInputs() {
       setRoleInitiateur(6);
     } else if(value == 'SUPPORT'){
       setRoleInitiateur(7);
+    } else if(value == 'LIVRAISON'){
+      setRoleInitiateur(1);
     }   
   };
 
@@ -121,6 +123,7 @@ export default function DemandeInputs() {
   const options_services = [
     { value: "MAINTENANCE", label: "MAINTENANCE" },
     { value: "SUPPORT", label: "SUPPORT"},
+    { value: "LIVRAISON", label: "LIVRAISON"},
   ];
 
   const options_motifs = [
@@ -302,7 +305,7 @@ export default function DemandeInputs() {
   }
   return (
     <>
-      <div className="flex justify-center mb-6 bg-blue-300 rounded-2xl p-3">
+      <div className="flex justify-center mb-6 bg-green-200 rounded-2xl p-3">
         {loadingStock ? (<>Loading...</>) :
           (
             errorFrom ? (

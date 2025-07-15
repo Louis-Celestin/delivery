@@ -46,6 +46,7 @@ export default function AllDemandesList() {
     const options_services = [
         { value: 6, label: "MAINTENANCE" },
         { value: 7, label: "SUPPORT"},
+        { value: 1, label: "LIVRAISON"},
     ];
 
     useEffect( ()=>{

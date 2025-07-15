@@ -203,17 +203,17 @@ export default function ReceptionMaintenanceDetails() {
             const response = await reception.receive(fd);
 
 
-            let piece_id = 1
-            let stock_initial = piece.quantite
-            let nouveau_stock = stock_initial - quantiteProduit
-            let utilisateur_id = null
+            // let piece_id = 1
+            // let stock_initial = piece.quantite
+            // let nouveau_stock = stock_initial - quantiteProduit
+            // let utilisateur_id = null
             
-            let modifStock = null
-            if(livraisonID == 7 || livraisonID == 8 || livraisonID == 5){
-                modifStock = await stock.setStock(piece_id, stock_initial, nouveau_stock, utilisateur_id)
-                console.log(modifStock)
-                console.log("Diminution stock chargeur")
-            }
+            // let modifStock = null
+            // if(livraisonID == 7 || livraisonID == 8 || livraisonID == 5){
+            //     modifStock = await stock.setStock(piece_id, stock_initial, nouveau_stock, utilisateur_id)
+            //     console.log(modifStock)
+            //     console.log("Diminution stock chargeur")
+            // }
 
             Swal.fire({
                     title: "Succès",

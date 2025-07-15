@@ -9,14 +9,6 @@ import LivraisonsAttenteSupport from "../../components/support/LivraisonsAttente
 // @ts-ignore
 import LivraisonsReturnSupport from "../../components/support/LivraisonsReturnSupport"
 // @ts-ignore
-import DemandesAttentesSupport from "../../components/support/DemandesAttentesSupport"
-// @ts-ignore
-import DemandesValideesSupport from "../../components/support/DemandesValideesSupport"
-// @ts-ignore
-import DemandesReturnSupport from "../../components/support/DemandesReturnSupport"
-// @ts-ignore
-import DemandesCancelSupport from "../../components/support/DemandesCancelSupport"
-// @ts-ignore
 import LivraisonsChargeurSupport from "../../components/support/LivraisonsChargeurSupport"
 
 
@@ -119,12 +111,6 @@ export default function SupportDashboard() {
           <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 grid-cols-1 gap-6">
               <LivraisonsChargeurSupport startDate={startDate} endDate={endDate} />
           </div>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 my-3">
-       <DemandesAttentesSupport />
-       <DemandesValideesSupport startDate={startDate} endDate={endDate} />
-       <DemandesReturnSupport startDate={startDate} endDate={endDate} />
-       <DemandesCancelSupport startDate={startDate} endDate={endDate} />
       </div>
     </>
   );

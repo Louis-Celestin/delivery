@@ -84,6 +84,8 @@ export default function DemandeDetails() {
                         setServiceDemandeur('SUPPORT')
                     } else if(idService == 6){
                         setServiceDemandeur('MAINTENANCE')
+                    } else if(idService == 1){
+                        setServiceDemandeur('LIVRAISON')
                     }
 
                     let stockData;

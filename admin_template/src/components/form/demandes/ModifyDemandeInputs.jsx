@@ -95,7 +95,9 @@ export default function ModifyDemandeInputs() {
       setRoleInitiateur(6);
     } else if(value == 'SUPPORT'){
       setRoleInitiateur(7);
-    }   
+    } else if(value == 'LIVRAISON'){
+      setRoleInitiateur(1);
+    }    
   };
 
   const ChangeUser = (value) => {
@@ -126,6 +128,7 @@ export default function ModifyDemandeInputs() {
   const options_services = [
     { value: "MAINTENANCE", label: "MAINTENANCE" },
     { value: "SUPPORT", label: "SUPPORT"},
+    { value: "LIVRAISON", label: "LIVRAISON"},
   ];
 
   const options_motifs = [
