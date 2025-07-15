@@ -9,43 +9,40 @@ require("crypto")
 const prisma = new PrismaClient();
 
 
-const register = async(req,res)=>{
+const register = async (req, res) => {
+  const { email, password, username, agent_id, role_id } = req.body;
 
-    const {email,password,username, agent_id, role_id}=req.body
-try {
-
-    // find users
+  try {
+    // Check if user already exists
     const exists = await prisma.users.findFirst({
-        where : {
-            email : email
-        }
-    })
-    if(exists) return res.status(400).json({message :"l'email existe deja"})
-    
-    const hashedPassword= await bcrypt.hash(password, 10)
+      where: { email }
+    });
 
-    const genUser= prisma.users.create({
-        data: {
-            agent_id: parseInt(agent_id),
-            email,
-            password: hashedPassword,
-            username,
-            role_id:parseInt(role_id)
-        }
-    }).then((user)=>{
-        if(user){
-            console.log(user)
-            return res.status(201).json(user)
-        }else{
-            return res.status(400).json({message : "Erreur de creation"})
-        }
-    }).catch((err)=>{
-        console.log(err)
-    })
-} catch (error) {
-    console.log(error)
-}
-}
+    if (exists) {
+      return res.status(400).json({ message: "L'email existe déjà" });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create user
+    const newUser = await prisma.users.create({
+      data: {
+        agent_id: parseInt(agent_id),
+        email,
+        password: hashedPassword,
+        username,
+        role_id: parseInt(role_id)
+      }
+    });
+
+    return res.status(201).json(newUser);
+
+  } catch (error) {
+    console.error("Registration error:", error);
+    return res.status(500).json({ message: "Erreur serveur lors de l'inscription" });
+  }
+};
 
 /** ✅ LOGIN (Connexion) */
 const login = async (req, res) => {
@@ -215,6 +212,17 @@ const changePassword = async (req, res) => {
     }
 };
 
+const getAllUsers = async (req, res) => {
+    try {
+        const allUsers = await prisma.users.findMany({
+            orderBy: { username: 'asc' },
+        });
+
+        res.status(200).json(allUsers);
+    } catch (error) {
+        res.status(500).json({ message: "Erreur lors de la récupération des utilisateurs", error });
+    }
+}
 
 
 module.exports ={
@@ -225,4 +233,5 @@ module.exports ={
     updateUser,
     deleteUser,
     changePassword,
+    getAllUsers,
 }

@@ -4,16 +4,16 @@ const cloudinary = require("../../config/clouddinaryConifg");
 
 const baseUrl = process.env.FRONTEND_BASE_URL || "https://livraisons.greenpayci.com";
 const localUrl = "http://localhost:5173"
-const GENERAL_URL = baseUrl
+const GENERAL_URL = localUrl
 
-let test_env = false
-let support = 7;
-let livraison = 1;
-let commercial = 2;
-let superviseur = 3;
-let maintenance = 6;
+let test_env = true
+let support_role = 7;
+let livraison_role = 1;
+let commercial_role = 2;
+let superviseur_role = 3;
+let maintenance_role = 6;
 if (test_env){
-  support = livraison = commercial = superviseur = maintenance = 4;
+  support_role = livraison_role = commercial_role = superviseur_role = maintenance_role = 4;
 }
 
 // ✅ Créer une validation (ancienne ou nouvelle)
@@ -133,12 +133,12 @@ const createValidation = async (req, res) => {
     if(type_livraison_id == 5 || type_livraison_id == 7){
       deliveryLink = `${url}/formulaire-chargeur/${livraison.id_livraison}`;
     } else if(type_livraison_id == 8){
-      deliveryLink = `${url}/formulaire-chargeur-decom/${livraison.id_livraison}`;
+      deliveryLink = `${url}/formulaire-chargeur/${livraison.id_livraison}`;
     }
     // const deliveryLink = `https://livraisons.greenpayci.com/formulaire-recu/${nouvelleLivraison.id_livraison}`
     const sendMail = require("../../utils/emailSender");
     const delivers = await prisma.users.findMany({
-      where: { role_id: livraison },
+      where: { role_id: livraison_role },
     });
 
     if (delivers && delivers.length > 0) {
@@ -181,7 +181,7 @@ const createValidation = async (req, res) => {
       const url = GENERAL_URL
       const deliveryLink = `${url}/formulaire-vue/${livraison.id_livraison}`;
       const maintenancers = await prisma.users.findMany({
-        where: { role_id: maintenance },
+        where: { role_id: maintenance_role },
       });
   
       if (maintenancers && maintenancers.length > 0) {
@@ -368,16 +368,17 @@ const returnDelivery = async (req, res) => {
       final_nom_validateur = user.agents.nom;
       final_date_validation = new Date();
 
-    //   const newValidation = await prisma.validations.create({
-    //   data: {
-    //     livraison_id: parseInt(livraison_id),
-    //     etat_validation: 'refuse',
-    //     commentaire: commentaire_return,
-    //     user_id: user_id ? parseInt(user_id) : null,
-    //     nom_recepteur: final_nom_validateur,
-    //     date_validation: final_date_validation,
-    //   },
-    // });
+      const newValidation = await prisma.validations.create({
+      data: {
+        livraison_id: parseInt(livraison_id),
+        etat_validation: 'refuse',
+        commentaire: commentaire_return,
+        user_id: user_id ? parseInt(user_id) : null,
+        nom_recepteur: final_nom_validateur,
+        date_validation: final_date_validation,
+        signature: 'retournée',
+      },
+    });
 
     await prisma.livraison.update({
       where: { id_livraison: parseInt(livraison_id) },
@@ -434,7 +435,7 @@ const returnDelivery = async (req, res) => {
     const sendMail = require("../../utils/emailSender");
     const livreurs = await prisma.users.findMany({
       where: {
-      role_id: livraison,
+      role_id: livraison_role,
       },
     });
     if (livreurs && livreurs.length > 0) {
@@ -471,7 +472,10 @@ const returnDelivery = async (req, res) => {
 
     }
 
-    return res.status(201).json({ message: "Livraison retournée avec succès." });;
+    return res.status(201).json({ 
+      message: "Livraison retournée avec succès.",
+      newValidation,
+    });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Erreur serveur." });
@@ -775,7 +779,7 @@ const returnDemandeDelivery = async (req, res) => {
     const sendMail = require("../../utils/emailSender");
     const livreurs = await prisma.users.findMany({
       where: {
-      role_id: livraison,
+      role_id: livraison_role,
       },
     });
     if (livreurs && livreurs.length > 0) {

@@ -20,16 +20,16 @@ const formatDate = (isoDate) => {
 
 const baseUrl = process.env.FRONTEND_BASE_URL || "https://livraisons.greenpayci.com";
 const localUrl = "http://localhost:5173"
-const GENERAL_URL = baseUrl
+const GENERAL_URL = localUrl
 
-let test_env = false
-let support = 7;
-let livraison = 1;
-let commercial = 2;
-let superviseur = 3;
-let maintenance = 6;
+let test_env = true
+let support_role = 7;
+let livraison_role = 1;
+let commercial_role = 2;
+let superviseur_role = 3;
+let maintenance_role = 6;
 if (test_env){
-  support = livraison = commercial = superviseur = maintenance = 4;
+  support_role = livraison_role = commercial_role = superviseur_role = maintenance_role = 4;
 } 
 
 const deliver = async (req, res) => {
@@ -191,7 +191,7 @@ const deliver = async (req, res) => {
       // const deliveryLink = `https://livraisons.greenpayci.com/formulaire-recu/${nouvelleLivraison.id_livraison}`
       const sendMail = require("../../utils/emailSender");
       const receivers = await prisma.users.findMany({
-        where: { role_id: commercial },
+        where: { role_id: commercial_role },
       });
   
       if (receivers && receivers.length > 0) {
@@ -235,7 +235,50 @@ const deliver = async (req, res) => {
       // const deliveryLink = `https://livraisons.greenpayci.com/formulaire-recu/${nouvelleLivraison.id_livraison}`
       const sendMail = require("../../utils/emailSender");
       const receivers = await prisma.users.findMany({
-        where: { role_id: maintenance },
+        where: { role_id: maintenance_role },
+      });
+  
+      if (receivers && receivers.length > 0) {
+        const subject = `NOUVELLE LIVRAISON ${livraisonTypeName}`;
+        const html = `
+          <p>Bonjour,</p>
+          <p>Une nouvelle livraison a été enregistrée.</p>
+          <ul>
+            <li><strong>Type de livraison:</strong> ${livraisonTypeName}</li>
+            <li><strong>Nombre de produits:</strong> ${produits.length}</li>
+          </ul>
+          <br>
+          <p>Retrouvez la livraison à ce lien : 
+            <span>
+              <a href="${deliveryLink}" target="_blank" style="background-color: #73dced; color: white; padding: 7px 12px; text-decoration: none; border-radius: 5px;">
+                Cliquez ici !
+              </a>
+            </span>
+          </p>
+          <br><br>
+          <p>Green - Pay vous remercie.</p>
+        `;
+  
+        for (const receiver of receivers) {
+          await sendMail({
+            to: receiver.email,
+            subject,
+            html,
+          });
+        }
+      }
+    }
+
+    // LIVRAISON CHARGEUR DECOM RI NOK AU SERVICE SUPPORT 
+    if(type_livraison_id == 8){
+      // const baseUrl = process.env.FRONTEND_BASE_URL || "https://livraisons.greenpayci.com";
+      // const localUrl = "http://localhost:5173"
+      const url = GENERAL_URL
+      const deliveryLink = `${url}/formulaire-support-chargeur-recu/${nouvelleLivraison.id_livraison}`;
+      // const deliveryLink = `https://livraisons.greenpayci.com/formulaire-recu/${nouvelleLivraison.id_livraison}`
+      const sendMail = require("../../utils/emailSender");
+      const receivers = await prisma.users.findMany({
+        where: { role_id: support_role },
       });
   
       if (receivers && receivers.length > 0) {
@@ -282,20 +325,20 @@ const deliver = async (req, res) => {
 
 
 const getAllLivraisons = async (req, res) => {
-    try {
-      const livraisons = await prisma.livraison.findMany({
-        where: { deleted: false },
-        orderBy: { date_livraison: 'desc' },
-        include : {
-          validations : true
-        }
-      });
-  
-      res.status(200).json(livraisons);
-    } catch (error) {
-      res.status(500).json({ message: "Erreur lors de la récupération des livraisons", error });
-    }
-  };
+  try {
+    const livraisons = await prisma.livraison.findMany({
+      where: { deleted: false },
+      orderBy: { date_livraison: 'desc' },
+      include : {
+        validations : true
+      }
+    });
+
+    res.status(200).json(livraisons);
+  } catch (error) {
+    res.status(500).json({ message: "Erreur lors de la récupération des livraisons", error });
+  }
+};
   
   
 const getOneLivraison = async (req, res) => {
@@ -411,7 +454,7 @@ const updateLivraison = async (req, res) => {
       // const deliveryLink = `https://livraisons.greenpayci.com/formulaire-recu/${nouvelleLivraison.id_livraison}`
       const sendMail = require("../../utils/emailSender");
       const receivers = await prisma.users.findMany({
-        where: { role_id: commercial },
+        where: { role_id: commercial_role },
       });
   
       if (receivers && receivers.length > 0) {
@@ -454,7 +497,7 @@ const updateLivraison = async (req, res) => {
       // const deliveryLink = `https://livraisons.greenpayci.com/formulaire-recu/${nouvelleLivraison.id_livraison}`
       const sendMail = require("../../utils/emailSender");
       const receivers = await prisma.users.findMany({
-        where: { role_id: maintenance },
+        where: { role_id: maintenance_role },
       });
   
       if (receivers && receivers.length > 0) {
@@ -620,15 +663,16 @@ const generateLivraisonPDF = async (req, res) => {
       
       // console.log(livraison.validations[0].signature)
       // 🧩 Remplacement des balises HTML
+      let index = livraison.validations.length-1
       html = html
         .replace("{{commentaire}}", livraison.commentaire || "")
         .replace("{{date_livraison}}", formatDate(livraison.date_livraison))
         .replace("{{qte_totale_livraison}}", livraison.qte_totale_livraison || livraison.produitsLivre.length)
         .replace("{{nom_expediteur}}", expediteurNom)
-        .replace("{{nom_recepteur}}", livraison.validations[0].nom_recepteur || "Receveur")
+        .replace("{{nom_recepteur}}", livraison.validations[index].nom_recepteur || "Receveur")
         .replace("{{produitsRows}}", produitsRows)
-        .replace("{{signature}}", livraison.validations[0].signature || "Validé")
-        .replace("{{date_validation}}", livraison.validations[0].date_validation ? formatDate(livraison.validations[0].date_validation) : "N/A")
+        .replace("{{signature}}", livraison.validations[index].signature || "Validé")
+        .replace("{{date_validation}}", livraison.validations[index].date_validation ? formatDate(livraison.validations[index].date_validation) : "N/A")
         .replace("{{signature_expediteur}}", livraison.signature_expediteur || "Signé")
 
       // 🖨️ Génération PDF
@@ -948,7 +992,7 @@ const deliverDemande = async (req, res) => {
       // const deliveryLink = `https://livraisons.greenpayci.com/formulaire-recu/${nouvelleLivraison.id_livraison}`
       const sendMail = require("../../utils/emailSender");
       const receivers = await prisma.users.findMany({
-        where: { role_id: support },
+        where: { role_id: support_role },
       });
   
       if (receivers && receivers.length > 0) {

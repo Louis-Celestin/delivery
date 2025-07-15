@@ -14,6 +14,8 @@ const transactionsRoutes = require("./routes/transactionsRoutes")
 const merchantsRoutes = require("./routes/merchantsRoutes")
 const statsRoutes = require("./routes/statsRoutes")
 const demandesRoutes = require("./routes/demandesRoutes")
+// const stockRoutes = require("./routes/stockRoutes")
+const stockRoutes = require("./routes/stockRoutes")
 
 dotenv.config()
 
@@ -48,6 +50,8 @@ app.use('/api/transaction', transactionsRoutes);
 app.use('/api/merchants', merchantsRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/demandes', demandesRoutes);
+app.use('/api/stock', stockRoutes);
+// app.use('/api/stock', stockRoutes);
 
 
 

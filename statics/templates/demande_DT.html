@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>DEMANDE CHARGEUR (DECOM RI NOK)</title>
+    <title>MOUVEMENT DE STOCK DT</title>
     <style>
         * { box-sizing: border-box; }
         body { margin: 0; padding: 0; overflow-x: hidden; font-family: Arial, sans-serif; }
@@ -28,10 +28,12 @@
             margin-top: 10px; 
         }
         th, td { 
-            border: 1px solid #000; 
-            padding: 5px; 
+            border: 1px solid #000;
+            padding-top: 10px; 
+            padding-bottom: 10px;
+            height: 20px;
             text-align: center; 
-            font-size: 13px; 
+            font-size: 15px; 
         }
     .footer { 
         display: flex; 
@@ -67,8 +69,10 @@
             <br>
             <h1>
                 <span>
-                    DEMANDE DE CHARGEUR(S) {{date_demande}} <br> POUR TPE DECOMMISSIONNÉ(S) SANS RI
+                    MOUVEMENT DE STOCK {{pieces_demandees}}
                 </span>
+                <br>
+                <span>({{motif_demande}})</span>
             </h1>
         </div>
         <div>
@@ -79,24 +83,41 @@
         </div>
         <br>
         <table>
-            <thead>
+            <tbody>
                 <tr>
-                    <th>Marchand</th>
-                    <th>Numéro de série</th>
+                    <th>Stock de départ</th>
+                    <th>Mr. NONWANON</th>
                 </tr>
-
-            </thead>
-            <tbody>{{produitsRows}}</tbody>
+                <tr>
+                    <th>Service demandeur</th>
+                    <th>{{service_demandeur}}</th>
+                </tr>
+                <tr>
+                    <th>Demandeur</th>
+                    <th>{{nom_demandeur}}</th>
+                </tr>
+                <tr>
+                    <th>Stock initiale</th>
+                    <th>{{stock_initial}}</th>
+                </tr>
+                <tr>
+                    <th>Quantité demandée</th>
+                    <th>{{quantite}}</th>
+                </tr>
+                <tr>
+                    <th>Stock restant</th>
+                    <th>{{stock_final}}</th>
+                </tr>
+            </tbody>
         </table>
-        <div style="margin-top: 15px;"><strong>Total :</strong> {{qte_total_demande}}</div>
         <br>
         <br>
         <div class="footer">
             <div>
+                <div class="date-validation"><strong>Date de l'opération :</strong> {{date_validation_demande}}</div>
                 <strong>Validateur :</strong> {{nom_validateur}}
                 <div class="footer-signature">
                     <img src="{{signature}}" alt="" class="signature-image"/>
-                    <div class="date-validation"><strong>Date de validation :</strong> {{date_validation_demande}}</div>
                 </div>
             </div>
         </div>
