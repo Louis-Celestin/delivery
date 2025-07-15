@@ -857,7 +857,7 @@ const updateDemande = async (req, res) => {
       produit_demande: typeof produitsDemandes === "string" ? produitsDemandes : JSON.stringify(produitsDemandes),
       commentaire,
       nom_demandeur: nom_demandeur || null,
-      type_demande_id,
+      type_demande_id: parseInt(type_demande_id),
       date_demande: new Date(),
       qte_total_demande: parseInt(qte_total_demande),
       user_id: utilisateur ? utilisateur.id_user : null,
