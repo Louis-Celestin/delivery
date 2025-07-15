@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import {CableDataIcon, AlertIcon, InfoIcon} from "../../icons/index"
+import {CableDataIcon, AlertIcon, InfoIcon, MiniTools, SimpleInfo} from "../../icons/index"
 import { ProgressSpinner } from "primereact/progressspinner"
 import { Stock } from "../../backend/stock/Stock"
 import { Link } from "react-router"
@@ -61,17 +61,17 @@ export default function StockInfos() {
         
                                     return(
                                         <>
-                                            <div className="rounded-2xl border border-cyan-300 bg-white px-4 pb-3 pt-4 dark:border-gray-800">
+                                            <div className="rounded-2xl border-gray-400 bg-gray-100 px-4 pb-3 pt-4 dark:border-gray-800">
                                                 <div>
-                                                    <div className="flex items-center border-b pb-3 mb-3">
-                                                        <span><InfoIcon /></span>
+                                                    <div className="flex items-center border-b pb-3 mb-3 justify-between">
                                                         <span className="text-sm">{nomPiece}</span>
+                                                        <span><SimpleInfo /></span>
                                                     </div>
                                                     <div className="flex justify-between items-center text-title-md">
                                                         <>
                                                             <span>{quantite}</span>
                                                         </>
-                                                        <span className="text-cyan-400"><CableDataIcon /></span>
+                                                        <span className="text-gray-500"><MiniTools /></span>
                                                     </div>
                                                 </div>
                                             </div>

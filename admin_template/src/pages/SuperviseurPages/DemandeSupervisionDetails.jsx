@@ -76,6 +76,8 @@ export default function DemandeSupervisionDetails() {
     const [stockDT, setStockDT] = useState([])
 
     const [motifDemande, setMotifDemande] = useState('');
+
+    const [pieceId, setPieceId] = useState(null);
     
 
     const formatDate = (date) => {
@@ -130,6 +132,7 @@ export default function DemandeSupervisionDetails() {
                     )
                     if(pieceDemande){
                         setTypeDemande(pieceDemande.nom_piece.toUpperCase())
+                        setPieceId(pieceDemande.id_piece)
                     }
                     if(demandeData.statut_demande == 'valide'){
                         setActionButtons(true)
@@ -223,6 +226,11 @@ export default function DemandeSupervisionDetails() {
             }
             const sign = signature.toDataURL('image/png')           
             let commentaire = message
+
+
+            const stock_initial = stockDepart
+            const nouveau_stock = stockFinal
+            const piece_id = pieceId
             try{
                 setLoadingDemande(true);
                 setIsModalOpen(false)
@@ -240,6 +248,13 @@ export default function DemandeSupervisionDetails() {
                     console.log(`${key}:`, value);
                 }
                 const response = await demandes.validateDemande(fd);
+                let modifStock = null
+                let utilisateur_id = null
+                if(pieceId != 1){
+                    modifStock = await stock.setStock(piece_id, stock_initial, nouveau_stock, utilisateur_id)
+                }
+                console.log(modifStock)
+                console.log('Stock modifié')
                 Swal.fire({
                         title: "Succès",
                         text: "Demande validée avec succès",
@@ -280,6 +295,7 @@ export default function DemandeSupervisionDetails() {
                 setLoadingDemande(true);
                 setIsModalReturnOpen(false);
                 const response = await demandes.returnDemande(demande_id, commentaire_return, user_id, type_demande_id);
+
                 Swal.fire({
                         title: "Succès",
                         text: "Demande retournée avec succès",

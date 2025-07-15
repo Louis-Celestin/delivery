@@ -6,6 +6,8 @@ import Label from "../Label";
 import Select from "../Select";
 import { Modal } from "../../ui/modal";
 import { useNavigate } from "react-router";
+import Swal from 'sweetalert2'
+import { ProgressSpinner } from 'primereact/progressspinner';
 
 export default function ModifyStockInputs() {
 
@@ -22,6 +24,8 @@ export default function ModifyStockInputs() {
     const [nouveauStock, setNouveauStock] = useState('')
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
     const [errorAjout, setErrorAjout] = useState('')
+    const [loadingModif, setLoadingModif] = useState(false);
+    const [pieceId, setPieceId] = useState(null)
 
     const ChangePieceType = (value) => {
         console.log("Selected value:", value);
@@ -36,6 +40,7 @@ export default function ModifyStockInputs() {
             setNomPiece(nomPiece);
             setStockInitial(stockPiece)
             setNouveauStock(stockPiece)
+            setPieceId(selectedStockItem.id_piece)
         }
     };
 
@@ -64,7 +69,7 @@ export default function ModifyStockInputs() {
     },[])
 
     const handleConfirm = () => {
-        if(role != 1){
+        if((role != 1) && (role != 3)){
           Swal.fire({
               title: "Error",
               text: "Vous n'êtes pas authorisé à faire cette action !",
@@ -93,6 +98,44 @@ export default function ModifyStockInputs() {
     }
 
     const handleNouveauStock = async (e) => {
+        e.preventDefault();
+        if(role != 1 && role != 3){
+          Swal.fire({
+              title: "Error",
+              text: "Vous n'êtes pas authorisé à faire cette action !",
+              icon: "error"
+          });
+          localStorage.removeItem('token');
+          localStorage.removeItem('username');
+          navigate('/signin');
+          return
+        }
+        setIsConfirmModalOpen(false)
+        setLoadingModif(true)
+
+        const piece_id = pieceId
+        const stock_initial = stockInitial
+        const nouveau_stock = nouveauStock
+        const utilisateur_id = userId
+
+        console.log("Utilisateur : ",utilisateur_id)
+
+        try{
+            const response = await stock.setStock(piece_id, stock_initial, nouveau_stock, utilisateur_id)
+            console.log(response)
+            console.log('Stock modifié')
+
+            Swal.fire({
+                title: "Succès",
+                text: "Stock modifié avec succès",
+                icon: "success"
+            });
+            navigate('/gestion-stock')
+        }catch(error){
+            console.log('error : ',error)
+        }finally{
+            setLoadingModif(false)
+        }
 
     }
     return(
@@ -128,11 +171,20 @@ export default function ModifyStockInputs() {
                     </ComponentCard>
                 </div>
                 <div className='w-full mt-6 flex justify-center items-center'>
-                    <button
-                        onClick={handleConfirm}
-                        className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
-                        Valider
-                    </button>
+                {loadingModif ? 
+                (
+                    <span className="">
+                        <ProgressSpinner style={{width: '50px', height: '50px'}} strokeWidth="8" animationDuration=".5s" />
+                    </span>
+                ) : (
+                    <>
+                        <button
+                            onClick={handleConfirm}
+                            className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
+                            Valider
+                        </button>
+                    </>
+                )}
                 </div>               
             </div>
             <Modal isOpen={isConfirmModalOpen} onClose={() => setIsConfirmModalOpen(false)} className="p-4 max-w-xl">

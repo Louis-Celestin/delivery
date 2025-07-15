@@ -23,6 +23,7 @@ import { Reception } from '../../backend/receptions/Reception';
 import { generatePdf } from '../../backend/receptions/GeneratePDF';
 import Swal from 'sweetalert2'
 import { CloseIcon } from '../../icons';
+import { Stock } from '../../backend/stock/Stock';
 
 
 
@@ -34,6 +35,9 @@ export default function ReceptionSupportDetails() {
     const user_id = localStorage.getItem("id")
     const role = localStorage.getItem("role_id")
     const navigate = useNavigate();
+    const stock = new Stock()
+
+
     // const signatureRef = useRef(null);
     // const fd = new window.FormData()
     const [loading, setLoading] = useState(false);
@@ -60,6 +64,9 @@ export default function ReceptionSupportDetails() {
     const [recu, setRecu] = useState(false);
     const [errorSign, setErrorSign] = useState('')
 
+    const [quantiteProduit, setQuantiteProduit] = useState(null)
+
+    const [piece, setPiece] = useState(null)
     
 
     const formatDate = (date) => {
@@ -100,6 +107,22 @@ export default function ReceptionSupportDetails() {
                       setDateLivraison(formatDate(data.date_livraison))
                       setLivraisonID(data.type_livraison_id)
                       setCommentaire(data.commentaire)
+
+                    const produits = JSON.parse(data.produitsLivre)
+                    setQuantiteProduit(produits.length)
+
+
+                    let stockData;
+                    stockData = await stock.getAllStock()
+                    const chargeur = stockData.find(
+                        (item) =>{
+                            return item.id_piece == 1
+                        }
+                    )
+                    if(chargeur){
+                        setPiece(chargeur)
+                    }
+
                       if(data.statut_livraison == 'livre'){
                         setShowSignButton(false)
                         setActionButtons(true)
@@ -188,6 +211,20 @@ export default function ReceptionSupportDetails() {
                 console.log(`${key}:`, value);
             }
             const response = await reception.receive(fd);
+
+
+            
+            let piece_id = 1
+            let stock_initial = piece.quantite
+            let nouveau_stock = stock_initial - quantiteProduit
+            let utilisateur_id = null
+            
+            let modifStock = null
+            if(livraisonID == 7 || livraisonID == 8 || livraisonID == 5){
+                modifStock = await stock.setStock(piece_id, stock_initial, nouveau_stock, utilisateur_id)
+                console.log(modifStock)
+                console.log("Diminution stock chargeur")
+            }
             Swal.fire({
                     title: "Succès",
                     text: "Formulaire réceptionné avec succès",
