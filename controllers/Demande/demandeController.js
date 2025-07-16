@@ -1047,6 +1047,8 @@ const generateDemandePDF = async (req, res) => {
         service_demandeur = 'SUPPORT'
       } else if(demande.role_id_demandeur == 6){
         service_demandeur = 'MAINTENANCE'
+      } else if(demande.role_id_demandeur == 1){
+        service_demandeur = 'LIVRAISON'
       }
   
       // 🗺️ Sélection du template
