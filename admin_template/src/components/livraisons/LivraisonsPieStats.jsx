@@ -36,7 +36,8 @@ export default function LivraisonsPieStats({ startDate, endDate }) {
                 const livraisonGIM = allData.filter(item => {
                     let deliveryDate
                     if(item.validations.length > 0){
-                        deliveryDate = new Date(item.validations[0].date_validation);
+                        let index = item.validations.length-1
+                        deliveryDate = new Date(item.validations[index].date_validation);
                     }
                     return  deliveryDate >= startDate && 
                             deliveryDate <= endDate &&
@@ -49,7 +50,8 @@ export default function LivraisonsPieStats({ startDate, endDate }) {
                 const livraisonRepare = allData.filter(item => {
                     let deliveryDate
                     if(item.validations.length > 0){
-                        deliveryDate = new Date(item.validations[0].date_validation);
+                        let index = item.validations.length-1
+                        deliveryDate = new Date(item.validations[index].date_validation);
                     }
                     return  deliveryDate >= startDate && 
                             deliveryDate <= endDate &&
@@ -61,7 +63,8 @@ export default function LivraisonsPieStats({ startDate, endDate }) {
                 const livraisonMAJ = allData.filter(item => {
                     let deliveryDate
                     if(item.validations.length > 0){
-                        deliveryDate = new Date(item.validations[0].date_validation);
+                        let index = item.validations.length-1
+                        deliveryDate = new Date(item.validations[index].date_validation);
                     }
                     return  deliveryDate >= startDate && 
                             deliveryDate <= endDate &&
@@ -73,7 +76,8 @@ export default function LivraisonsPieStats({ startDate, endDate }) {
                 const livraisonMobile = allData.filter(item => {
                     let deliveryDate
                     if(item.validations.length > 0){
-                        deliveryDate = new Date(item.validations[0].date_validation);
+                        let index = item.validations.length-1
+                        deliveryDate = new Date(item.validations[index].date_validation);
                     }
                     return  deliveryDate >= startDate && 
                             deliveryDate <= endDate &&
@@ -85,7 +89,8 @@ export default function LivraisonsPieStats({ startDate, endDate }) {
                 const livraisonChargeurDecom = allData.filter(item => {
                     let deliveryDate
                     if(item.validations.length > 0){
-                        deliveryDate = new Date(item.validations[0].date_validation);
+                        let index = item.validations.length-1
+                        deliveryDate = new Date(item.validations[index].date_validation);
                     }
                     return  deliveryDate >= startDate && 
                             deliveryDate <= endDate &&
@@ -97,7 +102,8 @@ export default function LivraisonsPieStats({ startDate, endDate }) {
                 const livraisonEcobank = allData.filter(item => {
                     let deliveryDate
                     if(item.validations.length > 0){
-                        deliveryDate = new Date(item.validations[0].date_validation);
+                        let index = item.validations.length-1
+                        deliveryDate = new Date(item.validations[index].date_validation);
                     }
                     return  deliveryDate >= startDate && 
                             deliveryDate <= endDate &&
@@ -109,7 +115,8 @@ export default function LivraisonsPieStats({ startDate, endDate }) {
                 const livraisonChargeur = allData.filter(item => {
                     let deliveryDate
                     if(item.validations.length > 0){
-                        deliveryDate = new Date(item.validations[0].date_validation);
+                        let index = item.validations.length-1
+                        deliveryDate = new Date(item.validations[index].date_validation);
                     }
                     return  deliveryDate >= startDate && 
                             deliveryDate <= endDate &&

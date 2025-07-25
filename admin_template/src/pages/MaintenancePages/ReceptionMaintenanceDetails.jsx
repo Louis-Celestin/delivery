@@ -145,26 +145,17 @@ export default function ReceptionMaintenanceDetails() {
             fetchDeliveryDetails();
         }
     },[id]);
-    const handleSignature = () =>{
-        if(signature.isEmpty()){
-            setErrorSign('Vous devez signer pour valider !')
-            return;
-        }
-        console.log(signature)
-        setSignUrl(signature.toDataURL('image/png'))
-        setIsModalOpen(false)
-        setShowSignButton(false)
-        setShowValidateButton(true)
-    }
+    // $
+
+    // const handleDeleteSign = () =>{
+    //     // signature.clear()
+    //     setSignUrl(null)
+    //     setShowSignButton(true)
+    //     setShowValidateButton(false)
+    // }
     const handleClear = () =>{
         console.log(signUrl)
         signature.clear()
-    }
-    const handleDeleteSign = () =>{
-        // signature.clear()
-        setSignUrl(null)
-        setShowSignButton(true)
-        setShowValidateButton(false)
     }
     const handleValidate = async (e) =>{
         e.preventDefault();
@@ -180,8 +171,11 @@ export default function ReceptionMaintenanceDetails() {
             return
         }
         setLoadingValidate(true);
+        setIsModalOpen(false)
         let commentaire = message
         let is_old_validation = false
+
+        const sign = signature.toDataURL('image/png')
 
 
         try{
@@ -191,9 +185,8 @@ export default function ReceptionMaintenanceDetails() {
             fd.append('commentaire', commentaire);
             fd.append('is_old_validation', is_old_validation);
 
-
-            if (signUrl) {
-            const blob = await fetch(signUrl).then(res => res.blob());
+            if (sign) {
+            const blob = await fetch(sign).then(res => res.blob());
             fd.append('signature', blob, 'signature.png');
             }
 
@@ -243,6 +236,7 @@ export default function ReceptionMaintenanceDetails() {
             return
         }
         setLoadingValidate(true);
+        setIsModalReturnOpen(false);
         const commentaire_return = message
         const livraison_id = id
         const type_livraison_id = livraisonID
@@ -258,7 +252,7 @@ export default function ReceptionMaintenanceDetails() {
         }
 
         try{
-            setLoadingReturn(true)
+           
             const response = await reception.returnDelivery(livraison_id, commentaire_return, user_id, type_livraison_id);
             Swal.fire({
                     title: "Succès",
@@ -266,12 +260,12 @@ export default function ReceptionMaintenanceDetails() {
                     icon: "success"
                     });
             console.log(response)
-            setIsModalReturnOpen(false)
+
             navigate('/toutes-les-livraisons-maintenance');
         } catch(error){
             console.log(error)
         } finally{
-            setLoadingReturn(false)
+            setLoadingValidate(false)
         }
     }
     const handleGeneratePdf = async () =>{
@@ -433,76 +427,53 @@ export default function ReceptionMaintenanceDetails() {
                     </div>
                     <div className='w-full flex flex-col justify-center items-center'>
                         {showSignButton ? 
-                        ( 
-                            <div className='flex'>
-                                <button onClick={() => {
-                                    if(role != 6){
-                                        Swal.fire({
-                                            title: "Error",
-                                            text: "Vous n'êtes pas authorisé à faire cette action !",
-                                            icon: "error"
-                                        });
-                                        localStorage.removeItem('token');
-                                        localStorage.removeItem('username');
-                                        navigate('/signin');
-                                        return
-                                    }
-                                    setIsModalReturnOpen(true)
-                                    }}
-                                    className='w-48 my-10 mx-3 bg-red-400 rounded-2xl h-10 flex justify-center items-center'>
-                                    Retourner
-                                </button>
-                                <button onClick={() => {
-                                    if(role != 6){
-                                        Swal.fire({
-                                            title: "Error",
-                                            text: "Vous n'êtes pas authorisé à faire cette action !",
-                                            icon: "error"
-                                        });
-                                        localStorage.removeItem('token');
-                                        localStorage.removeItem('username');
-                                        navigate('/signin');
-                                        return
-                                    }
-                                    setIsModalOpen(true)
-                                    }}
-                                    className='w-48 my-10 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
-                                    Réceptionner
-                                </button>
-                            </div>)
-                         : (<></>)}
-                    </div>
-                    <div className='w-auto mt-6 flex justify-center items-center static'>
-                        <div className='relative'>
-                            {signUrl ? 
-                            (
-                                <button onClick={handleDeleteSign} className='p-3 flex items-center rounded-bl-2xl bg-red-400 text-white hover:bg-red-500 absolute top-0 right-0'>
-                                <i className="pi pi-trash"></i>
-                            </button>
-                            ) : (<></>)}
-                            
-                            <img src={signUrl} alt="" srcset="" className='border-1 border-black bg-white' />
-                        </div>
-                    </div>
-                    <div className='w-full flex flex-col justify-center items-center'>
-                        {showValidateButton ?
-                         (
+                        (   
                             <>
                                 {loadingValidate ? 
-                                    (
-                                        <span className="mt-20">
-                                                <ProgressSpinner style={{width: '50px', height: '50px'}} strokeWidth="8" animationDuration=".5s" />
-                                        </span>
-                                    ) : (
-
-                                        <button onClick={handleValidate} className='w-1/4 my-10 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
-                                            Valider livraison
+                                    <span className="mt-20">
+                                        <ProgressSpinner style={{width: '50px', height: '50px'}} strokeWidth="8" animationDuration=".5s" />
+                                    </span>
+                                :
+                                    <div className='flex'>
+                                        <button onClick={() => {
+                                            if(role != 6){
+                                                Swal.fire({
+                                                    title: "Error",
+                                                    text: "Vous n'êtes pas authorisé à faire cette action !",
+                                                    icon: "error"
+                                                });
+                                                localStorage.removeItem('token');
+                                                localStorage.removeItem('username');
+                                                navigate('/signin');
+                                                return
+                                            }
+                                            setIsModalReturnOpen(true)
+                                            }}
+                                            className='w-48 my-10 mx-3 bg-red-400 rounded-2xl h-10 flex justify-center items-center'>
+                                            Retourner
                                         </button>
-                                    )}
+                                        <button onClick={() => {
+                                            if(role != 6){
+                                                Swal.fire({
+                                                    title: "Error",
+                                                    text: "Vous n'êtes pas authorisé à faire cette action !",
+                                                    icon: "error"
+                                                });
+                                                localStorage.removeItem('token');
+                                                localStorage.removeItem('username');
+                                                navigate('/signin');
+                                                return
+                                            }
+                                            setIsModalOpen(true)
+                                            }}
+                                            className='w-48 my-10 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
+                                            Réceptionner
+                                        </button>
+                                    </div>
+                                }   
                             </>
-                        ) : 
-                        (<></>)}
-                        
+                        )
+                            : (<></>)}
                     </div>
                 </div>
             </>)
@@ -533,7 +504,7 @@ export default function ReceptionMaintenanceDetails() {
                                 Clear
                                 </button>
                                 <button
-                                onClick={handleSignature}
+                                onClick={handleValidate}
                                 className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
                                 Valider
                             </button>
@@ -547,49 +518,39 @@ export default function ReceptionMaintenanceDetails() {
                 </div>
             </Modal>
             <Modal isOpen={isModalReturnOpen} onClose={() => setIsModalReturnOpen(false)} className="p-4 max-w-md">
-                {loadingReturn ? 
-                    (
-                        <div className='w-full h-full flex justify-center items-center'>
-                            <ProgressSpinner />
+                <div className='p-1'>
+                    <div className='text-center mb-3 text-sm'>
+                        <span>Indiquez la raison du retour pour valider</span>
+                    </div>
+                    <div className='flex flex-col justify-center items-center'>
+                        <div className='w-full mt-3'>
+                            <Label>Commentaire *</Label>
+                            <TextArea
+                                value={message}
+                                onChange={(value) => setMessage(value)}
+                                rows={4}
+                                placeholder="Ajoutez un commentaire"
+                                error={errorReturn}
+                                hint={errorReturn}
+                            />
                         </div>
-                    ) :
-                    (
-                        <div className='p-1'>
-                            <div className='text-center mb-3 text-sm'>
-                                <span>Indiquez la raison du retour pour valider</span>
-                            </div>
-                            <div className='flex flex-col justify-center items-center'>
-                                <div className='w-full mt-3'>
-                                    <Label>Commentaire *</Label>
-                                    <TextArea
-                                        value={message}
-                                        onChange={(value) => setMessage(value)}
-                                        rows={4}
-                                        placeholder="Ajoutez un commentaire"
-                                        error={errorReturn}
-                                        hint={errorReturn}
-                                    />
-                                </div>
-                                <div className='w-full mt-6 flex justify-center items-center'>
-                                    <button
-                                        onClick={handleReturn}
-                                        className='w-48 mx-3 bg-red-400 rounded-2xl h-10 flex justify-center items-center'>
-                                        Retourner
-                                    </button>
-                                    <button
-                                        onClick={() =>{
-                                            setIsModalReturnOpen(false);
-                                            setErrorReturn('')
-                                        }}
-                                        className='w-48 mx-3 bg-gray-400 rounded-2xl h-10 flex justify-center items-center'>
-                                        Annuler
-                                    </button>
-                                </div>  
-                            </div>
-                        </div>
-                    )
-                }
-                
+                        <div className='w-full mt-6 flex justify-center items-center'>
+                            <button
+                                onClick={handleReturn}
+                                className='w-48 mx-3 bg-red-400 rounded-2xl h-10 flex justify-center items-center'>
+                                Retourner
+                            </button>
+                            <button
+                                onClick={() =>{
+                                    setIsModalReturnOpen(false);
+                                    setErrorReturn('')
+                                }}
+                                className='w-48 mx-3 bg-gray-400 rounded-2xl h-10 flex justify-center items-center'>
+                                Annuler
+                            </button>
+                        </div>  
+                    </div>
+                </div>                
             </Modal>
         </>
     )

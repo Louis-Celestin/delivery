@@ -107,7 +107,7 @@ export default function AllDeliveriesVueList({ filterType }) {
         return (<span className="text-gray-500 text-theme-sm dark:text-gray-400">{formatDate(deliveryForms.date_livraison)}</span>)
     }
     const receiveDateTemplate = (deliveryForms) =>{
-        if(deliveryForms.validations.length>0){
+        if(deliveryForms.validations.length>0 && deliveryForms.statut_livraison != 'en_cours'){
             let index = deliveryForms.validations.length-1
             return (<span className="text-gray-500 text-theme-sm dark:text-gray-400">{formatDate(deliveryForms.validations[index].date_validation)}</span>) 
         }else{

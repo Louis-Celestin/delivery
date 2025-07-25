@@ -25,7 +25,8 @@ export default function LivraisonsRecu({ startDate, endDate }) {
                 const livraisonsRecues = data.filter(item => {
                     let deliveryDate
                     if(item.validations.length > 0){
-                        deliveryDate = new Date(item.validations[0].date_validation);
+                        let index = item.validations.length-1
+                        deliveryDate = new Date(item.validations[index].date_validation);
                     }
                     const isCommercial = item.type_livraison_id != 7 && item.type_livraison_id != 8;
                     return  deliveryDate >= startDate && 

@@ -19,18 +19,20 @@ export default function DemandesValidees({ startDate, endDate }) {
                 setLoading(true);
 
                 let data = await demandes.getAllDemandes()
-
+                console.log(data)
                 const demandesValidees = data.filter(item => {
                     let demandeDate = item.date_demande
                     if (item.validation_demande.length > 0){
-                        demandeDate = new Date(item.validation_demande[0].date_validation_demande);
+                        let index = item.validation_demande.length-1
+                        demandeDate = new Date(item.validation_demande[index].date_validation_demande);
                     }
                     console.log("Date validation :", demandeDate)
                     return item.statut_demande === "valide" && 
-                    demandeDate >= startDate && 
-                    demandeDate <= endDate;
+                        demandeDate >= startDate && 
+                        demandeDate <= endDate;
                 });
                 setCount(demandesValidees.length);
+                console.log("DEMANDES VALIDEES : ", demandesValidees.length)
             } catch(error){
                 console.log(error)
             } finally{

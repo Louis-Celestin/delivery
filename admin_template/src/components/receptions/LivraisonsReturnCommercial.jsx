@@ -24,9 +24,10 @@ export default function LivraisonReturnCommercial({ startDate, endDate }) {
 
                 const livraisonsReturn = data.filter(item => {
                     let deliveryDate = new Date(item.date_livraison)
-                    // if(item.validations.length > 0){
-                    //     deliveryDate = new Date(item.validations[0].date_validation);
-                    // }
+                    if(item.validations.length > 0){
+                        let index = item.validations.length-1
+                        deliveryDate = new Date(item.validations[index].date_validation);
+                    }
                     return  deliveryDate >= startDate && 
                             deliveryDate <= endDate &&
                             item.type_livraison_id !== 7 &&

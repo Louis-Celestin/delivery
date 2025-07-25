@@ -23,7 +23,8 @@ export default function DemandesReturn({ startDate, endDate }) {
                 const demandesRetournees = data.filter(item => {
                     let demandeDate = item.date_demande
                     if (item.validation_demande.length > 0){
-                        demandeDate = new Date(item.validation_demande[0].date_validation_demande);
+                        let index = item.validation_demande.length-1
+                        demandeDate = new Date(item.validation_demande[index].date_validation_demande);
                     }
 
                     return item.statut_demande === "retourne" && 

@@ -251,6 +251,7 @@ export default function DemandeSupervisionDetails() {
                 }
                 const response = await demandes.validateDemande(fd);
                 let modifStock = null
+                let ajoutStock = null
                 let utilisateur_id = null
                 if(pieceId != 1){
                     modifStock = await stock.setStock(piece_id, stock_initial, nouveau_stock, utilisateur_id)
