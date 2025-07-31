@@ -1,0 +1,145 @@
+// import EcommerceMetrics from "../../components/ecommerce/EcommerceMetrics";
+// import MonthlySalesChart from "../../components/ecommerce/MonthlySalesChart";
+// import StatisticsChart from "../../components/ecommerce/StatisticsChart";
+// import MonthlyTarget from "../../components/ecommerce/MonthlyTarget";
+// import RecentOrders from "../../components/ecommerce/RecentOrders";
+// import DemographicCard from "../../components/ecommerce/DemographicCard";
+// import PageMeta from "../../components/common/PageMeta";
+
+import { useState } from "react";
+// @ts-ignore
+import LivraisonsAttente from "../../components/receptions/LivraisonsAttente"
+// @ts-ignore
+import LivraisonsRecu from "../../components/receptions/LivraisonsRecu"
+// @ts-ignore
+import LivraisonsGeneralesCommercial from "../../components/receptions/LivraisonsGeneralesCommercial"
+// @ts-ignore
+import LivraisonsPieStatsCommercial from "../../components/receptions/LivraisonsPieStatsCommercial"
+// @ts-ignore
+import LivraisonsReturnCommercial from "../../components/receptions/LivraisonsReturnCommercial"
+import { RefreshTimeIcon } from "../../icons";
+
+import DatePicker from "../../components/form/date-picker";
+
+import { startOfWeek, endOfWeek, format, getWeek} from "date-fns";
+
+// import TerminalOrders from "../../components/livraisons/StockChargeurs"
+
+
+export default function ReceiveDashboard() {
+  const currentWeek = getWeek(new Date(), { weekStartsOn: 1 });
+  // @ts-ignore
+  const getFormattedDate = (date) => format(date, 'yyyy-MM-dd');
+  const [startDate, setStartDate] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [endDate, setEndDate] = useState(endOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [isDateChanged, setIsDateChanged] = useState(false);
+
+  return (
+    <>
+      <div className="mb-6">
+        <div className="mb-2 flex justify-between">
+          <span className="text-xl font-bold">
+            DASHBOARD COMMERCIAL
+          </span>
+          <div className="flex flex-col">
+            {isDateChanged ? 
+            (
+              <></>
+            ) : (
+              <>
+                <span className="text-2xl">
+                  Semaine {currentWeek}
+                </span>
+              </>
+            )}
+            
+            <span className="text-xs opacity-40">
+              Du {getFormattedDate(startDate)} au {getFormattedDate(endDate)}
+            </span>
+          </div>
+        </div>
+        <div className="my-2">
+          {isDateChanged ? 
+          (
+            <>
+              <div>
+                <button className="p-2 rounded-full bg-cyan-200 hover:bg-cyan-300" onClick={() => window.location.reload()}>
+                  <span className="text-blue-400 text-2xl">
+                    <RefreshTimeIcon />
+                  </span>
+                </button>
+              </div>
+            </>
+          ) :
+          (
+            <span className="border p-1 rounded-xl bg-green-300">
+              Cumul de la semaine
+            </span>
+          )}
+        </div>
+      </div>
+      <div className="grid lg:grid-cols-2 md:grid-cols-2 gap-6 space-3 my-6">
+        <div>
+            <div className="p-6 flex justify-center border bg-white rounded-2xl">
+              <div className="mx-3">
+                <DatePicker
+                  id="date-picker-debut"
+                  label="Date début"
+                  placeholder={getFormattedDate(startDate)}
+                  // @ts-ignore
+                  value={getFormattedDate(startDate)}
+                  onChange={(currentDateString) => {
+                    console.log("Date début changée : ",currentDateString)
+                    // @ts-ignore
+                    setStartDate(new Date(currentDateString))
+                    setIsDateChanged(true)
+                  }}
+                />
+              </div>
+              <div className="mx-3">
+                <DatePicker
+                  id="date-picker"
+                  label="Date fin"
+                  placeholder={getFormattedDate(endDate)}
+                  // @ts-ignore
+                  value={getFormattedDate(endDate)}
+                  onChange={(dates) => {
+                    if (dates && dates[0]) {
+                    let selectedDate = new Date(dates[0]);
+                    let nextDay = new Date(selectedDate);
+                    nextDay.setDate(selectedDate.getDate() + 1);
+                    setEndDate(nextDay);
+                    setIsDateChanged(true);
+                  }}}
+                />
+              </div>
+            </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
+          <div className="">
+            <LivraisonsAttente />
+          </div>
+          <div className="">
+            <LivraisonsRecu startDate={startDate} endDate={endDate} />
+          </div>
+        </div>
+      </div>
+      
+      <div className="grid xl:grid-cols-2 gap-6 my-6">
+        <div className="grid grid-cols-1">
+          <LivraisonsGeneralesCommercial startDate={startDate} endDate={endDate} />
+        </div>
+        <div>
+          <LivraisonsPieStatsCommercial startDate={startDate} endDate={endDate} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-6">
+        <div className="grid lg:grid-cols-2">
+          <LivraisonsReturnCommercial startDate={startDate} endDate={endDate} />
+        </div>
+      </div>
+
+    </>
+  );
+}
