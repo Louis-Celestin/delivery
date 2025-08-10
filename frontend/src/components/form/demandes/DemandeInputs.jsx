@@ -5,6 +5,7 @@ import Input from "../input/InputField.tsx";
 import Checkbox from "../input/Checkbox.tsx";
 import Select from "../Select.tsx";
 import TextArea from "../input/TextArea.tsx";
+import FileInput from "../input/FileInput.tsx"
 import {
   Table,
   TableBody,
@@ -31,10 +32,9 @@ export default function DemandeInputs() {
   const stock = new Stock();
   const users = new Users();
   const userId = localStorage.getItem('id');
-  const role = localStorage.getItem("role_id")
   const navigate = useNavigate();
 
-  const [loadingStock, setLoadingStock] = useState(false);
+  const [loadingDemandeData, setLoadingDemandeData] = useState(false);
   const [loadingDemande, setLoadingDemande] = useState(false);
   const [message, setMessage] = useState("");
   const [produitsDemande, setProduitsDemandes] = useState([]);
@@ -47,7 +47,7 @@ export default function DemandeInputs() {
   const [typeDemande, setTypeDemande] = useState('');
   const [demandeID, setDemandeID] = useState(null);
   const [serviceDemandeur, setServiceDemandeur] = useState('');
-  const [roleInitiateur, setRoleInitiateur] = useState(null);
+  const [serviceId, setServiceId] = useState(null);
 
   const [qteDemande, setQteDemande] = useState(0);
   
@@ -63,7 +63,73 @@ export default function DemandeInputs() {
   
   const [motifAutre, setMotifAutre] = useState(false);
 
+  const [optionsServices, setOptionsServices] = useState([])
+  const [servicesSelection, setServicesSelection] = useState([])
 
+  const [userRoles, setUserRoles] = useState([])
+
+  const [selectedFiles, setSelectedFiles] = useState([])
+  
+  useEffect( ()=>{
+    const fetchDemandeData = async () => {
+      setLoadingDemandeData(true)
+      try{
+
+        let userRoles_data = await users.getUserRoles(parseInt(userId))
+        const roles_id = userRoles_data.roles.map((role) =>{
+          return role.id_role
+        })
+        setUserRoles(roles_id)
+
+        let data;
+        data = await stock.getAllStock()
+        console.log(data)
+        setStockDT(data)
+        const piecesA920 = data.filter(item =>{
+          return item.model_id == 1;
+        });
+        const options = piecesA920.map((item) => ({
+          value: item.id_piece,
+          label: item.nom_piece.toUpperCase(),
+        }));
+        setOptionsPieces(options);
+
+
+        let users_data = await users.getAllUsers()
+        setUsersSelection(users_data)
+        const options_user = users_data.map((item) => ({
+          value: item.id_user,
+          label: item.username.toUpperCase().replace("."," ")
+        }));
+        setUsersOptions(options_user);
+
+        let services_data = await users.getAllServices()
+        setServicesSelection(services_data)
+        const options_services = services_data.map((item) => ({
+          value: item.id,
+          label: item.nom_service.toUpperCase()
+        }))
+        setOptionsServices(options_services)
+
+      }catch(error){
+        console.log('Error fetching data ',error)
+        setErrorForm('Erreur lors de la génération du formulaire')        
+      }finally{
+        setLoadingDemandeData(false)
+      }
+    };
+    // const fetchUsers = async () => {
+    //   let data;
+    //   data = await users.getAllUsers()
+    //   setUsersSelection(data)
+    //   const options = data.map((item) => ({
+    //     value: item.id_user,
+    //     label: item.username.toUpperCase().replace("."," ")
+    //   }));
+    //   setUsersOptions(options);
+    // }
+    fetchDemandeData();
+  },[])
 
   const ChangePieceType = (value) => {
     console.log("Selected value:", value);
@@ -85,13 +151,15 @@ export default function DemandeInputs() {
   
   const ChangeService = (value) => {
     console.log("Selected value:", value);
-    setServiceDemandeur(value);
-    if(value == 'MAINTENANCE'){
-      setRoleInitiateur(6);
-    } else if(value == 'SUPPORT'){
-      setRoleInitiateur(7);
-    } else if(value == 'LIVRAISON'){
-      setRoleInitiateur(1);
+    setServiceId(value)
+    const selectedService = servicesSelection.find(
+      (item) => {
+        return item.id == parseInt(value)
+      }
+    )
+    if(selectedService){
+      const nomSerivce = selectedService.nom_service.toUpperCase()
+      setServiceDemandeur(nomSerivce)
     }   
   };
 
@@ -104,7 +172,7 @@ export default function DemandeInputs() {
       }
     )
     if(selectedUser){
-      const nomUser = selectedUser.username.toUpperCase().replace(".", " ")
+      const nomUser = selectedUser.fullname.toUpperCase()
       setNomDemandeur(nomUser)
     }
   }
@@ -120,57 +188,38 @@ export default function DemandeInputs() {
     }
   }
 
-  const options_services = [
-    { value: "MAINTENANCE", label: "MAINTENANCE" },
-    { value: "SUPPORT", label: "SUPPORT"},
-    { value: "LIVRAISON", label: "LIVRAISON"},
-  ];
-
   const options_motifs = [
     { value: "PIECES TPE", label:"PIECES TPE"},
     { value: "CHARGEURS DECOMMISSIONNES", label:"CHARGEURS DECOMMISSIONNES"},
     { value: "AUTRE", label:"AUTRE"},
   ]
 
-  useEffect( ()=>{
-    const fetchStock = async () => {
-      setLoadingStock(true)
-      try{
-        let data;
-        data = await stock.getAllStock()
-        console.log(data)
-        setStockDT(data)
-        const piecesA920 = data.filter(item =>{
-          return item.model_id == 1;
-        });
-        const options = piecesA920.map((item) => ({
-          value: item.id_piece,
-          label: item.nom_piece.toUpperCase(),
-        }));
-        setOptionsPieces(options);
-      }catch(error){
-        console.log('Error fetching data ',error)
-        setErrorForm('Erreur lors de la génération du formulaire')        
-      }finally{
-        setLoadingStock(false)
-      }
-    };
-    const fetchUsers = async () => {
-      let data;
-      data = await users.getAllUsers()
-      setUsersSelection(data)
-      const options = data.map((item) => ({
-        value: item.id_user,
-        label: item.username.toUpperCase().replace("."," ")
-      }));
-      setUsersOptions(options);
+  const handleFileChange = (e) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const newFiles = Array.from(files);
+
+      // Avoid adding duplicate files (optional)
+      const updatedFiles = [...selectedFiles];
+
+      newFiles.forEach(file => {
+        if (!updatedFiles.find(f => f.name === file.name && f.size === file.size)) {
+          updatedFiles.push(file);
+        }
+      });
+
+      setSelectedFiles(updatedFiles);
     }
-    fetchStock();
-    fetchUsers();
-  },[])
+  };
+
+  const handleDeleteFile = (indexToRemove) => {
+    setSelectedFiles((prev) =>
+      prev.filter((_, index) => index !== indexToRemove)
+    );
+  }
 
   const handleConfirm = () => {
-    if(role != 1){
+    if(!userRoles.includes(3)){
       Swal.fire({
           title: "Error",
           text: "Vous n'êtes pas authorisé à faire cette action !",
@@ -186,7 +235,7 @@ export default function DemandeInputs() {
       setErrorAjout("Vous devez choisir la pièce à demander !");
       return;
     }
-    if(!roleInitiateur){
+    if(!serviceId){
       setErrorAjout("Vous devez choisir le service demandeur !");
       return;
     }
@@ -237,7 +286,7 @@ export default function DemandeInputs() {
     
   const handleDemande = async (e) => {
     e.preventDefault();
-    if(role != 1){
+    if(!userRoles.includes(3)){
       Swal.fire({
           title: "Error",
           text: "Vous n'êtes pas authorisé à faire cette action !",
@@ -256,23 +305,27 @@ export default function DemandeInputs() {
     const commentaire = message;
     const type_demande_id = demandeID
     const user_id = userId;
-    const role_demandeur = roleInitiateur;
-    const role_validateur = 3
+    const service_id = serviceId;
+    const role_validateur = 4
     const nom_demandeur = nomDemandeur;
     const quantite = qteDemande;
     const id_demandeur = idDemandeur;
+    const files_selected = selectedFiles
     
     fd.append('produitsDemandes',JSON.stringify(produitsDemande));
     fd.append('commentaire',commentaire);
     fd.append('user_id',userId);
     fd.append('type_demande_id',type_demande_id);
    
-    fd.append('role_demandeur', role_demandeur);
+    fd.append('service_id', service_id);
     fd.append('role_validateur', role_validateur);
     fd.append('nom_demandeur', nom_demandeur);
     fd.append('qte_total_demande',quantite);
     fd.append('id_demandeur', id_demandeur);
     fd.append('motif_demande', motifDemande);
+    selectedFiles.forEach((file, i) => {
+      fd.append('files_selected', file); // 👈 keep the same key name
+    });
 
     console.log('------  DEMANDE  ------')
     console.log('ID DEMANDE : ',type_demande_id)
@@ -298,6 +351,14 @@ export default function DemandeInputs() {
     }catch (error) {
       console.log('error')
       setError('Erreur lors de la génération du formulaire');
+      setProduitsDemandes([])
+      setLoadingDemande(false)
+      Swal.fire({
+        title: "Attention",
+        text: "Il y a eu une erreur dans la génération de la demande",
+        icon: "warning"
+      });
+      navigate('/toutes-les-demandes');
     }finally{
       setProduitsDemandes([])
       setLoadingDemande(false)
@@ -305,8 +366,8 @@ export default function DemandeInputs() {
   }
   return (
     <>
-      <div className="flex justify-center mb-6 bg-green-200 rounded-2xl p-3">
-        {loadingStock ? (<>Loading...</>) :
+      <div className="flex justify-center mb-6">
+        {loadingDemandeData ? (<>Loading...</>) :
           (
             errorFrom ? (
               <div className="text-error-600 bg-error-300 font-medium flex items-center justify-center rounded-3xl text-sm p-4">
@@ -331,7 +392,7 @@ export default function DemandeInputs() {
                         <div>
                           <Label>Service demandeur <span className="text-red-700">*</span></Label>
                           <Select
-                            options={options_services}
+                            options={optionsServices}
                             placeholder="Choisir une option"
                             onChange={ChangeService}
                             className="dark:bg-dark-900"               
@@ -379,6 +440,29 @@ export default function DemandeInputs() {
                             rows={4}
                             placeholder="Ajoutez un commentaire"
                           />
+                        </div>
+                        <div>
+                          <Label>Importer des fichiers</Label>
+                          <FileInput className="curstom-class" 
+                            onChange={handleFileChange}
+                            multiple 
+                          />
+                          {selectedFiles.length > 0 ? (
+                            <div className="border border-gray-500 mt-3 rounded">
+                              {selectedFiles.map((selectedFile, index) => (
+                                <div key={index} className="border-gray-300 px-1 flex justify-between items-center border-b border-t">
+                                  <span className="text-xs text-gray-700 font-medium">
+                                    <i>{selectedFile.name}</i>
+                                  </span>
+                                  <button onClick={() => handleDeleteFile(index)}>
+                                    <span className="text-error-600"><i className="pi pi-times"></i></span>
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <></>
+                          )}
                         </div>
                         <div className="pb-3 text-center">
                           <span className="text-sm font-semibold">Informations sur produits</span>
@@ -464,6 +548,24 @@ export default function DemandeInputs() {
             </div>
             <div>
               <span>Stock restant : <span className="font-bold text-red-700">{stockInitial - qteDemande}</span></span>
+            </div>
+            <div className="flex-col">
+              <span>Fichiers upload : </span>
+              {selectedFiles.length > 0 ? (
+                <div className="border border-gray-500 mt-3 rounded">
+                  {selectedFiles.map((selectedFile, index) => (
+                    <div key={index} className="border-gray-300 px-1 flex justify-between items-center border-b border-t">
+                      <span className="text-xs text-red-700 font-medium">
+                        <i>{selectedFile.name}</i>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <>
+                  <span>0</span>
+                </>
+              )}
             </div>
           </div>
         </div>

@@ -74,7 +74,7 @@ const login = async (req, res) => {
         const { email, password } = req.body;
         const user = await prisma.users.findFirst({ where: { email }});
 
-        if (!user) return res.status(401).json({ message: "Identifiants invalides." });
+        if (!user) return res.status(404).json({ message: "Utilisateur non enregistré." });
 
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(401).json({ message: "Identifiants invalides." });
@@ -92,14 +92,50 @@ const login = async (req, res) => {
 const updateUser = async (req, res) => {
     try {
         const { id } = req.params;
-        const { email, agent_id } = req.body;
+        const { fullname, username, email, userServices, userRoles, mailChecked } = req.body;
 
-        const user = await prisma.users.update({
-            where: { id: Number(id) },
-            data: { email, agent_id }
+        const user = await prisma.users.findUnique({
+            where: { id_user: parseInt(id) },
         });
 
-        res.status(200).json({ message: "Utilisateur mis à jour.", user });
+        const dataToUpdate = {
+            fullname,
+            username,
+            email,
+        }
+
+        const updatedUser = await prisma.users.update({
+            where : { id_user: parseInt(id) },
+            data: dataToUpdate
+        })
+
+        await prisma.user_roles.deleteMany({
+            where: { user_id: parseInt(id) }
+        })
+
+        await prisma.user_services.deleteMany({
+            where: { user_id: parseInt(id)}
+        })
+
+        if (userRoles && Array.isArray(userRoles)) {
+            await prisma.user_roles.createMany({
+                data: userRoles.map(roleId => ({
+                    user_id: parseInt(id),
+                    role_id: roleId,
+                })),
+            });
+        }
+
+        if (userServices && Array.isArray(userServices)) {
+            await prisma.user_services.createMany({
+                data: userServices.map(serviceId => ({
+                    user_id: parseInt(id),
+                    service_id: serviceId,
+                })),
+            });
+        }
+
+        res.status(200).json({ message: "Utilisateur mis à jour.", updatedUser });
     } catch (error) {
         res.status(500).json({ message: "Erreur serveur.", error });
     }
@@ -250,17 +286,15 @@ const getAllUsers = async (req, res) => {
 
 const getUserRoles = async (req, res) => {
     try{
-        const {
-            user_id
-        } = req.body;
+        const { id } = req.params;
 
-        const roles = await prisma.user_roles.findMany({
-            where: {user_id : user_id},
+        const user_roles = await prisma.user_roles.findMany({
+            where: {user_id : parseInt(id)},
             include: {roles : true}
         })
 
         res.status(200).json({
-            roles: roles.map(r => r.roles)
+            roles: user_roles.map(r => r.roles)
         });
     } catch (error) {
       res.status(500).json({ message: "Erreur serveur", error });
@@ -315,6 +349,23 @@ const getAllUserServices = async (req, res) => {
     }
 }
 
+const getUserServices = async (req, res) => {
+    try{
+        const { id } = req.params;
+
+        const user_services = await prisma.user_services.findMany({
+            where: {user_id : parseInt(id)},
+            include: {services : true}
+        })
+
+        res.status(200).json({
+            services: user_services.map(s => s.services)
+        });
+    } catch (error) {
+      res.status(500).json({ message: "Erreur serveur", error });
+    }
+}
+
 const getOneUser = async (req, res) =>{
     const { id } = req.params;
 
@@ -350,5 +401,6 @@ module.exports ={
     getAllRoles,
     getAllServices,
     getAllUserServices,
-    getOneUser
+    getOneUser,
+    getUserServices,
 }

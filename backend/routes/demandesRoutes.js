@@ -5,7 +5,7 @@ const upload = require("../middlewares/uploads");
 // const upload = multer({ storage: multer.memoryStorage() });
 const {faireDemande, getAllDemandes, getOneDemande, validateDemande, returnDemande, cancelDemande, updateDemande, generateDemandePDF} = require("../controllers/Demande/demandeController")
 
-router.post('/faireDemande', upload.single('signature_demandeur'), faireDemande);
+router.post('/faireDemande', upload.array('files_selected'), faireDemande);
 router.get('/getAllDemandes', getAllDemandes);
 router.get('/getOneDemande/:id', getOneDemande);
 router.post('/validateDemande', upload.single("signature"), validateDemande);

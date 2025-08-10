@@ -11,7 +11,7 @@ import TextAreaInput from "../../../components/form/form-elements/TextAreaInput"
 import InputStates from "../../../components/form/form-elements/InputStates";
 import PageMeta from "../../../components/common/PageMeta";
 
-import LivraisonInputs from "../../../components/form/form-elements/LivraisonInputs";
+import LivraisonInputs from "../../../components/form/livraisons/LivraisonInputs";
 import TerminalOrdersTable from "../../../components/tables/BasicTables/TerminalOrdersTable";
 
 export default function LivraisonForm() {
@@ -24,9 +24,6 @@ export default function LivraisonForm() {
                 <LivraisonInputs />
               </div>
             </div>
-            {/* <div className="space-y-6">
-                <TerminalOrdersTable />
-            </div> */}
           </div>  
         </div>
     )

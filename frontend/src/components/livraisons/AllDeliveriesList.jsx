@@ -3,6 +3,7 @@ import { Link } from "react-router";
 
 import { ProductDeliveries } from "../../backend/livraisons/productDeliveries"
 import { generatePdf } from "../../backend/receptions/GeneratePDF";
+import { Users } from "../../backend/users/Users";
 
 import Input from "../form/input/InputField";
 import { Calendar } from 'primereact/calendar';
@@ -17,6 +18,8 @@ import { Dropdown } from 'primereact/dropdown';
 export default function AllDeliveriesList({ filterType }) {
 
     const productDeliveries = new ProductDeliveries();
+    const userData = new Users();
+
     const [deliveryForms, setDeliveryForms] = useState([]);
     const [loading, setLoading] = useState(false);
     const [printingId, setPrintingId] = useState(null);
@@ -27,7 +30,6 @@ export default function AllDeliveriesList({ filterType }) {
         { label: 'Livré', value: 'livre' },
         { label : 'Retourné', value: 'en_attente'},
     ];
-    const [selectedType, setSelectedType] = useState(null)
     const typeOptions = [
         {label: 'TPE GIM', value:[1]},
         {label: 'TPE Réparé', value:[2]},
@@ -39,21 +41,42 @@ export default function AllDeliveriesList({ filterType }) {
     ]
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
+    
+    const [optionsServices, setOptionsServices] = useState([])
+    const [selectedService, setselectedService] = useState('')
+    
+    const [optionsType, setOptionsType] = useState([])
+    const [selectedType, setSelectedType] = useState(null)
+
 
     useEffect( ()=>{
-        const fetchDeliveryForms = async () =>{
+        const fetchDeliveriesData = async () =>{
             setLoading(true);
             try{
-                let response = await productDeliveries.getAllLivraisons();
-                console.log(response)
-                setDeliveryForms(response)
+                let delivery_data = await productDeliveries.getAllLivraisons();
+                console.log(delivery_data)
+                setDeliveryForms(delivery_data)
+
+                let type_deliveries_data = await productDeliveries.getAllTypeLivraisonCommerciale();
+                const options_type = type_deliveries_data.map((item) => ({
+                    value: item.id_type_livraison,
+                    label: item.nom_type_livraison,
+                }))
+                setOptionsType(options_type)
+
+                let services_data = await userData.getAllServices();
+                const options_services = services_data.map((item) => ({
+                    value: item.id,
+                    label: item.nom_service.toUpperCase()
+                }))
+                setOptionsServices(options_services)
                 
             } catch(error){
                 console.log('Error fetching data ',error)
             } finally{
                 setLoading(false);
             }
-        }; fetchDeliveryForms();
+        }; fetchDeliveriesData();
     },[])
     
     const formatDate = (date) => {
@@ -77,6 +100,7 @@ export default function AllDeliveriesList({ filterType }) {
         let title = '';
         let linkSee = `/formulaire/${deliveryForms.id_livraison}`;
         let titleClass = 'font-bold text-sm'
+
 
         if (deliveryForms.type_livraison_id === 1) {
             title = 'Livraison TPE GIM';
@@ -204,7 +228,7 @@ export default function AllDeliveriesList({ filterType }) {
     return(
         <>  
             <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
-                <div className="flex justify-normal flex-wrap gap-3 mb-3 p-6">
+                <div className="flex justify-normal flex-wrap gap-3 p-6">
                     <span>
                         <Input
                             className="relative"
@@ -223,12 +247,23 @@ export default function AllDeliveriesList({ filterType }) {
                     />
                     <Dropdown
                         value={selectedType}
-                        options={typeOptions}
+                        options={optionsType}
                         onChange={(e) => setSelectedType(e.value)}
                         placeholder="Filtrer par type de livraison"
                         showClear
                         className="w-full sm:w-64"
                     />
+                    <Dropdown
+                        value={selectedService}
+                        options={optionsServices}
+                        onChange={(e) => setselectedService(e.value)}
+                        placeholder="Filtrer par service"
+                        showClear
+                        className="w-full sm:w-64"
+                    />
+                    
+                </div>
+                <div className="flex justify-normal flex-wrap gap-3 mb-3 p-6">
                     <div className="flex gap-2">
                         <DatePicker
                             id="date-picker-debut"
@@ -252,21 +287,6 @@ export default function AllDeliveriesList({ filterType }) {
                             }}}
                             dateFormat="dd/mm/yy"/>
                     </div>
-                                {/* <Calendar
-                                value={startDate}
-                                onChange={(e) => setStartDate(e.value)}
-                                placeholder="Date de début"
-                                dateFormat="dd/mm/yy"
-                                showIcon
-                                /> */}
-                    {/* <div className="flex items-center">
-                        <span>
-                            <Link to={"/form-livraison"} className="bg-green-400 p-3 rounded-2xl ">
-                                Nouvelle livraison
-                            </Link>
-                        </span>
-                    </div> */}
-                    
                 </div>
                 <div className="p-6 pt-0">
                     <span className="text-md text-gray-600 dark:text-gray-300">

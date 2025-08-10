@@ -28,7 +28,7 @@ const navItems: NavItem[] = [
     name: "Dashboard",
     subItems: [
       { name: "Semaine en cours", path: "/", pro: false },
-      { name: "Gestion Stock", path: "/gestion-stock", roles:[1], pro: false },
+      { name: "Gestion Stock", path: "/gestion-stock", roles:[7], pro: false },
       // { name: "Données Générales", path:"/donnees-generales", pro: false},
       // { name: "Statistiques livraisons", path: "/statistiques-livraisons", pro: false },
       // { name: "Stock chargeur", path: "/gestion-stock-chargeur", pro: false },
@@ -37,7 +37,7 @@ const navItems: NavItem[] = [
   {
     icon: <UserCircleIcon />,
     name: "Gestion Profils",
-    roles:[1],
+    roles:[5],
     subItems: [
       { name: "Tous les utilisateurs", path:"/tous-les-utilisateurs", pro: false},
       { name: "Ajouter utilisateur", path:"/créer-utilisateur", pro: false},
@@ -46,20 +46,19 @@ const navItems: NavItem[] = [
   {
     name: "Formulaire",
     icon: <ListIcon />,
-    roles:[1],
     subItems: [
       { name: "Toutes les livraisons", path:"/toutes-les-livraisons", pro: false},
-      { name: "Nouvelle Livraison", path: "/form-livraison", pro: false },
-      { name: "Ancienne Livraison", path: "/form-ancienne-livraison", pro: false },
+      { name: "Nouvelle Livraison", path: "/form-livraison", roles:[1], pro: false },
+      { name: "Ancienne Livraison", path: "/form-ancienne-livraison", roles:[1], pro: false },
     ],
     
   },
   {
-    name: "Demandes",
+    name: "Mouvement Stock",
     icon: <ClipboardCheck />,
-    roles:[3],
+    roles:[3, 11],
     subItems: [
-      {name: "Nouvelle Demande", path:"/nouvelle-demande", pro: false},
+      {name: "Nouvelle Demande", path:"/nouvelle-demande", roles:[3], pro: false},
       { name: "Toutes les demandes", path: "/toutes-les-demandes", pro: false },
     ],
     

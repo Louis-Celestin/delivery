@@ -3,21 +3,29 @@ import { Link } from "react-router";
 
 import { Demandes } from "../../backend/demandes/Demandes";
 import { Stock } from "../../backend/stock/Stock";
+import { Users } from "../../backend/users/Users";
+import { ProductDeliveries } from "../../backend/livraisons/ProductDeliveries";
 
 import Input from "../form/input/InputField";
 import { Calendar } from 'primereact/calendar';
 import DatePicker from "../form/date-picker";
+import { MultiSelect } from "primereact/multiselect";
+// import MultiSelect from "../form/MultiSelect"
 
 import 'primeicons/primeicons.css';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
-import { Dropdown } from 'primereact/dropdown';
+import { Dropdown } from 'primereact/dropdown'
+
+import Swal from "sweetalert2";
 
 export default function AllDemandesList() {
 
     const demandes = new Demandes()
     const stock = new Stock()
+    const usersData = new Users()
+    const livraisonsData = new ProductDeliveries()
 
     const [demandeForms, setDemandeForms] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -30,64 +38,59 @@ export default function AllDemandesList() {
         { label: 'Retournée', value: 'retourne'},
         { label : 'Refusée', value: 'refuse'},
     ];
-    const [selectedType, setSelectedType] = useState(null)
-    const typeOptions = [
-        {label: 'Chargeur (Decom RI NOK)', value:[1]}, 
-    ]
+    const [selectedTypes, setSelectedTypes] = useState(null)
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
     
     const [optionsPieces, setOptionsPieces] = useState([])
     const [stockDT, setStockDT] = useState([])
-    const [serviceDemandeur, setServiceDemandeur] = useState('');
+    const [serviceDemandeurs, setServiceDemandeurs] = useState('');
 
+    const [optionsServices, setOptionsServices] = useState([])
 
-
-    const options_services = [
-        { value: 6, label: "MAINTENANCE" },
-        { value: 7, label: "SUPPORT"},
-        { value: 1, label: "LIVRAISON"},
-    ];
+    const [livraisonsPieces, setLivraisonsPieces] = useState([])
+    const [dateLivraison, setDateLivraison] = useState('')
+    const [statutLivraison, setStatutLivraison] = useState('')
 
     useEffect( ()=>{
-        const fetchDemandeForms = async () =>{
+        const fetchDemandeData = async () =>{
             setLoading(true);
             try{
-                let response = await demandes.getAllDemandes();
-                console.log(response)
-                // const demandesSupport = response.filter(item => {
-                //     return  item.role_id_demandeur === 7
-                // });
-                setDemandeForms(response)
+                let demande_data = await demandes.getAllDemandes();
+                console.log(demande_data)
+                setDemandeForms(demande_data)
                 
+                let stock_data = await stock.getAllStock()
+                console.log(stock_data)
+                setStockDT(stock_data)
+                const piecesA920 = stock_data.filter(item =>{
+                return item.model_id == 1;
+                });
+                const options = piecesA920.map((item) => ({
+                value: item.id_piece,
+                label: item.nom_piece.toUpperCase(),
+                selected: false,
+                }));
+                setOptionsPieces(options);
+                console.log(options)
+
+                let services_data = await usersData.getAllServices()
+                const options_services = services_data.map((item) => ({
+                    value: item.id,
+                    label: item.nom_service.toUpperCase(),
+                }))
+                setOptionsServices(options_services)
+                
+                let livraisons_pieces_data = await livraisonsData.getAllStockDeliveries()
+                setLivraisonsPieces(livraisons_pieces_data)
+
             } catch(error){
                 console.log('Error fetching data ',error)
             } finally{
                 setLoading(false);
             }
         }; 
-        const fetchStock = async () =>{
-            try{
-                let data;
-                data = await stock.getAllStock()
-                console.log(data)
-                setStockDT(data)
-                const piecesA920 = data.filter(item =>{
-                return item.model_id == 1;
-                });
-                const options = piecesA920.map((item) => ({
-                value: item.id_piece,
-                label: item.nom_piece.toUpperCase(),
-                }));
-                setOptionsPieces(options);
-            }catch(error){
-                console.log('Error fetching data ',error)
-            } finally{
-                setLoading(false);
-            }
-        };
-        fetchDemandeForms();
-        fetchStock();
+        fetchDemandeData();
     },[])
     
     const formatDate = (date) => {
@@ -103,10 +106,17 @@ export default function AllDemandesList() {
             window.open(fileURL, '_blank');
         }catch(error){
             console.log(error)
+            setPrintingId(null)
+            Swal.fire({
+                title: "Attention",
+                text: "Une erreur s'est produite lors de la génération du formulaire",
+                icon: "warning"
+            });
         }finally{
             setPrintingId(null);
         }
     }
+    
     const titleTemplate = (demandeForms) =>{
         let title = '';
         let linkSee = `/demande-details/${demandeForms.id_demande}`;
@@ -138,12 +148,12 @@ export default function AllDemandesList() {
     const demandeDateTemplate = (demandeForms) =>{
         return (<span className="text-gray-500 text-theme-sm dark:text-gray-400">{formatDate(demandeForms.date_demande)}</span>)
     }
-    const receiveDateTemplate = (demandeForms) =>{
+    const dateValidationTemplate = (demandeForms) =>{
         if(demandeForms.validation_demande.length>0 && demandeForms.statut_demande != 'en_cours'){
             let index = demandeForms.validation_demande.length-1
             return (<span className="text-gray-500 text-theme-sm dark:text-gray-400">{formatDate(demandeForms.validation_demande[index].date_validation_demande)}</span>) 
         }else{
-            return (<></>)
+            return (<span className="text-xs">N/A</span>)
         }
     }
     const statutTemplate = (demandeForms) =>{
@@ -190,7 +200,7 @@ export default function AllDemandesList() {
                     </>
                 ) : (
                     <>
-                        {demandeForms.statut_demande == 'refuse' ? 
+                        {/* {demandeForms.statut_demande == 'refuse' ? 
                             (
                                 <>
                                 </>
@@ -201,12 +211,63 @@ export default function AllDemandesList() {
                                     </button>
                                 </Link>
                             )
-                        }
+                        } */}
                     </>
                     
                 )}
             </span>
         )
+    }
+    const dateLivraisonTemplate = (demandeForms) =>{
+        let date = 'N/A'
+        let livraison = livraisonsPieces.find((item) => {
+            return item.demande_id == demandeForms.id_demande
+        })
+        if(livraison){
+            date = formatDate(livraison.Livraisons.date_livraison)
+        }
+         return (<span className="text-gray-500 text-theme-sm dark:text-gray-400">{date}</span>)
+        
+
+    }
+    const statutLivraisonTemplate = (demandeForms) =>{
+        let statutClass = 'text-xs'
+        let statut = 'N/A'
+        let livraison = livraisonsPieces.find((item) => {
+            return item.demande_id == demandeForms.id_demande
+        })
+        if(livraison){
+            if(livraison.Livraisons.statut_livraison == 'en_cours'){
+                statut = 'en cours'
+                statutClass = 'text-xs rounded-xl p-0.5 bg-orange-300' 
+            } else if (livraison.Livraisons.statut_livraison == 'livre'){
+                statut = 'livrée';
+                statutClass = 'text-xs rounded-xl p-0.5 px-1 bg-green-300'
+            } else if (livraison.Livraisons.statut_livraison == 'retourne'){
+                statut = 'retournée';
+                statutClass = 'text-xs rounded-xl p-0.5 px-1 bg-red-300'
+            } else if (livraison.Livraisons.statut_livraison == 'refuse'){
+                statut = 'refusée';
+                statutClass = 'text-xs text-white rounded-xl p-0.5 px-1 bg-black'
+            }
+        }
+        return(
+            <span className={statutClass}>{statut}</span>
+        )
+    }
+    const dateReceptionTemplate = (demandeForms) =>{
+        let date = 'N/A'
+        let livraison = livraisonsPieces.find((item) => {
+            return item.demande_id == demandeForms.id_demande
+        })
+        let index
+        if(livraison){
+            if(livraison.Livraisons.reception_livraison.length > 0){
+                index = livraison.Livraisons.reception_livraison.length - 1
+                date = formatDate(livraison.Livraisons.reception_livraison[index].date_reception)
+            }
+        }
+         return (<span className="text-gray-500 text-theme-sm dark:text-gray-400">{date}</span>)
     }
     const filteredDemandeForms = demandeForms.filter((item) => {
         let itemDate = new Date(item.date_demande);
@@ -214,11 +275,11 @@ export default function AllDemandesList() {
             let index = item.validation_demande.length-1
             itemDate = new Date(item.validation_demande[index].date_validation_demande)
         }
-        const matchesStatus = selectedStatus ? item.statut_demande === selectedStatus : true;
-        const matchesType = selectedType ? selectedType == item.type_demande_id : true;
+        const matchesStatus = selectedStatus ? selectedStatus.includes(item.statut_demande) : true;
+        const matchesType = selectedTypes ? selectedTypes.includes(item.type_demande_id) : true;
         const matchesStartDate = startDate ? itemDate >= startDate : true;
         const matchesEndDate = endDate ? itemDate <= endDate : true;
-        const matchesService = serviceDemandeur ? serviceDemandeur == item.role_id_demandeur : true;
+        const matchesService = serviceDemandeurs ? serviceDemandeurs.includes(item.service_demandeur) : true;
         const matchesGlobalFilter = globalFilter
           ? JSON.stringify(item).toLowerCase().includes(globalFilter.toLowerCase())
           : true;
@@ -238,30 +299,37 @@ export default function AllDemandesList() {
                             placeholder="Rechercher une demande..."
                         />
                     </span>
-                    <Dropdown
+                    <MultiSelect
                         value={selectedStatus}
                         options={statusOptions}
+                        display="chip"
+                        optionLabel="label"
+                        maxSelectedLabels={2}
                         onChange={(e) => setSelectedStatus(e.value)}
                         placeholder="Filtrer par statut"
-                        showClear
                         className="w-full sm:w-64"
                     />
-                    <Dropdown
-                        value={selectedType}
-                        options={optionsPieces}
-                        onChange={(e) => setSelectedType(e.value)}
-                        placeholder="Filtrer par type de demande"
-                        showClear
-                        className="w-full sm:w-64"
-                    />
-                    <Dropdown
-                        value={serviceDemandeur}
-                        options={options_services}
-                        onChange={(e) => setServiceDemandeur(e.value)}
+                    <MultiSelect
+                        value={serviceDemandeurs}
+                        options={optionsServices}
+                        display="chip"
+                        optionLabel="label"
+                        maxSelectedLabels={2}
+                        onChange={(e) => setServiceDemandeurs(e.value)}
                         placeholder="Filtrer par service demandeur"
-                        showClear
                         className="w-full sm:w-64"
                     />                  
+                    <MultiSelect
+                        label="Type de demande"
+                        options={optionsPieces}
+                        display="chip"
+                        value={selectedTypes}
+                        optionLabel="label"
+                        maxSelectedLabels={2}
+                        placeholder="Type de demande"
+                        className="w-full sm:w-90"
+                        onChange={(e) => setSelectedTypes(e.value)}
+                    />
                 </div>
                 <div className="flex justify-normal flex-wrap gap-3 mb-3 p-6">
                     <div className="flex gap-2">
@@ -306,8 +374,11 @@ export default function AllDemandesList() {
                         <Column field="type_demande_id" header="Demande" body={titleTemplate} sortable></Column>
                         <Column field="qte_total_demande" header="Nbre produit" sortable></Column>
                         <Column field="date_demande" header="Date d'émission" body={demandeDateTemplate} sortable></Column>
-                        <Column header="Date de cloture" body={receiveDateTemplate}></Column>
-                        <Column field="statut_demande" header="Statut" body={statutTemplate}></Column>
+                        <Column field="statut_demande" header="Statut validation" body={statutTemplate}></Column>
+                        <Column header="Date validation" body={dateValidationTemplate}></Column>
+                        <Column header="Date Livraison" body={dateLivraisonTemplate}></Column>
+                        <Column header="Statut livraison" body={statutLivraisonTemplate}></Column>
+                        <Column header="Date Reception" body={dateReceptionTemplate}></Column>
                         <Column header="Actions" body={actionTemplate}></Column>
                     </DataTable>
                 </div>

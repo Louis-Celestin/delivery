@@ -98,12 +98,23 @@
                 {{commentaire_validation}}
             </p>
         </div>
-        <br>
+        <div>
+            <p>
+                <strong>Commentaire livraison : </strong>
+                {{commentaire_livraison}}
+            </p>
+        </div>
+        <div>
+            <p>
+                <strong>Commentaire réception : </strong>
+                {{commentaire_reception}}
+            </p>
+        </div>
         <table>
             <tbody>
                 <tr>
                     <th>Stock de départ</th>
-                    <th>Mr. NONWANON</th>
+                    <th>DIRECTION TECHNIQUE</th>
                 </tr>
                 <tr>
                     <th>Service demandeur</th>
@@ -125,6 +136,18 @@
                     <th>Stock restant</th>
                     <th>{{stock_final}}</th>
                 </tr>
+                <tr>
+                    <th>Livreur</th>
+                    <th>{{nom_livreur}}</th>
+                </tr>
+                <tr>
+                    <th>Quantitée livrée</th>
+                    <th>{{quantite_livraison}}</th>
+                </tr>
+                <tr>
+                    <th>Recepteur</th>
+                    <th>{{nom_recepteur}}</th>
+                </tr>
             </tbody>
         </table>
         <div class="date-demande"><strong>Date de l'opération :</strong> {{date_demande}}</div>
@@ -135,6 +158,20 @@
                 <div class="footer-signature">
                     <img src="{{signature}}" alt="" class="signature-image"/>
                     <span class="date-operation">{{date_validation_demande}}</span>
+                </div>
+            </div>
+            <div>
+                <span class="nom-signature"><strong>Livraison :</strong> <br> {{nom_livreur}}</span>
+                <div class="footer-signature">
+                    <img src="{{signature_livraison}}" alt="" class="signature-image"/>
+                    <span class="date-operation">{{date_livraison}}</span>
+                </div>
+            </div>
+            <div>
+                <span class="nom-signature"><strong>Réception :</strong> <br> {{nom_recepteur}}</span>
+                <div class="footer-signature">
+                    <img src="{{signature_reception}}" alt="" class="signature-image"/>
+                    <span class="date-operation">{{date_reception}}</span>
                 </div>
             </div>
         </div>

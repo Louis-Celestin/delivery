@@ -15,13 +15,13 @@ export default function CreateUserInputs() {
 
     const userData = new Users()
     const navigate = useNavigate();
-    
+
     const [loadingInfos, setLoadingInfos] = useState(false)
     const [loadingCreate, setLoadindCreate] = useState(false)
     const [errorForm, setErrorForm] = useState('')
     const [errorInput, setErrorInput] = useState('')
 
-    const [user, setUser] = useState()
+    const [users, setUsers] = useState([])
     const [nomUser, setNomUser] = useState('')
     const [prenomUser, setPrenomUser] = useState('')
     const [emailUser, setEmailUser] = useState('')
@@ -49,6 +49,9 @@ export default function CreateUserInputs() {
 
                 const services_data = await userData.getAllServices()
                 setServices(services_data)
+
+                const users_data = await userData.getAllUsers()
+                setUsers(users_data)
 
             } catch(error){
                 console.log("Erreur lors du fetch : ", error)
@@ -89,6 +92,15 @@ export default function CreateUserInputs() {
             setErrorInput("Vous devez saisir un email !")
             return
         }
+        const existingUser = users.find((user) =>{
+            return user.email == emailUser
+        })
+
+        if(existingUser){
+            setErrorInput("Addresse e-mail déjà utilisée !")
+            return
+        }
+
         if(!passwordUser){
             setErrorInput("Vous devez saisir un mot de passe !")
             return
@@ -100,7 +112,7 @@ export default function CreateUserInputs() {
         const FULLNAME = (nomUser + " " + prenomUser).toUpperCase()
         setFullName(FULLNAME)
 
-        const USERNAME = prenomUser.split(' ')[0].toLowerCase() + '.' + nomUser.split(' ')[0].toLowerCase() 
+        const USERNAME = prenomUser.trim().split(' ')[0].toLowerCase() + '.' + nomUser.split(' ')[0].toLowerCase() 
         setUserName(USERNAME)
 
         setErrorInput('')
@@ -162,7 +174,9 @@ export default function CreateUserInputs() {
                                                         <Input type="text" placeholder="Amon" value={nomUser} onChange={(e) =>{
                                                             const value = e.target.value
                                                             if(/^[a-zA-Z\s]*$/.test(value)){
-                                                                setNomUser(value)
+                                                                if(!(value.split(" ").length>1)){
+                                                                    setNomUser(value)
+                                                                }
                                                             }
                                                         }} />
                                                     </div>

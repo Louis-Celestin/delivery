@@ -14,17 +14,15 @@ export class Users{
         }
     };
 
-    // async getUserRoles(user_id){
-    //     try{
-    //         const response = await axios.post(`${urlBase}/api/auth/getUserRoles`,{
-    //             user_id,
-    //         })
-    //         console.log(response)
-    //         return response.data;
-    //     } catch(error){
-    //         throw error.response.data
-    //     }
-    // };
+    async getUserRoles(id){
+        try{
+            const response = await axios.get(`${urlBase}/api/auth/getUserRoles/${id}`)
+            console.log(response)
+            return response.data;
+        } catch(error){
+            throw error.response.data
+        }
+    };
 
     async getAllUserRoles(){
         try{
@@ -79,6 +77,26 @@ export class Users{
     async register(payload){
         try{
             const response = await axios.post(`${urlBase}/api/auth/register`, payload)
+            console.log(response)
+            return response.data;
+        } catch(error){
+            throw error.response.data
+        }
+    }
+
+    async getUserServices(id){
+        try{
+            const response = await axios.get(`${urlBase}/api/auth/getUserServices/${id}`)
+            console.log(response)
+            return response.data;
+        } catch(error){
+            throw error.response.data
+        }
+    };
+
+    async updateUser(id, payload){
+        try{
+            const response = await axios.put(`${urlBase}/api/auth/updateUser/${id}`, payload)
             console.log(response)
             return response.data;
         } catch(error){

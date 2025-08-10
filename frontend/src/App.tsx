@@ -96,7 +96,7 @@ import AllDemandesDeliveries from "./pages/DeliveryPages/AllDemandesDeliveries"
 // @ts-ignore
 import DemandeDeliveryDetails from "./pages/DeliveryPages/DemandeDeliveryDetails"
 // @ts-ignore
-import LivraisonSupportForm from "./pages/Forms/LivraisonForms/LivraisonSupportForm"
+import LivraisonPiecesForm from "./pages/Forms/LivraisonForms/LivraisonPiecesForm"
 // @ts-ignore
 import DeliveryChargeurDecomDetails from "./pages/DeliveryPages/DeliveryChargeurDecomDetails"
 
@@ -154,7 +154,7 @@ export default function App() {
               <Route path="/formulaire-chargeur/:id" element={<DeliveryChargeurDetails />} />
               <Route path="/toutes-les-demandes-livraison" element={<AllDemandesDeliveries />} />
               <Route path="/demande-livraison/:id" element={<DemandeDeliveryDetails />} />
-              <Route path="/form-demande-support/:id" element={<LivraisonSupportForm />} />
+              <Route path="/livraison-pieces/:id" element={<LivraisonPiecesForm />} />
               <Route path="/formulaire-chargeur-decom/:id" element={<DeliveryChargeurDecomDetails />} />
 
 

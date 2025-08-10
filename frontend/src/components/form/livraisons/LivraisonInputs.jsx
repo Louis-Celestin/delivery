@@ -2,16 +2,16 @@ import { useEffect, useState, useRef } from "react";
 import ComponentCard from "../../common/ComponentCard.tsx";
 import Label from "../Label.tsx";
 import Input from "../input/InputField.tsx";
-import Checkbox from "../input/Checkbox";
+import Checkbox from "../input/Checkbox.tsx";
 import Select from "../Select.tsx";
-import TextArea from "../input/TextArea";
+import TextArea from "../input/TextArea.tsx";
 import {
   Table,
   TableBody,
   TableCell,
   TableHeader,
   TableRow,
-} from "../../ui/table";
+} from "../../ui/table/index.tsx";
 import { PlusIcon } from "../../../icons/index.ts";
 import { ListIcon } from "../../../icons/index.ts";
 import 'primeicons/primeicons.css'; 
@@ -21,16 +21,19 @@ import { Merchants } from "../../../backend/livraisons/Merchants.js";
 import { ProductDeliveries } from "../../../backend/livraisons/ProductDeliveries.js";
 import Swal from 'sweetalert2'
 import { Modal } from "../../ui/modal/index.tsx";
-
 import SignatureCanvas from 'react-signature-canvas'
+import { Users } from "../../../backend/users/Users.js"
 
 export default function LivraisonInputs() {
 
   const merchants = new Merchants();
   const productDeliveries = new ProductDeliveries();
+  const usersData = new Users()
   const userId = localStorage.getItem('id');
   const role = localStorage.getItem("role_id")
   const navigate = useNavigate();
+
+
   const [isOrangeChecked, setOrangeChecked] = useState(false);
   const [isMTNChecked, setMTNChecked] = useState(false);
   const [isMOOVChecked, setMOOVChecked] = useState(false);
@@ -57,38 +60,14 @@ export default function LivraisonInputs() {
   const [signUrl, setSignUrl] = useState();
   const [errorSign, setErrorSign] = useState('');
 
+  const [optionLivraisons, setOptionLivraisons] = useState([])
+  const [listTypeLivraison, setListTypeLivraison] = useState([])
 
-  const ChangeTypeLivraison = (value) => {
-    console.log("Selected value:", value);
-    setTypeLivraison(value);
-    if(value == 'TPE GIM'){
-      setLivraisonID(1);
-      setSelectedChargeur(false)
-    }else if(value == 'TPE REPARE'){
-      setLivraisonID(2);
-      setSelectedChargeur(false)
-    }else if(value == 'TPE MAJ GIM'){
-      setLivraisonID(3)
-      setSelectedChargeur(false)
-    }else if(value == 'TPE MOBILE'){
-      setLivraisonID(4)
-      setSelectedChargeur(false)
-    }else if(value == 'CHARGEUR'){
-      setLivraisonID(5)
-      setSelectedChargeur(true)
-    }else if(value == 'TPE ECOBANK'){
-      setLivraisonID(6)
-      setSelectedChargeur(false)
-    }else if(value == 'CHARGEUR (TPE DECOM RI OK)'){
-      setLivraisonID(7)
-      setSelectedChargeur(true)
-    }else if(value == 'CHARGEUR (TPE DECOM RI NOK)'){
-      setLivraisonID(8)
-      setSelectedChargeur(true)
-    }
-    
-  };
-  
+  const [optionServices, setOptionServices] = useState([])
+  const [listServices, setListService] = useState([])
+  const [serviceRecepteur, setServiceRecepteur] = useState('')
+
+  const [serviceId, setServiceId] = useState(null)
 
   useEffect( ()=>{
     const fetchTerminalInfos = async () => {
@@ -96,8 +75,25 @@ export default function LivraisonInputs() {
       try{
         let data;
         data = await merchants.findMerchant();
-        // console.log(data)
         setTerminals(data)
+
+        let type_delivery = await productDeliveries.getAllTypeLivraisonCommerciale()
+        setListTypeLivraison(type_delivery)
+        const optionsType = type_delivery.map((item) =>({
+          value: item.id_type_livraison,
+          label: item.nom_type_livraison,
+        }))
+        setOptionLivraisons(optionsType);
+
+        let services_data = await usersData.getAllServices()
+        setListService(services_data)
+        const optionsServices = services_data.map((item) =>({
+          value: item.id,
+          label: item.nom_service,
+        }))
+        setOptionServices(optionsServices)
+
+
       }catch(error){
         console.log('Error fetching data ',error)
         setErrorForm('Erreur lors de la génération du formulaire')
@@ -108,21 +104,45 @@ export default function LivraisonInputs() {
     };fetchTerminalInfos();
   },[])
   
-
   const filteredPointMarchand = terminalSN ? 
   terminals.filter((terminal) => 
-        terminal.SERIAL_NUMBER.includes(terminalSN)) : [];
+  terminal.SERIAL_NUMBER.includes(terminalSN)) : [];
+  
+  const ChangeTypeLivraison = (value) => {
+    console.log("Selected value:", value);
+    setLivraisonID(value);
+    
+    const selectedTypeLivraison = listTypeLivraison.find(
+      (item) => {
+        return item.id_type_livraison == parseInt(value)
+      }
+    );
 
-  const options_livraison = [
-    { value: "TPE GIM", label: "TPE GIM" },
-    { value: "TPE MOBILE", label: "TPE MOBILE" },
-    { value: "TPE MAJ GIM", label: "MISE A JOUR GIM" },
-    { value: "TPE REPARE", label: "TPE REPARE" },
-    { value: "TPE ECOBANK", label: "TPE ECOBANK" },
-    { value: "CHARGEUR", label: "CHARGEUR" },
-    { value: "CHARGEUR (TPE DECOM RI OK)", label: "CHARGEUR (TPE DECOM RI OK)"},
-    { value: "CHARGEUR (TPE DECOM RI NOK)", label: "CHARGEUR (TPE DECOM RI NOK)"},
-  ];
+    if(selectedTypeLivraison){
+      const nomType = selectedTypeLivraison.nom_type_livraison.toUpperCase()
+      setTypeLivraison(nomType)
+    } else{
+      setTypeLivraison('');
+    }    
+  };
+  
+  const ChangeService = (value) => {
+    console.log("Selected value:", value);
+    setServiceId(value);
+    
+    const selectedService = listServices.find(
+      (item) => {
+        return item.id == parseInt(value)
+      }
+    );
+
+    if(selectedService){
+      const nomService = selectedService.nom_service.toUpperCase()
+      setServiceRecepteur(nomService)
+    } else{
+      setServiceRecepteur('');
+    }    
+  }
 
   const handleConfirm = () => {
     if(role != 1){
@@ -143,6 +163,10 @@ export default function LivraisonInputs() {
 
     if(!livraisonID){
       setErrorAjout("Vous devez choisir le type de livraison !");
+      return;
+    }
+    if(!serviceId){
+      setErrorAjout("Vous devez choisir le service réceptionniste !");
       return;
     }
     if (!filteredPointMarchand || filteredPointMarchand.length === 0 || terminalSN.length < 10) {
@@ -252,7 +276,6 @@ export default function LivraisonInputs() {
     setIsConfirmModalOpen(false)
   }
     
-
   const handleDeliver = async (e) => {
     e.preventDefault();
 
@@ -322,8 +345,6 @@ export default function LivraisonInputs() {
       setLoadingDelivery(false)
     } 
   }
-  
-
 
   const handleDelete = (indexToRemove) => {
     setProduitsLivresTable((prev) =>
@@ -389,9 +410,19 @@ export default function LivraisonInputs() {
                         <div>
                           <Label>Type de Livraison <span className="text-red-700">*</span></Label>
                           <Select
-                            options={options_livraison}
+                            options={optionLivraisons}
                             placeholder="Select an option"
                             onChange={ChangeTypeLivraison}
+                            className="dark:bg-dark-900"
+                            
+                          />
+                        </div>
+                        <div>
+                          <Label>Service recepteur <span className="text-red-700">*</span></Label>
+                          <Select
+                            options={optionServices}
+                            placeholder="Select an option"
+                            onChange={ChangeService}
                             className="dark:bg-dark-900"
                             
                           />

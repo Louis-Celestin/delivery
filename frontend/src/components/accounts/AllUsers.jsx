@@ -47,6 +47,11 @@ export default function AllUsers() {
         fetchUsers();
     },[])
 
+    const formatDate = (date) => {
+        const d = new Date(date);
+        return d.toLocaleDateString('fr-FR');
+    };
+
     const nomTemplate = (user) =>{
         const nom = user.username
         const nomFinal = nom.split(".").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
@@ -64,7 +69,7 @@ export default function AllUsers() {
 
         return (
             <>
-                <span className="text-xs font-bold">
+                <span className="text-sm font-bold">
                     {email}
                 </span>
             </>
@@ -115,7 +120,7 @@ export default function AllUsers() {
             <>
                 {user_roles.map((role =>{
 
-                    const nomRole = role.nom_role.split("_");
+                    const nomRole = role.nom_role.split("_").join(" ");
                     let roleTag = 'px-1 rounded-xl bg-gray-400 text-xs text-black font-bold'
                     return (
                         <>  
@@ -128,7 +133,17 @@ export default function AllUsers() {
             </>
         )
     }
+    const dateTemplate = (user) =>{
+        const date = user.created_at
 
+        return(
+            <>
+                <span className="text-sm font-normal text-gray-600">
+                    {formatDate(date)}
+                </span>
+            </>
+        )
+    }
     const actionsTemplate = (user) =>{
         let linkModify = `/modifier-profil/${user.id_user}`
 
@@ -163,7 +178,7 @@ export default function AllUsers() {
                         <Column field="email" header="Email" body={emailTemplate} sortable></Column>
                         <Column header="Services" body={serviceTemplate}></Column>
                         <Column header="Rôles" body={roleTemplate}></Column>
-                        <Column header="Date création"></Column>
+                        <Column  field="created_at" header="Date création" body={dateTemplate} sortable></Column>
                         <Column header="Actions" body={actionsTemplate}></Column>
 
                         

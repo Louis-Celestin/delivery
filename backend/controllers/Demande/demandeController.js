@@ -8,14 +8,21 @@ const { get } = require("http");
 
 const formatDate = (isoDate) => {
   const date = new Date(isoDate);
-  return date.toLocaleDateString("fr-FR");
+  return date.toLocaleString("fr-FR", {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
 };
 
 const baseUrl = process.env.FRONTEND_BASE_URL || "https://livraisons.greenpayci.com";
 const localUrl = "http://localhost:5173"
-const GENERAL_URL = baseUrl 
+const GENERAL_URL = localUrl 
 
-let test_env = false
+let test_env = true
 let support_role = 7;
 let livraison_role = 1;
 let commercial_role = 2;
@@ -40,12 +47,11 @@ const faireDemande = async (req, res) =>{
         user_id,
         nom_demandeur,
         type_demande_id,
-        role_demandeur,
+        service_id,
         role_validateur,
         id_demandeur,
         qte_total_demande,
         motif_demande,
-
         } = req.body;
 
         // Correction ici : gestion de produitsDemandes (string JSON venant de form-data)
@@ -58,11 +64,6 @@ const faireDemande = async (req, res) =>{
                 id_piece: parseInt(type_demande_id)
             }
         })
-        // const typeDemande = await prisma.type_demande.findUnique({
-        // where: {
-        //     type_demande_id: parseInt(type_demande_id)
-        // }
-        // });
 
         if (!typeDemande) {
         return res.status(404).json({ message: "Type de demande non trouvé" });
@@ -90,6 +91,21 @@ const faireDemande = async (req, res) =>{
         // return res.status(400).json({ message: "Vous devez fournir une signature du demandeur" });
         // }
 
+        // Gestion de l'upload Cloudinary
+        let uploadedFiles = [];
+
+        if (req.files && req.files.length > 0) {
+          // Upload each file to Cloudinary
+          for (const file of req.files) {
+            const result = await cloudinary.uploader.upload(file.path, {
+              folder: "greenpay/mouvement_stock",
+              resource_type: "auto",
+              type: "upload"
+            });
+            uploadedFiles.push(result.secure_url);
+          }
+        } 
+
         let final_type_demande_id = type_demande_id
 
         const nouvelleDemande = await prisma.demandes.create({
@@ -104,9 +120,10 @@ const faireDemande = async (req, res) =>{
             type_demande_id: parseInt(final_type_demande_id),
             user_id: utilisateur ? utilisateur.id_user : null,
             role_id_recepteur: parseInt(role_validateur),
-            role_id_demandeur: parseInt(role_demandeur),
+            service_demandeur: parseInt(service_id),
             id_demandeur: parseInt(id_demandeur) || null,
             motif_demande: motif_demande || null,
+            files: JSON.stringify(uploadedFiles),
         }
         });
 
@@ -116,40 +133,59 @@ const faireDemande = async (req, res) =>{
           }
         });
 
+        const service = await prisma.services.findUnique({
+          where:{
+            id: parseInt(service_id)
+          }
+        })
 
-        // Gestion des mails
+        const userService = await prisma.user_services.findMany({
+          where:{
+            service_id: parseInt(service_id)
+          },
+          include:{
+            users: true
+          }
+        })
+        
+        const userRole = await prisma.user_roles.findMany({
+          where:{
+            role_id: parseInt(role_validateur)
+          },
+          include:{
+            users: true
+          }
+        })
+               
+        const service_users = userService.map(us => us.users)
+        const validateurs = userRole.map(us => us.users)
+
+
+        // GESTION DES MAILS
+
         let motif = motif_demande
         let demandeTypeName = piece.nom_piece.toUpperCase()
 
-        let serviceDemandeur = '';
-        let roleService;
-        switch(parseInt(role_demandeur)) {
-          case 7:
-            serviceDemandeur = 'SUPPORT'
-            roleService = support_role
-            break;
-          case 6:
-            serviceDemandeur = 'MAINTENANCE'
-            roleService = maintenance_role
-            break;
-          case 1:
-            serviceDemandeur = 'LIVRAISON'
-            roleService = livraison_role
-            break;
-        }
+        let serviceDemandeur = service.nom_service.toUpperCase();
 
         let quantite = nouvelleDemande.qte_total_demande;
         let commentaire_mail = nouvelleDemande.commentaire ? nouvelleDemande.commentaire : '(sans commentaire)';
         const url = GENERAL_URL
-        let demandeLink = `${url}/demande-supervision-details/${nouvelleDemande.id_demande}`;
+        let demandeLink = `${url}/demande-details/${nouvelleDemande.id_demande}`;
         // const demandeLink = `https://livraisons.greenpayci.com/formulaire-recu/${nouvelleLivraison.id_demande}`
+
+        let attachments = []
+        // attachments = uploadedFiles.map((url, index) => ({
+        //   filename: `fichier-${index + 1}${path.extname(url) || '.pdf'}`, // fallback to .pdf
+        //   path: url
+        // }));
+
+        console.log(attachments.length , attachments)
         const sendMail = require("../../utils/emailSender");
-        const receivers = await prisma.users.findMany({
-            where: { role_id: superviseur_role },
-        });
-        if (receivers && receivers.length > 0) {
+        
+        if ((service_users && service_users.length > 0) || (validateurs && validateurs.length > 0)){
             const subject = `NOUVELLE DEMANDE ${motif}`;
-            const html = `
+            let html = `
             <p>Bonjour,</p>
             <p>Une nouvelle demande a été enregistrée.</p>
             <ul>
@@ -173,60 +209,52 @@ const faireDemande = async (req, res) =>{
             <br><br>
             <p>Green - Pay vous remercie.</p>
             `;
+            if(attachments.length > 0){
+              html = `
+                <p>Bonjour,</p>
+                <p>Une nouvelle demande a été enregistrée.</p>
+                <ul>
+                  <li><strong>Type de demande:</strong> ${demandeTypeName}</li>
+                  <li><strong>Nombre de produits:</strong> ${quantite}</li>
+                </ul>
+                <ul>
+                  <li><strong>Service demandeur:</strong> ${serviceDemandeur}</li>
+                  <li><strong>Nom demandeur:</strong> ${nouvelleDemande.nom_demandeur}</li>
+                </ul>
+                <br>
+                <p>Commentaire : ${commentaire_mail}<p>
+                <br>
+                <p>Retrouvez la demande à ce lien : 
+                    <span>
+                    <a href="${demandeLink}" target="_blank" style="background-color: #73dced; color: white; padding: 7px 12px; text-decoration: none; border-radius: 5px;">
+                        Cliquez ici !
+                    </a>
+                    </span>
+                </p>
+                <p>En pièces jointes, les différents fichiers relatifs à la demande.<p>
+                <br><br>
+                <p>Green - Pay vous remercie.</p>
+                `;
+            }
     
-            for (const receiver of receivers) {
+            for (const service_user of service_users) {
             await sendMail({
-                to: receiver.email,
-                subject,
-                html,
+              to: service_user.email,
+              subject,
+              html,
+              attachments
             });
             }
-        }
-
-        // MAIL DE NOUVELLE DEMANDE AU SERVICE CONCERNE
-        
-        let demandeServiceLink = `${url}/demande-vue-details/${nouvelleDemande.id_demande}`;
-        const service = await prisma.users.findMany({
-            where: { role_id: roleService },
-        });
-      
-        if (service && service.length > 0) {
-            const subject = `NOUVELLE DEMANDE ${motif}`;
-            const html = `
-            <p>Bonjour,</p>
-            <p>Une nouvelle demande a été enregistrée.</p>
-            <ul>
-                <li><strong>Type de demande:</strong> ${demandeTypeName}</li>
-                <li><strong>Nombre de produits:</strong> ${quantite}</li>
-            </ul>
-            <ul>
-                <li><strong>Service demandeur:</strong> ${serviceDemandeur}</li>
-                <li><strong>Nom demandeur:</strong> ${nouvelleDemande.nom_demandeur}</li>
-            </ul>
-            <br>
-            <p>Commentaire : ${commentaire_mail}<p>
-            <br>
-            <p>Retrouvez la demande à ce lien : 
-                <span>
-                <a href="${demandeServiceLink}" target="_blank" style="background-color: #73dced; color: white; padding: 7px 12px; text-decoration: none; border-radius: 5px;">
-                    Cliquez ici !
-                </a>
-                </span>
-            </p>
-            <br><br>
-            <p>Green - Pay vous remercie.</p>
-            `;
-    
-            for (const agent of service) {
+            for (const validateur of validateurs) {
             await sendMail({
-                to: agent.email,
-                subject,
-                html,
+              to: validateur.email,
+              subject,
+              html,
+              attachments
             });
             }
         }
   
-
         res.status(201).json({
         message: "Demande enregistrée avec succès",
         demandes: nouvelleDemande
@@ -307,15 +335,14 @@ const validateDemande = async (req, res) => {
     if (!user_id) return res.status(403).json({ message: "Utilisateur non authentifié." });
 
     const user = await prisma.users.findUnique({
-        where: { id_user: parseInt(user_id) },
-        include: { agents: true },
+      where: { id_user: parseInt(user_id) },
     });
 
-    if (!user || !user.agents) {
-        return res.status(404).json({ message: "Utilisateur ou agent non trouvé." });
+    if (!user) {
+        return res.status(404).json({ message: "Utilisateur non trouvé." });
     }
 
-    final_nom_validateur = user.agents.nom;
+    final_nom_validateur = user.fullname;
     final_date_validation = new Date();
     
     const newValidation = await prisma.validation_demande.create({
@@ -335,33 +362,42 @@ const validateDemande = async (req, res) => {
         data: { statut_demande: "valide" },
     });
 
-
     const piece = await prisma.stock_dt.findUnique({
       where:{
         id_piece: parseInt(demande.type_demande_id)
       }
     });
 
-    // Gestion des mails
+    const service = await prisma.services.findUnique({
+      where:{
+        id: parseInt(demande.service_demandeur)
+      }
+    })
+
+    const userService = await prisma.user_services.findMany({
+      where:{
+        service_id: parseInt(demande.service_demandeur)
+      },
+      include:{
+        users: true
+      }
+    })
+            
+    const service_users = userService.map(us => us.users)
+    const demandeur = await prisma.users.findUnique({
+      where:{
+        id_user: demande.user_id
+      }
+    })
+
+
+    //                  GESTION MAILS
+
+
     let motif = demande.motif_demande
     let demandeTypeName = piece.nom_piece.toUpperCase()
 
-    let serviceDemandeur = '';
-    let roleService;
-    switch(parseInt(demande.role_id_demandeur)) {
-      case 7:
-        serviceDemandeur = 'SUPPORT'
-        roleService = support_role
-        break;
-      case 6:
-        serviceDemandeur = 'MAINTENANCE'
-        roleService = maintenance_role
-        break;
-      case 1:
-        serviceDemandeur = 'LIVRAISON'
-        roleService = livraison_role
-        break;
-    }
+    let serviceDemandeur = service.nom_service.toUpperCase();
 
     let quantite = demande.qte_total_demande;
     let commentaire_mail = commentaire ? commentaire : '(sans commentaire)';
@@ -369,10 +405,7 @@ const validateDemande = async (req, res) => {
     let demandeLink = `${url}/demande-details/${demande.id_demande}`;
     // const demandeLink = `https://livraisons.greenpayci.com/formulaire-recu/${nouvelleLivraison.id_demande}`
     const sendMail = require("../../utils/emailSender");
-    const receivers = await prisma.users.findMany({
-        where: { role_id: livraison_role },
-    });
-    if (receivers && receivers.length > 0) {
+    if ((service_users && service_users.length > 0) || demandeur) {
         const subject = `NOUVELLE DEMANDE ${motif}`;
         const html = `
         <p>Bonjour,</p>
@@ -398,56 +431,17 @@ const validateDemande = async (req, res) => {
         <br><br>
         <p>Green - Pay vous remercie.</p>
         `;
-
-        for (const receiver of receivers) {
         await sendMail({
-            to: receiver.email,
+          to: demandeur.email,
+          subject,
+          html,
+        });
+        for (const service_user of service_users) {
+          await sendMail({
+            to: service_user.email,
             subject,
             html,
-        });
-        }
-    }
-
-    // MAIL DE DEMANDE VALIDEE AU SERVICE CONCERNE
-    
-    let demandeServiceLink = `${url}/demande-vue-details/${demande.id_demande}`;
-    const service = await prisma.users.findMany({
-        where: { role_id: roleService },
-    });
-  
-    if (service && service.length > 0) {
-        const subject = `NOUVELLE DEMANDE ${motif}`;
-        const html = `
-        <p>Bonjour,</p>
-        <p>La demande ${demande.id_demande} a été validée.</p>
-        <ul>
-            <li><strong>Type de demande:</strong> ${demandeTypeName}</li>
-            <li><strong>Nombre de produits:</strong> ${quantite}</li>
-        </ul>
-        <ul>
-            <li><strong>Service demandeur:</strong> ${serviceDemandeur}</li>
-            <li><strong>Nom demandeur:</strong> ${demande.nom_demandeur}</li>
-        </ul>
-        <br>
-        <p>Commentaire : ${commentaire_mail}<p>
-        <br>
-        <p>Retrouvez la demande à ce lien : 
-            <span>
-            <a href="${demandeServiceLink}" target="_blank" style="background-color: #73dced; color: white; padding: 7px 12px; text-decoration: none; border-radius: 5px;">
-                Cliquez ici !
-            </a>
-            </span>
-        </p>
-        <br><br>
-        <p>Green - Pay vous remercie.</p>
-        `;
-
-        for (const agent of service) {
-        await sendMail({
-            to: agent.email,
-            subject,
-            html,
-        });
+          });
         }
     }
 
@@ -998,23 +992,36 @@ const generateDemandePDF = async (req, res) => {
     const { id } = req.params;
   
     try {
-      const data = await prisma.demandes.findUnique({
+      const demande_data = await prisma.demandes.findUnique({
         where: { id_demande: parseInt(id) },
         include: {
           validation_demande: true,
         }
       });
 
-      console.log(data)
+      console.log("demande data: ",demande_data)
+
+      const livraison_data = await prisma.livraison_piece.findFirst({
+        where: { demande_id: parseInt(id) },
+        include: {
+          Livraisons: {
+            include: {
+              reception_livraison: true
+            }
+          }
+        }
+      })
+
+      console.log("livraison data: ",livraison_data)
   
-      if (!data) return res.status(404).json({ message: "Demande introuvable" });
-      if (data.validation_demande.length < 1) return res.status(400).json({ message: "Aucune validation trouvée" });
+      if (!demande_data) return res.status(404).json({ message: "Demande introuvable" });
+      if (demande_data.validation_demande.length < 1) return res.status(400).json({ message: "Aucune validation trouvée" });
   
       const demande = {
-        ...data,
-        produitsDemandes: typeof data.produit_demande === "string"
-          ? JSON.parse(data.produit_demande)
-          : data.produit_demande
+        ...demande_data,
+        produitsDemandes: typeof demande_data.produit_demande === "string"
+          ? JSON.parse(demande_data.produit_demande)
+          : demande_data.produit_demande
       };
       
       const piece = await prisma.stock_dt.findUnique({
@@ -1022,87 +1029,126 @@ const generateDemandePDF = async (req, res) => {
           id_piece: parseInt(demande.type_demande_id)
         }
       })
+
+
       // 🔎 Récupération de l'agent qui a fait la demande (si user_id défini)
       let nomDemandeur = "N/A";
-      // console.log(demande)
       if (demande.nom_demandeur) {
-        // ✅ Ancienne demande ou nom fourni manuellement
         nomDemandeur = demande.nom_demandeur;
       } else if (demande.user_id) {
         const user = await prisma.users.findUnique({
           where: { id_user: demande.user_id }
         });
-  
-        if (user?.agent_id) {
-          const agent = await prisma.agents.findUnique({
-            where: { id: user.agent_id }
-          });
-          if (agent?.nom) {
-            nomDemandeur = agent.nom;
-          }
-        }
+        nomDemandeur = user.fullname
       }
+
+
       let service_demandeur = "N/A"
-      if(demande.role_id_demandeur == 7){
-        service_demandeur = 'SUPPORT'
-      } else if(demande.role_id_demandeur == 6){
-        service_demandeur = 'MAINTENANCE'
-      } else if(demande.role_id_demandeur == 1){
-        service_demandeur = 'LIVRAISON'
+      const service = await prisma.services.findUnique({
+        where: {
+          id: parseInt(demande.service_demandeur)
+        }
+      })
+      if(service){
+        service_demandeur = service.nom_service.toUpperCase()
       }
   
+      
+      // 🧱 Construction du tableau
+      // const produitsRows = demande.produitsDemandes.map((p, index) => {
+        //   let row = "";
+        //   switch (demande.type_demande_id) {
+          //     case 1:
+          //       row = `<tr><td>${p.pointMarchand || p.marchand} - ${p.caisse}</td><td>${p.serialNumber || p.sn}</td></tr>`;
+          //       break;
+          //     default:
+          //       row = "";
+          //   }
+          
+          //   // ➕ Ajout du saut de page toutes les 20 lignes
+          //   if ((index + 1) % 20 === 0) {
+            //     row += `<tr class="page-break"></tr>`;
+            //   }
+            
+            //   return row;
+            // }).join("\n");
+            
+            // console.log(demande.validations[0].signature)
+            // 🧩 Remplacement des balises HTML
       // 🗺️ Sélection du template
       const templatesMap = {
         1: "demande_DT.html",
+        2: "demande_livraison.html"
       };
-  
-      const templateFile = templatesMap[1];
-      if (!templateFile) return res.status(400).json({ message: "Type de demande inconnu" });
-  
-      const filePath = path.join(__dirname, "../../statics/templates/", templateFile);
-      let html = fs.readFileSync(filePath, "utf8");
       
-      let produits = JSON.parse(data.produit_demande)
+      let templateFile = templatesMap[1];
+      
+      let index = demande.validation_demande.length-1
+
+      let produits = JSON.parse(demande_data.produit_demande)
       let quantite = produits.quantite
       let stock_initial = produits.stockDepart
       let stock_final = stock_initial - quantite
-      // 🧱 Construction du tableau
-      // const produitsRows = demande.produitsDemandes.map((p, index) => {
-      //   let row = "";
-      //   switch (demande.type_demande_id) {
-      //     case 1:
-      //       row = `<tr><td>${p.pointMarchand || p.marchand} - ${p.caisse}</td><td>${p.serialNumber || p.sn}</td></tr>`;
-      //       break;
-      //     default:
-      //       row = "";
-      //   }
+      let nomValidateur = demande.validation_demande[index].nom_validateur
+      let signature_validation = demande.validation_demande[index].signature
+      let date_validation = demande.validation_demande[index].date_validation_demande
+      let commentaire_validation = demande.validation_demande[index].commentaire
       
-      //   // ➕ Ajout du saut de page toutes les 20 lignes
-      //   if ((index + 1) % 20 === 0) {
-      //     row += `<tr class="page-break"></tr>`;
-      //   }
+      let signature_livraison = 'N/A'
+      let date_livraison = 'N/A'
+      let signature_reception = 'N/A'
+      let date_reception = 'N/A'
+      let nom_livreur = 'N/A'
+      let nom_recepteur = 'N/A'
+      let commentaire_livraison = 'N/A'
+      let commentaire_reception = 'N/A'
+      let quantite_livraison = 'N/A'
       
-      //   return row;
-      // }).join("\n");
-      
-      // console.log(demande.validations[0].signature)
-      // 🧩 Remplacement des balises HTML
 
-      let index = demande.validation_demande.length-1
+
+      if(livraison_data && livraison_data.Livraisons.reception_livraison.length > 0){
+
+        templateFile = templatesMap[2]
+        let index_reception = livraison_data.Livraisons.reception_livraison.length - 1
+
+        signature_livraison = livraison_data.Livraisons.signature_expediteur
+        date_livraison = livraison_data.Livraisons.date_livraison
+        signature_reception = livraison_data.Livraisons.reception_livraison[index_reception].signature_recepteur
+        date_reception = livraison_data.Livraisons.reception_livraison[index_reception].date_reception
+        nom_livreur = livraison_data.Livraisons.nom_livreur
+        nom_recepteur = livraison_data.Livraisons.reception_livraison[index_reception].nom_recepteur
+        commentaire_livraison = livraison_data.Livraisons.commentaire_livraison
+        commentaire_reception = livraison_data.Livraisons.reception_livraison[index_reception].commentaire_reception
+        quantite_livraison = livraison_data.Livraisons.quantite_livraison
+      }
+
+      const filePath = path.join(__dirname, "../../statics/templates/", templateFile);
+      let html = fs.readFileSync(filePath, "utf8");
+            
       html = html
-        .replace("{{commentaire}}", demande.commentaire || "")
-        .replace("{{date_demande}}", formatDate(demande.date_demande))
-        .replace("{{pieces_demandees}}", piece.nom_piece.toUpperCase())
-        .replace("{{motif_demande}}", demande.motif_demande)
-        // .replace("{{qte_total_demande}}", demande.qte_total_demande || demande.produit_demande.length)
-        .replace("{{nom_validateur}}", demande.validation_demande[index].nom_validateur || "Validateur")
-        .replace("{{nom_demandeur}}", nomDemandeur || "Demandeur")
-        .replace("{{service_demandeur}}", service_demandeur || "Validateur")
-        .replace("{{quantite}}", quantite)
-        .replace("{{stock_initial}}", stock_initial)
-        .replace("{{stock_final}}", stock_final)
-        .replace("{{signature}}", demande.validation_demande[index].signature || "Validé")
-        .replace("{{date_validation_demande}}", demande.validation_demande[index].date_validation_demande ? formatDate(demande.validation_demande[index].date_validation_demande) : "N/A")
+        .replaceAll("{{commentaire}}", demande.commentaire)
+        .replaceAll("{{commentaire_validation}}", commentaire_validation)
+        .replaceAll("{{commentaire_livraison}}", commentaire_livraison)
+        .replaceAll("{{commentaire_reception}}", commentaire_reception)
+        .replaceAll("{{date_demande}}", formatDate(demande.date_demande))
+        .replaceAll("{{pieces_demandees}}", piece.nom_piece.toUpperCase())
+        .replaceAll("{{motif_demande}}", demande.motif_demande)
+        // .replaceAll("{{qte_total_demande}}", demande.qte_total_demande || demande.produit_demande.length)
+        .replaceAll("{{nom_validateur}}", nomValidateur)
+        .replaceAll("{{nom_demandeur}}", nomDemandeur)
+        .replaceAll("{{service_demandeur}}", service_demandeur)
+        .replaceAll("{{quantite}}", quantite)
+        .replaceAll("{{quantite_livraison}}", quantite_livraison)
+        .replaceAll("{{stock_initial}}", stock_initial)
+        .replaceAll("{{stock_final}}", stock_final)
+        .replaceAll("{{signature}}", signature_validation ? signature_validation : '#')
+        .replaceAll("{{date_validation_demande}}", formatDate(date_validation))
+        .replaceAll("{{nom_livreur}}", nom_livreur)
+        .replaceAll("{{signature_livraison}}", signature_livraison ? signature_livraison : '#')
+        .replaceAll("{{date_livraison}}", formatDate(date_livraison))
+        .replaceAll("{{nom_recepteur}}", nom_recepteur)
+        .replaceAll("{{signature_reception}}", signature_reception ? signature_reception : '#')
+        .replaceAll("{{date_reception}}", formatDate(date_reception) )
 
       // 🖨️ Génération PDF
       const browser = await puppeteer.launch({ headless: "new", args : ["--no-sandbox", "--disable-setuid-sandbox"] });

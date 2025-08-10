@@ -43,7 +43,7 @@ export default function SignInForm() {
       // localStorage.setItem('name', response.user.agents.nom);
       // localStorage.setItem('user_id', response.user.agent_id);
       // const name = localStorage.getItem('name');
-      // const user_id = localStorage.getItem('user_id');
+      const user_id = localStorage.getItem('id');
       // const user_fonction = localStorage.getItem('fonction');
       // const user_role = localStorage.getItem('role');
       // console.log(name)
@@ -51,6 +51,7 @@ export default function SignInForm() {
       // console.log('USER ID : ', user_id)
       // console.log('ROLE :', user_role)
       console.log(connectMessage)
+      console.log("USER ID CONNECTED : ", user_id)
       navigate(from, { replace: true });
     } catch (error) {
       console.log('error')
