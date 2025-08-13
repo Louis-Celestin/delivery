@@ -433,7 +433,7 @@ export default function DemandeInputs() {
                           <></>
                         )}
                         <div>
-                          <Label>Description</Label>
+                          <Label>Commentaire</Label>
                           <TextArea
                             value={message}
                             onChange={(value) => setMessage(value)}
@@ -441,7 +441,7 @@ export default function DemandeInputs() {
                             placeholder="Ajoutez un commentaire"
                           />
                         </div>
-                        <div>
+                        {/* <div>
                           <Label>Importer des fichiers</Label>
                           <FileInput className="curstom-class" 
                             onChange={handleFileChange}
@@ -463,7 +463,7 @@ export default function DemandeInputs() {
                           ) : (
                             <></>
                           )}
-                        </div>
+                        </div> */}
                         <div className="pb-3 text-center">
                           <span className="text-sm font-semibold">Informations sur produits</span>
                         </div>

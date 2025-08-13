@@ -146,6 +146,12 @@ export default function CreateUserInputs() {
             });
             navigate('/tous-les-utilisateurs');
         } catch(error){
+            Swal.fire({
+                title: "Attention",
+                text: "Une erreur est survenue lors de la création",
+                icon: "warning"
+            });
+            navigate('/tous-les-utilisateurs');
             console.log("Erreur dans la création de l'utilisateur : ",error)
             return
         } finally{
@@ -163,8 +169,7 @@ export default function CreateUserInputs() {
                             <div className="text-error-600 bg-error-300 font-medium flex items-center justify-center rounded-3xl text-sm p-4">
                                 {errorForm}
                             </div>
-                            ) :
-                                (
+                            ) : (
                                     <>
                                         <ComponentCard className="md:w-1/2 w-full" title="Nouvel utilisateur">
                                             <div className="space-y-6">

@@ -14,6 +14,7 @@ import { ProgressSpinner } from 'primereact/progressspinner';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Dropdown } from 'primereact/dropdown';
+import { MultiSelect } from "primereact/multiselect";
 
 export default function AllDeliveriesList({ filterType }) {
 
@@ -30,23 +31,16 @@ export default function AllDeliveriesList({ filterType }) {
         { label: 'Livré', value: 'livre' },
         { label : 'Retourné', value: 'en_attente'},
     ];
-    const typeOptions = [
-        {label: 'TPE GIM', value:[1]},
-        {label: 'TPE Réparé', value:[2]},
-        {label: 'MAJ GIM', value:[3]},
-        {label: 'TPE MOBILE', value:[4]},
-        {label: 'TPE ECOBANK', value:[6]},
-        {label: 'Chargeur', value:[5, 7]},
-        {label: 'Chargeur (DECOM RI NOK)', value:[8]} 
-    ]
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
     
     const [optionsServices, setOptionsServices] = useState([])
-    const [selectedService, setselectedService] = useState('')
+    const [selectedService, setselectedService] = useState(null)
     
     const [optionsType, setOptionsType] = useState([])
     const [selectedType, setSelectedType] = useState(null)
+
+    const [typesLivraison, setTypesLivraison] = useState([])
 
 
     useEffect( ()=>{
@@ -58,7 +52,11 @@ export default function AllDeliveriesList({ filterType }) {
                 setDeliveryForms(delivery_data)
 
                 let type_deliveries_data = await productDeliveries.getAllTypeLivraisonCommerciale();
-                const options_type = type_deliveries_data.map((item) => ({
+                let type_deliveries = type_deliveries_data.filter((type) =>{
+                    return type.is_deleted == false
+                })
+                setTypesLivraison(type_deliveries)
+                const options_type = type_deliveries.map((item) => ({
                     value: item.id_type_livraison,
                     label: item.nom_type_livraison,
                 }))
@@ -100,32 +98,37 @@ export default function AllDeliveriesList({ filterType }) {
         let title = '';
         let linkSee = `/formulaire/${deliveryForms.id_livraison}`;
         let titleClass = 'font-bold text-sm'
-
-
-        if (deliveryForms.type_livraison_id === 1) {
-            title = 'Livraison TPE GIM';
-            titleClass = "font-bold text-sm text-fuchsia-400"
-        } else if (deliveryForms.type_livraison_id === 2) {
-            title = 'Livraison TPE REPARE'; // fallback or other types
-            titleClass = "font-bold text-sm text-red-400"
-        } else if (deliveryForms.type_livraison_id === 3) {
-            title = 'Livraison TPE MAJ GIM'; // fallback or other types
-            titleClass = "font-bold text-sm text-purple-400"
-        } else if (deliveryForms.type_livraison_id === 4) {
-            title = 'Livraison TPE MOBILE'; // fallback or other types
-            titleClass = "font-bold text-sm text-green-400"
-        } else if (deliveryForms.type_livraison_id === 5 || deliveryForms.type_livraison_id === 7) {
-            title = 'Livraison CHARGEUR'; // fallback or other types
-            titleClass = "font-bold text-sm text-yellow-400"
-            linkSee = `/formulaire-chargeur/${deliveryForms.id_livraison}`
-        } else if (deliveryForms.type_livraison_id === 6) {
-            title = 'Livraison TPE ECOBANK'; // fallback or other types
-            titleClass = "font-bold text-sm text-cyan-400"
-        } else if (deliveryForms.type_livraison_id === 8) {
-            title = 'Livraison CHARGEUR (DECOM RI NOK)'; // fallback or other types
-            titleClass = "font-bold text-sm text-yellow-600";
-            linkSee = `/formulaire-chargeur/${deliveryForms.id_livraison}`;
+        let typeLivraison = typesLivraison.find((item) =>{
+            return item.id_type_livraison == deliveryForms.type_livraison_id
+        })
+        if(typeLivraison){
+            title = typeLivraison.nom_type_livraison.toUpperCase()
         }
+
+        // if (deliveryForms.type_livraison_id === 1) {
+        //     title = 'Livraison TPE GIM';
+        //     titleClass = "font-bold text-sm text-fuchsia-400"
+        // } else if (deliveryForms.type_livraison_id === 2) {
+        //     title = 'Livraison TPE REPARE'; // fallback or other types
+        //     titleClass = "font-bold text-sm text-red-400"
+        // } else if (deliveryForms.type_livraison_id === 3) {
+        //     title = 'Livraison TPE MAJ GIM'; // fallback or other types
+        //     titleClass = "font-bold text-sm text-purple-400"
+        // } else if (deliveryForms.type_livraison_id === 4) {
+        //     title = 'Livraison TPE MOBILE'; // fallback or other types
+        //     titleClass = "font-bold text-sm text-green-400"
+        // } else if (deliveryForms.type_livraison_id === 5 || deliveryForms.type_livraison_id === 7) {
+        //     title = 'Livraison CHARGEUR'; // fallback or other types
+        //     titleClass = "font-bold text-sm text-yellow-400"
+        //     linkSee = `/formulaire-chargeur/${deliveryForms.id_livraison}`
+        // } else if (deliveryForms.type_livraison_id === 6) {
+        //     title = 'Livraison TPE ECOBANK'; // fallback or other types
+        //     titleClass = "font-bold text-sm text-cyan-400"
+        // } else if (deliveryForms.type_livraison_id === 8) {
+        //     title = 'Livraison CHARGEUR (DECOM RI NOK)'; // fallback or other types
+        //     titleClass = "font-bold text-sm text-yellow-600";
+        //     linkSee = `/formulaire-chargeur/${deliveryForms.id_livraison}`;
+        // }
         return (
             <span className="flex flex-col">
                 <Link key={deliveryForms.id_livraison}
@@ -168,13 +171,6 @@ export default function AllDeliveriesList({ filterType }) {
         let linkSee = `/formulaire/${deliveryForms.id_livraison}`;
         let linkModify = `/form-modify-nouvelle-livraison/${deliveryForms.id_livraison}`
 
-        if (deliveryForms.type_livraison_id === 5 || deliveryForms.type_livraison_id === 7) {
-            linkSee = `/formulaire-chargeur/${deliveryForms.id_livraison}`
-            // linkModify = `/form-modify-livraison-chargeur/${deliveryForms.id_livraison}`
-        } else if (deliveryForms.type_livraison_id === 8){
-            linkSee = `/formulaire-chargeur/${deliveryForms.id_livraison}`;
-        }
-
         return(
             <span className="flex items-center">
                 <Link to={linkSee}>
@@ -195,15 +191,7 @@ export default function AllDeliveriesList({ filterType }) {
                     </>
                 ) : (
                     <>
-                        <>    
-                            <Link to={linkModify}>
-                                    <button className="mx-1 text-gray-500 text-theme-sm dark:text-gray-400">
-                                        <i className="pi pi-pencil"></i>
-                                    </button>
-                            </Link>
-                        </>
-                    </>
-                    
+                    </>                
                 )}
             </span>
         )
@@ -214,14 +202,15 @@ export default function AllDeliveriesList({ filterType }) {
             let index = item.validations.length-1
             itemDate = new Date(item.validations[index].date_validation)
         }
-        const matchesStatus = selectedStatus ? item.statut_livraison === selectedStatus : true;
+        const matchesStatus = selectedStatus ? selectedStatus.includes(item.statut_livraison) : true;
         const matchesType = selectedType ? selectedType.includes(item.type_livraison_id) : true;
+        const matchesService = selectedService ? selectedService.includes(item.service_id) : true;
         const matchesStartDate = startDate ? itemDate >= startDate : true;
         const matchesEndDate = endDate ? itemDate <= endDate : true;
         const matchesGlobalFilter = globalFilter
           ? JSON.stringify(item).toLowerCase().includes(globalFilter.toLowerCase())
           : true;
-        return matchesStatus && matchesType && matchesStartDate && matchesEndDate && matchesGlobalFilter;
+        return matchesStatus && matchesType && matchesService && matchesStartDate && matchesEndDate && matchesGlobalFilter;
     });
 
 
@@ -237,30 +226,60 @@ export default function AllDeliveriesList({ filterType }) {
                             placeholder="Rechercher un formulaire..."
                         />
                     </span>
-                    <Dropdown
+                    {/* <Dropdown
                         value={selectedStatus}
                         options={statusOptions}
                         onChange={(e) => setSelectedStatus(e.value)}
                         placeholder="Filtrer par statut"
                         showClear
                         className="w-full sm:w-64"
+                    /> */}
+                    <MultiSelect
+                        value={selectedStatus}
+                        options={statusOptions}
+                        display="chip"
+                        optionLabel="label"
+                        maxSelectedLabels={2}
+                        onChange={(e) => setSelectedStatus(e.value)}
+                        placeholder="Filtrer par statut"
+                        className="w-full sm:w-64"
                     />
-                    <Dropdown
+                    <MultiSelect
+                        value={selectedType}
+                        options={optionsType}
+                        display="chip"
+                        optionLabel="label"
+                        maxSelectedLabels={2}
+                        onChange={(e) => setSelectedType(e.value)}
+                        placeholder="Filtrer par type de livraison"
+                        className="w-full sm:w-64"
+                    />
+                    {/* <Dropdown
                         value={selectedType}
                         options={optionsType}
                         onChange={(e) => setSelectedType(e.value)}
                         placeholder="Filtrer par type de livraison"
                         showClear
                         className="w-full sm:w-64"
+                    /> */}
+                    <MultiSelect
+                        value={selectedService}
+                        options={optionsServices}
+                        display="chip"
+                        optionLabel="label"
+                        maxSelectedLabels={2}
+                        onChange={(e) => setselectedService(e.value)}
+                        placeholder="Filtrer par service"
+                        className="w-full sm:w-64"
                     />
-                    <Dropdown
+                    {/* <Dropdown
                         value={selectedService}
                         options={optionsServices}
                         onChange={(e) => setselectedService(e.value)}
                         placeholder="Filtrer par service"
                         showClear
                         className="w-full sm:w-64"
-                    />
+                    /> */}
                     
                 </div>
                 <div className="flex justify-normal flex-wrap gap-3 mb-3 p-6">

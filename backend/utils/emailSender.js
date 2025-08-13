@@ -1,18 +1,21 @@
 const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: process.env.SMTP_PORT,
-  secure: false,
+  host: "smtp.office365.com",
+  port: 587,
+  secure: false,            // STARTTLS
+  requireTLS: true,         // force l'upgrade TLS
   auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
+    user: process.env.NODEMAILER_USER,     // ton email complet
+    pass: process.env.NODEMAILER_PASSWORD, // mot de passe ou app password
   },
+  // PAS de tls.servername ici
+  connectionTimeout: 30_000,
 });
 
 const sendMail = async ({ to, subject, html, attachments = [] }) => {
   await transporter.sendMail({
-    from: process.env.EMAIL_USER,
+    from: process.env.NODEMAILER_USER,
     to,
     subject,
     html,

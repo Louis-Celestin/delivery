@@ -164,6 +164,18 @@ const getAllStock = async (req, res) =>{
     }
 }
 
+const getAllModels = async (req, res) =>{
+    try {
+        const models = await prisma.model_piece.findMany({
+            orderBy: { id_model: 'asc' },
+        });
+
+        res.status(200).json(models);
+    } catch (error) {
+        res.status(500).json({ message: "Erreur lors de la récupération des models", error });
+    }
+}
+
 
 // Augmenter la quantité d'un stock
 const plusQte = async (req, res) =>{
@@ -179,4 +191,5 @@ const minusQte = async (req, res) =>{
 module.exports = {
     setStock,
     getAllStock,
+    getAllModels,
 }

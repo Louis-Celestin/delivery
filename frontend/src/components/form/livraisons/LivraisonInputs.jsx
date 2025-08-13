@@ -30,7 +30,6 @@ export default function LivraisonInputs() {
   const productDeliveries = new ProductDeliveries();
   const usersData = new Users()
   const userId = localStorage.getItem('id');
-  const role = localStorage.getItem("role_id")
   const navigate = useNavigate();
 
 
@@ -54,7 +53,6 @@ export default function LivraisonInputs() {
   const [errorDeliver, setErrorDeliver] = useState(null);
   const [messageTPE, setMessageTPE] = useState('');
   const [isConfirmModalOpen , setIsConfirmModalOpen] = useState(false);
-  const [selectedChargeur, setSelectedChargeur] = useState(false);
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
   const [signature, setSignature] = useState();
   const [signUrl, setSignUrl] = useState();
@@ -67,6 +65,10 @@ export default function LivraisonInputs() {
   const [listServices, setListService] = useState([])
   const [serviceRecepteur, setServiceRecepteur] = useState('')
 
+  const [optionsRoles, setOptionsRoles] = useState([])
+  const [selectedRole, setSelectedRole] = useState([])
+  const [listRoles, setListRoles] = useState([])
+
   const [serviceId, setServiceId] = useState(null)
 
   useEffect( ()=>{
@@ -77,7 +79,10 @@ export default function LivraisonInputs() {
         data = await merchants.findMerchant();
         setTerminals(data)
 
-        let type_delivery = await productDeliveries.getAllTypeLivraisonCommerciale()
+        let type_delivery_data = await productDeliveries.getAllTypeLivraisonCommerciale()
+        let type_delivery = type_delivery_data.filter((type) =>{
+          return type.is_deleted == false
+        })
         setListTypeLivraison(type_delivery)
         const optionsType = type_delivery.map((item) =>({
           value: item.id_type_livraison,
@@ -93,6 +98,14 @@ export default function LivraisonInputs() {
         }))
         setOptionServices(optionsServices)
 
+        let roles_data = await usersData.getAllRoles()
+        setListRoles(roles_data)
+        const optionsRoles = roles_data.map((item) =>({
+          value: item.id_role,
+          label: item.nom_role.split('_').join(' ').toLowerCase(),
+        }))
+        setOptionsRoles(optionsRoles)
+
 
       }catch(error){
         console.log('Error fetching data ',error)
@@ -107,6 +120,11 @@ export default function LivraisonInputs() {
   const filteredPointMarchand = terminalSN ? 
   terminals.filter((terminal) => 
   terminal.SERIAL_NUMBER.includes(terminalSN)) : [];
+
+  const ChangeRole = (value) => {
+    console.log("Selected value : ",value)
+    setSelectedRole(value);
+  }
   
   const ChangeTypeLivraison = (value) => {
     console.log("Selected value:", value);
@@ -145,17 +163,6 @@ export default function LivraisonInputs() {
   }
 
   const handleConfirm = () => {
-    if(role != 1){
-      Swal.fire({
-          title: "Error",
-          text: "Vous n'êtes pas authorisé à faire cette action !",
-          icon: "error"
-      });
-      localStorage.removeItem('token');
-      localStorage.removeItem('username');
-      navigate('/signin');
-      return
-    }
     
     let banque = ''
     banque = filteredPointMarchand.map((terminal) => terminal.BANQUE).join("-");
@@ -166,7 +173,7 @@ export default function LivraisonInputs() {
       return;
     }
     if(!serviceId){
-      setErrorAjout("Vous devez choisir le service réceptionniste !");
+      setErrorAjout("Vous devez choisir le service réceptionneur !");
       return;
     }
     if (!filteredPointMarchand || filteredPointMarchand.length === 0 || terminalSN.length < 10) {
@@ -310,6 +317,8 @@ export default function LivraisonInputs() {
     fd.append('user_id',userId);
     fd.append('isAncienne',isAncienne)
     fd.append('produitsLivre',JSON.stringify(produitsLivre))
+    fd.append('service_recepteur', serviceId)
+    fd.append('role_recepteur', selectedRole)
     if (sign) {
       const blob = await fetch(sign).then(res => res.blob());
       fd.append('signature_expediteur', blob, 'signature.png');
@@ -337,8 +346,15 @@ export default function LivraisonInputs() {
     });
     navigate('/toutes-les-livraisons');
     }catch (error) {
+      setLoadingDelivery(false)
       console.log('error')
       setError('Erreur lors de la génération du formulaire');
+      Swal.fire({
+        title: "Attention",
+        text: "Une erreur s'est produite lors de la livraison.",
+        icon: "warning"
+      });
+      navigate('/toutes-les-livraisons');
     }finally{
       setProduitsLivres([])
       setProduitsLivresTable([])
@@ -356,17 +372,6 @@ export default function LivraisonInputs() {
   };
 
   const handleValidate = () =>{
-    if(role != 1){
-      Swal.fire({
-          title: "Error",
-          text: "Vous n'êtes pas authorisé à faire cette action !",
-          icon: "error"
-      });
-      localStorage.removeItem('token');
-      localStorage.removeItem('username');
-      navigate('/signin');
-      return
-    }
     if(produitsLivre.length == 0){
        Swal.fire({
       title: "Error",
@@ -428,7 +433,17 @@ export default function LivraisonInputs() {
                           />
                         </div>
                         <div>
-                          <Label>Description</Label>
+                          <Label>Associer un rôle</Label>
+                          <Select
+                            options={optionsRoles}
+                            placeholder="Choisir un rôle"
+                            onChange={ChangeRole}
+                            className="dark:bg-dark-900"
+                            
+                          />
+                        </div>
+                        <div>
+                          <Label>Commentaire</Label>
                           <TextArea
                             value={message}
                             onChange={(value) => setMessage(value)}
@@ -463,68 +478,62 @@ export default function LivraisonInputs() {
                         <div>
                           <Label>Point Marchand</Label>
                           <Input type="text" id="input"
+                            className="cursor-default"
+                            value={filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(" - ")}
+                            readOnly
+                          />
+                        </div>
+                        <div>
+                          <Label>Banque</Label>
+                          <Input type="text" id="input" 
                                   className="cursor-default"
-                                  value={filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(" - ")}
+                                  value={filteredPointMarchand.map((terminal) => terminal.BANQUE).join(" - ")}
                                   readOnly
                                   />
                         </div>
-                        {selectedChargeur ? 
-                        (<></>) : 
-                        (
-                          <>
-                            <div>
-                              <Label>Banque</Label>
-                              <Input type="text" id="input" 
-                                      className="cursor-default"
-                                      value={filteredPointMarchand.map((terminal) => terminal.BANQUE).join(" - ")}
-                                      readOnly
-                                      />
-                            </div>
-                            <div>
-                              <Input type="text" id="input" 
-                                      value={filteredPointMarchand.map((terminal) => terminal.TPE).join(" - ")}
-                                      className="hidden"/>
-                            </div>
-                            <div className="flex flex-col">
-                              <div className="flex items-center gap-3 my-2">
-                                <Checkbox
-                                checked={
-                                    filteredPointMarchand.length > 0 &&
-                                    filteredPointMarchand.some((terminal) =>
-                                      terminal.NUM_ORANGE?.startsWith("07")
-                                    )
-                                  }
-                                  onChange={(e)=>{}}
-                                  readOnly
-                                  label="Orange Money" />
-                              </div>
-                              <div className="flex items-center gap-3 my-2">
-                                <Checkbox 
-                                checked={
-                                    filteredPointMarchand.length > 0 &&
-                                    filteredPointMarchand.some((terminal) =>
-                                      terminal.NUM_MTN?.startsWith("05")
-                                    )
-                                  }
-                                  onChange={(e)=>{}}
-                                  readOnly
-                                label="MTN Money" />
-                              </div>
-                              <div className="flex items-center gap-3 my-2">
-                                <Checkbox 
-                                checked={
-                                    filteredPointMarchand.length > 0 &&
-                                    filteredPointMarchand.some((terminal) =>
-                                      terminal.NUM_MOOV?.startsWith("01")
-                                    )
-                                  }
-                                  onChange={(e)=>{}}
-                                  readOnly 
-                                label="MOOV Money" />
-                              </div>
-                            </div>
-                          </>
-                        )}
+                        <div>
+                          <Input type="text" id="input" 
+                                  value={filteredPointMarchand.map((terminal) => terminal.TPE).join(" - ")}
+                                  className="hidden"/>
+                        </div>
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-3 my-2">
+                            <Checkbox
+                            checked={
+                                filteredPointMarchand.length > 0 &&
+                                filteredPointMarchand.some((terminal) =>
+                                  terminal.NUM_ORANGE?.startsWith("07")
+                                )
+                              }
+                              onChange={(e)=>{}}
+                              readOnly
+                              label="Orange Money" />
+                          </div>
+                          <div className="flex items-center gap-3 my-2">
+                            <Checkbox 
+                            checked={
+                                filteredPointMarchand.length > 0 &&
+                                filteredPointMarchand.some((terminal) =>
+                                  terminal.NUM_MTN?.startsWith("05")
+                                )
+                              }
+                              onChange={(e)=>{}}
+                              readOnly
+                            label="MTN Money" />
+                          </div>
+                          <div className="flex items-center gap-3 my-2">
+                            <Checkbox 
+                            checked={
+                                filteredPointMarchand.length > 0 &&
+                                filteredPointMarchand.some((terminal) =>
+                                  terminal.NUM_MOOV?.startsWith("01")
+                                )
+                              }
+                              onChange={(e)=>{}}
+                              readOnly 
+                            label="MOOV Money" />
+                          </div>
+                        </div>
                         <div>
                           <button onClick={handleConfirm} className="w-full bg-green-400 rounded-2xl h-10 flex items-center justify-center">
                             <span>Ajouter</span>
@@ -671,6 +680,9 @@ export default function LivraisonInputs() {
             <span>Vous allez ajouter un terminal pour livraison :  <span className="font-bold text-red-700">{typeLivraison}</span></span>
           </div>
           <div>
+            <div>
+              <span>Service : <span className="font-bold text-red-700">{serviceRecepteur}</span></span>
+            </div>
             <div>
               <span>S/N terminal : <span className="font-bold text-red-700">{terminalSN}</span></span>
             </div>

@@ -47,7 +47,6 @@ export class Users{
     async getAllServices(){
         try{
             const response = await axios.get(`${urlBase}/api/auth/getAllServices`)
-            console.log("SERVICES : ",response)
             return response.data;
         } catch(error){
             throw error.response.data

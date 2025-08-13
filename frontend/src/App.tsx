@@ -107,6 +107,8 @@ import ReceptionSupportDetails from "./pages/SupportPages/ReceptionSupportDetail
 
 // @ts-ignore
 import ModifyStockForm from "./pages/Forms/StockForms/ModifyStockForm"
+// @ts-ignore
+import AjouterPieceForm from "./pages/Forms/StockForms/AjouterPieceForm"
 
 
 // @ts-ignore
@@ -120,6 +122,13 @@ import AllUsersPage from "./pages/Accounts/AllUsersPage"
 import ModifyProfilForm from "./pages/Forms/UserForms/ModifyProfilForm"
 // @ts-ignore
 import CreateUserForm from "./pages/Forms/UserForms/CreateUserForm"
+
+// @ts-ignore
+import TypesLivraisonsPage from "./pages/Admin/AdminLivraisons/TypesLivraisonsPage"
+// @ts-ignore
+import AjouterTypeLivraisonForm from "./pages/Forms/AdminForms/AjouterTypeLivraisonForm"
+// @ts-ignore
+import ModifyTypeLivraisonForm from "./pages/Forms/AdminForms/ModifyTypeLivraisonForm"
 
 
 export default function App() {
@@ -144,7 +153,7 @@ export default function App() {
               <Route path="/form-elements" element={<FormElements />} />
               <Route path="/form-livraison" element={<LivraisonForm />} />
               <Route path="/form-ancienne-livraison" element={<AncienneLivraisonForm />} />
-              <Route path="/form-modify-nouvelle-livraison/:id" element={<ModifyLivraisonForm />} />
+              <Route path="/modifier-livraison/:id" element={<ModifyLivraisonForm />} />
               <Route path="/form-livraison-chargeur" element={<LivraisonChargeurForm />} />
               <Route path="/form-modify-livraison-chargeur/:id" element={<ModifyLivraisonChargeurForm />} />
 
@@ -173,6 +182,7 @@ export default function App() {
               {/* Stock DT */}
               <Route path="/gestion-stock" element={<GestionStockChargeur />} />
               <Route path="/modifier-stock" element={<ModifyStockForm />} />
+              <Route path="/ajouter-piece" element={<AjouterPieceForm />} />
 
               {/* Maintenance */}
               <Route path="/toutes-les-livraisons-maintenance" element={<AllMaintenanceDeliveries />} />
@@ -192,10 +202,17 @@ export default function App() {
               <Route path="/demande-vue-details/:id" element={<DemandeVueDetails />} />
 
 
-              {/* Gestion des profils d'utilisateurs */}
+              {/****** Gestion *******/}
+
+              {/* Utilisateurs */}
               <Route path="/tous-les-utilisateurs" element={<AllUsersPage />} />
               <Route path="/modifier-profil/:id" element={<ModifyProfilForm />} />
               <Route path="/créer-utilisateur" element={<CreateUserForm />} />
+              {/* Types Livraisons */}
+              <Route path="/types-livraison" element={<TypesLivraisonsPage />} />
+              <Route path="/ajouter-type-livraison" element={<AjouterTypeLivraisonForm />} />
+              <Route path="/modifier-type-livraison/:id" element={<ModifyTypeLivraisonForm />} />
+
 
 
               {/* Reset Password */}

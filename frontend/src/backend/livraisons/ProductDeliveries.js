@@ -1,5 +1,5 @@
-  import axios from "axios";
-  import urlBase from '../const';
+import axios from "axios";
+import urlBase from '../const';
 
 
 export class ProductDeliveries{
@@ -55,17 +55,9 @@ export class ProductDeliveries{
     }
   };
 
-  async updateLivraison(id, produitsLivre, commentaire, statut_livraison, type_livraison_id, user_id){
+  async updateLivraison(id, payload){
     try{
-      const response = await axios.put(`${urlBase}/api/delivery/updateLivraison/${id}`,
-      {produitsLivre,
-      commentaire,
-      statut_livraison,
-      type_livraison_id,
-      user_id,
-      });
-
-      // console.log(response)
+      const response = await axios.put(`${urlBase}/api/delivery/updateLivraison/${id}`,payload);
       return response.data;
     } catch(error){
       throw error.response.data
@@ -121,10 +113,45 @@ export class ProductDeliveries{
           'Content-Type': 'multipart/form-data'
         }
       })
-      console.log(response)
       return response.data;
     } catch (error) {
       throw error.response.data;
+    }
+  }
+
+  async addDeliveryType(payload){
+    try{
+      const response = await axios.post(`${urlBase}/api/delivery/addDeliveryType`, payload)
+      return response.data
+    } catch(error){
+      throw error.response.data
+    }
+  }
+
+  async getOneTypeLivraison(id){
+    try{
+      const response = await axios.get(`${urlBase}/api/delivery/getOneTypeLivraison/${id}`)
+      return response.data
+    } catch(error){
+      throw error.response.data
+    }
+  }
+
+  async updateTypeLivraison(id, payload){
+    try{
+      const response = await axios.put(`${urlBase}/api/delivery/updateTypeLivraison/${id}`, payload)
+      return response.data
+    } catch(error){
+      throw error.response.data
+    }
+  }
+
+  async deleteTypeLivraison(id, payload){
+    try{
+      const response = await axios.put(`${urlBase}/api/delivery/deleteTypeLivraison/${id}`, payload)
+      return response.data
+    } catch(error){
+      throw error.response.data
     }
   }
 }

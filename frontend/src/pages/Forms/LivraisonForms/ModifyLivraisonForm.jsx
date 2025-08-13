@@ -1,5 +1,5 @@
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
-import ModifyLivraisonInputs from "../../../components/form/form-elements/ModifyLivraisonInputs"
+import ModifyLivraisonInputs from "../../../components/form/livraisons/ModifyLivraisonInputs"
 export default function ModifyLivraisonForm() {
     return (
         <div>

@@ -1,5 +1,5 @@
 import { useState, useEffect} from 'react';
-import { useParams, Link } from 'react-router';
+import { useParams, Link, useNavigate } from 'react-router';
 
 import PageBreadcrumb from '../../components/common/PageBreadCrumb';
 import {
@@ -13,8 +13,15 @@ import {
 import 'primeicons/primeicons.css';
 
 import { ProductDeliveries } from '../../backend/livraisons/ProductDeliveries';
+import { Users } from '../../backend/users/Users';
+import { Reception } from '../../backend/receptions/Reception';
 import { generatePdf } from '../../backend/receptions/GeneratePDF';
 import { ProgressSpinner } from 'primereact/progressspinner';
+import { Modal } from '../../components/ui/modal';
+import Swal from 'sweetalert2'
+import SignatureCanvas from 'react-signature-canvas'
+import Label from "../../components/form/Label";
+import TextArea from "../../components/form/input/TextArea";
 
 
 
@@ -22,6 +29,11 @@ export default function DeliveryDetails() {
     
     const productDeliveries = new ProductDeliveries()
     const { id } = useParams();
+    const usersData = new Users()
+    const reception = new Reception()
+    const userId = localStorage.getItem('id')
+    const navigate = useNavigate();
+
     const [loading, setLoading] = useState(false);
     const [loadingPrint, setLoadingPrint] = useState(false);
     const [deliveryDetails, setDeliveryDetails] = useState('')
@@ -35,6 +47,23 @@ export default function DeliveryDetails() {
     const [actionButtons, setActionButtons] = useState(false);
     const [attente, setAttente] = useState(true)
 
+    const [isRecepteur, setIsRecepteur] = useState(false)
+    const [isLivreur, setIsLivreur] = useState(false)
+    const [isModificateur, setIsModificateur] = useState(false)
+
+    const [loadingReception, setLoadingReception] = useState(false);
+    const [isModalReceptionOpen, setIsModalReceptionOpen] = useState(false);
+    const [isModalReturnLivraisonOpen, setIsModalReturnLivraisonOpen] = useState(false)
+    const [messageReception, setMessageReception] = useState('')
+    const [messageReturnLivraison, setMessageReturnLivraison] = useState('')
+    const [errorSignReception, setErrorSignReception] = useState('')
+    const [errorReturnLivraison, setErrorReturnLivraison] = useState('')
+    const [signatureReception, setSignatureReception] = useState()
+
+    const [livraisonID, setLivraisonID] = useState('')
+
+    const [isCompleted, setIsCompleted] = useState(false)
+
     const formatDate = (date) => {
         const d = new Date(date);
         return d.toLocaleDateString('fr-FR'); // or use any locale you want
@@ -46,48 +75,69 @@ export default function DeliveryDetails() {
             const fetchDeliveryDetails = async () =>{
                 try{
                     setLoading(true);
-                    let data;
-                    data = await productDeliveries.getOneLivraison(id);
+                    
+                    let userRoles_data = await usersData.getUserRoles(parseInt(userId))
+                    const roles_id = userRoles_data.roles.map((role) =>{
+                        return role.id_role
+                    })
+                    
+                    if (roles_id.includes(6)){
+                        setIsModificateur(true)
+                    }
+                    
+                    let livraison_data;
+                    livraison_data = await productDeliveries.getOneLivraison(id);
                     let index;
-                    console.log(data)
+                    console.log(livraison_data)
                     setDeliveryDetails({
-                        ...data,
-                        produitsLivre: JSON.parse(data.produitsLivre)
-                      });
-                      if(data.type_livraison_id == 1){
-                        setTypeLivraison("TPE GIM")
-                      } else if(data.type_livraison_id == 2){
-                        setTypeLivraison("TPE REPARE")
-                      } else if(data.type_livraison_id == 3){
-                        setTypeLivraison("TPE MAJ")
-                      } else if(data.type_livraison_id == 4){
-                        setTypeLivraison("TPE MOBILE")
-                      } else if(data.type_livraison_id == 5){
-                        setTypeLivraison("CHARGEUR")
-                      } else if(data.type_livraison_id == 6){
-                        setTypeLivraison("TPE ECOBANK")
-                      }
-                      
-                      setDateLivraison(formatDate(data.date_livraison))
-                      setCommentaire(data.commentaire)
-                      if(data.statut_livraison == 'livre'){
+                        ...livraison_data,
+                        produitsLivre: JSON.parse(livraison_data.produitsLivre)
+                    });
+                    setLivraisonID(livraison_data.id_livraison)
+                    setDateLivraison(formatDate(livraison_data.date_livraison))
+                    setCommentaire(livraison_data.commentaire)
+                    if(livraison_data.statut_livraison == 'livre'){
+                        setIsCompleted(true)
                         setActionButtons(true)
                         setStatutLivraison('Livré')
                         setAttente(false)
                         setStatutClass('text-sm border rounded-xl p-1 bg-green-100 text-green-500 font-bold')
                         setRecu(true)
-                        index = data.validations.length-1
-                        setCommentaireReception(data.validations[index].commentaire)
-                      }
-                      else if(data.statut_livraison == 'en_attente'){
+                        index = livraison_data.validations.length-1
+                        setCommentaireReception(livraison_data.validations[index].commentaire)
+                    }
+                    else if(livraison_data.statut_livraison == 'en_cours'){
+                        if(roles_id.includes(livraison_data.role_id) || roles_id.includes(2)){
+                            setIsRecepteur(true)
+                        }
+                        if(roles_id.includes(1)){
+                            setIsLivreur(true)
+                        }
+                    }
+                    else if(livraison_data.statut_livraison == 'en_attente'){
                         setActionButtons(false)
                         setRecu(true)
                         setAttente(true)
                         setStatutLivraison('Retourné')
                         setStatutClass('text-sm border rounded-xl p-1 bg-red-100 text-red-500 font-bold')
-                        index = data.validations.length-1
-                        setCommentaireReception(data.validations[index].commentaire)
-                      }
+                        index = livraison_data.validations.length-1
+                        setCommentaireReception(livraison_data.validations[index].commentaire)
+                        if(roles_id.includes(1)){
+                            setIsLivreur(true)
+                        }
+                    }
+
+                    let type_data = await productDeliveries.getAllTypeLivraisonCommerciale()
+                    const typeLivraison = type_data.find((item) => {
+                        return item.id_type_livraison == livraison_data.type_livraison_id
+                    })
+                    if(typeLivraison){
+                        setTypeLivraison(typeLivraison.nom_type_livraison.toUpperCase())
+                    } else{
+                        setTypeLivraison('Inconnue')
+                    }
+
+
                 } catch(error){
                     console.log("Error fetchind data ", error)
                 } finally{
@@ -109,7 +159,103 @@ export default function DeliveryDetails() {
             }finally{
                 setLoadingPrint(false);
             }
+    }
+
+    const handleClearReception = () =>{
+        signatureReception.clear()
+    }
+
+    const handleReception = async (e) =>{
+        e.preventDefault();
+        if(signatureReception.isEmpty()){
+            setErrorSignReception('Vous devez signer pour valider !')
+            return;
         }
+        try{
+            setLoadingReception(true);
+            setIsModalReceptionOpen(false)
+            const sign = signatureReception.toDataURL('image/png')
+            const fd = new FormData();
+            fd.append('livraison_id', livraisonID);
+            fd.append('user_id', userId);
+            fd.append('commentaire', messageReception);
+            if (sign) {
+            const blob = await fetch(sign).then(res => res.blob());
+            fd.append('signature', blob, 'signature.png');
+            }
+            for (let [key, value] of fd.entries()) {
+                console.log(`${key}:`, value);
+            }
+            const response = await reception.receive(fd);
+            
+            // let piece_id = 1
+            // let stock_initial = piece.quantite
+            // let nouveau_stock = stock_initial - quantiteProduit
+            // let utilisateur_id = null
+            
+            // let modifStock = null
+            // if(livraisonID == 7 || livraisonID == 8 || livraisonID == 5){
+            //     modifStock = await stock.setStock(piece_id, stock_initial, nouveau_stock, utilisateur_id)
+            //     console.log(modifStock)
+            //     console.log("Diminution stock chargeur")
+            // }
+            Swal.fire({
+                title: "Succès",
+                text: "Formulaire réceptionné avec succès",
+                icon: "success"
+            });
+            console.log(response)
+            navigate('/toutes-les-livraisons');
+        } catch(error){
+            setLoadingReception(false)
+            console.log(error)
+            Swal.fire({
+                title: "Attention",
+                text: "Une erreur s'est produite lors de la réception",
+                icon: "warning"
+            });
+            navigate('/toutes-les-livraisons');
+        } finally{
+            setLoadingReception(false)
+        }
+    }
+
+    const handleReturnLivraison = async (e) =>{
+        e.preventDefault();
+        if(!messageReturnLivraison){
+            setErrorReturnLivraison("Ajoutez un commentaire avant de retourner une livraison!")
+            return;
+        }
+        const payload = {
+            livraison_id: livraisonID,
+            commentaire_return: messageReturnLivraison,
+            user_id: userId,
+        }
+        console.log(livraisonID)
+        try{
+            setLoadingReception(true);
+            setIsModalReturnLivraisonOpen(false);
+            console.log("Sending payload: ", payload);
+            const response = await reception.returnDelivery(payload);
+            Swal.fire({
+                title: "Succès",
+                text: "Livraison retournée avec succès",
+                icon: "success"
+            });
+            console.log(response)
+            navigate('/toutes-les-livraisons');
+        } catch(error){
+            console.log(error)
+            Swal.fire({
+                title: "Attention",
+                text: "Une erreur s'est produite lors du retour de la livraison",
+                icon: "warning"
+            });
+            navigate('/toutes-les-livraisons');
+        } finally{
+            setLoadingReception(false)
+        }
+    }
 
     return (
         <>
@@ -118,40 +264,98 @@ export default function DeliveryDetails() {
             (<>
                 <PageBreadcrumb pageTitle={`Livraison | ${typeLivraison}`}/>
                 <div>
-                    <div className='my-3 flex justify-between items-center'>
-                        <span>{`Livraison du ${dateLivraison}`}</span>
-                        {actionButtons? 
-                        (
+                    <div className='grid grid-cols-2 justify-between items-center mb-6'>
+                        <div>
                             <div>
-                                <>
-                                    {loadingPrint ? (
-                                        <span className='m-3'>
-                                            <ProgressSpinner style={{width: '20px', height: '20px'}} strokeWidth="8" animationDuration=".5s" />
-                                        </span>
-                                    ) : (
-                                        <button onClick={handleGeneratePdf} className='m-3 text-2xl'><span><i className="pi pi-print"></i></span></button>
-                                    )}
-                                </>
+                                <span>{`Livraison du ${dateLivraison}`}</span>
                             </div>
-
-                        ) : (
-                            <>  
-                                {attente ? 
-                                (
-                                   <Link to={`/form-modify-nouvelle-livraison/${deliveryDetails.id_livraison}`}>
-                                        <button className='m-3 text-2xl'><span><i className="pi pi-pencil"></i></span></button>
-                                   </Link>
-                                ) : (
-                                    
-                                    <></>
-                                )}
-                            </>
-                        )}
-                    </div>
-                    <div className='mb-3'>
-                        <span className={statutClass}>
-                            {statutLivraison}
-                        </span>
+                            <div className='mt-3'>
+                                <span className={statutClass}>
+                                    {statutLivraison}
+                                </span>
+                            </div>
+                        </div>
+                        <div className='text-right'>
+                            <div className='grid grid-cols-2'>
+                                <div className='col-start-2 space-y-0.5'>
+                                    {isCompleted ? (
+                                        <>
+                                            {loadingPrint ? (
+                                                <>
+                                                    <div className='text-center'>
+                                                        <span className=''>
+                                                            <ProgressSpinner style={{width: '20px', height: '20px'}} strokeWidth="8" animationDuration=".5s" />
+                                                        </span>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <button className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'
+                                                        onClick={handleGeneratePdf}>
+                                                        <span className='mr-4'><i className="pi pi-print"></i></span>
+                                                        <span className='text-sm text-gray-700 font-medium'>Voir formulaire PDF</span> 
+                                                    </button>
+                                                </>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <></>
+                                    )}
+                                    {isModificateur ? (
+                                        <>
+                                            <button className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'>
+                                               <span className='mr-4'><i className="pi pi-cog"></i></span>
+                                               <span className='text-sm text-gray-700 font-medium'>Modification Admin</span> 
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <></>
+                                    )}
+                                    {isLivreur ? (
+                                        <>
+                                            <Link to={`/modifier-livraison/${deliveryDetails.id_livraison}`} className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'>
+                                               <span className='mr-4'><i className="pi pi-pencil"></i></span>
+                                               <span className='text-sm text-gray-700 font-medium'>Modifier Livraison</span> 
+                                            </Link>
+                                        </>
+                                    ) : (
+                                        <></>
+                                    )}
+                                    {isRecepteur ? (
+                                        <>
+                                            {loadingReception ? (
+                                                <>
+                                                    <div className='text-center'>
+                                                        <span className=''>
+                                                            <ProgressSpinner style={{width: '20px', height: '20px'}} strokeWidth="8" animationDuration=".5s" />
+                                                        </span>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <button className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'
+                                                        onClick={() =>{
+                                                            setIsModalReceptionOpen(true)
+                                                        }}>
+                                                        <span className='mr-4'><i className="pi pi-inbox"></i></span>
+                                                        <span className='text-sm text-gray-700 font-medium'>Réceptionner Livraison</span> 
+                                                    </button>
+                                                    <button className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'
+                                                        onClick={() =>{
+                                                            setIsModalReturnLivraisonOpen(true)
+                                                        }}>
+                                                        <span className='mr-4'><i className="pi pi-arrow-left"></i></span>
+                                                        <span className='text-sm text-gray-700 font-medium'>Retourner Livraison</span> 
+                                                    </button>
+                                                </>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <></>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div className='overflow-hidden mb-6 pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
                         <div className='mb-6 pb-2 w-full border-b'>
@@ -266,7 +470,80 @@ export default function DeliveryDetails() {
                 </div>
             </>)
             }
-            
+            <Modal isOpen={isModalReceptionOpen} onClose={() => setIsModalReceptionOpen(false)} className="p-4 max-w-md">
+            <div className='p-1'>
+                <div className='text-center mb-3 text-sm'>
+                    <span>Signez manuellement pour valider la livraison</span>
+                </div>
+                <div className='flex flex-col justify-center items-center'>
+                    <SignatureCanvas
+                        ref={data=>setSignatureReception(data)}
+                        canvasProps={{ width: 300, height: 250, className: 'sigCanvas border border-gray-300 rounded' }}
+                    />
+                    <div className='w-full mt-3'>
+                        <Label>Commentaire</Label>
+                        <TextArea
+                            value={messageReception}
+                            onChange={(value) => setMessageReception(value)}
+                            rows={4}
+                            placeholder="Ajoutez un commentaire"
+                        />
+                    </div>
+                    <div className='w-full mt-6 flex justify-center items-center'>
+                        <button
+                            onClick={handleClearReception}
+                            className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
+                            Clear
+                            </button>
+                            <button
+                            onClick={handleReception}
+                            className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
+                            Valider
+                        </button>
+                    </div>  
+                </div>
+                <div className="text-center">
+                    <span className="text-error-500 text-xs">
+                        {errorSignReception}
+                    </span>
+                </div>
+            </div>
+            </Modal>
+            <Modal isOpen={isModalReturnLivraisonOpen} onClose={() => setIsModalReturnLivraisonOpen(false)} className="p-4 max-w-md">
+                <div className='p-1'>
+                    <div className='text-center mb-3 text-sm'>
+                        <span>Indiquez la raison du retour pour valider</span>
+                    </div>
+                    <div className='flex flex-col justify-center items-center'>
+                        <div className='w-full mt-3'>
+                            <Label>Commentaire *</Label>
+                            <TextArea
+                                value={messageReturnLivraison}
+                                onChange={(value) => setMessageReturnLivraison(value)}
+                                rows={4}
+                                placeholder="Ajoutez un commentaire"
+                                error={errorReturnLivraison}
+                                hint={errorReturnLivraison}
+                            />
+                        </div>
+                        <div className='w-full mt-6 flex justify-center items-center'>
+                            <button
+                                onClick={handleReturnLivraison}
+                                className='w-48 mx-3 bg-red-400 rounded-2xl h-10 flex justify-center items-center'>
+                                Retourner
+                            </button>
+                            <button
+                                onClick={() =>{
+                                    setIsModalReturnLivraisonOpen(false);
+                                    setErrorReturn('')
+                                }}
+                                className='w-48 mx-3 bg-gray-400 rounded-2xl h-10 flex justify-center items-center'>
+                                Annuler
+                            </button>
+                        </div>  
+                    </div>
+                </div>
+            </Modal>
         </>
     )
 }

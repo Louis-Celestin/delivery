@@ -50,16 +50,9 @@ export class Demandes{
         }
     }
 
-    async returnDemande(demande_id, commentaire_return, user_id, type_demande_id){
+    async returnDemande(payload){
         try{
-          const response = await axios.post(`${urlBase}/api/demandes/returnDemande`,
-            {
-              demande_id,
-              commentaire_return,
-              user_id,
-              type_demande_id,
-            }
-          )
+          const response = await axios.post(`${urlBase}/api/demandes/returnDemande`, payload)
           console.log(response)
             return response.data;
         } catch (error) {
@@ -84,22 +77,9 @@ export class Demandes{
         }
     };
 
-    async updateDemande(id, produitsDemandes, commentaire, type_demande_id, user_id, nom_demandeur, role_demandeur, role_validateur, id_demandeur, qte_total_demande, motif_demande){
+    async updateDemande(payload){
       try{
-        const response = await axios.put(`${urlBase}/api/demandes/updateDemande/${id}`,
-        {
-          produitsDemandes,
-          commentaire,
-          type_demande_id,
-          user_id,
-          nom_demandeur,
-          role_demandeur,
-          role_validateur,
-          id_demandeur,
-          qte_total_demande,
-          motif_demande, 
-        });
-
+        const response = await axios.put(`${urlBase}/api/demandes/updateDemande/${id}`, payload)
         // console.log(response)
         return response.data;
       } catch(error){

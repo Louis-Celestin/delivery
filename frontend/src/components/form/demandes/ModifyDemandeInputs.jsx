@@ -69,77 +69,18 @@ export default function ModifyDemandeInputs() {
   const [motifDemande, setMotifDemande] = useState('PIECES TPE');
   
   const [motifAutre, setMotifAutre] = useState(false);
-
-  const ChangePieceType = (value) => {
-    console.log("Selected value:", value);
-    setDemandeID(value);
-    const selectedStockItem = stockDT.find(
-      (item) => {
-        return item.id_piece == parseInt(value)
-      } 
-    );
-    if (selectedStockItem) {
-      const nomPiece = selectedStockItem.nom_piece
-      const stockPiece = selectedStockItem.quantite
-      setTypeDemande(nomPiece.toUpperCase());
-      setStockInitial(stockPiece)
-    } else {
-      setTypeDemande('');
-    }
-  };
   
-  const ChangeService = (value) => {
-    console.log("Selected value:", value);
-    setServiceDemandeur(value);
-    if(value == 'MAINTENANCE'){
-      setRoleInitiateur(6);
-    } else if(value == 'SUPPORT'){
-      setRoleInitiateur(7);
-    } else if(value == 'LIVRAISON'){
-      setRoleInitiateur(1);
-    }    
-  };
-
-  const ChangeUser = (value) => {
-    console.log("Selected value:", value);
-    setIdDemandeur(value)
-    const selectedUser = usersSelection.find(
-      (item) => {
-        return item.id_user == parseInt(value)
-      }
-    )
-    if(selectedUser){
-      const nomUser = selectedUser.username.toUpperCase().replace(".", " ")
-      setNomDemandeur(nomUser)
-    }
-  }
-
-  const ChangeMotif = (value) => {
-    console.log("Selected value:", value);
-    if(value == "AUTRE"){
-      setMotifDemande('')
-      setMotifAutre(true);
-    }else{
-      setMotifAutre(false);
-      setMotifDemande(value);
-    }
-  }
-  
-  const options_services = [
-    { value: "MAINTENANCE", label: "MAINTENANCE" },
-    { value: "SUPPORT", label: "SUPPORT"},
-    { value: "LIVRAISON", label: "LIVRAISON"},
-  ];
-
-  const options_motifs = [
-    { value: "PIECES TPE", label:"PIECES TPE"},
-    { value: "CHARGEURS DECOMMISSIONNES", label:"CHARGEURS DECOMMISSIONNES"},
-    { value: "AUTRE", label:"AUTRE"},
-  ]
   useEffect( ()=>{
     const fetchDemandeInfos = async () => {
       setLoadingDemandeInfos(true)
       try{
+
+        let userRoles_data = await users.getUserRoles(parseInt(userId))
+        const roles_id = userRoles_data.roles.map((role) =>{
+          return role.id_role
+        })
+        setUserRoles(roles_id)
+
         let demandeData;
         demandeData = await demandes.getOneDemande(id);
         console.log(demandeData)
@@ -222,6 +163,73 @@ export default function ModifyDemandeInputs() {
     fetchUsers();
   },[id])
 
+  const ChangePieceType = (value) => {
+    console.log("Selected value:", value);
+    setDemandeID(value);
+    const selectedStockItem = stockDT.find(
+      (item) => {
+        return item.id_piece == parseInt(value)
+      } 
+    );
+    if (selectedStockItem) {
+      const nomPiece = selectedStockItem.nom_piece
+      const stockPiece = selectedStockItem.quantite
+      setTypeDemande(nomPiece.toUpperCase());
+      setStockInitial(stockPiece)
+    } else {
+      setTypeDemande('');
+    }
+  };
+  
+  const ChangeService = (value) => {
+    console.log("Selected value:", value);
+    setServiceDemandeur(value);
+    if(value == 'MAINTENANCE'){
+      setRoleInitiateur(6);
+    } else if(value == 'SUPPORT'){
+      setRoleInitiateur(7);
+    } else if(value == 'LIVRAISON'){
+      setRoleInitiateur(1);
+    }    
+  };
+
+  const ChangeUser = (value) => {
+    console.log("Selected value:", value);
+    setIdDemandeur(value)
+    const selectedUser = usersSelection.find(
+      (item) => {
+        return item.id_user == parseInt(value)
+      }
+    )
+    if(selectedUser){
+      const nomUser = selectedUser.username.toUpperCase().replace(".", " ")
+      setNomDemandeur(nomUser)
+    }
+  }
+
+  const ChangeMotif = (value) => {
+    console.log("Selected value:", value);
+    if(value == "AUTRE"){
+      setMotifDemande('')
+      setMotifAutre(true);
+    }else{
+      setMotifAutre(false);
+      setMotifDemande(value);
+    }
+  }
+  
+  const options_services = [
+    { value: "MAINTENANCE", label: "MAINTENANCE" },
+    { value: "SUPPORT", label: "SUPPORT"},
+    { value: "LIVRAISON", label: "LIVRAISON"},
+  ];
+
+  const options_motifs = [
+    { value: "PIECES TPE", label:"PIECES TPE"},
+    { value: "CHARGEURS DECOMMISSIONNES", label:"CHARGEURS DECOMMISSIONNES"},
+    { value: "AUTRE", label:"AUTRE"},
+  ]
+
 
 
   const handleConfirm = () => {
@@ -293,7 +301,7 @@ export default function ModifyDemandeInputs() {
 
   const handleDemande = async (e) => {
     e.preventDefault();
-    if(role != 1){
+    if(!userRoles.includes(3)){
       Swal.fire({
           title: "Error",
           text: "Vous n'êtes pas authorisé à faire cette action !",
@@ -307,43 +315,20 @@ export default function ModifyDemandeInputs() {
     setIsConfirmModalOpen(false)
     setLoadingDemande(true);
 
-    const fd = new FormData();
-
-    const commentaire = message;
-    const type_demande_id = demandeID
-    const user_id = userId;
-    const role_demandeur = roleInitiateur;
-    const role_validateur = 3
-    const nom_demandeur = nomDemandeur;
-    const qte_total_demande = qteDemande;
-    const id_demandeur = idDemandeur;
-    const motif_demande = motifDemande;
-    
-    fd.append('id', id);
-    fd.append('produitsDemandes',JSON.stringify(produitsDemandes));
-    fd.append('commentaire',commentaire);
-    fd.append('user_id',userId);
-    fd.append('type_demande_id',type_demande_id);
-    
-    fd.append('role_demandeur', role_demandeur);
-    fd.append('role_validateur', role_validateur);
-    fd.append('nom_demandeur', nom_demandeur);
-    fd.append('qte_total_demande',qte_total_demande);
-    fd.append('id_demandeur', id_demandeur);
-    fd.append('motif_demande', motifDemande);
-
-    console.log('------  DEMANDE  ------')
-    console.log('ID DEMANDE : ',type_demande_id)
-    console.log('ID User : ', user_id)
-    console.log('Produits demandés : ',produitsDemandes)
-    console.log('commentaire : ',commentaire)
-    console.log('quantite totale demande : ',qte_total_demande)
-    console.log('Motif de la demande : ', motifDemande)
-    console.log('Demandeur : ',nom_demandeur)
-    console.log('id demandeur : ',id_demandeur)
-
+    const payload = {
+      id: id,
+      produitsDemandes: JSON.stringify(produitsDemandes),
+      commentaire: message,
+      type_demande_id: demandeID,
+      user_id: userId,
+      role_validateur: 4,
+      nom_demandeur: nomDemandeur,
+      qte_total_demande: qteDemande,
+      id_demandeur: idDemandeur,
+      motif_demande: motifDemande
+    }
     try{
-    const response = await demandes.updateDemande(id, produitsDemandes, commentaire, type_demande_id, user_id, nom_demandeur, role_demandeur, role_validateur, id_demandeur, qte_total_demande, motif_demande)
+    const response = await demandes.updateDemande(payload)
 
     console.log(response);
     console.log('Demande modifiée')
@@ -354,6 +339,12 @@ export default function ModifyDemandeInputs() {
     });
     navigate('/toutes-les-demandes');
     }catch (error) {
+      Swal.fire({
+        title: "Attention",
+        text: "Une erreur est survenue lors de la modification de la demande",
+        icon: "warning"
+      });
+      navigate('/toutes-les-demandes');
       console.log('error lors de la demande : ',error)
       setError('Erreur lors de la génération du formulaire');
     }finally{
@@ -364,7 +355,7 @@ export default function ModifyDemandeInputs() {
   
   return (
     <>
-      <div className="flex justify-center mb-6 bg-blue-300 rounded-2xl p-3">
+      <div className="flex justify-center mb-6">
         {loadingStock ? (<>Loading...</>) :
           (
             errorFrom ? (

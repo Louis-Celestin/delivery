@@ -168,8 +168,14 @@ export default function ModifyProfilInputs() {
             });
             navigate('/tous-les-utilisateurs');
         } catch(error){
-            console.log("Erreur dans la création de l'utilisateur : ",error)
-            return
+            setLoadindCreate(false) 
+            console.log("Erreur dans la modification de l'utilisateur : ",error)
+            Swal.fire({
+                title: "Attention",
+                text: "Une erreur est survenue lors de la modification de l'utilisateur.",
+                icon: "warning"
+            });
+            navigate('/tous-les-utilisateurs');
         } finally{
             setLoadindCreate(false)
         }

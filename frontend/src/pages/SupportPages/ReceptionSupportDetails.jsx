@@ -212,8 +212,6 @@ export default function ReceptionSupportDetails() {
             }
             const response = await reception.receive(fd);
 
-
-            
             // let piece_id = 1
             // let stock_initial = piece.quantite
             // let nouveau_stock = stock_initial - quantiteProduit

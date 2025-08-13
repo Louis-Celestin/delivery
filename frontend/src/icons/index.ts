@@ -65,7 +65,9 @@ import { ReactComponent as ReturnArrow } from "./return-2-solid.svg?react"
 import { ReactComponent as MaintenanceCircle } from "./maintenance-warning.svg?react"
 import { ReactComponent as SimpleInfo } from "./outline-info.svg?react"
 import { ReactComponent as ClipboardCheck } from "./clipboard-check-form.svg?react"
-import { ReactComponent as MiniTools} from "./mini-tools.svg?react"
+import { ReactComponent as MiniTools } from "./mini-tools.svg?react"
+import { ReactComponent as StockBox } from "./stock-box.svg?react"
+import { ReactComponent as DeliveryAdd} from "./delivery-add.svg?react"
 export {
   ErrorHexaIcon,
   AlertHexaIcon,
@@ -134,4 +136,6 @@ export {
   ClipboardCheck,
   CheckSimple,
   MiniTools,
+  StockBox,
+  DeliveryAdd,
 };

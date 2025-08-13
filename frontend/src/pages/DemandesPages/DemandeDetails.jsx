@@ -137,6 +137,7 @@ export default function DemandeDetails() {
                     const service = servicesData.find((item) => {
                         return item.id == idService
                     })
+                    console.log(idService)
                     setServiceDemandeur(service.nom_service.toUpperCase())
 
                     if(demandeData.statut_demande == 'en_cours'){
@@ -340,18 +341,20 @@ export default function DemandeDetails() {
 
     const handleReturn = async (e) =>{
         e.preventDefault();
-        const demande_id = id;
-        const type_demande_id = typeDemandeId;
-        const commentaire_return = messageReturn;
-
-        if(!commentaire_return){
+        if(!messageReturn){
             setErrorReturn("Ajoutez un commentaire avant de retourner une demande!")
             return;
+        }
+
+        const payload = {
+            demande_id: id,
+            commentaire_return: messageReturn,
+            user_id: user_id,
         }
         try{
             setLoadingDemande(true);
             setIsModalReturnOpen(false);
-            const response = await demandes.returnDemande(demande_id, commentaire_return, user_id, type_demande_id);
+            const response = await demandes.returnDemande(payload);
 
             Swal.fire({
                     title: "Succès",
@@ -376,24 +379,26 @@ export default function DemandeDetails() {
 
     const handleCancel = async (e) =>{
         e.preventDefault();
-
-        const demande_id = id;
-        const type_demande_id = typeDemandeId;
-        const commentaire_refus = messageCancel;
         
         if(!commentaire_refus){
             setErrorCancel("Ajoutez un commentaire avant de refuser la demande!")
             return;
         }
+
+        const payload = {
+            demande_id: id,
+            commentaire_refus: messageCancel,
+            user_id: user_id,
+        }
         try{
             setLoadingDemande(true);
             setIsModalCancelOpen(false);
-            const response = await demandes.cancelDemande(demande_id, commentaire_refus, user_id, type_demande_id);
+            const response = await demandes.cancelDemande(payload);
             Swal.fire({
-                    title: "Succès",
-                    text: "Demande refusée avec succès",
-                    icon: "success"
-                    });
+                title: "Succès",
+                text: "Demande refusée avec succès",
+                icon: "success"
+            });
             console.log(response)
             setIsModalReturnOpen(false)
             navigate('/toutes-les-demandes');

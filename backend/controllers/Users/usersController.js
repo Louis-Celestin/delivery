@@ -5,8 +5,27 @@ const { validationResult } = require("express-validator");
 const { envoyerEmail } = require("../../config/emailConfig")
 const cloudinary = require("../../config/clouddinaryConifg");
 require("crypto")
+const sendMail = require("../../utils/emailSender")
 
 const prisma = new PrismaClient();
+
+// baseUrl est l'addresse du site de livraison
+const baseUrl = process.env.FRONTEND_BASE_URL || "https://livraisons.greenpayci.com";
+
+// localUrl est l'addresse en local pour les tests
+const localUrl = "http://localhost:5173"
+
+// GENERAL_URL va être utilisée dans les mails envoyés pour pouvoir rediriger correctement l'utilisateur vers la page avec le bon lien
+// En test GENERAL_URL doit avoir la valeur de localUrl et celle de baseUrl lors du deploiement.
+let GENERAL_URL = baseUrl 
+
+
+let test_env = true
+let email_test = process.env.EMAIL_TEST
+
+if(test_env){
+  GENERAL_URL = localUrl
+}
 
 
 const register = async (req, res) => {
@@ -58,6 +77,37 @@ const register = async (req, res) => {
           service_id: serviceId,
         })),
       });
+    }
+
+    /* ********************* GESTION DE MAIL A L'UTILISATEUR NOUVELEMENT AJOUTE *********************** */
+    const url = GENERAL_URL
+    const subject = "NOUVEAU COMPTE CRÉÉ"
+    const html = `
+        <p>Bonjour,<p>
+        <p>Votre Email vient d'être enregistré dans l'application de livraison GREEN-PAY.<p>
+        <br>
+        <p>Connectez vous à ce lien : <p>
+        <a href="${url}" target="_blank">${url}<a>
+        <br>
+        <p><i>Identifiants : </i><p>
+        <ul>
+            <li><strong>E-mail:</strong> votre e-mail Green - Pay</li>
+            <li><strong>Mot de passe:</strong> ${password}</li>
+        </ul>
+        <br>
+        <p>Vous pouvez à tout moment changer votre mot de passe ou le réinitialiser dans l'application.<p>
+        <br>
+        <p>En cas de soucis de connexion ou autre veuillez vous référer au groupe support développement.<p>
+        <br><br>
+        <p>Green - Pay vous remercie.</p>
+    `
+    if(mailChecked){
+        await sendMail({
+            to: newUser.email,
+            subject,
+            html,
+            attachments
+        })
     }
 
     return res.status(201).json(newUser);
@@ -133,6 +183,29 @@ const updateUser = async (req, res) => {
                     service_id: serviceId,
                 })),
             });
+        }
+
+        /* ********************* GESTION DE MAIL A L'UTILISATEUR NOUVELEMENT AJOUTE *********************** */
+        const url = GENERAL_URL
+        const subject = "MODIFICATION DE PROFIL"
+        const html = `
+            <p>Bonjour,<p>
+            <p>Votre profil vient d'être modifié dans l'application de livraison GREEN-PAY.<p>
+            <br>
+            <p>Retrouvez les modifications à ce lien : <p>
+            <a href="${url}" target="_blank">${url}<a>
+            <br>
+            <p>En cas de soucis de connexion ou autre veuillez vous référer au groupe support développement.<p>
+            <br><br>
+            <p>Green - Pay vous remercie.</p>
+        `
+        if(mailChecked){
+            await sendMail({
+                to: user.email,
+                subject,
+                html,
+                attachments
+            })
         }
 
         res.status(200).json({ message: "Utilisateur mis à jour.", updatedUser });

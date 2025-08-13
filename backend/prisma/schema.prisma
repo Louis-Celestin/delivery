@@ -70,12 +70,18 @@ model livraison {
   signature_expediteur String                      @db.VarChar(255)
   nom_livreur          String?                     @db.VarChar(255)
   type_livraison_id    Int?
+  service_id           Int?
+  role_id              Int?
   users                users?                      @relation(fields: [user_id], references: [id_user], onDelete: Restrict, onUpdate: Restrict, map: "livraison_ibfk_1")
   typeLivraison        type_livraison_commerciale? @relation(fields: [type_livraison_id], references: [id_type_livraison], onDelete: Restrict, onUpdate: Restrict, map: "livraison_ibfk_2")
+  services             services?                   @relation(fields: [service_id], references: [id], onDelete: NoAction, map: "livraison_ibfk_3")
+  roles                roles?                      @relation(fields: [role_id], references: [id_role], onDelete: NoAction, map: "livraison_ibfk_4")
   validations          validations[]
 
   @@index([type_livraison_id], map: "type_livraison_id")
   @@index([user_id], map: "user_id")
+  @@index([service_id], map: "service_id")
+  @@index([role_id], map: "role_id")
 }
 
 model model_piece {
@@ -89,6 +95,7 @@ model roles {
   nom_role                                   String?      @db.VarChar(255)
   Livraisons                                 Livraisons[]
   demandes_demandes_role_id_recepteurToroles demandes[]   @relation("demandes_role_id_recepteurToroles")
+  livraison                                  livraison[]
   stock_dt                                   stock_dt[]
   user_roles                                 user_roles[]
 }
@@ -124,18 +131,19 @@ model user_roles {
 }
 
 model users {
-  id_user                               Int                   @id @default(autoincrement())
-  fullname                              String?               @db.VarChar(255)
-  username                              String?               @db.VarChar(255)
-  password                              String?               @db.VarChar(255)
-  email                                 String?               @db.VarChar(255)
-  reset_token                           String?               @db.VarChar(255)
-  reset_expires                         DateTime?             @db.DateTime(0)
-  created_at                            DateTime?             @default(now()) @db.Date
-  demandes_demandes_user_idTousers      demandes[]            @relation("demandes_user_idTousers")
-  demandes_demandes_id_demandeurTousers demandes[]            @relation("demandes_id_demandeurTousers")
+  id_user                               Int                          @id @default(autoincrement())
+  fullname                              String?                      @db.VarChar(255)
+  username                              String?                      @db.VarChar(255)
+  password                              String?                      @db.VarChar(255)
+  email                                 String?                      @db.VarChar(255)
+  reset_token                           String?                      @db.VarChar(255)
+  reset_expires                         DateTime?                    @db.DateTime(0)
+  created_at                            DateTime?                    @default(now()) @db.Date
+  demandes_demandes_user_idTousers      demandes[]                   @relation("demandes_user_idTousers")
+  demandes_demandes_id_demandeurTousers demandes[]                   @relation("demandes_id_demandeurTousers")
   livraison                             livraison[]
   reception_livraison                   reception_livraison[]
+  type_livraison_commerciale            type_livraison_commerciale[]
   user_roles                            user_roles[]
   user_services                         user_services[]
   validation_demande                    validation_demande[]
@@ -180,6 +188,7 @@ model services {
   code_service  String?         @db.VarChar(255)
   Livraisons    Livraisons[]
   demandes      demandes[]
+  livraison     livraison[]
   user_services user_services[]
 }
 
@@ -208,7 +217,13 @@ model livraison_piece {
 model type_livraison_commerciale {
   id_type_livraison  Int         @id @default(autoincrement())
   nom_type_livraison String?     @db.VarChar(255)
+  created_by         String?     @db.VarChar(255)
+  user_id            Int?
+  is_deleted         Boolean     @default(false)
   livraison          livraison[]
+  users              users?      @relation(fields: [user_id], references: [id_user], onDelete: NoAction, map: "type_livraison_commerciale_ibfk_1")
+
+  @@index([user_id], map: "user_id")
 }
 
 model Livraisons {

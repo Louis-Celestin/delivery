@@ -2,21 +2,22 @@ import { useEffect, useState, useRef } from "react";
 import ComponentCard from "../../common/ComponentCard.tsx";
 import Label from "../Label.tsx";
 import Input from "../input/InputField.tsx";
-import Checkbox from "../input/Checkbox";
+import Checkbox from "../input/Checkbox.tsx";
 import Select from "../Select.tsx";
-import TextArea from "../input/TextArea";
+import TextArea from "../input/TextArea.tsx";
 import {
   Table,
   TableBody,
   TableCell,
   TableHeader,
   TableRow,
-} from "../../ui/table";
+} from "../../ui/table/index.tsx";
 import { PlusIcon, ListIcon, PencilIcon } from "../../../icons/index.ts";
 import 'primeicons/primeicons.css'; 
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { useNavigate, useParams } from "react-router";
 import { Merchants } from "../../../backend/livraisons/Merchants.js";
+import { Users } from "../../../backend/users/Users.js";
 import { ProductDeliveries } from "../../../backend/livraisons/ProductDeliveries.js";
 import { Modal } from "../../ui/modal/index.tsx";
 import Swal from 'sweetalert2'
@@ -27,9 +28,11 @@ export default function ModifyLivraisonInputs() {
   const merchants = new Merchants();
   const productDeliveries = new ProductDeliveries();
   const userId = localStorage.getItem('id');
-  const role = localStorage.getItem("role_id")
+  const usersData = new Users()
   const { id } = useParams();
   const navigate = useNavigate();
+
+
   const [isOrangeChecked, setOrangeChecked] = useState(false);
   const [isMTNChecked, setMTNChecked] = useState(false);
   const [isMOOVChecked, setMOOVChecked] = useState(false);
@@ -50,99 +53,78 @@ export default function ModifyLivraisonInputs() {
   const [errorDeliver, setErrorDeliver] = useState(null);
   const [isConfirmModalOpen , setIsConfirmModalOpen] = useState(false);
   const [messageTPE, setMessageTPE] = useState('');
-  const [selectedChargeur, setSelectedChargeur] = useState(false);
+  
+  const [optionLivraisons, setOptionLivraisons] = useState([])
+  const [listTypeLivraison, setListTypeLivraison] = useState([])
 
-  const options_livraison = [
-    { value: "TPE GIM", label: "TPE GIM" },
-    { value: "TPE MOBILE", label: "TPE MOBILE" },
-    { value: "TPE MAJ GIM", label: "TPE MAJ GIM" },
-    { value: "TPE REPARE", label: "TPE REPARE" },
-    { value: "CHARGEUR", label: "CHARGEUR" },
-    { value: "TPE ECOBANK", label: "TPE ECOBANK" },
-    { value: "CHARGEUR (TPE DECOM RI OK)", label: "CHARGEUR (TPE DECOM RI OK)"},
-    { value: "CHARGEUR (TPE DECOM RI NOK)", label: "CHARGEUR (TPE DECOM RI NOK)"},
-  ];
+  const [optionServices, setOptionServices] = useState([])
+  const [listServices, setListService] = useState([])
+  const [serviceRecepteur, setServiceRecepteur] = useState('')
 
-  const ChangeTypeLivraison = (value) => {
-    console.log("Selected value:", value);
-    setTypeLivraison(value);
-    if(value == 'TPE GIM'){
-      setLivraisonID(1);
-      setSelectedChargeur(false)
-    }else if(value == 'TPE REPARE'){
-      setLivraisonID(2);
-      setSelectedChargeur(false)
-    }else if(value == 'TPE MAJ GIM'){
-      setLivraisonID(3)
-      setSelectedChargeur(false)
-    }else if(value == 'TPE MOBILE'){
-      setLivraisonID(4)
-      setSelectedChargeur(false)
-    }else if(value == 'CHARGEUR'){
-      setLivraisonID(5)
-      setSelectedChargeur(true)
-    }else if(value == 'TPE ECOBANK'){
-      setLivraisonID(6)
-      setSelectedChargeur(false)
-    }else if(value == 'CHARGEUR (TPE DECOM RI OK)'){
-      setLivraisonID(7)
-      setSelectedChargeur(true)
-    }else if(value == 'CHARGEUR (TPE DECOM RI NOK)'){
-      setLivraisonID(8)
-      setSelectedChargeur(true)
-    }
-  }
+  const [optionsRoles, setOptionsRoles] = useState([])
+  const [selectedRole, setSelectedRole] = useState()
+  const [nomRole, setNomRole] = useState('')
+  const [listRoles, setListRoles] = useState([])
+
+  const [serviceId, setServiceId] = useState(null)
   
   useEffect( ()=>{
     const fetchDeliveryInfos = async () => {
       setLoadingDeliveryInfos(true)
       try{
-        let data;
-        data = await productDeliveries.getOneLivraison(id);
-        console.log(data)
-        setMessage(data.commentaire);
-        const parsedProduitsLivre = JSON.parse(data.produitsLivre);
+        let delivery_data;
+        delivery_data = await productDeliveries.getOneLivraison(id);
+        console.log(delivery_data)
+        setMessage(delivery_data.commentaire);
+        const parsedProduitsLivre = JSON.parse(delivery_data.produitsLivre);
         setProduitsLivres(parsedProduitsLivre);
         setProduitsLivresTable(parsedProduitsLivre);
-        switch (data.type_livraison_id) {
-        case 1: 
-          setTypeLivraison("TPE GIM"); 
-          setLivraisonID(1);
-          break;
-        case 2:
-          setTypeLivraison("TPE REPARE"); 
-          setLivraisonID(2);
-          break;
-        case 3: 
-          setTypeLivraison("TPE MAJ GIM"); 
-          setLivraisonID(3)
-          break;
-        case 4: 
-          setTypeLivraison("TPE MOBILE"); 
-          setLivraisonID(4);
-          break;
-        case 5: 
-          setTypeLivraison("CHARGEUR");
-          setLivraisonID(5)
-          setSelectedChargeur(true)
-          break;
-        case 6:
-          setTypeLivraison("TPE ECOBANK");
-          setLivraisonID(6);
-          break;
-        case 7: 
-          setTypeLivraison("CHARGEUR (TPE DECOM RI OK)");
-          setLivraisonID(7)
-          setSelectedChargeur(true)
-          break;
-        case 8: 
-          setTypeLivraison("CHARGEUR (TPE DECOM RI NOK)");
-          setLivraisonID(8)
-          setSelectedChargeur(true)
-          break;
 
-        default: setTypeLivraison("Inconnu"); break;
-      }
+        let type_delivery = await productDeliveries.getAllTypeLivraisonCommerciale()
+        setListTypeLivraison(type_delivery)
+        const optionsType = type_delivery.map((item) =>({
+          value: item.id_type_livraison,
+          label: item.nom_type_livraison,
+        }))
+        setOptionLivraisons(optionsType);
+        let typeLivraison = type_delivery.find((item) =>{
+          return item.id_type_livraison === delivery_data.type_livraison_id
+        })
+        if(typeLivraison){
+          setTypeLivraison(typeLivraison.nom_type_livraison.toUpperCase())
+          setLivraisonID(typeLivraison.id_type_livraison)
+        }
+
+        let services_data = await usersData.getAllServices()
+        setListService(services_data)
+        const optionsServices = services_data.map((item) =>({
+          value: item.id,
+          label: item.nom_service,
+        }))
+        setOptionServices(optionsServices)
+        let service = services_data.find((item) =>{
+          return item.id === delivery_data.service_id
+        })
+        if(service){
+          setServiceRecepteur(service.nom_service.toUpperCase())
+          setServiceId(service.id)
+        }
+
+        let roles_data = await usersData.getAllRoles()
+        setListRoles(roles_data)
+        const optionsRoles = roles_data.map((item) =>({
+          value: item.id_role,
+          label: item.nom_role.split('_').join(' ').toLowerCase(),
+        }))
+        setOptionsRoles(optionsRoles)
+        let role = roles_data.find((item) =>{
+          return item.id === delivery_data.role_id
+        })
+        if(role){
+          setNomRole(role.nom_role.split('_').join(' ').toLowerCase())
+          setSelectedRole(role.id_role)
+        }
+
       }catch(error){
         console.log('Error fetching data ',error)
         setErrorForm('Erreur lors de la génération du formulaire')
@@ -152,38 +134,71 @@ export default function ModifyLivraisonInputs() {
       }
     }
     const fetchTerminalInfos = async () => {
-        setLoadingMerchant(true)
-        try{
-          let data;
-          data = await merchants.findMerchant();
-          console.log(data)
-          setTerminals(data)
-        }catch(error){
-          console.log('Error fetching data ',error)
-          setErrorForm('Erreur lors de la génération du formulaire')
+      setLoadingMerchant(true)
+      try{
+        let data;
+        data = await merchants.findMerchant();
+        console.log(data)
+        setTerminals(data)
+      }catch(error){
+        console.log('Error fetching data ',error)
+        setErrorForm('Erreur lors de la génération du formulaire')
+
+      }finally{
+        setLoadingMerchant(false)
+      }
+  };
+  fetchDeliveryInfos();
+  fetchTerminalInfos();
   
-        }finally{
-          setLoadingMerchant(false)
-        }
-    };
-    fetchDeliveryInfos();
-    fetchTerminalInfos();
+  },[id])
+
+  const filteredPointMarchand = terminalSN ? 
+  terminals.filter((terminal) => 
+  terminal.SERIAL_NUMBER.includes(terminalSN)) : [];
+
+  const ChangeRole = (value) => {
+    console.log("Selected value : ",value)
+    setSelectedRole(value);
+  }
+
+  const ChangeTypeLivraison = (value) => {
+    console.log("Selected value:", value);
+    setLivraisonID(value);
     
-    },[id])
+    const selectedTypeLivraison = listTypeLivraison.find(
+      (item) => {
+        return item.id_type_livraison == parseInt(value)
+      }
+    );
+
+    if(selectedTypeLivraison){
+      const nomType = selectedTypeLivraison.nom_type_livraison.toUpperCase()
+      setTypeLivraison(nomType)
+    } else{
+      setTypeLivraison('');
+    }    
+  };
+
+  const ChangeService = (value) => {
+    console.log("Selected value:", value);
+    setServiceId(value);
+    
+    const selectedService = listServices.find(
+      (item) => {
+        return item.id == parseInt(value)
+      }
+    );
+
+    if(selectedService){
+      const nomService = selectedService.nom_service.toUpperCase()
+      setServiceRecepteur(nomService)
+    } else{
+      setServiceRecepteur('');
+    }    
+  }
 
   const handleConfirm = () => {
-
-    if(role != 1){
-      Swal.fire({
-          title: "Error",
-          text: "Vous n'êtes pas authorisé à faire cette action !",
-          icon: "error"
-      });
-      localStorage.removeItem('token');
-      localStorage.removeItem('username');
-      navigate('/signin');
-      return
-    }
     
     let banque = ''
     banque = filteredPointMarchand.map((terminal) => terminal.BANQUE).join("-");
@@ -191,6 +206,9 @@ export default function ModifyLivraisonInputs() {
     if(!livraisonID){
       setErrorAjout("Vous devez choisir le type de livraison !");
       return;
+    }
+    if(!serviceId){
+      setErrorAjout("Vous devez choisir le service de réception !")
     }
     if (!filteredPointMarchand || filteredPointMarchand.length === 0 || terminalSN.length < 10) {
       setErrorAjout("S/N invalide !");
@@ -237,8 +255,6 @@ export default function ModifyLivraisonInputs() {
     setIsConfirmModalOpen(true)
   }
 
-    
-
   const handleAjout = (e) => {
     e.preventDefault(); // prevent page reload
 
@@ -278,22 +294,10 @@ export default function ModifyLivraisonInputs() {
     setMOOVChecked(false);
     setMobileMoney([]);
     setIsConfirmModalOpen(false)
-    }
+  }
     
-
   const handleDeliver = async (e) => {
     e.preventDefault();
-    if(role != 1){
-      Swal.fire({
-          title: "Error",
-          text: "Vous n'êtes pas authorisé à faire cette action !",
-          icon: "error"
-      });
-      localStorage.removeItem('token');
-      localStorage.removeItem('username');
-      navigate('/signin');
-      return
-    }
 
     if(produitsLivre.length == 0){
       Swal.fire({
@@ -312,33 +316,38 @@ export default function ModifyLivraisonInputs() {
       return;
     }
 
-    setLoadingDelivery(true);
-    const commentaire = message;
-    const type_livraison_id = livraisonID
-    const user_id = userId;
-    const isAncienne = false;
-    const statut_livraison = 'en_cours'
-
-    console.log('Trying to create form...')
-    console.log('Commentaire : ',commentaire)
-    console.log('ID Livraison : ',type_livraison_id)
-    console.log('ID User : ', user_id)
-    console.log('Ancienne ? ', isAncienne)
-    console.log('Produits livrés : ',produitsLivre)
-
+    console.log(produitsLivre)
+    const payload = {
+      produitsLivre: JSON.stringify(produitsLivre),
+      commentaire: message,
+      type_livraison_id: livraisonID,
+      user_id: userId,
+      service_recepteur: serviceId,
+      role_recepteur: selectedRole,
+    }
+    
     try{
-    const response = await productDeliveries.updateLivraison(id, produitsLivre, commentaire, statut_livraison, type_livraison_id, user_id)
-    console.log(response);
-    console.log('Formulaire modifié')
-    Swal.fire({
-      title: "Succès",
-      text: "Formulaire modifié avec succès",
-      icon: "success"
-    });
-    navigate('/toutes-les-livraisons');
+      console.log('Executing : ',payload)
+      setLoadingDelivery(true);
+      const response = await productDeliveries.updateLivraison(id, payload)
+      console.log(response);
+      console.log('Formulaire modifié')
+      Swal.fire({
+        title: "Succès",
+        text: "Formulaire modifié avec succès",
+        icon: "success"
+      });
+      navigate('/toutes-les-livraisons');
     }catch (error) {
       console.log(error)
       setError('Erreur lors de la génération du formulaire');
+      Swal.fire({
+        title: "Attention",
+        text: "Une erreur est survenue lors de la modification de la livraison",
+        icon: "warning"
+      });
+      navigate('/toutes-les-livraisons');
+      setLoadingDelivery(false)
     }finally{
       setProduitsLivres([])
       setProduitsLivresTable([])
@@ -346,24 +355,8 @@ export default function ModifyLivraisonInputs() {
     }
    
   }
-  
-
-  const filteredPointMarchand = terminalSN ? 
-  terminals.filter((terminal) => 
-        terminal.SERIAL_NUMBER.includes(terminalSN)) : [];
 
   const handleDelete = (indexToRemove) => {
-    if(role != 1){
-      Swal.fire({
-          title: "Error",
-          text: "Vous n'êtes pas authorisé à faire cette action !",
-          icon: "error"
-      });
-      localStorage.removeItem('token');
-      localStorage.removeItem('username');
-      navigate('/signin');
-      return
-    }
     setProduitsLivresTable((prev) =>
       prev.filter((_, index) => index !== indexToRemove)
     );
@@ -372,7 +365,6 @@ export default function ModifyLivraisonInputs() {
     );
   };
 
-  
   return (
     <>
       <div className="flex justify-center mb-6">
@@ -394,18 +386,35 @@ export default function ModifyLivraisonInputs() {
                             <span className="text-sm font-semibold">Informations générales</span>
                         </div>
                         <div>
-                          <Label>Type de Livraison *</Label>
+                          <Label>Type de Livraison <span className="text-red-700">*</span></Label>
                           <Select
-                            options={options_livraison}
-                            defaultValue={typeLivraison}
-                            placeholder="Select an option"
+                            options={optionLivraisons}
+                            placeholder={typeLivraison}
                             onChange={ChangeTypeLivraison}
                             className="dark:bg-dark-900"
                             
                           />
                         </div>
                         <div>
-                          <Label>Description</Label>
+                          <Label>Service recepteur <span className="text-red-700">*</span></Label>
+                          <Select
+                            options={optionServices}
+                            placeholder={serviceRecepteur}
+                            onChange={ChangeService}
+                            className="dark:bg-dark-900"       
+                          />
+                        </div>
+                        <div>
+                          <Label>Associer un rôle</Label>
+                          <Select
+                            options={optionsRoles}
+                            placeholder={nomRole}
+                            onChange={ChangeRole}
+                            className="dark:bg-dark-900"
+                          />
+                        </div>
+                        <div>
+                          <Label>Commentaire</Label>
                           <TextArea
                             value={message}
                             onChange={(value) => setMessage(value)}
@@ -419,7 +428,7 @@ export default function ModifyLivraisonInputs() {
                         </div>
 
                         <div>
-                          <Label htmlFor="input">Numéro de série *</Label>
+                          <Label htmlFor="input">Numéro de série <span className="text-red-700">*</span></Label>
                           <Input type="text" id="input" value={terminalSN} onChange={(e) =>{
                             const value = e.target.value
                             // Allow only digits
@@ -439,63 +448,57 @@ export default function ModifyLivraisonInputs() {
                                   readOnly
                                   />
                         </div>
-                        {selectedChargeur ? 
-                        (<></>) : 
-                        (
-                          <>
-                            <div>
-                              <Label>Banque</Label>
-                              <Input type="text" id="input" 
-                                      className="cursor-default"
-                                      value={filteredPointMarchand.map((terminal) => terminal.BANQUE).join(" - ")}
-                                      readOnly
-                                      />
+                          <div>
+                            <Label>Banque</Label>
+                            <Input type="text" id="input" 
+                                    className="cursor-default"
+                                    value={filteredPointMarchand.map((terminal) => terminal.BANQUE).join(" - ")}
+                                    readOnly
+                                    />
+                          </div>
+                          <div>
+                            <Input type="text" id="input" 
+                                    value={filteredPointMarchand.map((terminal) => terminal.TPE).join(" - ")}
+                                    className="hidden"/>
+                          </div>
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-3 my-2">
+                              <Checkbox
+                              checked={
+                                  filteredPointMarchand.length > 0 &&
+                                  filteredPointMarchand.some((terminal) =>
+                                    terminal.NUM_ORANGE?.startsWith("07")
+                                  )
+                                }
+                                onChange={(e)=>{}}
+                                readOnly
+                                label="Orange Money" />
                             </div>
-                            <div>
-                              <Input type="text" id="input" 
-                                      value={filteredPointMarchand.map((terminal) => terminal.TPE).join(" - ")}
-                                      className="hidden"/>
+                            <div className="flex items-center gap-3 my-2">
+                              <Checkbox 
+                              checked={
+                                  filteredPointMarchand.length > 0 &&
+                                  filteredPointMarchand.some((terminal) =>
+                                    terminal.NUM_MTN?.startsWith("05")
+                                  )
+                                }
+                                onChange={(e)=>{}}
+                                readOnly
+                              label="MTN Money" />
                             </div>
-                            <div className="flex flex-col">
-                              <div className="flex items-center gap-3 my-2">
-                                <Checkbox
-                                checked={
-                                    filteredPointMarchand.length > 0 &&
-                                    filteredPointMarchand.some((terminal) =>
-                                      terminal.NUM_ORANGE?.startsWith("07")
-                                    )
-                                  }
-                                  onChange={(e)=>{}}
-                                  readOnly
-                                  label="Orange Money" />
-                              </div>
-                              <div className="flex items-center gap-3 my-2">
-                                <Checkbox 
-                                checked={
-                                    filteredPointMarchand.length > 0 &&
-                                    filteredPointMarchand.some((terminal) =>
-                                      terminal.NUM_MTN?.startsWith("05")
-                                    )
-                                  }
-                                  onChange={(e)=>{}}
-                                  readOnly
-                                label="MTN Money" />
-                              </div>
-                              <div className="flex items-center gap-3 my-2">
-                                <Checkbox 
-                                checked={
-                                    filteredPointMarchand.length > 0 &&
-                                    filteredPointMarchand.some((terminal) =>
-                                      terminal.NUM_MOOV?.startsWith("01")
-                                    )
-                                  }
-                                  onChange={(e)=>{}}
-                                  readOnly 
-                                label="MOOV Money" />
-                              </div>
+                            <div className="flex items-center gap-3 my-2">
+                              <Checkbox 
+                              checked={
+                                  filteredPointMarchand.length > 0 &&
+                                  filteredPointMarchand.some((terminal) =>
+                                    terminal.NUM_MOOV?.startsWith("01")
+                                  )
+                                }
+                                onChange={(e)=>{}}
+                                readOnly 
+                              label="MOOV Money" />
                             </div>
-                          </>
-                        )}
+                          </div>
                         <div>
                           <button onClick={handleConfirm} className="w-full bg-green-400 rounded-2xl h-10 flex items-center justify-center">
                             <span>Ajouter</span>
@@ -612,12 +615,12 @@ export default function ModifyLivraisonInputs() {
         </div>
         <div className="w-full flex flex-col justify-center items-center">
           {loadingDelivery? 
-            <span className="mt-20">
+            <span className="mt-6">
               <ProgressSpinner style={{width: '50px', height: '50px'}} strokeWidth="8" animationDuration=".5s" />
             </span>
           : 
             <div className="flex">
-                <button onClick={handleDeliver} className=" mt-20 w-50 mx-1 bg-green-400 rounded-2xl h-10 flex justify-center items-center">
+                <button onClick={handleDeliver} className=" mt-6 w-50 mx-1 bg-green-400 rounded-2xl h-10 flex justify-center items-center">
                     <span>Modifier formulaire</span>
                     <span className="text-2xl"><ListIcon /></span>
                 </button> 
@@ -638,6 +641,9 @@ export default function ModifyLivraisonInputs() {
             <span>Vous allez ajouter un terminal pour livraison :  <span className="font-bold text-red-700">{typeLivraison}</span></span>
           </div>
           <div>
+            <div>
+              <span>Service : <span className="font-bold text-red-700">{serviceRecepteur}</span></span>
+            </div>
             <div>
               <span>S/N terminal : <span className="font-bold text-red-700">{terminalSN}</span></span>
             </div>

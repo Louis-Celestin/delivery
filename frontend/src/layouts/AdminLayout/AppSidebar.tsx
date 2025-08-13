@@ -10,6 +10,8 @@ import {
   ClipboardCheck,
   GridIcon,
   UserCircleIcon,
+  StockBox,
+  DeliveryAdd,
 } from "../../icons";
 import { useSidebar } from "../../context/SidebarContext";
 import SidebarWidget from "./SidebarWidget";
@@ -28,19 +30,9 @@ const navItems: NavItem[] = [
     name: "Dashboard",
     subItems: [
       { name: "Semaine en cours", path: "/", pro: false },
-      { name: "Gestion Stock", path: "/gestion-stock", roles:[7], pro: false },
       // { name: "Données Générales", path:"/donnees-generales", pro: false},
       // { name: "Statistiques livraisons", path: "/statistiques-livraisons", pro: false },
       // { name: "Stock chargeur", path: "/gestion-stock-chargeur", pro: false },
-    ],
-  },
-  {
-    icon: <UserCircleIcon />,
-    name: "Gestion Profils",
-    roles:[5],
-    subItems: [
-      { name: "Tous les utilisateurs", path:"/tous-les-utilisateurs", pro: false},
-      { name: "Ajouter utilisateur", path:"/créer-utilisateur", pro: false},
     ],
   },
   {
@@ -60,8 +52,34 @@ const navItems: NavItem[] = [
     subItems: [
       {name: "Nouvelle Demande", path:"/nouvelle-demande", roles:[3], pro: false},
       { name: "Toutes les demandes", path: "/toutes-les-demandes", pro: false },
+    ], 
+  },
+  {
+    icon: <StockBox />,
+    name: "Gestion stock",
+    roles:[7],
+    subItems: [
+      { name: "Voir Stock", path: "/gestion-stock", pro: false },
+      { name: "Ajouter pièce", path: "/ajouter-piece", pro: false },
     ],
-    
+  },
+  {
+    icon: <UserCircleIcon />,
+    name: "Gestion Profils",
+    roles:[5],
+    subItems: [
+      { name: "Tous les utilisateurs", path:"/tous-les-utilisateurs", pro: false},
+      { name: "Ajouter utilisateur", path:"/créer-utilisateur", pro: false},
+    ],
+  },
+  {
+    icon: <DeliveryAdd />,
+    name: "Gestion Livraison",
+    roles:[14],
+    subItems: [
+      { name: "Voir types livraison", path: "/types-livraison", pro: false },
+      { name: "Ajouter type livraison", path: "/ajouter-type-livraison", pro: false },
+    ],
   },
 
 ];
