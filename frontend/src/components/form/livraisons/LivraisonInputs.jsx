@@ -71,6 +71,8 @@ export default function LivraisonInputs() {
 
   const [serviceId, setServiceId] = useState(null)
 
+  const [quantiteLivraison, setQuantiteLivraison] = useState(0)
+
   useEffect( ()=>{
     const fetchTerminalInfos = async () => {
       setLoadingMerchant(true)
@@ -270,6 +272,7 @@ export default function LivraisonInputs() {
   
     setProduitsLivresTable((prev) => [...prev, newProduit]);
     setProduitsLivres((prev) => [...prev, newProduit]);
+    setQuantiteLivraison(quantiteLivraison + 1)
   
     // Optional: Reset form fields
     setTerminalSN('');
@@ -369,6 +372,7 @@ export default function LivraisonInputs() {
     setProduitsLivres((prev) =>
       prev.filter((_, index) => index !== indexToRemove)
     );
+    setQuantiteLivraison(quantiteLivraison - 1)
   };
 
   const handleValidate = () =>{
@@ -559,6 +563,9 @@ export default function LivraisonInputs() {
       </div>
       <div>
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
+          <div className='p-4 text-xs text-gray-600'>
+            <span>Quantité : {quantiteLivraison}</span>
+          </div>
           <div className="max-w-full overflow-x-auto">
             <Table>
               {/* Table Header */}
@@ -654,19 +661,19 @@ export default function LivraisonInputs() {
             </Table>
           </div>
         </div>
-        <div className="w-full flex flex-col justify-center items-center">
+        <div className="w-full flex flex-col justify-center items-center mt-6">
           {loadingDelivery? 
-            <span className="mt-20">
+            <span className="">
               <ProgressSpinner style={{width: '50px', height: '50px'}} strokeWidth="8" animationDuration=".5s" />
             </span>
           :
-            <button onClick={handleValidate} className="w-1/4 mt-20 bg-green-400 rounded-2xl h-10 flex justify-center items-center">
+            <button onClick={handleValidate} className="w-1/4 bg-green-400 rounded-2xl h-10 flex justify-center items-center">
               <span>Valider formulaire</span>
               <span className="text-2xl"><ListIcon /></span>
             </button> 
             }
             {errorDeliver?
-              <span className="text-error-600 font-medium flex items-center justify-center text-sm p-1 mt-4">
+              <span className="text-error-600 font-medium flex items-center justify-center text-sm p-1">
                 {errorDeliver}
               </span>
             :

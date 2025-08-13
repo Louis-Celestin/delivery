@@ -571,11 +571,11 @@ const returnDemande = async (req, res) => {
       <p>Commentaire : ${commentaire_mail}<p>
       <br>
       <p>Retrouvez la demande à ce lien : 
-          <span>
-          <a href="${demandeLink}" target="_blank" style="background-color: #73dced; color: white; padding: 7px 12px; text-decoration: none; border-radius: 5px;">
-              Cliquez ici !
-          </a>
-          </span>
+        <span>
+        <a href="${demandeLink}" target="_blank" style="background-color: #73dced; color: white; padding: 7px 12px; text-decoration: none; border-radius: 5px;">
+          Cliquez ici !
+        </a>
+        </span>
       </p>
       <br><br>
       <p>Green - Pay vous remercie.</p>
@@ -753,7 +753,6 @@ const updateDemande = async (req, res) => {
     commentaire,
     user_id,
     type_demande_id,
-    nom_demandeur,
     service_id,
     role_validateur,
     id_demandeur,
@@ -762,7 +761,7 @@ const updateDemande = async (req, res) => {
   } = req.body;
 
   try {
-    // Données à mettre à jour
+    
     const produits = typeof produitsDemandes === "string"
     ? JSON.parse(produitsDemandes)
     : produitsDemandes;
@@ -772,33 +771,33 @@ const updateDemande = async (req, res) => {
     utilisateur = await prisma.users.findUnique({
       where: {
         id_user: parseInt(user_id)
-      }})
+      }
+    })
   
-
     if (!utilisateur) {
       return res.status(404).json({ message: "Utilisateur non trouvé" });
     }
   
     const dataToUpdate = {
-      statut_demande: "en_cours",
-      produit_demande: typeof produitsDemandes === "string" ? produitsDemandes : JSON.stringify(produitsDemandes),
-      commentaire,
-      nom_demandeur: nom_demandeur || null,
-      type_demande_id: parseInt(type_demande_id),
+      nom_demandeur: utilisateur.fullname || null,
       date_demande: new Date(),
+      commentaire,
+      signature_demandeur: '',
       qte_total_demande: parseInt(qte_total_demande),
+      produit_demande: typeof produitsDemandes === "string" ? produitsDemandes : JSON.stringify(produitsDemandes),
+      statut_demande: "en_cours",
       user_id: utilisateur ? utilisateur.id_user : null,
+      type_demande_id: parseInt(type_demande_id),
       role_id_recepteur: parseInt(role_validateur),
-      service_demandeur: parseInt(service_id),
       id_demandeur: parseInt(id_demandeur) || null,
       motif_demande: motif_demande || null,
+      service_demandeur: parseInt(service_id),
     };
 
     const updated = await prisma.demandes.update({
-        where: { id_demande: parseInt(id) },
-        data: dataToUpdate
+      where: { id_demande: parseInt(id) },
+      data: dataToUpdate
     });
-
 
 
     /************************** GESTION DES MAILS ********************************/ 
@@ -901,8 +900,7 @@ const updateDemande = async (req, res) => {
       }
     }
 
-
-      return res.status(200).json(updated);
+    return res.status(200).json(updated);
   } catch (error) {
       console.error(error);
       return res.status(500).json({ message: "Erreur lors de la mise à jour", error });

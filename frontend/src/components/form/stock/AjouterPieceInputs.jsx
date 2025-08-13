@@ -31,6 +31,7 @@ export default function AjouterPieceInputs() {
     const [optionsModel, setOptionsModel] = useState([])
     const [selectedModel, setSelectedModel] = useState()
     const [nomModel, setNomModel] = useState('')
+    const [listeModels, setListeModels] = useState([])
 
     const [optionsService, setOptionsService] = useState([])
     const [selectedService, setSelectedService] = useState()
@@ -39,6 +40,8 @@ export default function AjouterPieceInputs() {
     const [quantitePiece, setQuantitePiece] = useState(0)
 
     const [codePiece, setCodePiece] = useState('')
+
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
 
     useEffect( () =>{
         const fetchData = async () =>{
@@ -56,6 +59,7 @@ export default function AjouterPieceInputs() {
                 setListeServices(service_data)
 
                 const models_data = await stockData.getAllModels()
+                setListeModels(models_data)
                 const options_models = models_data.map((item) =>({
                     value: item.id_model,
                     label: item.nom_model,
@@ -75,11 +79,14 @@ export default function AjouterPieceInputs() {
         console.log("Selected value : ",value)
         setSelectedModel(value);
 
-        const model = stock.find((item) =>{
+        const model = listeModels.find((item) =>{
             return item.id_model == value
         })
-
-        setNomModel(model.nom_model)
+        if(model){
+            setNomModel(model.nom_model)
+        }else{
+            setNomModel('Inconnu')
+        }
     }
 
     const changeService = (value) =>{
@@ -106,6 +113,9 @@ export default function AjouterPieceInputs() {
             setErrorInput("Vous devez choisir le service !")
             return
         }
+        if(!quantitePiece){
+            setQuantitePiece(0)
+        }
 
         const existingPiece = stock.find((item) =>{
             const sameName = item.nom_piece.toLowerCase().trim() == nomPiece.toLowerCase().trim()
@@ -119,8 +129,43 @@ export default function AjouterPieceInputs() {
         }
 
         setIsConfirmModalOpen(true)
-        setTypeLivraison(nomLivraison.toUpperCase().trim())
         setErrorInput('')
+    }
+
+    const handleCreate = async (e) => {
+        e.preventDefault()
+
+        const payload = {
+            nomPiece: nomPiece,
+            modelId: selectedModel,
+            serviceId: selectedService,
+            quantite: quantitePiece,
+            user_id: userId,
+            code_piece: codePiece,
+        }
+
+        try{
+            setLoadindCreate(true)
+            setIsConfirmModalOpen(false)
+            console.log("Sending payload: ", payload);
+            const response = await stockData.addPiece(payload)
+            console.log(response)
+            Swal.fire({
+                title: "Succès",
+                text: "Nouvelle pièce ajouté au stock",
+                icon: "success"
+            })
+            navigate('/gestion-stock')
+        } catch(error){
+            Swal.fire({
+                title: "Attention",
+                text: "Une erreur est survenue lors de la création",
+                icon: "warning"
+            })
+            navigate('/gestion-stock')
+        } finally{
+            setLoadindCreate(false)
+        }
     }
 
     return(
@@ -142,6 +187,15 @@ export default function AjouterPieceInputs() {
                                                 onChange={(e) =>{
                                                     const value = e.target.value
                                                     setNomPiece(value)
+                                                }}    
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="input">Code pièce</Label>
+                                            <Input type="text" placeholder="##" value={codePiece}
+                                                onChange={(e) =>{
+                                                    const value = e.target.value
+                                                    setCodePiece(value)
                                                 }}    
                                             />
                                         </div>
@@ -203,7 +257,43 @@ export default function AjouterPieceInputs() {
                         )}
                     </>
                 )}
-            </div> 
+            </div>
+            <Modal isOpen={isConfirmModalOpen} onClose={() => setIsConfirmModalOpen(false)} className="p-6 max-w-xl">
+                <div className="space-y-6">
+                    <div className="w-full text-center">
+                        <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium">Nouvelle pièce</span>
+                    </div>
+                    <div>
+                        <span>Vous allez ajouter une nouvelle pièce : <span className="text-red-500 font-medium">{nomPiece}</span></span>
+                    </div>
+                    <div>
+                        <span>Code pièce : <span className="text-red-500 font-medium">{codePiece}</span></span>
+                    </div>
+                    <div>
+                        <span>Modèle : <span className="text-red-500 font-medium">{nomModel}</span></span>
+                    </div>
+                    <div>
+                        <span>Service : <span className="text-red-500 font-medium">{nomService}</span></span>
+                    </div>
+                    <div>
+                        <span>Quantité : <span className="text-red-500 font-medium">{quantitePiece}</span></span>
+                    </div>
+                    <div className='w-full flex justify-center items-center'>
+                        <button className='w-1/3 mx-3 bg-gray-400 rounded-2xl h-10 flex justify-center items-center'
+                            onClick={() =>{
+                                setIsConfirmModalOpen(false);
+                            }}
+                        >
+                            Annuler
+                        </button>
+                        <button className='w-1/3 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'
+                            onClick={handleCreate}
+                        >
+                            Valider
+                        </button>
+                    </div>
+                </div>
+            </Modal> 
         </>
     )
 }

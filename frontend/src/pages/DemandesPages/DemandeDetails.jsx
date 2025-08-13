@@ -357,10 +357,10 @@ export default function DemandeDetails() {
             const response = await demandes.returnDemande(payload);
 
             Swal.fire({
-                    title: "Succès",
-                    text: "Demande retournée avec succès",
-                    icon: "success"
-                    });
+                title: "Succès",
+                text: "Demande retournée avec succès",
+                icon: "success"
+            });
             console.log(response)
             setIsModalReturnOpen(false)
             navigate('/toutes-les-demandes');
@@ -380,7 +380,7 @@ export default function DemandeDetails() {
     const handleCancel = async (e) =>{
         e.preventDefault();
         
-        if(!commentaire_refus){
+        if(!messageCancel){
             setErrorCancel("Ajoutez un commentaire avant de refuser la demande!")
             return;
         }

@@ -20,7 +20,7 @@ export default function StockDTInfos() {
             data = await stock.getAllStock()
             console.log(data)
             const piecesA920 = data.filter(item =>{
-                return item.model_id == 1 && item.service == 3;
+                return item.model_id == 1 && item.service == 5;
             });
             setStockDT(piecesA920)
         }catch(error){

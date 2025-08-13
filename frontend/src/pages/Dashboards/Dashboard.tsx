@@ -100,9 +100,9 @@ export default function Dashboard() {
                 // @ts-ignore
                 value={getFormattedDate(startDate)}
                 onChange={(currentDateString) => {
-                    // @ts-ignore
-                    setStartDate(new Date(currentDateString))
-                    setIsDateChanged(true)
+                  // @ts-ignore
+                  setStartDate(new Date(currentDateString))
+                  setIsDateChanged(true)
                 }}
               />
             </div>

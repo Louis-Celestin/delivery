@@ -6,24 +6,15 @@ export class Stock{
     async getAllStock(){
         try{
             const response = await axios.get(`${urlBase}/api/stock/getAllStock`)
-            console.log(response)
             return response.data;
         } catch(error){
             throw error.response.data
         }
     };
 
-    async setStock(piece_id, stock_initial, nouveau_stock, utilisateur_id){
+    async setStock(payload){
         try{
-            const response = await axios.put(`${urlBase}/api/stock/setStock`,
-                {
-                    piece_id,
-                    stock_initial,
-                    nouveau_stock,
-                    utilisateur_id,
-                }
-            )
-            console.log(response)
+            const response = await axios.put(`${urlBase}/api/stock/setStock`,payload)
             return response.data;
         } catch(error){
             throw error.response.data
@@ -39,5 +30,14 @@ export class Stock{
             throw error.response.data
         }
     };
+
+    async addPiece(payload){
+        try{
+            const response = await axios.post(`${urlBase}/api/stock/addPiece`, payload)
+            return response.data
+        } catch(error){
+            throw error.response.data
+        }
+    }
 
 }

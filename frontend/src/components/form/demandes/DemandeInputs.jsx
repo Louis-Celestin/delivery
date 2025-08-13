@@ -88,7 +88,7 @@ export default function DemandeInputs() {
         const piecesA920 = data.filter(item =>{
           return item.model_id == 1;
         });
-        const options = piecesA920.map((item) => ({
+        const options = data.map((item) => ({
           value: item.id_piece,
           label: item.nom_piece.toUpperCase(),
         }));
@@ -364,166 +364,169 @@ export default function DemandeInputs() {
       setLoadingDemande(false)
     } 
   }
+  
   return (
     <>
       <div className="flex justify-center mb-6">
-        {loadingDemandeData ? (<>Loading...</>) :
-          (
-            errorFrom ? (
+        {loadingDemandeData ? (<>Loading...</>) : (
+          <>
+            {errorFrom ? (
               <div className="text-error-600 bg-error-300 font-medium flex items-center justify-center rounded-3xl text-sm p-4">
                 {errorFrom}
               </div>
             ) : (
-                  <>
-                    <ComponentCard className="md:w-1/2 w-full" title={`Demande ${typeDemande}`}>
-                      <div className="pb-3 text-center">
-                        <span className="text-sm font-semibold">Informations générales</span>
-                      </div>
-                      <div className="space-y-6">
+              <>
+                <ComponentCard className="md:w-1/2 w-full" title={`Demande ${typeDemande}`}>
+                  <div className="pb-3 text-center">
+                    <span className="text-sm font-semibold">Informations générales</span>
+                  </div>
+                  <div className="space-y-6">
+                    <div>
+                      <Label>Pièce demandée <span className="text-red-700">*</span></Label>
+                      <Select
+                        options={optionsPieces}
+                        placeholder="Choisir une option"
+                        onChange={ChangePieceType}
+                        className="dark:bg-dark-900"                          
+                      />
+                    </div>
+                    <div>
+                      <Label>Service demandeur <span className="text-red-700">*</span></Label>
+                      <Select
+                        options={optionsServices}
+                        placeholder="Choisir une option"
+                        onChange={ChangeService}
+                        className="dark:bg-dark-900"               
+                      />
+                    </div>
+                    <div>
+                      <Label>Demandeur <span className="text-red-700">*</span></Label>
+                      <Select
+                        options={usersOptions}
+                        placeholder="Choisir une option"
+                        onChange={ChangeUser}
+                        className="dark:bg-dark-900"               
+                      />
+                    </div>
+                    <div>
+                      <Label>Motif de demande <span className="text-red-700">*</span></Label>
+                      <Select
+                        options={options_motifs}
+                        placeholder="Choisir une option"
+                        onChange={ChangeMotif}
+                        className="dark:bg-dark-900"
+                        defaultValue={motifDemande}               
+                      />
+                    </div>
+                    {motifAutre ? 
+                    (
+                      <>
                         <div>
-                          <Label>Pièce demandée <span className="text-red-700">*</span></Label>
-                          <Select
-                            options={optionsPieces}
-                            placeholder="Choisir une option"
-                            onChange={ChangePieceType}
-                            className="dark:bg-dark-900"                          
+                          <Label>Préciser le motif <span className="text-red-700">*</span></Label>
+                          <Input
+                            value={motifDemande} 
+                            placeholder="Motif de la demande"
+                            onChange={(e) => setMotifDemande(e.target.value)}
                           />
                         </div>
-                        <div>
-                          <Label>Service demandeur <span className="text-red-700">*</span></Label>
-                          <Select
-                            options={optionsServices}
-                            placeholder="Choisir une option"
-                            onChange={ChangeService}
-                            className="dark:bg-dark-900"               
-                          />
-                        </div>
-                        <div>
-                          <Label>Demandeur <span className="text-red-700">*</span></Label>
-                          <Select
-                            options={usersOptions}
-                            placeholder="Choisir une option"
-                            onChange={ChangeUser}
-                            className="dark:bg-dark-900"               
-                          />
-                        </div>
-                        <div>
-                          <Label>Motif de demande <span className="text-red-700">*</span></Label>
-                          <Select
-                            options={options_motifs}
-                            placeholder="Choisir une option"
-                            onChange={ChangeMotif}
-                            className="dark:bg-dark-900"
-                            defaultValue={motifDemande}               
-                          />
-                        </div>
-                        {motifAutre ? 
-                        (
-                          <>
-                            <div>
-                              <Label>Préciser le motif <span className="text-red-700">*</span></Label>
-                              <Input
-                                value={motifDemande} 
-                                placeholder="Motif de la demande"
-                                onChange={(e) => setMotifDemande(e.target.value)}
-                              />
+                      </>
+                    ) : (
+                      <></>
+                    )}
+                    <div>
+                      <Label>Commentaire</Label>
+                      <TextArea
+                        value={message}
+                        onChange={(value) => setMessage(value)}
+                        rows={4}
+                        placeholder="Ajoutez un commentaire"
+                      />
+                    </div>
+                    {/* <div>
+                      <Label>Importer des fichiers</Label>
+                      <FileInput className="curstom-class" 
+                        onChange={handleFileChange}
+                        multiple 
+                      />
+                      {selectedFiles.length > 0 ? (
+                        <div className="border border-gray-500 mt-3 rounded">
+                          {selectedFiles.map((selectedFile, index) => (
+                            <div key={index} className="border-gray-300 px-1 flex justify-between items-center border-b border-t">
+                              <span className="text-xs text-gray-700 font-medium">
+                                <i>{selectedFile.name}</i>
+                              </span>
+                              <button onClick={() => handleDeleteFile(index)}>
+                                <span className="text-error-600"><i className="pi pi-times"></i></span>
+                              </button>
                             </div>
-                          </>
-                        ) : (
-                          <></>
-                        )}
-                        <div>
-                          <Label>Commentaire</Label>
-                          <TextArea
-                            value={message}
-                            onChange={(value) => setMessage(value)}
-                            rows={4}
-                            placeholder="Ajoutez un commentaire"
-                          />
+                          ))}
                         </div>
-                        {/* <div>
-                          <Label>Importer des fichiers</Label>
-                          <FileInput className="curstom-class" 
-                            onChange={handleFileChange}
-                            multiple 
-                          />
-                          {selectedFiles.length > 0 ? (
-                            <div className="border border-gray-500 mt-3 rounded">
-                              {selectedFiles.map((selectedFile, index) => (
-                                <div key={index} className="border-gray-300 px-1 flex justify-between items-center border-b border-t">
-                                  <span className="text-xs text-gray-700 font-medium">
-                                    <i>{selectedFile.name}</i>
-                                  </span>
-                                  <button onClick={() => handleDeleteFile(index)}>
-                                    <span className="text-error-600"><i className="pi pi-times"></i></span>
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <></>
-                          )}
-                        </div> */}
-                        <div className="pb-3 text-center">
-                          <span className="text-sm font-semibold">Informations sur produits</span>
+                      ) : (
+                        <></>
+                      )}
+                    </div> */}
+                    <div className="pb-3 text-center">
+                      <span className="text-sm font-semibold">Informations sur produits</span>
+                    </div>
+                    <div className="">
+                      <div className="flex justify-center items-center">
+                        <div className="me-1">
+                          <Label htmlFor="input">Stock de départ <span className="text-red-700">*</span></Label>
+                          <Input type="number" id="input" value={stockInitial} onChange={(e) =>{
+                            const value = e.target.value
+                            if(value>=0){
+                              setStockInitial(value)
+                            }
+                          }} />
                         </div>
-                        <div className="">
-                          <div className="flex justify-center items-center">
-                            <div className="me-1">
-                              <Label htmlFor="input">Stock de départ <span className="text-red-700">*</span></Label>
-                              <Input type="number" id="input" value={stockInitial} onChange={(e) =>{
-                                const value = e.target.value
-                                if(value>=0){
-                                  setStockInitial(value)
-                                }
-                              }} />
-                            </div>
-                            <div className="ms-1">
-                              <Label htmlFor="input">Quantité demandée <span className="text-red-700">*</span></Label>
-                              <Input type="number" id="input" value={qteDemande} onChange={(e) =>{
-                                const value = e.target.value
-                                if(value>=0){
-                                  setQteDemande(value)
-                                }
-                              }} />
-                            </div>
-                          </div>                        
+                        <div className="ms-1">
+                          <Label htmlFor="input">Quantité demandée <span className="text-red-700">*</span></Label>
+                          <Input type="number" id="input" value={qteDemande} onChange={(e) =>{
+                            const value = e.target.value
+                            if(value>=0){
+                              setQteDemande(value)
+                            }
+                          }} />
                         </div>
-                        <div>
-                          <span className="text-error-600 font-medium flex items-center justify-center text-sm p-1 mt-4">
-                            {errorAjout}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="text-right text-gray-500">
-                        <span className="text-xs font-medium">
-                          Les champs suivis par un <span className="text-red-700">*</span> sont obligatoires
+                      </div>                        
+                    </div>
+                    <div>
+                      <span className="text-error-600 font-medium flex items-center justify-center text-sm p-1 mt-4">
+                        {errorAjout}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="w-full flex flex-col justify-center items-center">
+                    {loadingDemande? 
+                      <span className="">
+                        <ProgressSpinner style={{width: '50px', height: '50px'}} strokeWidth="8" animationDuration=".5s" />
+                      </span>
+                    :
+                      <button onClick={handleConfirm} className="w-1/2 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center">
+                        <span>Valider demande</span>
+                        <span className="text-2xl"><ListIcon /></span>
+                      </button> 
+                      }
+                      {errorDeliver?
+                        <span className="text-error-600 font-medium flex items-center justify-center text-sm p-1 mt-4">
+                          {errorDeliver}
                         </span>
-                      </div>
-                    </ComponentCard>
-                  </>
-            )
+                      :
+                        <></>
+                      }
+                  </div>
+                  <div className="text-right text-gray-500">
+                    <span className="text-xs font-medium">
+                      Les champs suivis par un <span className="text-red-700">*</span> sont obligatoires
+                    </span>
+                  </div>
+                </ComponentCard>
+              </>
+            )}
+          
+          </>
           )
         }
-      </div>
-      <div className="w-full flex flex-col justify-center items-center">
-        {loadingDemande? 
-          <span className="mt-6">
-            <ProgressSpinner style={{width: '50px', height: '50px'}} strokeWidth="8" animationDuration=".5s" />
-          </span>
-        :
-          <button onClick={handleConfirm} className="w-1/4 mt-6 bg-green-400 rounded-2xl h-10 flex justify-center items-center">
-            <span>Valider demande</span>
-            <span className="text-2xl"><ListIcon /></span>
-          </button> 
-          }
-          {errorDeliver?
-            <span className="text-error-600 font-medium flex items-center justify-center text-sm p-1 mt-4">
-              {errorDeliver}
-            </span>
-          :
-            <></>
-          }
       </div>
       <Modal isOpen={isConfirmModalOpen} onClose={() => setIsConfirmModalOpen(false)} className="p-4 max-w-xl">
         <div className="p-6 mt-5">

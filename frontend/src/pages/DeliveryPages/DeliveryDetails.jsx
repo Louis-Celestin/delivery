@@ -64,6 +64,8 @@ export default function DeliveryDetails() {
 
     const [isCompleted, setIsCompleted] = useState(false)
 
+    const [quantiteLivraison, setQuantiteLivraison] = useState()
+
     const formatDate = (date) => {
         const d = new Date(date);
         return d.toLocaleDateString('fr-FR'); // or use any locale you want
@@ -93,6 +95,8 @@ export default function DeliveryDetails() {
                         ...livraison_data,
                         produitsLivre: JSON.parse(livraison_data.produitsLivre)
                     });
+                    const produits = JSON.parse(livraison_data.produitsLivre)
+                    setQuantiteLivraison(produits.length)
                     setLivraisonID(livraison_data.id_livraison)
                     setDateLivraison(formatDate(livraison_data.date_livraison))
                     setCommentaire(livraison_data.commentaire)
@@ -149,16 +153,21 @@ export default function DeliveryDetails() {
     },[id]);
 
     const handleGeneratePdf = async () =>{
-            setLoadingPrint(true);
-            try{
-                const blob = await generatePdf(id);
-                const fileURL = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
-                window.open(fileURL, '_blank');
-            }catch(error){
-                console.log(error)
-            }finally{
-                setLoadingPrint(false);
-            }
+        setLoadingPrint(true);
+        try{
+            const blob = await generatePdf(id);
+            const fileURL = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+            window.open(fileURL, '_blank');
+        }catch(error){
+            console.log(error)
+            Swal.fire({
+                title: "Attention",
+                text: "Une erreur s'est produite lors de la génération du pdf",
+                icon: "warning"
+            });
+        }finally{
+            setLoadingPrint(false);
+        }
     }
 
     const handleClearReception = () =>{
@@ -386,6 +395,9 @@ export default function DeliveryDetails() {
                         <></>
                     )}
                     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
+                        <div className='p-4 text-xs text-gray-600'>
+                            <span>Quantité : {quantiteLivraison}</span>
+                        </div>
                         <div className="max-w-full overflow-x-auto">
                             <Table>
                             {/* Table Header */}

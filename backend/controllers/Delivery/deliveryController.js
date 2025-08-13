@@ -168,7 +168,7 @@ const deliver = async (req, res) => {
     const sendMail = require("../../utils/emailSender");
     const commentaire_mail = commentaire ? commentaire : '(sans commentaire)' 
     if ((service_users && service_users.length > 0) || (recepteurs && recepteurs.length > 0) ) {
-      const subject = `NOUVELLE LIVRAISON ${livraisonTypeName}`;
+      const subject = `NOUVELLE LIVRAISON (${livraisonTypeName})`;
       const html = `
         <p>Bonjour,</p>
         <p>Une nouvelle livraison a été enregistrée.</p>
@@ -391,7 +391,7 @@ const updateLivraison = async (req, res) => {
     const sendMail = require("../../utils/emailSender");
     const commentaire_mail = commentaire ? commentaire : '(sans commentaire)' 
     if ((service_users && service_users.length > 0) || (recepteurs && recepteurs.length > 0) ) {
-      const subject = `MODIFICATION LIVRAISON ${livraisonTypeName}`;
+      const subject = `MODIFICATION LIVRAISON (${livraisonTypeName})`;
       const html = `
         <p>Bonjour,</p>
         <p>La livraison ${updated.id_livraison} a été modifiée.</p>
@@ -463,154 +463,12 @@ const deleteLivraison = async (req, res) => {
     }
 };
 
-const generateLivraisonPDF = async (req, res) => {
-    const { id } = req.params;
-  
-    try {
-      const data = await prisma.livraison.findUnique({
-        where: { id_livraison: parseInt(id) },
-        include: {
-          validations: true,
-        }
-      });
-
-      console.log(data)
-  
-      if (!data) return res.status(404).json({ message: "Livraison introuvable" });
-      if (data.validations.length < 1) return res.status(400).json({ message: "Aucune validation trouvée" });
-  
-      const livraison = {
-        ...data,
-        produitsLivre: typeof data.produitsLivre === "string"
-          ? JSON.parse(data.produitsLivre)
-          : data.produitsLivre
-      };
-  
-      // 🔎 Récupération de l'agent qui a fait la livraison (si user_id défini)
-      let expediteurNom = "N/A";
-      // console.log(livraison)
-      if (livraison.nom_livreur) {
-        // ✅ Ancienne livraison ou nom fourni manuellement
-        expediteurNom = livraison.nom_livreur;
-      } else if (livraison.user_id) {
-        const user = await prisma.users.findUnique({
-          where: { id_user: livraison.user_id }
-        });
-  
-        if (user?.agent_id) {
-          const agent = await prisma.agents.findUnique({
-            where: { id: user.agent_id }
-          });
-          if (agent?.nom) {
-            expediteurNom = agent.nom;
-          }
-        }
-      }
-  
-      // 🗺️ Sélection du template
-      const templatesMap = {
-        1: "livraison_tpe_gim.html",
-        2: "livraison_tpe_repare.html",
-        3: "livraison_mj_gim.html",
-        4: "livraison_tpe_mobile.html",
-        5: "livraison_chargeur_tpe.html",
-        6: "livraison_tpe_ecobank.html", // Type Ecobank ajouté aux templates
-        7: "livraison_chargeur_tpe.html",
-        8: "livraison_chargeur_decom.html",
-      };
-  
-      const templateFile = templatesMap[livraison.type_livraison_id];
-      if (!templateFile) return res.status(400).json({ message: "Type de livraison inconnu" });
-  
-      const filePath = path.join(__dirname, "../../statics/templates/", templateFile);
-      let html = fs.readFileSync(filePath, "utf8");
-  
-      // 🧱 Construction du tableau
-      const produitsRows = livraison.produitsLivre.map((p, index) => {
-        let row = "";
-        const has = (m) => p.mobile_money?.includes(m) ? "✔" : "";
-        switch (livraison.type_livraison_id) {
-          case 1:
-            row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${p.banque}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
-            break;
-          case 2:
-            row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td></tr>`;
-            break;
-          case 3:
-            row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${p.banque}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
-            break;
-          case 4:
-            row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
-            break;
-          case 5:
-            row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td></tr>`;
-            break;
-          case 6:
-            row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${p.banque}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
-            break;
-          case 7:
-            row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td></tr>`;
-            break;
-          case 8:
-            row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td></tr>`;
-            break;
-          default:
-            row = "";
-        }
-      
-        // ➕ Ajout du saut de page toutes les 20 lignes
-        if ((index + 1) % 20 === 0) {
-          row += `<tr class="page-break"></tr>`;
-        }
-      
-        return row;
-      }).join("\n");
-      
-      // console.log(livraison.validations[0].signature)
-      // 🧩 Remplacement des balises HTML
-      let index = livraison.validations.length-1
-      html = html
-        .replace("{{commentaire}}", livraison.commentaire || "")
-        .replace("{{date_livraison}}", formatDate(livraison.date_livraison))
-        .replace("{{qte_totale_livraison}}", livraison.qte_totale_livraison || livraison.produitsLivre.length)
-        .replace("{{nom_expediteur}}", expediteurNom)
-        .replace("{{nom_recepteur}}", livraison.validations[index].nom_recepteur || "Receveur")
-        .replace("{{produitsRows}}", produitsRows)
-        .replace("{{signature}}", livraison.validations[index].signature || "Validé")
-        .replace("{{date_validation}}", livraison.validations[index].date_validation ? formatDate(livraison.validations[index].date_validation) : "N/A")
-        .replace("{{signature_expediteur}}", livraison.signature_expediteur || "Signé")
-
-      // 🖨️ Génération PDF
-      const browser = await puppeteer.launch({ headless: "new", args : ["--no-sandbox", "--disable-setuid-sandbox"] });
-      const page = await browser.newPage();
-      await page.setContent(html, { waitUntil: "networkidle0" });
-  
-      const pdfBuffer = await page.pdf({
-        format: "A4",
-        printBackground: true,
-      });
-  
-      await browser.close();
-  
-      res.set({
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename=livraison_${livraison.id_livraison}.pdf`
-      });
-  
-      return res.send(pdfBuffer);
-  
-    } catch (err) {
-      console.error(err);
-      return res.status(500).json({ message: "Erreur lors de la génération du PDF" });
-    }
-};
-
 /* Ajout d'une fonction deliverOld specialement pour les livraisons anciennes */
 const deliverOld = async (req, res) => {
-    const {
-      produitsLivre,
-      commentaire,
-      user_id,
+  const {
+    produitsLivre,
+    commentaire,
+    user_id,
       nom_livreur,
       nom_validateur,
       type_livraison_id,
@@ -1247,6 +1105,177 @@ const deleteTypeLivraison = async (req, res) => {
     return res.status(500).json({ message: "Erreur lors de la mise à jour", error });
   }
 }
+
+const generateLivraisonPDF = async (req, res) => {
+    const { id } = req.params;
+  
+    try {
+      const data = await prisma.livraison.findUnique({
+        where: { id_livraison: parseInt(id) },
+        include: {
+          validations: true,
+        }
+      });
+
+      console.log(data)
+  
+      if (!data) return res.status(404).json({ message: "Livraison introuvable" });
+      if (data.validations.length < 1) return res.status(400).json({ message: "Aucune validation trouvée" });
+  
+      const livraison = {
+        ...data,
+        produitsLivre: typeof data.produitsLivre === "string"
+          ? JSON.parse(data.produitsLivre)
+          : data.produitsLivre
+      };
+  
+      // 🔎 Récupération de l'agent qui a fait la livraison (si user_id défini)
+      let expediteurNom = "N/A";
+      // console.log(livraison)
+      if (livraison.nom_livreur) {
+        expediteurNom = livraison.nom_livreur;
+      } else if (livraison.user_id) {
+        const user = await prisma.users.findUnique({
+          where: { id_user: livraison.user_id }
+        });
+        if (user) {
+          expediteurNom = user.fullname;
+        }
+      }
+  
+      // 🗺️ Sélection du template
+      const templatesMap = {
+        0: "livraison_base.html",
+        1: "livraison_tpe_gim.html",
+        2: "livraison_tpe_repare.html",
+        3: "livraison_mj_gim.html",
+        4: "livraison_tpe_mobile.html",
+        5: "livraison_chargeur_tpe.html",
+        6: "livraison_tpe_ecobank.html",
+        7: "livraison_chargeur_tpe.html",
+        8: "livraison_chargeur_decom.html",
+      };
+  
+      const templateFile = templatesMap[0];
+      // if (!templateFile) return res.status(400).json({ message: "Type de livraison inconnu" });
+  
+      const filePath = path.join(__dirname, "../../statics/templates/", templateFile);
+      let html = fs.readFileSync(filePath, "utf8");
+  
+      // 🧱 Construction du tableau
+      const produitsRows = livraison.produitsLivre.map((p, index) => {
+        let row = "";
+        const has = (m) => p.mobile_money?.includes(m) ? "✔" : "";
+        row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${p.banque}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
+        // switch (livraison.type_livraison_id) {
+        //   case 1:
+        //     row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${p.banque}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
+        //     break;
+        //   case 2:
+        //     row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td></tr>`;
+        //     break;
+        //   case 3:
+        //     row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${p.banque}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
+        //     break;
+        //   case 4:
+        //     row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
+        //     break;
+        //   case 5:
+        //     row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td></tr>`;
+        //     break;
+        //   case 6:
+        //     row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${p.banque}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
+        //     break;
+        //   case 7:
+        //     row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td></tr>`;
+        //     break;
+        //   case 8:
+        //     row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td></tr>`;
+        //     break;
+        //   default:
+        //     row = "";
+        // }
+      
+        // ➕ Ajout du saut de page toutes les 20 lignes
+        if ((index + 1) % 20 === 0) {
+          row += `<tr class="page-break"></tr>`;
+        }
+      
+        return row;
+      }).join("\n");
+
+      const typeLivraison = await prisma.type_livraison_commerciale.findUnique({
+        where: {
+          id_type_livraison: livraison.type_livraison_id
+        }
+      })
+      
+      // console.log(livraison.validations[0].signature)
+      // 🧩 Remplacement des balises HTML
+      let index = livraison.validations.length-1
+      html = html
+        .replaceAll("{{type_livraison}}", typeLivraison.nom_type_livraison.toUpperCase())
+        .replace("{{commentaire}}", livraison.commentaire || "")
+        .replace("{{commentaire_reception}}", livraison.validations[index].commentaire)
+        .replace("{{date_livraison}}", formatDate(livraison.date_livraison))
+        .replace("{{qte_totale_livraison}}", livraison.qte_totale_livraison || livraison.produitsLivre.length)
+        .replace("{{nom_expediteur}}", expediteurNom)
+        .replace("{{nom_recepteur}}", livraison.validations[index].nom_recepteur || "Receveur")
+        .replace("{{produitsRows}}", produitsRows)
+        .replace("{{signature}}", livraison.validations[index].signature || "Validé")
+        .replace("{{date_validation}}", livraison.validations[index].date_validation ? formatDate(livraison.validations[index].date_validation) : "N/A")
+        .replace("{{signature_expediteur}}", livraison.signature_expediteur || "Signé")
+        .replace(/(\.title_type\s*\{)([\s\S]*?)(\})/gi, (match, open, content, close) => {
+          let newContent = " background-color: white; color: black;";
+          switch(livraison.type_livraison_id){
+            case 1:
+              newContent = " background-color: #cda5f5; color: #ffff;"
+            break;
+            case 2:
+              newContent = " background-color: #ee6060; color: #ffff;"
+            break;
+            case 3:
+              newContent = " background-color: #a476d2; color: #ffff;"
+            break;
+            case 4:
+              newContent = " background-color: #77ef83; color: #ffff;"
+            break;
+            case 5:
+              newContent = " background-color: #eaee7f; color: #ffff;"
+            break;
+            case 6:
+              newContent = " background-color: #80d8e6; color: #ffff;"
+            break;
+            default:
+              newContent = " background-color: white; color: black;"
+          }
+          return open + newContent + close;
+        })
+
+      // 🖨️ Génération PDF
+      const browser = await puppeteer.launch({ headless: "new", args : ["--no-sandbox", "--disable-setuid-sandbox"] });
+      const page = await browser.newPage();
+      await page.setContent(html, { waitUntil: "networkidle0" });
+  
+      const pdfBuffer = await page.pdf({
+        format: "A4",
+        printBackground: true,
+      });
+  
+      await browser.close();
+  
+      res.set({
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename=livraison_${livraison.id_livraison}.pdf`
+      });
+  
+      return res.send(pdfBuffer);
+  
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Erreur lors de la génération du PDF" });
+    }
+};
 
 
 module.exports = {

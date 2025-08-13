@@ -5,6 +5,7 @@ import Input from "../input/InputField.tsx";
 import Checkbox from "../input/Checkbox.tsx";
 import Select from "../Select.tsx";
 import TextArea from "../input/TextArea.tsx";
+import FileInput from "../input/FileInput.tsx"
 import {
   Table,
   TableBody,
@@ -17,7 +18,6 @@ import { ListIcon } from "../../../icons/index.ts";
 import 'primeicons/primeicons.css'; 
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { useNavigate, useParams } from "react-router";
-import { Merchants } from "../../../backend/livraisons/Merchants.js";
 import { Demandes } from "../../../backend/demandes/Demandes.js";
 import { Stock } from "../../../backend/stock/Stock.js"
 import { Users } from "../../../backend/users/Users.js";
@@ -28,38 +28,32 @@ import SignatureCanvas from 'react-signature-canvas'
 
 export default function ModifyDemandeInputs() {
 
-  const merchants = new Merchants();
   const demandes = new Demandes();
   const stock = new Stock();
   const users = new Users();
-
   const userId = localStorage.getItem('id');
-  const role = localStorage.getItem("role_id")
   const navigate = useNavigate();
-
   const { id } = useParams();
-  const [loadingStock, setLoadingStock] = useState(false);
+
+  const [loadingDemandeData, setLoadingDemandeData] = useState(false);
   const [loadingDemande, setLoadingDemande] = useState(false);
   const [message, setMessage] = useState("");
-  const [produitsDemandes, setProduitsDemandes] = useState([]);
+  const [produitsDemande, setProduitsDemandes] = useState([]);
   const [error, setError] = useState(null);
   const [errorFrom, setErrorForm] = useState(null);
   const [errorAjout, setErrorAjout] = useState(null);
   const [errorDeliver, setErrorDeliver] = useState(null);
   const [isConfirmModalOpen , setIsConfirmModalOpen] = useState(false);
-  const [roleInitiateur, setRoleInitiateur] = useState(null);
-
+  
   const [typeDemande, setTypeDemande] = useState('');
   const [demandeID, setDemandeID] = useState(null);
+  const [serviceDemandeur, setServiceDemandeur] = useState('');
+  const [serviceId, setServiceId] = useState(null);
 
   const [qteDemande, setQteDemande] = useState(0);
   
   const [nomDemandeur, setNomDemandeur] = useState('');
-
-  const [loadingDemandeInfos, setLoadingDemandeInfos] = useState(false);
-
-  const [serviceDemandeur, setServiceDemandeur] = useState('');
-
+  
   const [stockDT, setStockDT] = useState([])
   const [optionsPieces, setOptionsPieces] = useState([])
   const [stockInitial, setStockInitial] = useState(0);
@@ -69,10 +63,19 @@ export default function ModifyDemandeInputs() {
   const [motifDemande, setMotifDemande] = useState('PIECES TPE');
   
   const [motifAutre, setMotifAutre] = useState(false);
+
+  const [optionsServices, setOptionsServices] = useState([])
+  const [servicesSelection, setServicesSelection] = useState([])
+
+  const [userRoles, setUserRoles] = useState([])
+
+  const [selectedFiles, setSelectedFiles] = useState([])
+
+  const [demandeDetails, setDemandeDetails] = useState([])
   
   useEffect( ()=>{
-    const fetchDemandeInfos = async () => {
-      setLoadingDemandeInfos(true)
+    const fetchDemandeData = async () => {
+      setLoadingDemandeData(true)
       try{
 
         let userRoles_data = await users.getUserRoles(parseInt(userId))
@@ -81,59 +84,21 @@ export default function ModifyDemandeInputs() {
         })
         setUserRoles(roles_id)
 
-        let demandeData;
-        demandeData = await demandes.getOneDemande(id);
-        console.log(demandeData)
-        setMessage(demandeData.commentaire);
-        const parsedProduitsDemandes = JSON.parse(demandeData.produit_demande);
-        setProduitsDemandes(parsedProduitsDemandes);
+        const demandeData = await demandes.getOneDemande(id)
+        setDemandeDetails(demandeData)
         setDemandeID(demandeData.type_demande_id)
-        setIdDemandeur(demandeData.id_demandeur)
-        console.log("TYPE ID DE LA DEMANDE : ",demandeData.type_demande_id)
         setMotifDemande(demandeData.motif_demande)
-        setStockInitial(parsedProduitsDemandes.stockDepart)
+        setServiceId(demandeData.service_demandeur)
         setQteDemande(demandeData.qte_total_demande)
-        setRoleInitiateur(demandeData.role_id_demandeur)
-        setNomDemandeur(demandeData.nom_demandeur)
+        setIdDemandeur(demandeData.id_demandeur)
+        setMessage(demandeData.commentaire)
+        
 
-        let idService = demandeData.role_id_demandeur
-        if(idService == 7){
-            setServiceDemandeur('SUPPORT')
-        } else if(idService == 6){
-            setServiceDemandeur('MAINTENANCE')
-        }
-
-        let stockData;
-        stockData = await stock.getAllStock()
-        setStockDT(stockData)
-        const piecesA920 = stockData.filter(item =>{
-        return item.model_id == 1;
-        });
-        const pieceDemande = piecesA920.find(
-            (item) =>{
-                return item.id_piece == demandeData.type_demande_id
-            }
-        )
-        if(pieceDemande){
-            setTypeDemande(pieceDemande.nom_piece.toUpperCase())
-        }
-
-      }catch(error){
-        console.log('Error fetching data ',error)
-        setErrorForm('Erreur lors de la génération du formulaire')
-
-      }finally{
-        setLoadingDemandeInfos(false)
-      }
-    }
-    const fetchStock = async () => {
-      setLoadingStock(true)
-      try{
-        let data;
-        data = await stock.getAllStock()
-        console.log(data)
-        setStockDT(data)
-        const piecesA920 = data.filter(item =>{
+        let stock_data;
+        stock_data = await stock.getAllStock()
+        console.log(stock_data)
+        setStockDT(stock_data)
+        const piecesA920 = stock_data.filter(item =>{
           return item.model_id == 1;
         });
         const options = piecesA920.map((item) => ({
@@ -141,27 +106,65 @@ export default function ModifyDemandeInputs() {
           label: item.nom_piece.toUpperCase(),
         }));
         setOptionsPieces(options);
+        const selectedStockItem = stock_data.find(
+          (item) => {
+            return item.id_piece == demandeData.type_demande_id
+          } 
+        );
+        if (selectedStockItem) {
+          const nomPiece = selectedStockItem.nom_piece
+          const stockPiece = selectedStockItem.quantite
+          setTypeDemande(nomPiece.toUpperCase());
+          setStockInitial(stockPiece)
+        } else {
+          setTypeDemande('');
+        }
+
+
+        let users_data = await users.getAllUsers()
+        setUsersSelection(users_data)
+        const options_user = users_data.map((item) => ({
+          value: item.id_user,
+          label: item.username.toUpperCase().replace("."," ")
+        }));
+        setUsersOptions(options_user);
+        const selectedUser = users_data.find(
+          (item) => {
+            return item.id_user == demandeData.id_demandeur
+          }
+        )
+        if(selectedUser){
+          const nomUser = selectedUser.fullname.toUpperCase()
+          setNomDemandeur(nomUser)
+        }
+
+
+        let services_data = await users.getAllServices()
+        setServicesSelection(services_data)
+        const options_services = services_data.map((item) => ({
+          value: item.id,
+          label: item.nom_service.toUpperCase()
+        }))
+        setOptionsServices(options_services)
+        const selectedService = services_data.find(
+          (item) => {
+            return item.id == demandeData.service_demandeur
+          }
+        )
+        if(selectedService){
+          const nomSerivce = selectedService.nom_service.toUpperCase()
+          setServiceDemandeur(nomSerivce)
+        }
+
       }catch(error){
         console.log('Error fetching data ',error)
         setErrorForm('Erreur lors de la génération du formulaire')        
       }finally{
-        setLoadingStock(false)
+        setLoadingDemandeData(false)
       }
     };
-    const fetchUsers = async () => {
-      let data;
-      data = await users.getAllUsers()
-      setUsersSelection(data)
-      const options = data.map((item) => ({
-        value: item.id_user,
-        label: item.username.toUpperCase().replace("."," ")
-      }));
-      setUsersOptions(options);
-    }
-    fetchDemandeInfos();
-    fetchStock();
-    fetchUsers();
-  },[id])
+    fetchDemandeData();
+  },[])
 
   const ChangePieceType = (value) => {
     console.log("Selected value:", value);
@@ -183,14 +186,16 @@ export default function ModifyDemandeInputs() {
   
   const ChangeService = (value) => {
     console.log("Selected value:", value);
-    setServiceDemandeur(value);
-    if(value == 'MAINTENANCE'){
-      setRoleInitiateur(6);
-    } else if(value == 'SUPPORT'){
-      setRoleInitiateur(7);
-    } else if(value == 'LIVRAISON'){
-      setRoleInitiateur(1);
-    }    
+    setServiceId(value)
+    const selectedService = servicesSelection.find(
+      (item) => {
+        return item.id == parseInt(value)
+      }
+    )
+    if(selectedService){
+      const nomSerivce = selectedService.nom_service.toUpperCase()
+      setServiceDemandeur(nomSerivce)
+    }   
   };
 
   const ChangeUser = (value) => {
@@ -202,7 +207,7 @@ export default function ModifyDemandeInputs() {
       }
     )
     if(selectedUser){
-      const nomUser = selectedUser.username.toUpperCase().replace(".", " ")
+      const nomUser = selectedUser.fullname.toUpperCase()
       setNomDemandeur(nomUser)
     }
   }
@@ -217,12 +222,6 @@ export default function ModifyDemandeInputs() {
       setMotifDemande(value);
     }
   }
-  
-  const options_services = [
-    { value: "MAINTENANCE", label: "MAINTENANCE" },
-    { value: "SUPPORT", label: "SUPPORT"},
-    { value: "LIVRAISON", label: "LIVRAISON"},
-  ];
 
   const options_motifs = [
     { value: "PIECES TPE", label:"PIECES TPE"},
@@ -230,10 +229,32 @@ export default function ModifyDemandeInputs() {
     { value: "AUTRE", label:"AUTRE"},
   ]
 
+  const handleFileChange = (e) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const newFiles = Array.from(files);
 
+      // Avoid adding duplicate files (optional)
+      const updatedFiles = [...selectedFiles];
+
+      newFiles.forEach(file => {
+        if (!updatedFiles.find(f => f.name === file.name && f.size === file.size)) {
+          updatedFiles.push(file);
+        }
+      });
+
+      setSelectedFiles(updatedFiles);
+    }
+  };
+
+  const handleDeleteFile = (indexToRemove) => {
+    setSelectedFiles((prev) =>
+      prev.filter((_, index) => index !== indexToRemove)
+    );
+  }
 
   const handleConfirm = () => {
-    if(role != 1){
+    if(!userRoles.includes(3)){
       Swal.fire({
           title: "Error",
           text: "Vous n'êtes pas authorisé à faire cette action !",
@@ -249,7 +270,7 @@ export default function ModifyDemandeInputs() {
       setErrorAjout("Vous devez choisir la pièce à demander !");
       return;
     }
-    if(!roleInitiateur){
+    if(!serviceId){
       setErrorAjout("Vous devez choisir le service demandeur !");
       return;
     }
@@ -284,7 +305,7 @@ export default function ModifyDemandeInputs() {
       setErrorAjout("Stock insuffisant !");
       return;
     }
-    
+   
     const newProduit = {
       typeProduit: typeDemande,
       stockDepart: stock,
@@ -298,14 +319,13 @@ export default function ModifyDemandeInputs() {
     setIsConfirmModalOpen(true)
   }
     
-
   const handleDemande = async (e) => {
     e.preventDefault();
     if(!userRoles.includes(3)){
       Swal.fire({
-          title: "Error",
-          text: "Vous n'êtes pas authorisé à faire cette action !",
-          icon: "error"
+        title: "Error",
+        text: "Vous n'êtes pas authorisé à faire cette action !",
+        icon: "error"
       });
       localStorage.removeItem('token');
       localStorage.removeItem('username');
@@ -316,19 +336,19 @@ export default function ModifyDemandeInputs() {
     setLoadingDemande(true);
 
     const payload = {
-      id: id,
-      produitsDemandes: JSON.stringify(produitsDemandes),
       commentaire: message,
       type_demande_id: demandeID,
       user_id: userId,
+      service_id: serviceId,
       role_validateur: 4,
-      nom_demandeur: nomDemandeur,
       qte_total_demande: qteDemande,
       id_demandeur: idDemandeur,
-      motif_demande: motifDemande
+      motif_demande: motifDemande,
     }
+
     try{
-    const response = await demandes.updateDemande(payload)
+    console.log("Sending payload : ",payload)
+    const response = await demandes.updateDemande(id, payload)
 
     console.log(response);
     console.log('Demande modifiée')
@@ -339,14 +359,16 @@ export default function ModifyDemandeInputs() {
     });
     navigate('/toutes-les-demandes');
     }catch (error) {
+      console.log('error')
+      setError('Une erreur est survenue lors de la modification de la demande');
+      setProduitsDemandes([])
+      setLoadingDemande(false)
       Swal.fire({
         title: "Attention",
         text: "Une erreur est survenue lors de la modification de la demande",
         icon: "warning"
       });
       navigate('/toutes-les-demandes');
-      console.log('error lors de la demande : ',error)
-      setError('Erreur lors de la génération du formulaire');
     }finally{
       setProduitsDemandes([])
       setLoadingDemande(false)
@@ -356,142 +378,165 @@ export default function ModifyDemandeInputs() {
   return (
     <>
       <div className="flex justify-center mb-6">
-        {loadingStock ? (<>Loading...</>) :
-          (
-            errorFrom ? (
+        {loadingDemandeData ? (<>Loading...</>) : (
+          <>
+            {errorFrom ? (
               <div className="text-error-600 bg-error-300 font-medium flex items-center justify-center rounded-3xl text-sm p-4">
                 {errorFrom}
               </div>
             ) : (
-                  <>
-                    <ComponentCard className="md:w-1/2 w-full" title={`Demande ${typeDemande}`}>
-                      <div className="pb-3 text-center">
-                        <span className="text-sm font-semibold">Informations générales</span>
-                      </div>
-                      <div className="space-y-6">
+              <>
+                <ComponentCard className="md:w-1/2 w-full" title={`Demande ${typeDemande}`}>
+                  <div className="pb-3 text-center">
+                    <span className="text-sm font-semibold">Informations générales</span>
+                  </div>
+                  <div className="space-y-6">
+                    <div>
+                      <Label>Pièce demandée <span className="text-red-700">*</span></Label>
+                      <Select
+                        options={optionsPieces}
+                        placeholder={typeDemande}
+                        onChange={ChangePieceType}
+                        className="dark:bg-dark-900"                          
+                      />
+                    </div>
+                    <div>
+                      <Label>Service demandeur <span className="text-red-700">*</span></Label>
+                      <Select
+                        options={optionsServices}
+                        placeholder={serviceDemandeur}
+                        onChange={ChangeService}
+                        className="dark:bg-dark-900"               
+                      />
+                    </div>
+                    <div>
+                      <Label>Demandeur <span className="text-red-700">*</span></Label>
+                      <Select
+                        options={usersOptions}
+                        placeholder={nomDemandeur}
+                        onChange={ChangeUser}
+                        className="dark:bg-dark-900"               
+                      />
+                    </div>
+                    <div>
+                      <Label>Motif de demande <span className="text-red-700">*</span></Label>
+                      <Select
+                        options={options_motifs}
+                        placeholder="Choisir une option"
+                        onChange={ChangeMotif}
+                        className="dark:bg-dark-900"
+                        defaultValue={motifDemande}               
+                      />
+                    </div>
+                    {motifAutre ? 
+                    (
+                      <>
                         <div>
-                          <Label>Pièce demandée <span className="text-red-700">*</span></Label>
-                          <Select
-                            options={optionsPieces}
-                            defaultValue={demandeID}                          
-                            onChange={ChangePieceType}
-                            className="dark:bg-dark-900"
+                          <Label>Préciser le motif <span className="text-red-700">*</span></Label>
+                          <Input
+                            value={motifDemande} 
+                            placeholder="Motif de la demande"
+                            onChange={(e) => setMotifDemande(e.target.value)}
                           />
                         </div>
-                        <div>
-                          <Label>Service demandeur <span className="text-red-700">*</span></Label>
-                          <Select
-                            options={options_services}
-                            placeholder="Choisir une option"
-                            onChange={ChangeService}
-                            className="dark:bg-dark-900" 
-                            defaultValue={serviceDemandeur}              
-                          />
-                        </div>
-                        <div>
-                          <Label>Demandeur <span className="text-red-700">*</span></Label>
-                          <Select
-                            options={usersOptions}
-                            placeholder="Choisir une option"
-                            onChange={ChangeUser}
-                            className="dark:bg-dark-900"
-                            defaultValue={idDemandeur}               
-                          />
-                        </div>
-                        <div>
-                          <Label>Motif de demande <span className="text-red-700">*</span></Label>
-                          <Select
-                            options={options_motifs}
-                            placeholder="Choisir une option"
-                            onChange={ChangeMotif}
-                            className="dark:bg-dark-900"
-                            defaultValue={motifDemande}               
-                          />
-                        </div>
-                        {motifAutre ? 
-                        (
-                          <>
-                            <div>
-                              <Label>Préciser le motif <span className="text-red-700">*</span></Label>
-                              <Input
-                                value={motifDemande} 
-                                placeholder="Motif de la demande"
-                                onChange={(e) => setMotifDemande(e.target.value)}
-                              />
+                      </>
+                    ) : (
+                      <></>
+                    )}
+                    <div>
+                      <Label>Commentaire</Label>
+                      <TextArea
+                        value={message}
+                        onChange={(value) => setMessage(value)}
+                        rows={4}
+                        placeholder="Ajoutez un commentaire"
+                      />
+                    </div>
+                    {/* <div>
+                      <Label>Importer des fichiers</Label>
+                      <FileInput className="curstom-class" 
+                        onChange={handleFileChange}
+                        multiple 
+                      />
+                      {selectedFiles.length > 0 ? (
+                        <div className="border border-gray-500 mt-3 rounded">
+                          {selectedFiles.map((selectedFile, index) => (
+                            <div key={index} className="border-gray-300 px-1 flex justify-between items-center border-b border-t">
+                              <span className="text-xs text-gray-700 font-medium">
+                                <i>{selectedFile.name}</i>
+                              </span>
+                              <button onClick={() => handleDeleteFile(index)}>
+                                <span className="text-error-600"><i className="pi pi-times"></i></span>
+                              </button>
                             </div>
-                          </>
-                        ) : (
-                          <></>
-                        )}
-                        <div>
-                          <Label>Description</Label>
-                          <TextArea
-                            value={message}
-                            onChange={(value) => setMessage(value)}
-                            rows={4}
-                            placeholder="Ajoutez un commentaire"
-                          />
+                          ))}
                         </div>
-                        <div className="pb-3 text-center">
-                          <span className="text-sm font-semibold">Informations sur produits</span>
+                      ) : (
+                        <></>
+                      )}
+                    </div> */}
+                    <div className="pb-3 text-center">
+                      <span className="text-sm font-semibold">Informations sur produits</span>
+                    </div>
+                    <div className="">
+                      <div className="flex justify-center items-center">
+                        <div className="me-1">
+                          <Label htmlFor="input">Stock de départ <span className="text-red-700">*</span></Label>
+                          <Input type="number" id="input" value={stockInitial} onChange={(e) =>{
+                            const value = e.target.value
+                            if(value>=0){
+                              setStockInitial(value)
+                            }
+                          }} />
                         </div>
-                        <div className="">
-                          <div className="flex justify-center items-center">
-                            <div className="me-1">
-                              <Label htmlFor="input">Stock de départ <span className="text-red-700">*</span></Label>
-                              <Input type="number" id="input" value={stockInitial} onChange={(e) =>{
-                                const value = e.target.value
-                                if(value>=0){
-                                  setStockInitial(value)
-                                }
-                              }} />
-                            </div>
-                            <div className="ms-1">
-                              <Label htmlFor="input">Quantité demandée <span className="text-red-700">*</span></Label>
-                              <Input type="number" id="input" value={qteDemande} onChange={(e) =>{
-                                const value = e.target.value
-                                if(value>=0){
-                                  setQteDemande(value)
-                                }
-                              }} />
-                            </div>
-                          </div>                        
+                        <div className="ms-1">
+                          <Label htmlFor="input">Quantité demandée <span className="text-red-700">*</span></Label>
+                          <Input type="number" id="input" value={qteDemande} onChange={(e) =>{
+                            const value = e.target.value
+                            if(value>=0){
+                              setQteDemande(value)
+                            }
+                          }} />
                         </div>
-                        <div>
-                          <span className="text-error-600 font-medium flex items-center justify-center text-sm p-1 mt-4">
-                            {errorAjout}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="text-right text-gray-500">
-                        <span className="text-xs font-medium">
-                          Les champs suivis par un <span className="text-red-700">*</span> sont obligatoires
+                      </div>                        
+                    </div>
+                    <div>
+                      <span className="text-error-600 font-medium flex items-center justify-center text-sm p-1 mt-4">
+                        {errorAjout}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="w-full flex flex-col justify-center items-center">
+                    {loadingDemande? 
+                      <span className="">
+                        <ProgressSpinner style={{width: '50px', height: '50px'}} strokeWidth="8" animationDuration=".5s" />
+                      </span>
+                    :
+                      <button onClick={handleConfirm} className="w-1/2 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center">
+                        <span>Valider demande</span>
+                        <span className="text-2xl"><ListIcon /></span>
+                      </button> 
+                      }
+                      {errorDeliver?
+                        <span className="text-error-600 font-medium flex items-center justify-center text-sm p-1 mt-4">
+                          {errorDeliver}
                         </span>
-                      </div>
-                    </ComponentCard>
-                  </>
-            )
+                      :
+                        <></>
+                      }
+                  </div>
+                  <div className="text-right text-gray-500">
+                    <span className="text-xs font-medium">
+                      Les champs suivis par un <span className="text-red-700">*</span> sont obligatoires
+                    </span>
+                  </div>
+                </ComponentCard>
+              </>
+            )}
+          
+          </>
           )
         }
-      </div>
-      <div className="w-full flex flex-col justify-center items-center">
-        {loadingDemande? 
-          <span className="mt-6">
-            <ProgressSpinner style={{width: '50px', height: '50px'}} strokeWidth="8" animationDuration=".5s" />
-          </span>
-        :
-          <button onClick={handleConfirm} className="w-1/4 mt-6 bg-green-400 rounded-2xl h-10 flex justify-center items-center">
-            <span>Valider demande</span>
-            <span className="text-2xl"><ListIcon /></span>
-          </button> 
-          }
-          {errorDeliver?
-            <span className="text-error-600 font-medium flex items-center justify-center text-sm p-1 mt-4">
-              {errorDeliver}
-            </span>
-          :
-            <></>
-          }
       </div>
       <Modal isOpen={isConfirmModalOpen} onClose={() => setIsConfirmModalOpen(false)} className="p-4 max-w-xl">
         <div className="p-6 mt-5">
@@ -516,6 +561,24 @@ export default function ModifyDemandeInputs() {
             </div>
             <div>
               <span>Stock restant : <span className="font-bold text-red-700">{stockInitial - qteDemande}</span></span>
+            </div>
+            <div className="flex-col">
+              <span>Fichiers upload : </span>
+              {selectedFiles.length > 0 ? (
+                <div className="border border-gray-500 mt-3 rounded">
+                  {selectedFiles.map((selectedFile, index) => (
+                    <div key={index} className="border-gray-300 px-1 flex justify-between items-center border-b border-t">
+                      <span className="text-xs text-red-700 font-medium">
+                        <i>{selectedFile.name}</i>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <>
+                  <span>0</span>
+                </>
+              )}
             </div>
           </div>
         </div>

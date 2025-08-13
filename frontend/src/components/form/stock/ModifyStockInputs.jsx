@@ -13,7 +13,6 @@ export default function ModifyStockInputs() {
 
     const stock = new Stock();
     const userId = localStorage.getItem('id');
-    const role = localStorage.getItem("role_id")
     const navigate = useNavigate();
 
     const [stockDT, setStockDT] = useState([])
@@ -26,24 +25,7 @@ export default function ModifyStockInputs() {
     const [errorAjout, setErrorAjout] = useState('')
     const [loadingModif, setLoadingModif] = useState(false);
     const [pieceId, setPieceId] = useState(null)
-
-    const ChangePieceType = (value) => {
-        console.log("Selected value:", value);
-        const selectedStockItem = stockDT.find(
-        (item) => {
-            return item.id_piece == parseInt(value)
-        } 
-        );
-        if (selectedStockItem) {
-            const nomPiece = selectedStockItem.nom_piece
-            const stockPiece = selectedStockItem.quantite
-            setNomPiece(nomPiece);
-            setStockInitial(stockPiece)
-            setNouveauStock(stockPiece)
-            setPieceId(selectedStockItem.id_piece)
-        }
-    };
-
+    
     useEffect( ()=>{
         const fetchStock = async () => {
             setLoadingStock(true)
@@ -68,18 +50,25 @@ export default function ModifyStockInputs() {
         fetchStock();
     },[])
 
-    const handleConfirm = () => {
-        if((role != 1) && (role != 3)){
-          Swal.fire({
-              title: "Error",
-              text: "Vous n'êtes pas authorisé à faire cette action !",
-              icon: "error"
-          });
-          localStorage.removeItem('token');
-          localStorage.removeItem('username');
-          navigate('/signin');
-          return
+    const ChangePieceType = (value) => {
+        console.log("Selected value:", value);
+        const selectedStockItem = stockDT.find(
+        (item) => {
+            return item.id_piece == parseInt(value)
+        } 
+        );
+        if (selectedStockItem) {
+            const nomPiece = selectedStockItem.nom_piece
+            const stockPiece = selectedStockItem.quantite
+            setNomPiece(nomPiece);
+            setStockInitial(stockPiece)
+            setNouveauStock(stockPiece)
+            setPieceId(selectedStockItem.id_piece)
         }
+    };
+
+
+    const handleConfirm = () => {
     
         console.log("Nouveau Stock ", nomPiece, " : ", nouveauStock)
         
@@ -99,29 +88,19 @@ export default function ModifyStockInputs() {
 
     const handleNouveauStock = async (e) => {
         e.preventDefault();
-        if(role != 1 && role != 3){
-          Swal.fire({
-              title: "Error",
-              text: "Vous n'êtes pas authorisé à faire cette action !",
-              icon: "error"
-          });
-          localStorage.removeItem('token');
-          localStorage.removeItem('username');
-          navigate('/signin');
-          return
-        }
         setIsConfirmModalOpen(false)
-        setLoadingModif(true)
 
-        const piece_id = pieceId
-        const stock_initial = stockInitial
-        const nouveau_stock = nouveauStock
-        const utilisateur_id = userId
-
-        console.log("Utilisateur : ",utilisateur_id)
+        const payload = {
+            piece_id: pieceId,
+            stock_initial: stockInitial,
+            nouveau_stock: nouveauStock,
+            utilisateur_id: userId,
+        }
 
         try{
-            const response = await stock.setStock(piece_id, stock_initial, nouveau_stock, utilisateur_id)
+            setLoadingModif(true)
+            console.log("Sending payload : ",payload)
+            const response = await stock.setStock(payload)
             console.log(response)
             console.log('Stock modifié')
 
@@ -133,6 +112,12 @@ export default function ModifyStockInputs() {
             navigate('/gestion-stock')
         }catch(error){
             console.log('error : ',error)
+            Swal.fire({
+                title: "Attention",
+                text: "Une erreur est survenue lors de la modification du stock",
+                icon: "success"
+            });
+            navigate('/gestion-stock')
         }finally{
             setLoadingModif(false)
         }

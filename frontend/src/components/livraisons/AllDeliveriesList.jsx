@@ -80,20 +80,25 @@ export default function AllDeliveriesList({ filterType }) {
     const formatDate = (date) => {
         const d = new Date(date);
         return d.toLocaleDateString('fr-FR'); // or use any locale you want
-      };
+    };
 
-      const handleGeneratePdf = async (id) =>{
-            setPrintingId(id);
-            try{
-                const blob = await generatePdf(id);
-                const fileURL = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
-                window.open(fileURL, '_blank');
-            }catch(error){
-                console.log(error)
-            }finally{
-                setPrintingId(null);
-            }
-      }
+    const handleGeneratePdf = async (id) =>{
+        setPrintingId(id);
+        try{
+            const blob = await generatePdf(id);
+            const fileURL = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+            window.open(fileURL, '_blank');
+        }catch(error){
+            console.log(error)
+            Swal.fire({
+                title: "Attention",
+                text: "Une erreur s'est produite lors de la génération du pdf",
+                icon: "warning"
+            });
+        }finally{
+            setPrintingId(null);
+        }
+    }
     const titleTemplate = (deliveryForms) =>{
         let title = '';
         let linkSee = `/formulaire/${deliveryForms.id_livraison}`;

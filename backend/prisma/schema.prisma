@@ -107,6 +107,9 @@ model stock_dt {
   model_id        Int
   code_piece      String?           @db.VarChar(255)
   service         Int?
+  created_by      String?           @db.VarChar(255)
+  user_id         Int?
+  is_deleted      Boolean           @default(false)
   demandes        demandes[]
   livraison_piece livraison_piece[]
   model_piece     model_piece       @relation(fields: [model_id], references: [id_model], onUpdate: Restrict, map: "stock_dt_ibfk_1")

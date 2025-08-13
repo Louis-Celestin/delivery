@@ -67,6 +67,8 @@ export default function ModifyLivraisonInputs() {
   const [listRoles, setListRoles] = useState([])
 
   const [serviceId, setServiceId] = useState(null)
+
+  const [quantiteLivraison, setQuantiteLivraison] = useState(0)
   
   useEffect( ()=>{
     const fetchDeliveryInfos = async () => {
@@ -285,6 +287,8 @@ export default function ModifyLivraisonInputs() {
   
     setProduitsLivresTable((prev) => [...prev, newProduit]);
     setProduitsLivres((prev) => [...prev, newProduit]);
+
+    setQuantiteLivraison(quantiteLivraison + 1)
   
     // Optional: Reset form fields
     setTerminalSN('');
@@ -363,6 +367,7 @@ export default function ModifyLivraisonInputs() {
     setProduitsLivres((prev) =>
       prev.filter((_, index) => index !== indexToRemove)
     );
+    setQuantiteLivraison(quantiteLivraison - 1)
   };
 
   return (
@@ -511,6 +516,11 @@ export default function ModifyLivraisonInputs() {
                           </div>
                         </div>
                       </div>
+                      <div className="text-right text-gray-500">
+                        <span className="text-xs font-medium">
+                          Les champs suivis par un <span className="text-red-700">*</span> sont obligatoires
+                        </span>
+                      </div>
                     </ComponentCard>
                   </>
             )
@@ -519,6 +529,9 @@ export default function ModifyLivraisonInputs() {
       </div>
       <div>
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
+          <div className='p-4 text-xs text-gray-600'>
+            <span>Quantité : {quantiteLivraison}</span>
+          </div>
           <div className="max-w-full overflow-x-auto">
             <Table>
               {/* Table Header */}
