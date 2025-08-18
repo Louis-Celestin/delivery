@@ -14,52 +14,51 @@ export const AuthProvider = ({ children }) => {
 
   const users = new Users();
 
-  useEffect(() => {
-    const fetchUserAndRoles = async () => {
-      setLoading(true);
+  const fetchUserAndRoles = async () => {
+    setLoading(true);
 
-      try {
-        const id = localStorage.getItem("id");
-        const email = localStorage.getItem("email");
-        const username = localStorage.getItem("username");
+    try {
+      const id = localStorage.getItem("id");
+      const email = localStorage.getItem("email");
+      const username = localStorage.getItem("username");
 
-        if (!id) {
-          setUser(null);
-          setLoading(false);
-          return;
-        }
-
-        // Fetch roles using your API function
-        const roles = await users.getAllUserRoles();
-        // console.log("ROLES : ",roles)
-        const userRoles = roles.filter(item =>{
-          return item.user_id == id
-        })
-        const roleList = userRoles.map(item =>{
-          return item.role_id
-        })
-
-        console.log("ROLE LIST ", roleList)
-        setUser({
-          id,
-          email,
-          username,
-          roleList, // include roles here
-        });
-      } catch (err) {
-        console.error("Error fetching user roles:", err);
-        setError("Failed to load user roles.");
+      if (!id) {
         setUser(null);
-      } finally {
         setLoading(false);
+        return;
       }
-    };
 
+      // Fetch roles using your API function
+      const roles = await users.getAllUserRoles();
+      // console.log("ROLES : ",roles)
+      const userRoles = roles.filter(item =>{
+        return item.user_id == id
+      })
+      const roleList = userRoles.map(item =>{
+        return item.role_id
+      })
+
+      console.log("ROLE LIST ", roleList)
+      setUser({
+        id,
+        email,
+        username,
+        roleList, // include roles here
+      });
+    } catch (err) {
+      console.error("Error fetching user roles:", err);
+      setError("Failed to load user roles.");
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
     fetchUserAndRoles();
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, error }}>
+    <AuthContext.Provider value={{ user, loading, error, refreshUser: fetchUserAndRoles }}>
       {children}
     </AuthContext.Provider>
   );

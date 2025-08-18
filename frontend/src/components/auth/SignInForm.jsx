@@ -16,6 +16,7 @@ export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { refreshUser } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -52,6 +53,7 @@ export default function SignInForm() {
       // console.log('ROLE :', user_role)
       console.log(connectMessage)
       console.log("USER ID CONNECTED : ", user_id)
+      refreshUser();
       navigate(from, { replace: true });
     } catch (error) {
       console.log('error')

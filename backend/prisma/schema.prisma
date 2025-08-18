@@ -35,13 +35,14 @@ model demandes {
   id_demandeur                            Int?
   motif_demande                           String?                 @db.VarChar(255)
   service_demandeur                       Int?
+  champs_autre                            String?                 @db.LongText
   files                                   String?                 @db.LongText
   users_demandes_user_idTousers           users?                  @relation("demandes_user_idTousers", fields: [user_id], references: [id_user], onDelete: Restrict, onUpdate: Restrict, map: "demandes_ibfk_2")
   roles_demandes_role_id_recepteurToroles roles?                  @relation("demandes_role_id_recepteurToroles", fields: [role_id_recepteur], references: [id_role], onDelete: Restrict, onUpdate: Restrict, map: "demandes_ibfk_3")
   stock_dt                                stock_dt?               @relation(fields: [type_demande_id], references: [id_piece], onDelete: Restrict, onUpdate: Restrict, map: "demandes_ibfk_6")
   users_demandes_id_demandeurTousers      users?                  @relation("demandes_id_demandeurTousers", fields: [id_demandeur], references: [id_user], onDelete: Restrict, onUpdate: Restrict, map: "demandes_ibfk_7")
   services                                services?               @relation(fields: [service_demandeur], references: [id], onDelete: NoAction, map: "demandes_ibfk_8")
-  livraison_piece                         livraison_piece[]
+  livraison_piece                         livraison_piece?
   validation_demande                      validation_demande[]
 
   @@index([id_demandeur], map: "id_demandeur")
@@ -96,7 +97,6 @@ model roles {
   Livraisons                                 Livraisons[]
   demandes_demandes_role_id_recepteurToroles demandes[]   @relation("demandes_role_id_recepteurToroles")
   livraison                                  livraison[]
-  stock_dt                                   stock_dt[]
   user_roles                                 user_roles[]
 }
 
@@ -113,7 +113,7 @@ model stock_dt {
   demandes        demandes[]
   livraison_piece livraison_piece[]
   model_piece     model_piece       @relation(fields: [model_id], references: [id_model], onUpdate: Restrict, map: "stock_dt_ibfk_1")
-  roles           roles?            @relation(fields: [service], references: [id_role], onDelete: Restrict, onUpdate: Restrict, map: "stock_dt_ibfk_2")
+  roles           services?         @relation(fields: [service], references: [id], onDelete: NoAction, map: "stock_dt_ibfk_2")
 
   @@index([model_id], map: "model_id")
   @@index([service], map: "service")
@@ -192,6 +192,7 @@ model services {
   Livraisons    Livraisons[]
   demandes      demandes[]
   livraison     livraison[]
+  stock_dt      stock_dt[]
   user_services user_services[]
 }
 
@@ -208,12 +209,11 @@ model livraison_piece {
   id              Int        @id @default(autoincrement())
   piece_id        Int
   produits_livres String?    @db.LongText
-  demande_id      Int?
+  demande_id      Int?       @unique(map: "demande_id")
   Livraisons      Livraisons @relation(fields: [id], references: [id], onDelete: Cascade, map: "livraison_piece_ibfk_1")
   stock_dt        stock_dt   @relation(fields: [piece_id], references: [id_piece], onDelete: NoAction, map: "livraison_piece_ibfk_2")
   demandes        demandes?  @relation(fields: [demande_id], references: [id_demande], onDelete: Cascade, map: "livraison_piece_ibfk_3")
 
-  @@index([demande_id], map: "demande_id")
   @@index([piece_id], map: "piece_id")
 }
 
@@ -230,22 +230,23 @@ model type_livraison_commerciale {
 }
 
 model Livraisons {
-  id                    Int                         @id @default(autoincrement())
-  user_id               Int
-  quantite_livraison    Int
-  nom_livreur           String?                     @db.VarChar(255)
-  commentaire_livraison String?                     @db.VarChar(255)
-  signature_expediteur  String?                     @db.VarChar(255)
-  files                 String?                     @db.LongText
-  type                  Livraisons_type
-  statut_livraison      Livraisons_statut_livraison
-  role_id               Int?
-  service_id            Int?
-  date_livraison        DateTime                    @default(now()) @db.DateTime(0)
-  roles                 roles?                      @relation(fields: [role_id], references: [id_role], map: "Livraisons_ibfk_1")
-  services              services?                   @relation(fields: [service_id], references: [id], map: "Livraisons_ibfk_2")
-  livraison_piece       livraison_piece?
-  reception_livraison   reception_livraison[]
+  id                      Int                         @id @default(autoincrement())
+  user_id                 Int
+  quantite_livraison      Int
+  nom_livreur             String?                     @db.VarChar(255)
+  commentaire_livraison   String?                     @db.VarChar(255)
+  signature_expediteur    String?                     @db.VarChar(255)
+  files                   String?                     @db.LongText
+  type                    Livraisons_type
+  statut_livraison        Livraisons_statut_livraison
+  role_id                 Int?
+  service_id              Int?
+  date_livraison          DateTime                    @default(now()) @db.DateTime(0)
+  autres_champs_livraison String?                     @db.LongText
+  roles                   roles?                      @relation(fields: [role_id], references: [id_role], map: "Livraisons_ibfk_1")
+  services                services?                   @relation(fields: [service_id], references: [id], map: "Livraisons_ibfk_2")
+  livraison_piece         livraison_piece?
+  reception_livraison     reception_livraison[]
 
   @@index([role_id], map: "role_id")
   @@index([service_id], map: "service_id")

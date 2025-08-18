@@ -79,6 +79,7 @@ export default function DemandeDetails() {
     const [commentaireLivraison, setCommentaireLivraison] = useState('')
     const [quantiteLivraison, setQuantiteLivraison] = useState('')
     const [nomLivreur, setNomLivreur] = useState('')
+    const [modifyLivraison, setModifyLivraison] = useState(false)
     
 
     const [loadingReception, setLoadingReception] = useState(false);
@@ -93,6 +94,9 @@ export default function DemandeDetails() {
     const [commentaireReception, setCommentaireReception] = useState('')
     const [nomRecepteur, setNomRecepteur] = useState('')
     const [isReceived, setIsReceived] = useState(false)
+
+    const [otherFields, setOtherFields] = useState([])
+    const [otherFieldsLivraison, setOtherFieldsLivraison] = useState([])
 
     const formatDate = (date) => {
         const d = new Date(date);
@@ -130,6 +134,8 @@ export default function DemandeDetails() {
                     setNomDemandeur(demandeData.nom_demandeur)
                     setDateDemande(formatDate(demandeData.date_demande))
                     setCommentaire(demandeData.commentaire)
+                    const autres = JSON.parse(demandeData.champs_autre)
+                    setOtherFields(autres)
 
                     let idService = demandeData.service_demandeur
 
@@ -191,12 +197,12 @@ export default function DemandeDetails() {
 
                     let stockData;
                     stockData = await stock.getAllStock()
-                    console.log(stockData)
+                    // console.log(stockData)
                     setStockDT(stockData)
                     const piecesA920 = stockData.filter(item =>{
                         return item.model_id == 1;
                     });
-                    const pieceDemande = piecesA920.find(
+                    const pieceDemande = stockData.find(
                         (item) =>{
                             return item.id_piece == demandeData.type_demande_id
                         }
@@ -206,6 +212,7 @@ export default function DemandeDetails() {
                     }
 
                     let livraison_data = await livraisonData.getOneLivraisonDemande(id)
+
                     let index_reception
                     console.log(livraison_data)
                     setLivraisonID(livraison_data.id)
@@ -213,7 +220,8 @@ export default function DemandeDetails() {
                     setQuantiteLivraison(livraison_data.Livraisons.quantite_livraison)
                     setDateLivraison(formatDate(livraison_data.Livraisons.date_livraison))
                     setCommentaireLivraison(livraison_data.Livraisons.commentaire_livraison)
-
+                    const autresLivraison = JSON.parse(livraison_data.Livraisons.autres_champs_livraison)
+                    setOtherFieldsLivraison(autresLivraison)
 
                     let statut_livraison = livraison_data.Livraisons.statut_livraison
                     if(statut_livraison == 'livre' || statut_livraison == 'retourne'){
@@ -231,6 +239,8 @@ export default function DemandeDetails() {
                             if(roles_id.includes(12)){
                                 setIsReception(true)
                             }
+                            setIsLivreur(true)
+                            setModifyLivraison(true)
                             setStatutLivraison('Retournée')
                             setStatutClassLivraison('text-sm rounded-xl p-1 bg-red-100 text-red-500 font-bold')       
                         }
@@ -241,6 +251,8 @@ export default function DemandeDetails() {
                             setIsReception(true)
                         }
                         setStatutLivraison('En attente')
+                        setModifyLivraison(true)
+                        setIsLivreur(true)
                     } 
 
                     
@@ -562,10 +574,10 @@ export default function DemandeDetails() {
                                     )}
                                     {isModificateur ? (
                                         <>
-                                            <button className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'>
+                                            <Link to={`/modification-admin-demande/${demandeDetails.id_demande}`} className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'>
                                                <span className='mr-4'><i className="pi pi-cog"></i></span>
                                                <span className='text-sm text-gray-700 font-medium'>Modification Admin</span> 
-                                            </button>
+                                            </Link>
                                         </>
                                     ) : (
                                         <></>
@@ -621,10 +633,21 @@ export default function DemandeDetails() {
                                     )}
                                     {isLivreur ? (
                                         <>
-                                            <Link to={`/livraison-pieces/${demandeDetails.id_demande}`} className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'>
-                                               <span className='mr-4'><i className="pi pi-send"></i></span>
-                                               <span className='text-sm text-gray-700 font-medium'>Faire livraison</span> 
-                                            </Link>
+                                            {modifyLivraison ? (
+                                                <>
+                                                    <Link to={`/modifier-livraison-pieces/${demandeDetails.id_demande}`} className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'>
+                                                        <span className='mr-4'><i className="pi pi-pencil"></i></span>
+                                                        <span className='text-sm text-gray-700 font-medium'>Modifier livraison</span> 
+                                                    </Link>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Link to={`/livraison-pieces/${demandeDetails.id_demande}`} className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'>
+                                                        <span className='mr-4'><i className="pi pi-send"></i></span>
+                                                        <span className='text-sm text-gray-700 font-medium'>Faire livraison</span> 
+                                                    </Link>
+                                                </>
+                                            )}
                                         </>
                                     ) : (
                                         <></>
@@ -782,6 +805,16 @@ export default function DemandeDetails() {
                                         <th className='border w-1/2'>Stock final</th>
                                         <th className='border w-1/2'>{stockFinal}</th>
                                     </tr>
+                                    {otherFields.map((field) => {
+                                        return(
+                                            <>
+                                                <tr className='border h-15'>
+                                                    <th className='border w-1/2'>{field.titre}</th>
+                                                    <th className='border w-1/2'>{field.information}</th>
+                                                </tr>
+                                            </>
+                                        )
+                                    })}
                                     {isDelivered ? (
                                         <>  
                                             <tr className='border h-15'>
@@ -796,6 +829,16 @@ export default function DemandeDetails() {
                                     ) : (
                                         <></>
                                     )}
+                                    {otherFieldsLivraison.map((field) => {
+                                        return(
+                                            <>
+                                                <tr className='border h-15'>
+                                                    <th className='border w-1/2'>{field.titre}</th>
+                                                    <th className='border w-1/2'>{field.information}</th>
+                                                </tr>
+                                            </>
+                                        )
+                                    })}
                                     {isReceived ? (
                                         <>
                                             <tr className='border h-15'>

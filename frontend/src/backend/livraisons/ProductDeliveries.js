@@ -154,4 +154,13 @@ export class ProductDeliveries{
       throw error.response.data
     }
   }
+
+  async updateDeliveryStock(id, payload){
+    try{
+      const response = await axios.put(`${urlBase}/api/delivery/updateDeliveryStock/${id}`,payload);
+      return response.data;
+    } catch(error){
+      throw error.response.data
+    }
+  }
 }

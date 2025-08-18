@@ -420,7 +420,7 @@ export default function LivraisonInputs() {
                           <Label>Type de Livraison <span className="text-red-700">*</span></Label>
                           <Select
                             options={optionLivraisons}
-                            placeholder="Select an option"
+                            placeholder="Choisir une option"
                             onChange={ChangeTypeLivraison}
                             className="dark:bg-dark-900"
                             
@@ -430,7 +430,7 @@ export default function LivraisonInputs() {
                           <Label>Service recepteur <span className="text-red-700">*</span></Label>
                           <Select
                             options={optionServices}
-                            placeholder="Select an option"
+                            placeholder="Choisir une option"
                             onChange={ChangeService}
                             className="dark:bg-dark-900"
                             

@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router";
 // @ts-ignore
 import { useAuth } from "../../context/AuthContext"
+// @ts-ignore
+import LoadingPage from "../../components/common/LoadingPage"
 
 import {
   ChevronDownIcon,
@@ -39,9 +41,9 @@ const navItems: NavItem[] = [
     name: "Formulaire",
     icon: <ListIcon />,
     subItems: [
-      { name: "Toutes les livraisons", path:"/toutes-les-livraisons", pro: false},
       { name: "Nouvelle Livraison", path: "/form-livraison", roles:[1], pro: false },
-      { name: "Ancienne Livraison", path: "/form-ancienne-livraison", roles:[1], pro: false },
+      { name: "Toutes les livraisons", path:"/toutes-les-livraisons", pro: false},
+      // { name: "Ancienne Livraison", path: "/form-ancienne-livraison", roles:[1], pro: false },
     ],
     
   },
@@ -59,8 +61,8 @@ const navItems: NavItem[] = [
     name: "Gestion stock",
     roles:[7],
     subItems: [
-      { name: "Voir Stock", path: "/gestion-stock", pro: false },
       { name: "Ajouter pièce", path: "/ajouter-piece", pro: false },
+      { name: "Voir Stock", path: "/gestion-stock", pro: false },
     ],
   },
   {
@@ -68,8 +70,8 @@ const navItems: NavItem[] = [
     name: "Gestion Profils",
     roles:[5],
     subItems: [
-      { name: "Tous les utilisateurs", path:"/tous-les-utilisateurs", pro: false},
       { name: "Ajouter utilisateur", path:"/créer-utilisateur", pro: false},
+      { name: "Tous les utilisateurs", path:"/tous-les-utilisateurs", pro: false},
     ],
   },
   {
@@ -77,8 +79,8 @@ const navItems: NavItem[] = [
     name: "Gestion Livraison",
     roles:[14],
     subItems: [
-      { name: "Voir types livraison", path: "/types-livraison", pro: false },
       { name: "Ajouter type livraison", path: "/ajouter-type-livraison", pro: false },
+      { name: "Voir types livraison", path: "/types-livraison", pro: false },
     ],
   },
 
@@ -308,7 +310,7 @@ const AppSidebar: React.FC = () => {
     </ul>
   );
 
-  if (loading) return null;
+  if (loading) return (<LoadingPage />);
 
   return (
     <aside

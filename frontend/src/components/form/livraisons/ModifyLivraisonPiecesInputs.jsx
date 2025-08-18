@@ -2,17 +2,17 @@ import { useEffect, useState, useRef } from "react";
 import ComponentCard from "../../common/ComponentCard.tsx";
 import Label from "../Label.tsx";
 import Input from "../input/InputField.tsx";
-import Checkbox from "../input/Checkbox";
+import Checkbox from "../input/Checkbox.tsx";
 import Select from "../Select.tsx";
 import DatePicker from "../date-picker.tsx";
-import TextArea from "../input/TextArea";
+import TextArea from "../input/TextArea.tsx";
 import {
   Table,
   TableBody,
   TableCell,
   TableHeader,
   TableRow,
-} from "../../ui/table";
+} from "../../ui/table/index.tsx";
 import { PlusIcon, ListIcon, RefreshTimeIcon } from "../../../icons/index.ts";
 import 'primeicons/primeicons.css'; 
 import { ProgressSpinner } from 'primereact/progressspinner';
@@ -28,7 +28,7 @@ import SignatureCanvas from 'react-signature-canvas'
 
 
 
-export default function LivraisonPiecesInputs() {
+export default function ModifyLivraisonPiecesInputs() {
 
   const productDeliveries = new ProductDeliveries();
   const demandes = new Demandes()
@@ -80,15 +80,21 @@ export default function LivraisonPiecesInputs() {
       setLoadingDemandeInfos(true)
       try{
         let demande_data = await demandes.getOneDemande(id);
-        console.log(demande_data)
         setDemandeForm(demande_data);
-        setLivraisonID(demande_data.type_demande_id)
-        setQuantiteProduit(demande_data.qte_total_demande)
+
+        const livraison_data = await productDeliveries.getOneLivraisonDemande(id)
+        let fieldsAutre = JSON.parse(livraison_data.Livraisons.autres_champs_livraison)
+        setFields(fieldsAutre)
+        setOtherFields(fieldsAutre)
+        setQuantiteProduit(livraison_data.Livraisons.quantite_livraison)
+        setMessage(livraison_data.Livraisons.commentaire_livraison)
+        setServiceId(livraison_data.Livraisons.service_id)
+        setLivraisonID(livraison_data.piece_id)
 
         let stock_data = await stock.getAllStock()
         setStockDT(stock_data)
         const stockItem = stock_data.find((item) => {
-          return item.id_piece == demande_data.type_demande_id
+          return item.id_piece == livraison_data.piece_id
         })
         if(stockItem){
           setTypeLivraison(stockItem.nom_piece.toUpperCase())
@@ -102,12 +108,10 @@ export default function LivraisonPiecesInputs() {
         }))
         setOptionsServices(options_services)
         const defaultService = services_data.find((item) => {
-          return item.id == demande_data.service_demandeur
+          return item.id == livraison_data.Livraisons.service_id
         })
         setSelectedService(defaultService.nom_service.toUpperCase())
-        setServiceId(demande_data.service_demandeur)
-        console.log("Default service : ", defaultService.id)
-        console.log("Selected service :", demande_data.service_demandeur)
+
 
       }catch(error){
           console.log('Error fetching data ',error)
@@ -273,15 +277,6 @@ export default function LivraisonPiecesInputs() {
       navigate('/toutes-les-demandes');
       return
     }
-    if(demandeForm.demande_livree){
-      Swal.fire({
-        title: "Error",
-        text: "La demande a déjà été livrée!",
-        icon: "error"
-      });
-      navigate('/toutes-les-demandes');
-      return
-    }
     const filteredFields = fields.filter(
       (f) => f.titre.trim() !== "" && f.information.trim() !== ""
     );
@@ -298,38 +293,34 @@ export default function LivraisonPiecesInputs() {
   const handleDeliver = async (e) => {
     e.preventDefault();
 
-    if(signature.isEmpty()){
-      setErrorSign('Vous devez signer pour valider !')
-      return;
-    }
+    // if(signature.isEmpty()){
+    //   setErrorSign('Vous devez signer pour valider !')
+    //   return;
+    // }
     // setSignUrl(signature.toDataURL('image/png'))
-    const sign = signature.toDataURL('image/png')
-    
-    const fd = new FormData();
-    
-    fd.append('commentaire',message);
-    fd.append('type_livraison_id',livraisonID);
-    fd.append('user_id',userId);
-    fd.append('role_reception', 12)
-    fd.append('quantite', quantiteProduit)
-    fd.append('service_reception', serviceId)
-    fd.append('demande_id', id);
-    fd.append('otherFields', JSON.stringify(otherFields));
-    if (sign){
-      const blob = await fetch(sign).then(res => res.blob());
-      fd.append('signature_expediteur', blob, 'signature.png');
+    // const sign = signature.toDataURL('image/png')
+
+    const payload = {
+      commentaire: message,
+      type_livraison_id: livraisonID,
+      user_id: userId,
+      role_reception: 12,
+      quantite: quantiteProduit,
+      service_reception: serviceId,
+      demande_id: id,
+      otherFields: JSON.stringify(otherFields),
     }
 
     try{
       setLoadingDelivery(true);
       setIsSignatureModalOpen(false)
-      const response = await productDeliveries.deliverStock(fd)
+      const response = await productDeliveries.updateDeliveryStock(id, payload)
 
       console.log(response);
-      console.log('Formulaire créé')
+      console.log('Formulaire modifié')
       Swal.fire({
         title: "Succès",
-        text: "Formulaire créé avec succès",
+        text: "Formulaire modifié avec succès",
         icon: "success"
       });
       navigate('/toutes-les-demandes');
@@ -341,6 +332,7 @@ export default function LivraisonPiecesInputs() {
         text: "Il y a eu une erreur lors de la livraison",
         icon: "warning"
       });
+      navigate('/toutes-les-demandes');
     }finally{
       setProduitsLivres([])
       setProduitsLivresTable([])
@@ -485,7 +477,7 @@ export default function LivraisonPiecesInputs() {
                     : 
                       <div className="flex">
                         <button onClick={handleValidate} className="w-50 mx-1 bg-green-400 rounded-2xl h-10 flex justify-center items-center">
-                          <span>Valider livraison</span>
+                          <span>Modifier livraison</span>
                           <span className="text-2xl"><ListIcon /></span>
                         </button> 
                       </div>
@@ -523,22 +515,22 @@ export default function LivraisonPiecesInputs() {
               <span>Signez manuellement pour valider la livraison</span>
           </div>
           <div className='flex flex-col justify-center items-center'>
-              <SignatureCanvas
-                  ref={data=>setSignature(data)}
-                  canvasProps={{ width: 300, height: 250, className: 'sigCanvas border border-gray-300 rounded' }}
-              />
-              <div className='w-full mt-6 flex justify-center items-center'>
-                  <button
-                      onClick={handleClear}
-                      className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
-                      Clear
-                  </button>
-                  <button
-                      onClick={handleDeliver}
-                      className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
-                      Valider
-                  </button>
-              </div>  
+            <SignatureCanvas
+                ref={data=>setSignature(data)}
+                canvasProps={{ width: 300, height: 250, className: 'sigCanvas border border-gray-300 rounded' }}
+            />
+            <div className='w-full mt-6 flex justify-center items-center'>
+                <button
+                    onClick={handleClear}
+                    className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
+                    Clear
+                </button>
+                <button
+                    onClick={handleDeliver}
+                    className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
+                    Valider
+                </button>
+            </div>  
           </div>
           <div className="text-center">
               <span className="text-error-500 text-xs">
@@ -546,7 +538,7 @@ export default function LivraisonPiecesInputs() {
               </span>
           </div>
         </div>
-        </Modal>
+      </Modal>
     </>
   );
 }

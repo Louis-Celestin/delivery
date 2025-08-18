@@ -17,22 +17,23 @@ import { PlusIcon } from "../../../icons/index.ts";
 import { ListIcon } from "../../../icons/index.ts";
 import 'primeicons/primeicons.css'; 
 import { ProgressSpinner } from 'primereact/progressspinner';
-import { useNavigate } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { Demandes } from "../../../backend/demandes/Demandes.js";
 import { Stock } from "../../../backend/stock/Stock.js"
 import { Users } from "../../../backend/users/Users.js";
 import Swal from 'sweetalert2'
 import { Modal } from "../../ui/modal/index.tsx";
-import { Dropdown } from "primereact/dropdown"
+
 import SignatureCanvas from 'react-signature-canvas'
 
-export default function DemandeInputs() {
+export default function ModifyDemandeAdminForm() {
 
   const demandes = new Demandes();
   const stock = new Stock();
   const users = new Users();
   const userId = localStorage.getItem('id');
   const navigate = useNavigate();
+  const { id } = useParams();
 
   const [loadingDemandeData, setLoadingDemandeData] = useState(false);
   const [loadingDemande, setLoadingDemande] = useState(false);
@@ -70,10 +71,10 @@ export default function DemandeInputs() {
 
   const [selectedFiles, setSelectedFiles] = useState([])
 
+  const [demandeDetails, setDemandeDetails] = useState([])
+
   const [fields, setFields] = useState([])
   const [otherFields, setOtherFields] = useState([])
-
-  const [optionsModels, setOptionsModels] = useState([])
   
   useEffect( ()=>{
     const fetchDemandeData = async () => {
@@ -86,43 +87,43 @@ export default function DemandeInputs() {
         })
         setUserRoles(roles_id)
 
+        const demandeData = await demandes.getOneDemande(id)
+        setDemandeDetails(demandeData)
+        setDemandeID(demandeData.type_demande_id)
+        setMotifDemande(demandeData.motif_demande)
+        setServiceId(demandeData.service_demandeur)
+        setQteDemande(demandeData.qte_total_demande)
+        setIdDemandeur(demandeData.id_demandeur)
+        setMessage(demandeData.commentaire)
+        let fieldsAutre = JSON.parse(demandeData.champs_autre)
+        setFields(fieldsAutre)
+        setOtherFields(fieldsAutre)
+        
         let stock_data;
         stock_data = await stock.getAllStock()
         console.log(stock_data)
         setStockDT(stock_data)
-        // const optionsPieces = stock_data.map((item) => ({
-        //   value: item.id_piece,
-        //   label: item.nom_piece.toUpperCase(),
-        // }));
-        // setOptionsPieces(optionsPieces);
-        
-        const models_data = await stock.getAllModels()
-        const options_model = models_data.map((item) =>({
-          value: item.id_model,
-          label: item.nom_model.toUpperCase(),
-        }))
-        setOptionsModels(options_model)
-        // const piecesA920 = stock_data.filter(item =>{
-        //   return item.model_id == 1;
-        // });
-        // const groupeOptionsPieces = models_data.map((model) => {
-        //   let nom_model = model.nom_model;
-        //   let model_pieces = stock_data.filter(item => {
-        //     if (item.model_id == model.id_model){
-        //       return({
-        //         value: item.id_piece,
-        //         label: item.nom_piece,
-        //       })
-        //     }
-        //   })
-        //   if(model_pieces){
-        //     return({
-        //       label: nom_model,
-        //       items: model_pieces
-        //     })
-        //   }
-        // })
-        // setOptionsPieces(groupeOptionsPieces)
+        const piecesA920 = stock_data.filter(item =>{
+          return item.model_id == 1;
+        });
+        const options = piecesA920.map((item) => ({
+          value: item.id_piece,
+          label: item.nom_piece.toUpperCase(),
+        }));
+        setOptionsPieces(options);
+        const selectedStockItem = stock_data.find(
+          (item) => {
+            return item.id_piece == demandeData.type_demande_id
+          } 
+        );
+        if (selectedStockItem) {
+          const nomPiece = selectedStockItem.nom_piece
+          const stockPiece = selectedStockItem.quantite
+          setTypeDemande(nomPiece.toUpperCase());
+          setStockInitial(stockPiece)
+        } else {
+          setTypeDemande('');
+        }
 
 
         let users_data = await users.getAllUsers()
@@ -132,6 +133,16 @@ export default function DemandeInputs() {
           label: item.username.toUpperCase().replace("."," ")
         }));
         setUsersOptions(options_user);
+        const selectedUser = users_data.find(
+          (item) => {
+            return item.id_user == demandeData.id_demandeur
+          }
+        )
+        if(selectedUser){
+          const nomUser = selectedUser.fullname.toUpperCase()
+          setNomDemandeur(nomUser)
+        }
+
 
         let services_data = await users.getAllServices()
         setServicesSelection(services_data)
@@ -140,6 +151,15 @@ export default function DemandeInputs() {
           label: item.nom_service.toUpperCase()
         }))
         setOptionsServices(options_services)
+        const selectedService = services_data.find(
+          (item) => {
+            return item.id == demandeData.service_demandeur
+          }
+        )
+        if(selectedService){
+          const nomSerivce = selectedService.nom_service.toUpperCase()
+          setServiceDemandeur(nomSerivce)
+        }
 
       }catch(error){
         console.log('Error fetching data ',error)
@@ -148,37 +168,9 @@ export default function DemandeInputs() {
         setLoadingDemandeData(false)
       }
     };
-    // const fetchUsers = async () => {
-    //   let data;
-    //   data = await users.getAllUsers()
-    //   setUsersSelection(data)
-    //   const options = data.map((item) => ({
-    //     value: item.id_user,
-    //     label: item.username.toUpperCase().replace("."," ")
-    //   }));
-    //   setUsersOptions(options);
-    // }
     fetchDemandeData();
   },[])
 
-  // const groupedItemTemplate = (option) => {
-  //   return (
-  //     <div className="flex align-items-center">
-  //       <div>{option.label}</div>
-  //     </div>
-  //   );
-  // };
-
-  const ChangeModel = (value) => {
-    const pieces_model = stockDT.filter((item) => {
-      return item.model_id == value
-    })
-    const optionsPieces = pieces_model.map((item) => ({
-      value: item.id_piece,
-      label: item.nom_piece.toUpperCase(),
-    }));
-    setOptionsPieces(optionsPieces);
-  }
   const ChangePieceType = (value) => {
     console.log("Selected value:", value);
     setDemandeID(value);
@@ -264,7 +256,7 @@ export default function DemandeInputs() {
     setSelectedFiles((prev) =>
       prev.filter((_, index) => index !== indexToRemove)
     );
-  }
+  };
 
   const handleAddField = () => {
     setFields((prev) => [
@@ -288,9 +280,9 @@ export default function DemandeInputs() {
   const handleConfirm = () => {
     if(!userRoles.includes(3)){
       Swal.fire({
-        title: "Error",
-        text: "Vous n'êtes pas authorisé à faire cette action !",
-        icon: "error"
+          title: "Error",
+          text: "Vous n'êtes pas authorisé à faire cette action !",
+          icon: "error"
       });
       localStorage.removeItem('token');
       localStorage.removeItem('username');
@@ -344,7 +336,7 @@ export default function DemandeInputs() {
       quantite: qteProduit,
     };
     setProduitsDemandes(newProduit)
-    
+
     const filteredFields = fields.filter(
       (f) => f.titre.trim() !== "" && f.information.trim() !== ""
     );
@@ -358,9 +350,9 @@ export default function DemandeInputs() {
     e.preventDefault();
     if(!userRoles.includes(3)){
       Swal.fire({
-          title: "Error",
-          text: "Vous n'êtes pas authorisé à faire cette action !",
-          icon: "error"
+        title: "Error",
+        text: "Vous n'êtes pas authorisé à faire cette action !",
+        icon: "error"
       });
       localStorage.removeItem('token');
       localStorage.removeItem('username');
@@ -370,70 +362,38 @@ export default function DemandeInputs() {
     setIsConfirmModalOpen(false)
     setLoadingDemande(true);
 
-    const fd = new FormData();
-
-    // const payload = {
-    //   commentaire: message,
-    //   user_id: userId,
-    //   otherFields: otherFields,
-    // }
-
-    const commentaire = message;
-    const type_demande_id = demandeID
-    const user_id = userId;
-    const service_id = serviceId;
-    const role_validateur = 4
-    const nom_demandeur = nomDemandeur;
-    const quantite = qteDemande;
-    const id_demandeur = idDemandeur;
-    const files_selected = selectedFiles
-    
-    fd.append('produitsDemandes',JSON.stringify(produitsDemande));
-    fd.append('commentaire',commentaire);
-    fd.append('user_id',userId);
-    fd.append('type_demande_id',type_demande_id);
-   
-    fd.append('service_id', service_id);
-    fd.append('role_validateur', role_validateur);
-    fd.append('nom_demandeur', nom_demandeur);
-    fd.append('qte_total_demande',quantite);
-    fd.append('id_demandeur', id_demandeur);
-    fd.append('motif_demande', motifDemande);
-    fd.append('otherFields', JSON.stringify(otherFields));
-    selectedFiles.forEach((file, i) => {
-      fd.append('files_selected', file); // 👈 keep the same key name
-    });
-
-    console.log('------  DEMANDE  ------')
-    console.log('ID DEMANDE : ',type_demande_id)
-    console.log('ID User : ', user_id)
-    console.log('Produits demandés : ',produitsDemande)
-    console.log('commentaire : ',commentaire)
-    console.log('quantite totale demande : ',quantite)
-    console.log('Motif de la demande : ', motifDemande)
-    console.log('Demandeur : ',nom_demandeur)
-    console.log('id demandeur : ',id_demandeur)
+    const payload = {
+      commentaire: message,
+      type_demande_id: demandeID,
+      user_id: userId,
+      service_id: serviceId,
+      role_validateur: 4,
+      qte_total_demande: qteDemande,
+      id_demandeur: idDemandeur,
+      motif_demande: motifDemande,
+      otherFields: JSON.stringify(otherFields),
+    }
 
     try{
-      // console.log("Sending payload : ",payload)
-      const response = await demandes.faireDemande(fd)
+    console.log("Sending payload : ",payload)
+    // const response = await demandes.updateDemande(id, payload)
 
-    console.log(response);
-    console.log('Demande créée')
+    // console.log(response);
+    console.log('Demande modifiée')
     Swal.fire({
       title: "Succès",
-      text: "Demande créée avec succès",
+      text: "Demande modifiée avec succès",
       icon: "success"
     });
     navigate('/toutes-les-demandes');
     }catch (error) {
       console.log('error')
-      setError('Erreur lors de la génération du formulaire');
+      setError('Une erreur est survenue lors de la modification de la demande');
       setProduitsDemandes([])
       setLoadingDemande(false)
       Swal.fire({
         title: "Attention",
-        text: "Il y a eu une erreur dans la génération de la demande",
+        text: "Une erreur est survenue lors de la modification de la demande",
         icon: "warning"
       });
       navigate('/toutes-les-demandes');
@@ -460,32 +420,19 @@ export default function DemandeInputs() {
                   </div>
                   <div className="space-y-6">
                     <div>
-                      <Label>Model pièce <span className="text-red-700">*</span></Label>
-                      <Select
-                        options={optionsModels}
-                        placeholder="Choisir une option"
-                        onChange={ChangeModel}
-                        className="dark:bg-dark-900"                          
-                      />
-                    </div>
-                    <div>
                       <Label>Pièce demandée <span className="text-red-700">*</span></Label>
                       <Select
                         options={optionsPieces}
-                        placeholder="Choisir une option"
+                        placeholder={typeDemande}
                         onChange={ChangePieceType}
                         className="dark:bg-dark-900"                          
                       />
                     </div>
-                    {/* <div className="card flex justify-content-center">
-                      <Dropdown options={optionsPieces} optionLabel="label" 
-                        optionGroupLabel="label" optionGroupChildren="items" optionGroupTemplate={groupedItemTemplate} className="w-full md:w-14rem" />
-                    </div> */}
                     <div>
                       <Label>Service demandeur <span className="text-red-700">*</span></Label>
                       <Select
                         options={optionsServices}
-                        placeholder="Choisir une option"
+                        placeholder={serviceDemandeur}
                         onChange={ChangeService}
                         className="dark:bg-dark-900"               
                       />
@@ -494,7 +441,7 @@ export default function DemandeInputs() {
                       <Label>Demandeur <span className="text-red-700">*</span></Label>
                       <Select
                         options={usersOptions}
-                        placeholder="Choisir une option"
+                        placeholder={nomDemandeur}
                         onChange={ChangeUser}
                         className="dark:bg-dark-900"               
                       />

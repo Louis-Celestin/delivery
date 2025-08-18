@@ -70,6 +70,22 @@ const createValidation = async (req, res) => {
       data: { statut_livraison: "livre" },
     });
 
+    const pieces_chargeurs = await prisma.stock_dt.findUnique({
+      where: {
+        id_piece: 1
+      }
+    })
+    if(livraison.type_livraison_id == 5 || livraison.type_livraison_id == 7 || livraison.type_livraison_id == 8){
+      await prisma.stock_dt.update({
+      where:{
+        id_piece: 1
+      },
+      data: {
+        quantite:  pieces_chargeurs.quantite - livraison.qte_totale_livraison
+      }
+    }) 
+    }
+
 
     /******************************* GESTION DES MAILS  *******************************/
 

@@ -604,6 +604,7 @@ const deliverStock = async (req, res) => {
       quantite,
       service_reception,
       role_reception,
+      otherFields,
     } = req.body;
 
     const typeLivraison = await prisma.stock_dt.findUnique({
@@ -638,6 +639,10 @@ const deliverStock = async (req, res) => {
       return res.status(400).json({ message: "Vous devez fournir une signature d'expéditeur." });
     }
 
+    const autres = typeof otherFields === "string"
+    ? JSON.parse(otherFields)
+    : otherFields
+
     const nouvelleLivraison = await prisma.Livraisons.create({
       data: {
         user_id: utilisateur ? utilisateur.id_user : null,
@@ -650,6 +655,7 @@ const deliverStock = async (req, res) => {
         role_id: role_reception ? parseInt(role_reception) : null,
         service_id: service_reception ? parseInt(service_reception) : null,
         date_livraison: new Date(),
+        autres_champs_livraison: JSON.stringify(autres),
 
         livraison_piece: {
           create: {
@@ -878,15 +884,25 @@ const receiveStock = async (req, res) => {
         livraison_piece : true
       }
     })
-
-
-    // *********** GESTION DES MAILS ************
-
+    
     const piece = await prisma.stock_dt.findUnique({
       where:{
         id_piece: livraison.piece_id
       }
     });
+
+    await prisma.stock_dt.update({
+      where:{
+        id_piece: livraison.piece_id
+      },
+      data: {
+        quantite: piece.quantite - livraison.Livraisons.quantite_livraison
+      }
+    }) 
+
+    
+    // *********** GESTION DES MAILS ************
+
 
     const service = await prisma.services.findUnique({
       where:{
@@ -1277,6 +1293,158 @@ const generateLivraisonPDF = async (req, res) => {
     }
 };
 
+const updateDeliveryStock = async (req, res) => {
+  const { id } = req.params;
+  const {
+    commentaire,
+    type_livraison_id,
+    user_id,
+    role_reception,
+    quantite,
+    service_reception,
+    otherFields,
+  } = req.body;
+
+  try {
+    
+    let utilisateur = null;
+    
+    utilisateur = await prisma.users.findUnique({
+      where: {
+        id_user: parseInt(user_id)
+      }
+    })
+    
+    if (!utilisateur) {
+      return res.status(404).json({ message: "Utilisateur non trouvé" });
+    }
+
+    let nomLivreur = utilisateur.fullname
+
+    const autres = typeof otherFields === "string"
+    ? JSON.parse(otherFields)
+    : otherFields
+    
+    // Données à mettre à jour
+    const dataToUpdate = {
+      user_id: utilisateur ? utilisateur.id_user : null,
+      quantite_livraison: parseInt(quantite),
+      nom_livreur: nomLivreur ? nomLivreur : null,
+      commentaire_livraison : commentaire,
+      type: "livraison_piece",
+      statut_livraison: "en_cours",
+      role_id: role_reception ? parseInt(role_reception) : null,
+      service_id: service_reception ? parseInt(service_reception) : null,
+      date_livraison: new Date(),
+      autres_champs_livraison: JSON.stringify(autres),
+    };
+
+    // Mise à jour de la livraison
+    const updated = await prisma.livraison_piece.update({
+      where: { demande_id: parseInt(id) },
+      data: {
+        Livraisons: {
+          update: {
+            data: dataToUpdate,
+          }
+        }
+      },
+      include: {
+        Livraisons: true
+      }
+    });
+
+
+    // *********** GESTION DES MAILS ************
+
+    const piece = await prisma.stock_dt.findUnique({
+      where:{
+        id_piece: parseInt(type_livraison_id)
+      }
+    });
+
+    const service = await prisma.services.findUnique({
+      where:{
+        id: parseInt(service_reception)
+      }
+    })
+
+    const userService = await prisma.user_services.findMany({
+      where:{
+        service_id: parseInt(service_reception)
+      },
+      include:{
+        users: true
+      }
+    })
+
+    const userRole = await prisma.user_roles.findMany({
+      where:{
+        role_id: 12
+      },
+      include:{
+        users: true
+      }
+    })
+    let recepteurs = userRole.map(us => us.users)
+    const service_users = userService.map(us => us.users)
+
+    let livraisonTypeName = piece.nom_piece.toUpperCase();
+    let serviceReception = service.nom_service.toUpperCase();
+    let quantiteProduits = quantite
+    let commentaire_mail = commentaire ? commentaire : "(Sans commentaire)"
+    
+    const url = GENERAL_URL
+    const deliveryLink = `${url}/demande-details/${updated.demande_id}`;
+    const sendMail = require("../../utils/emailSender");
+
+    if ((recepteurs && recepteurs.length > 0) || (service_users && service_users.length > 0)) {
+      const subject = `NOUVELLE LIVRAISON ${livraisonTypeName}`;
+      const html = `
+        <p>Bonjour,</p>
+        <p>La livraison ${updated.id} a été modifiée.</p>
+        <ul>
+          <li><strong>Type de livraison:</strong> ${livraisonTypeName}</li>
+          <li><strong>Nombre de produits:</strong> ${quantiteProduits}</li>
+          <li><strong>Service:</strong> ${serviceReception}</li>
+        </ul>
+        <br>
+          <p>Commentaire : ${commentaire_mail}<p>
+        <br>
+        <p>Retrouvez la livraison à ce lien : 
+          <span>
+            <a href="${deliveryLink}" target="_blank" style="background-color: #73dced; color: white; padding: 7px 12px; text-decoration: none; border-radius: 5px;">
+              Cliquez ici !
+            </a>
+          </span>
+        </p>
+        <br><br>
+        <p>Green - Pay vous remercie.</p>
+      `;
+
+      for (const recepteur of recepteurs) {
+        await sendMail({
+          to: recepteur.email,
+          subject,
+          html,
+        });
+      }
+      for (const service_user of service_users) {
+        await sendMail({
+          to: service_user.email,
+          subject,
+          html,
+        });
+      }
+    }
+
+    return res.status(200).json(updated);
+  } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: "Erreur lors de la mise à jour", error });
+  }
+}
+
 
 module.exports = {
   deliver,
@@ -1295,4 +1463,5 @@ module.exports = {
   getOneTypeLivraison,
   updateTypeLivraison,
   deleteTypeLivraison,
+  updateDeliveryStock,
 }

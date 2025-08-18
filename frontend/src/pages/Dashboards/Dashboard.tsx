@@ -126,6 +126,11 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+      <div>
+        <div className="grid grid-cols-2">
+          {/* <LivraisonsGenerales startDate={startDate} endDate={endDate} /> */}
+        </div>
+      </div>
     </>
   );
 }

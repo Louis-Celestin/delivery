@@ -130,6 +130,12 @@ import AjouterTypeLivraisonForm from "./pages/Forms/AdminForms/AjouterTypeLivrai
 // @ts-ignore
 import ModifyTypeLivraisonForm from "./pages/Forms/AdminForms/ModifyTypeLivraisonForm"
 
+// @ts-ignore
+import ModifyLivraisonPiecesForm from "./pages/Forms/LivraisonForms/ModifyLivraisonPiecesForm"
+
+// @ts-ignore
+import ModifyDemandeAdminForm from "./pages/Forms/AdminForms/ModifyDemandeAdminForm"
+
 
 export default function App() {
   return (
@@ -165,6 +171,8 @@ export default function App() {
               <Route path="/demande-livraison/:id" element={<DemandeDeliveryDetails />} />
               <Route path="/livraison-pieces/:id" element={<LivraisonPiecesForm />} />
               <Route path="/formulaire-chargeur-decom/:id" element={<DeliveryChargeurDecomDetails />} />
+              <Route path="/modifier-livraison-pieces/:id" element={<ModifyLivraisonPiecesForm />} />
+      
 
 
               {/* Receptions */}
@@ -212,6 +220,8 @@ export default function App() {
               <Route path="/types-livraison" element={<TypesLivraisonsPage />} />
               <Route path="/ajouter-type-livraison" element={<AjouterTypeLivraisonForm />} />
               <Route path="/modifier-type-livraison/:id" element={<ModifyTypeLivraisonForm />} />
+              {/* Formulaire mouvement de stock */}
+              <Route path="/modification-admin-demande/:id" element={<ModifyDemandeAdminForm />} />
 
 
 

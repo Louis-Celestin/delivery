@@ -6,6 +6,7 @@ const prisma = new PrismaClient();
 const cloudinary = require("../../config/clouddinaryConifg");
 const { get } = require("http");
 const { urlToHttpOptions } = require("url");
+const { type } = require("os");
 
 
 // Fonction de format de date pour les fiches PDF. La date va apparaître avec l'heure.
@@ -66,6 +67,7 @@ const faireDemande = async (req, res) =>{
         id_demandeur,
         qte_total_demande,
         motif_demande,
+        otherFields,
       } = req.body;
 
       // Correction ici : gestion de produitsDemandes (string JSON venant de form-data)
@@ -73,10 +75,14 @@ const faireDemande = async (req, res) =>{
       ? JSON.parse(produitsDemandes)
       : produitsDemandes;
       
+      const autres = typeof otherFields === "string"
+      ? JSON.parse(otherFields)
+      : otherFields
+
       const typeDemande = await prisma.stock_dt.findUnique({
-          where: {
-              id_piece: parseInt(type_demande_id)
-          }
+        where: {
+          id_piece: parseInt(type_demande_id)
+        }
       })
 
       if (!typeDemande) {
@@ -124,20 +130,21 @@ const faireDemande = async (req, res) =>{
 
       const nouvelleDemande = await prisma.demandes.create({
       data: {
-          statut_demande: "en_cours",
-          qte_total_demande: parseInt(qte_total_demande),
-          produit_demande: JSON.stringify(produits),
-          commentaire,
-          nom_demandeur: nom_demandeur || null,
-          date_demande: new Date(),
-          signature_demandeur: 'signé',
-          type_demande_id: parseInt(final_type_demande_id),
-          user_id: utilisateur ? utilisateur.id_user : null,
-          role_id_recepteur: parseInt(role_validateur),
-          service_demandeur: parseInt(service_id),
-          id_demandeur: parseInt(id_demandeur) || null,
-          motif_demande: motif_demande || null,
-          files: JSON.stringify(uploadedFiles),
+        statut_demande: "en_cours",
+        qte_total_demande: parseInt(qte_total_demande),
+        produit_demande: JSON.stringify(produits),
+        commentaire,
+        nom_demandeur: nom_demandeur || null,
+        date_demande: new Date(),
+        signature_demandeur: 'signé',
+        type_demande_id: parseInt(final_type_demande_id),
+        user_id: utilisateur ? utilisateur.id_user : null,
+        role_id_recepteur: parseInt(role_validateur),
+        service_demandeur: parseInt(service_id),
+        id_demandeur: parseInt(id_demandeur) || null,
+        motif_demande: motif_demande || null,
+        champs_autre: JSON.stringify(autres),
+        files: JSON.stringify(uploadedFiles),
       }
       });
 
@@ -758,6 +765,7 @@ const updateDemande = async (req, res) => {
     id_demandeur,
     qte_total_demande,
     motif_demande,
+    otherFields,
   } = req.body;
 
   try {
@@ -765,6 +773,10 @@ const updateDemande = async (req, res) => {
     const produits = typeof produitsDemandes === "string"
     ? JSON.parse(produitsDemandes)
     : produitsDemandes;
+
+    const autres = typeof otherFields === "string"
+    ? JSON.parse(otherFields)
+    : otherFields
 
     let utilisateur = null;
   
@@ -792,6 +804,7 @@ const updateDemande = async (req, res) => {
       id_demandeur: parseInt(id_demandeur) || null,
       motif_demande: motif_demande || null,
       service_demandeur: parseInt(service_id),
+      champs_autre: JSON.stringify(autres),
     };
 
     const updated = await prisma.demandes.update({
@@ -940,7 +953,7 @@ const generateDemandePDF = async (req, res) => {
         ...demande_data,
         produitsDemandes: typeof demande_data.produit_demande === "string"
           ? JSON.parse(demande_data.produit_demande)
-          : demande_data.produit_demande
+          : demande_data.produit_demande,        
       };
       
       const piece = await prisma.stock_dt.findUnique({
@@ -949,6 +962,8 @@ const generateDemandePDF = async (req, res) => {
         }
       })
 
+      const champsAutres = JSON.parse(demande_data.champs_autre)
+      let champsAutresLivraison = null
 
       // 🔎 Récupération de l'agent qui a fait la demande (si user_id défini)
       let nomDemandeur = "N/A";
@@ -971,7 +986,7 @@ const generateDemandePDF = async (req, res) => {
       if(service){
         service_demandeur = service.nom_service.toUpperCase()
       }
-  
+      
       
       // 🧱 Construction du tableau
       // const produitsRows = demande.produitsDemandes.map((p, index) => {
@@ -994,6 +1009,20 @@ const generateDemandePDF = async (req, res) => {
             
             // console.log(demande.validations[0].signature)
             // 🧩 Remplacement des balises HTML
+
+      const autresChamps = champsAutres.map((data, index) => {
+        let row = ""
+        row = `<tr><th>${data.titre}</th><th>${data.information}</th></tr>`
+
+        if ((index + 1) % 20 === 0) {
+          row += `<tr class="page-break"></tr>`;
+        }
+
+        return row
+      }).join("\n");
+
+      let autresChampsLivraison = []
+
       // 🗺️ Sélection du template
       const templatesMap = {
         1: "demande_DT.html",
@@ -1026,6 +1055,19 @@ const generateDemandePDF = async (req, res) => {
 
 
       if(livraison_data && livraison_data.Livraisons.reception_livraison.length > 0){
+
+        champsAutresLivraison = JSON.parse(livraison_data.Livraisons.autres_champs_livraison)
+        autresChampsLivraison = champsAutresLivraison.map((data, index) => {
+          let row = ""
+          row = `<tr><th>${data.titre}</th><th>${data.information}</th></tr>`
+
+          if ((index + 1) % 20 === 0) {
+            row += `<tr class="page-break"></tr>`;
+          }
+
+          return row
+        }).join("\n");
+
 
         templateFile = templatesMap[2]
         let index_reception = livraison_data.Livraisons.reception_livraison.length - 1
@@ -1068,6 +1110,8 @@ const generateDemandePDF = async (req, res) => {
         .replaceAll("{{nom_recepteur}}", nom_recepteur)
         .replaceAll("{{signature_reception}}", signature_reception ? signature_reception : '#')
         .replaceAll("{{date_reception}}", formatDate(date_reception) )
+        .replace("{{autre_champs}}", autresChamps ? autresChamps : '')
+        .replace("{{autre_champs_livraison}}", autresChampsLivraison ? autresChampsLivraison : '')
 
       // 🖨️ Génération PDF
       const browser = await puppeteer.launch({ headless: "new", args : ["--no-sandbox", "--disable-setuid-sandbox"] });
@@ -1095,8 +1139,6 @@ const generateDemandePDF = async (req, res) => {
 };
 
   
-
-
 
 module.exports = {
     faireDemande,

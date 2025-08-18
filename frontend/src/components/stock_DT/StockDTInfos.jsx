@@ -22,7 +22,7 @@ export default function StockDTInfos() {
             const piecesA920 = data.filter(item =>{
                 return item.model_id == 1 && item.service == 5;
             });
-            setStockDT(piecesA920)
+            setStockDT(data)
         }catch(error){
         console.log('Error fetching data ',error)
         setErrorForm('Erreur lors de la génération du formulaire')        

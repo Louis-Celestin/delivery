@@ -72,6 +72,11 @@ export default function ModifyDemandeInputs() {
   const [selectedFiles, setSelectedFiles] = useState([])
 
   const [demandeDetails, setDemandeDetails] = useState([])
+
+  const [fields, setFields] = useState([])
+  const [otherFields, setOtherFields] = useState([])
+
+  const [optionsModels, setOptionsModels] = useState([])
   
   useEffect( ()=>{
     const fetchDemandeData = async () => {
@@ -92,20 +97,22 @@ export default function ModifyDemandeInputs() {
         setQteDemande(demandeData.qte_total_demande)
         setIdDemandeur(demandeData.id_demandeur)
         setMessage(demandeData.commentaire)
+        let fieldsAutre = JSON.parse(demandeData.champs_autre)
+        setFields(fieldsAutre)
+        setOtherFields(fieldsAutre)
         
-
         let stock_data;
         stock_data = await stock.getAllStock()
         console.log(stock_data)
         setStockDT(stock_data)
-        const piecesA920 = stock_data.filter(item =>{
-          return item.model_id == 1;
-        });
-        const options = piecesA920.map((item) => ({
-          value: item.id_piece,
-          label: item.nom_piece.toUpperCase(),
-        }));
-        setOptionsPieces(options);
+        // const piecesA920 = stock_data.filter(item =>{
+        //   return item.model_id == 1;
+        // });
+        // const options = piecesA920.map((item) => ({
+        //   value: item.id_piece,
+        //   label: item.nom_piece.toUpperCase(),
+        // }));
+        // setOptionsPieces(options);
         const selectedStockItem = stock_data.find(
           (item) => {
             return item.id_piece == demandeData.type_demande_id
@@ -119,7 +126,13 @@ export default function ModifyDemandeInputs() {
         } else {
           setTypeDemande('');
         }
-
+        
+        const models_data = await stock.getAllModels()
+        const options_model = models_data.map((item) =>({
+          value: item.id_model,
+          label: item.nom_model.toUpperCase(),
+        }))
+        setOptionsModels(options_model)
 
         let users_data = await users.getAllUsers()
         setUsersSelection(users_data)
@@ -165,6 +178,17 @@ export default function ModifyDemandeInputs() {
     };
     fetchDemandeData();
   },[])
+
+  const ChangeModel = (value) => {
+    const pieces_model = stockDT.filter((item) => {
+      return item.model_id == value
+    })
+    const optionsPieces = pieces_model.map((item) => ({
+      value: item.id_piece,
+      label: item.nom_piece.toUpperCase(),
+    }));
+    setOptionsPieces(optionsPieces);
+  }
 
   const ChangePieceType = (value) => {
     console.log("Selected value:", value);
@@ -251,7 +275,26 @@ export default function ModifyDemandeInputs() {
     setSelectedFiles((prev) =>
       prev.filter((_, index) => index !== indexToRemove)
     );
-  }
+  };
+
+  const handleAddField = () => {
+    setFields((prev) => [
+      ...prev,
+      { id: Date.now(), titre: "", information: "" }
+    ]);
+  };
+
+  const handleFieldChange = (id, fieldName, value) => {
+    setFields((prev) =>
+      prev.map((f) =>
+        f.id === id ? { ...f, [fieldName]: value } : f
+      )
+    );
+  };
+
+  const handleRemoveField = (id) => {
+    setFields((prev) => prev.filter((f) => f.id !== id));
+  };
 
   const handleConfirm = () => {
     if(!userRoles.includes(3)){
@@ -311,9 +354,12 @@ export default function ModifyDemandeInputs() {
       stockDepart: stock,
       quantite: qteProduit,
     };
-
     setProduitsDemandes(newProduit)
 
+    const filteredFields = fields.filter(
+      (f) => f.titre.trim() !== "" && f.information.trim() !== ""
+    );
+    setOtherFields(filteredFields)
 
     setErrorAjout('')
     setIsConfirmModalOpen(true)
@@ -344,6 +390,7 @@ export default function ModifyDemandeInputs() {
       qte_total_demande: qteDemande,
       id_demandeur: idDemandeur,
       motif_demande: motifDemande,
+      otherFields: JSON.stringify(otherFields),
     }
 
     try{
@@ -391,6 +438,15 @@ export default function ModifyDemandeInputs() {
                     <span className="text-sm font-semibold">Informations générales</span>
                   </div>
                   <div className="space-y-6">
+                    <div>
+                      <Label>Model pièce <span className="text-red-700">*</span></Label>
+                      <Select
+                        options={optionsModels}
+                        placeholder="Choisir une option"
+                        onChange={ChangeModel}
+                        className="dark:bg-dark-900"                          
+                      />
+                    </div>
                     <div>
                       <Label>Pièce demandée <span className="text-red-700">*</span></Label>
                       <Select
@@ -501,6 +557,63 @@ export default function ModifyDemandeInputs() {
                       </div>                        
                     </div>
                     <div>
+                      {fields.map((field, index) => (
+                      <div
+                        key={field.id}
+                        className="flex justify-center items-center relative mb-2 rounded"
+                      >
+                        {/* Remove button */}
+                        <div className="absolute right-0 top-0">
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveField(field.id)}
+                            className="text-red-500"
+                          >
+                            <i className="pi pi-times"></i>
+                          </button>
+                        </div>
+
+                        {/* First input */}
+                        <div className="me-1">
+                          <Label htmlFor={`titre-${field.id}`}>
+                            Titre champ {index + 1}
+                          </Label>
+                          <Input
+                            type="text"
+                            id={`titre-${field.id}`}
+                            value={field.titre}
+                            onChange={(e) =>
+                              handleFieldChange(field.id, "titre", e.target.value)
+                            }
+                            className="border rounded px-2 py-1"
+                          />
+                        </div>
+
+                        {/* Second input */}
+                        <div className="ms-1">
+                          <Label htmlFor={`info-${field.id}`}>Information</Label>
+                          <Input
+                            type="text"
+                            id={`info-${field.id}`}
+                            value={field.information}
+                            onChange={(e) =>
+                              handleFieldChange(field.id, "information", e.target.value)
+                            }
+                            className="border rounded px-2 py-1"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                    </div>
+                    <div>
+                      <button
+                        type="button"
+                        onClick={handleAddField}
+                      >
+                        <span className="text-xs text-gray-500 font-medium"> <span className="underline">Ajouter un champ </span><span className="text-xl">+</span></span>
+                      </button>
+                    </div>
+                    <div>
                       <span className="text-error-600 font-medium flex items-center justify-center text-sm p-1 mt-4">
                         {errorAjout}
                       </span>
@@ -562,7 +675,16 @@ export default function ModifyDemandeInputs() {
             <div>
               <span>Stock restant : <span className="font-bold text-red-700">{stockInitial - qteDemande}</span></span>
             </div>
-            <div className="flex-col">
+            {otherFields.map((field) =>{
+              return(
+                <>
+                  <div>
+                    <span>{field.titre} : <span className="font-bold text-red-700">{field.information}</span></span>
+                  </div>
+                </>
+              )
+            })}
+            {/* <div className="flex-col">
               <span>Fichiers upload : </span>
               {selectedFiles.length > 0 ? (
                 <div className="border border-gray-500 mt-3 rounded">
@@ -579,7 +701,7 @@ export default function ModifyDemandeInputs() {
                   <span>0</span>
                 </>
               )}
-            </div>
+            </div> */}
           </div>
         </div>
         <div className='w-full mt-6 flex justify-center items-center'>
