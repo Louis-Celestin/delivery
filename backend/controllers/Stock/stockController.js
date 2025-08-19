@@ -7,7 +7,7 @@ const cloudinary = require("../../config/clouddinaryConifg");
 
 const baseUrl = process.env.FRONTEND_BASE_URL || "https://livraisons.greenpayci.com";
 const localUrl = "http://localhost:5173"
-const GENERAL_URL = localUrl 
+const GENERAL_URL = baseUrl 
 
 let test_env = true
 let support_role = 7;

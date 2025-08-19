@@ -33,7 +33,7 @@ const localUrl = "http://localhost:5173"
 let GENERAL_URL = baseUrl 
 
 
-let test_env = true
+let test_env = false
 let email_test = process.env.EMAIL_TEST
 
 if(test_env){

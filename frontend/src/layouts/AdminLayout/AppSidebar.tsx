@@ -115,13 +115,17 @@ const AppSidebar: React.FC = () => {
 
   const hasRoleAccess = (roles = []) => {
     if (roles.length === 0) return true;
+    // @ts-ignore
     return user?.roleList?.some((role) => roles.includes(role));
   };
 
+  // @ts-ignore
   const filterNavItems = (items) =>
+    // @ts-ignore
   items.map((item) => {
     // Filter subItems
     const filteredSubItems = item.subItems
+    // @ts-ignore
       ? item.subItems.filter((sub) => hasRoleAccess(sub.roles))
       : [];
 

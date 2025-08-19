@@ -6,14 +6,14 @@ import { Link, useNavigate } from "react-router";
 import { ClipboardCheck } from "../../../icons";
 // @ts-ignore
 import { Demandes } from "../../../backend/demandes/Demandes"
-import { formatDistanceToNow, parseISO } from 'date-fns';
+// import { formatDistanceToNow, parseISO } from 'date-fns';
 
 export default function NotificationDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const [notifying, setNotifying] = useState(false);
   // @ts-ignore
   const [demandesEnAttentes, setDemandesEnAttentes] = useState([])
-  const demandes = new Demandes();
+  // const demandes = new Demandes();
   const navigate = useNavigate()
 
   function toggleDropdown() {
