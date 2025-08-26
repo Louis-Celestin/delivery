@@ -1,3 +1,5 @@
+const TEST_ENV = require("../../utils/consts")
+
 const puppeteer = require("puppeteer");
 const fs = require("fs");
 const path = require("path");
@@ -24,28 +26,15 @@ const formatDate = (isoDate) => {
 
 // baseUrl est l'addresse du site de livraison
 const baseUrl = process.env.FRONTEND_BASE_URL || "https://livraisons.greenpayci.com";
-
 // localUrl est l'addresse en local pour les tests
 const localUrl = "http://localhost:5173"
-
 // GENERAL_URL va être utilisée dans les mails envoyés pour pouvoir rediriger correctement l'utilisateur vers la page avec le bon lien
 // En test GENERAL_URL doit avoir la valeur de localUrl et celle de baseUrl lors du deploiement.
 let GENERAL_URL = baseUrl 
-
-
-let test_env = false
-let email_test = process.env.EMAIL_TEST
-
+let test_env = TEST_ENV
 if(test_env){
   GENERAL_URL = localUrl
 }
-
-let support_role = 7;
-let livraison_role = 1;
-let commercial_role = 2;
-let superviseur_role = 3;
-let maintenance_role = 6;
-
 
 // Faire une demande
 // DEMANDE CHARGEURS POUR TPE SANS RI SUPPORT -> DT -> ORNELLA
@@ -1136,9 +1125,7 @@ const generateDemandePDF = async (req, res) => {
       console.error(err);
       return res.status(500).json({ message: "Erreur lors de la génération du PDF" });
     }
-};
-
-  
+};   
 
 module.exports = {
     faireDemande,

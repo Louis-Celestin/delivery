@@ -1,3 +1,4 @@
+const TEST_ENV = require("../../utils/consts")
 const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -9,20 +10,14 @@ const sendMail = require("../../utils/emailSender")
 
 const prisma = new PrismaClient();
 
-// baseUrl est l'addresse du site de livraison
+/// baseUrl est l'addresse du site de livraison
 const baseUrl = process.env.FRONTEND_BASE_URL || "https://livraisons.greenpayci.com";
-
 // localUrl est l'addresse en local pour les tests
 const localUrl = "http://localhost:5173"
-
 // GENERAL_URL va être utilisée dans les mails envoyés pour pouvoir rediriger correctement l'utilisateur vers la page avec le bon lien
 // En test GENERAL_URL doit avoir la valeur de localUrl et celle de baseUrl lors du deploiement.
 let GENERAL_URL = baseUrl 
-
-
-let test_env = true
-let email_test = process.env.EMAIL_TEST
-
+let test_env = TEST_ENV
 if(test_env){
   GENERAL_URL = localUrl
 }

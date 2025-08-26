@@ -52,6 +52,9 @@ export default function AllDemandesList() {
     const [dateLivraison, setDateLivraison] = useState('')
     const [statutLivraison, setStatutLivraison] = useState('')
 
+    const [optionsModels, setOptionsModels] = useState([])
+    const [selectedModels, setSelectedModels] = useState(null)
+
     useEffect( ()=>{
         const fetchDemandeData = async () =>{
             setLoading(true);
@@ -59,20 +62,33 @@ export default function AllDemandesList() {
                 let demande_data = await demandes.getAllDemandes();
                 console.log(demande_data)
                 setDemandeForms(demande_data)
+
+                const models_data = await stock.getAllModels()
+                const options_model = models_data.map((item) =>({
+                value: item.id_model,
+                label: item.nom_model.toUpperCase(),
+                }))
+                setOptionsModels(options_model)
                 
                 let stock_data = await stock.getAllStock()
-                console.log(stock_data)
                 setStockDT(stock_data)
                 const piecesA920 = stock_data.filter(item =>{
                 return item.model_id == 1;
                 });
-                const options = piecesA920.map((item) => ({
-                value: item.id_piece,
-                label: item.nom_piece.toUpperCase(),
-                selected: false,
-                }));
-                setOptionsPieces(options);
-                console.log(options)
+                const options_pieces = stock_data.map((piece) =>{
+                    let model = models_data.find((item) =>{
+                        return item.id_model == piece.model_id
+                    })
+                    if(model){
+                        return({
+                            value: piece.id_piece,
+                            label: piece.nom_piece.toUpperCase() + ' - ' + model.nom_model,
+                            selected: false,
+                        })
+                    }
+                    
+                });
+                setOptionsPieces(options_pieces);
 
                 let services_data = await usersData.getAllServices()
                 const options_services = services_data.map((item) => ({
@@ -97,6 +113,17 @@ export default function AllDemandesList() {
         const d = new Date(date);
         return d.toLocaleDateString('fr-FR'); // or use any locale you want
     };
+
+    const ChangeModel = (value) => {
+        const pieces_model = stockDT.filter((item) => {
+        return item.model_id == value
+        })
+        const optionsPieces = pieces_model.map((item) => ({
+        value: item.id_piece,
+        label: item.nom_piece.toUpperCase(),
+        }));
+        setOptionsPieces(optionsPieces);
+    }
 
     const handleGeneratePdf = async (id) =>{
         setPrintingId(id);
@@ -280,10 +307,11 @@ export default function AllDemandesList() {
         const matchesStartDate = startDate ? itemDate >= startDate : true;
         const matchesEndDate = endDate ? itemDate <= endDate : true;
         const matchesService = serviceDemandeurs ? serviceDemandeurs.includes(item.service_demandeur) : true;
+        const matchesModel = selectedModels ? selectedModels.includes(item.model_id) : true;
         const matchesGlobalFilter = globalFilter
           ? JSON.stringify(item).toLowerCase().includes(globalFilter.toLowerCase())
           : true;
-        return matchesStatus && matchesType && matchesStartDate && matchesEndDate && matchesService && matchesGlobalFilter;
+        return matchesStatus && matchesType && matchesStartDate && matchesEndDate && matchesService && matchesModel && matchesGlobalFilter;
     });
 
 
@@ -330,6 +358,17 @@ export default function AllDemandesList() {
                         className="w-full sm:w-90"
                         onChange={(e) => setSelectedTypes(e.value)}
                     />
+                    <MultiSelect
+                        label="Model"
+                        options={optionsModels}
+                        display="chip"
+                        value={selectedModels}
+                        optionLabel="label"
+                        maxSelectedLabels={2}
+                        placeholder="Model produit"
+                        className="w-full sm:w-90"
+                        onChange={(e) => setSelectedModels(e.value)}
+                    />
                 </div>
                 <div className="flex justify-normal flex-wrap gap-3 mb-3 p-6">
                     <div className="flex gap-2">
@@ -368,7 +407,7 @@ export default function AllDemandesList() {
                         removableSort 
                         paginator rows={5} rowsPerPageOptions={[5, 10, 25, 50]}
                         tableStyle={{ minWidth: '50rem' }}
-                        emptyMessage="Aucune livraison trouvée"
+                        emptyMessage="Aucune demande trouvée"
                         className="p-datatable-sm">
 
                         <Column field="type_demande_id" header="Demande" body={titleTemplate} sortable></Column>

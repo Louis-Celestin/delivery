@@ -1,3 +1,4 @@
+const TEST_ENV = require("../../utils/consts")
 const puppeteer = require("puppeteer");
 const fs = require("fs");
 const path = require("path");
@@ -6,6 +7,7 @@ const prisma = new PrismaClient();
 const cloudinary = require("../../config/clouddinaryConifg");
 const { type } = require("os");
 const { sign } = require("crypto");
+const sendMail = require("../../utils/emailSender");
 
 const formatDate = (isoDate) => {
   const date = new Date(isoDate);
@@ -19,19 +21,17 @@ const formatDate = (isoDate) => {
   });
 };
 
+// baseUrl est l'addresse du site de livraison
 const baseUrl = process.env.FRONTEND_BASE_URL || "https://livraisons.greenpayci.com";
+// localUrl est l'addresse en local pour les tests
 const localUrl = "http://localhost:5173"
-const GENERAL_URL = baseUrl
-
-let test_env = true
-let support_role = 7;
-let livraison_role = 1;
-let commercial_role = 2;
-let superviseur_role = 3;
-let maintenance_role = 6;
-if (test_env){
-  support_role = livraison_role = commercial_role = superviseur_role = maintenance_role = 4;
-} 
+// GENERAL_URL va être utilisée dans les mails envoyés pour pouvoir rediriger correctement l'utilisateur vers la page avec le bon lien
+// En test GENERAL_URL doit avoir la valeur de localUrl et celle de baseUrl lors du deploiement.
+let GENERAL_URL = baseUrl 
+let test_env = TEST_ENV
+if(test_env){
+  GENERAL_URL = localUrl
+}
 
 const deliver = async (req, res) => {
   try {
@@ -165,7 +165,7 @@ const deliver = async (req, res) => {
     const url = GENERAL_URL
     let deliveryLink = `${url}/formulaire-recu/${nouvelleLivraison.id_livraison}`;
 
-    const sendMail = require("../../utils/emailSender");
+    
     const commentaire_mail = commentaire ? commentaire : '(sans commentaire)' 
     if ((service_users && service_users.length > 0) || (recepteurs && recepteurs.length > 0) ) {
       const subject = `NOUVELLE LIVRAISON (${livraisonTypeName})`;
@@ -388,7 +388,6 @@ const updateLivraison = async (req, res) => {
     const url = GENERAL_URL
     let deliveryLink = `${url}/formulaire/${updated.id_livraison}`;
 
-    const sendMail = require("../../utils/emailSender");
     const commentaire_mail = commentaire ? commentaire : '(sans commentaire)' 
     if ((service_users && service_users.length > 0) || (recepteurs && recepteurs.length > 0) ) {
       const subject = `MODIFICATION LIVRAISON (${livraisonTypeName})`;
@@ -716,7 +715,6 @@ const deliverStock = async (req, res) => {
     
     const url = GENERAL_URL
     const deliveryLink = `${url}/demande-details/${demande_id}`;
-    const sendMail = require("../../utils/emailSender");
 
     if ((recepteurs && recepteurs.length > 0) || (service_users && service_users.length > 0)) {
       const subject = `NOUVELLE LIVRAISON ${livraisonTypeName}`;
@@ -927,7 +925,6 @@ const receiveStock = async (req, res) => {
     
     const url = GENERAL_URL
     const deliveryLink = `${url}/demande-details/${livraison.demande_id}`;
-    const sendMail = require("../../utils/emailSender");
 
     if ((livreurs && livreurs.length > 0)) {
       const subject = `NOUVELLE LIVRAISON ${livraisonTypeName}`;
@@ -1396,7 +1393,6 @@ const updateDeliveryStock = async (req, res) => {
     
     const url = GENERAL_URL
     const deliveryLink = `${url}/demande-details/${updated.demande_id}`;
-    const sendMail = require("../../utils/emailSender");
 
     if ((recepteurs && recepteurs.length > 0) || (service_users && service_users.length > 0)) {
       const subject = `NOUVELLE LIVRAISON ${livraisonTypeName}`;

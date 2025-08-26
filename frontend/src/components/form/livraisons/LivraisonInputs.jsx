@@ -423,7 +423,7 @@ export default function LivraisonInputs() {
                             placeholder="Choisir une option"
                             onChange={ChangeTypeLivraison}
                             className="dark:bg-dark-900"
-                            
+                      
                           />
                         </div>
                         <div>

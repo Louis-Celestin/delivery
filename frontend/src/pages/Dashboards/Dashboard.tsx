@@ -20,6 +20,8 @@ import DemandesValidees from "../../components/mouvement_stock/DemandesValidees"
 import DemandesReturn from "../../components/mouvement_stock/DemandesReturn"
 // @ts-ignore
 import DemandesCancel from "../../components/mouvement_stock/DemandesCancel"
+// @ts-ignore
+import LivraisonsBarChart from "../../components/livraisons/LivraisonsBarChart"
 
 import DatePicker from "../../components/form/date-picker";
 import { startOfWeek, endOfWeek, format, getWeek } from "date-fns";
@@ -47,7 +49,8 @@ export default function Dashboard() {
 
   return (
     <>
-      <div className="mb-3">
+    <div className="space-y-6">
+      <div>
         <div className="mb-2 flex justify-between">
           <span className="text-xl font-bold">
             DASHBOARD
@@ -69,7 +72,7 @@ export default function Dashboard() {
             </span>
           </div>
         </div>
-        <div className="my-2">
+        <div>
           {isDateChanged ? 
           (
             <>
@@ -89,48 +92,51 @@ export default function Dashboard() {
           )}
         </div>
       </div>
-      <div className="grid lg:grid-cols-2 md:grid-cols-2 gap-6 mt-6 my-3">
-        <div className="grid grid-cols-1">
-          <div className="p-6 flex justify-center border bg-white rounded-2xl">
-            <div className="mx-3">
-              <DatePicker
-                id="date-picker-debut"
-                label="Date début"
-                placeholder={getFormattedDate(startDate)}
-                // @ts-ignore
-                value={getFormattedDate(startDate)}
-                onChange={(currentDateString) => {
+      <div>
+        <div className="grid lg:grid-cols-2 md:grid-cols-2 gap-6 mt-6 my-3">
+          <div className="grid grid-cols-1">
+            <div className="p-6 flex justify-center border bg-white rounded-2xl">
+              <div className="mx-3">
+                <DatePicker
+                  id="date-picker-debut"
+                  label="Date début"
+                  placeholder={getFormattedDate(startDate)}
                   // @ts-ignore
-                  setStartDate(new Date(currentDateString))
-                  setIsDateChanged(true)
-                }}
-              />
-            </div>
-            <div className="mx-3">
-              <DatePicker
-                id="date-picker"
-                label="Date fin"
-                placeholder={getFormattedDate(endDate)}
-                // @ts-ignore
-                value={getFormattedDate(endDate)}
-                onChange={(dates) => {
-                  if (dates && dates[0]) {
-                  let selectedDate = new Date(dates[0]);
-                  let nextDay = new Date(selectedDate);
-                  nextDay.setDate(selectedDate.getDate() + 1);
-                  setEndDate(nextDay);
-                  setIsDateChanged(true);
-                }}}
-              />
+                  value={getFormattedDate(startDate)}
+                  onChange={(currentDateString) => {
+                    // @ts-ignore
+                    setStartDate(new Date(currentDateString))
+                    setIsDateChanged(true)
+                  }}
+                />
+              </div>
+              <div className="mx-3">
+                <DatePicker
+                  id="date-picker"
+                  label="Date fin"
+                  placeholder={getFormattedDate(endDate)}
+                  // @ts-ignore
+                  value={getFormattedDate(endDate)}
+                  onChange={(dates) => {
+                    if (dates && dates[0]) {
+                    let selectedDate = new Date(dates[0]);
+                    let nextDay = new Date(selectedDate);
+                    nextDay.setDate(selectedDate.getDate() + 1);
+                    setEndDate(nextDay);
+                    setIsDateChanged(true);
+                  }}}
+                />
+              </div>
             </div>
           </div>
         </div>
       </div>
       <div>
-        <div className="grid grid-cols-2">
-          {/* <LivraisonsGenerales startDate={startDate} endDate={endDate} /> */}
+        <div className="grid grid-cols-1">
+          <LivraisonsBarChart startDate={startDate} endDate={endDate} />
         </div>
       </div>
+    </div>
     </>
   );
 }
