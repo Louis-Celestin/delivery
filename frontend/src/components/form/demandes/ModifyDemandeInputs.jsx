@@ -383,6 +383,7 @@ export default function ModifyDemandeInputs() {
 
     const payload = {
       commentaire: message,
+      nom_demandeur: nomDemandeur,
       type_demande_id: demandeID,
       user_id: userId,
       service_id: serviceId,
@@ -390,6 +391,7 @@ export default function ModifyDemandeInputs() {
       qte_total_demande: qteDemande,
       id_demandeur: idDemandeur,
       motif_demande: motifDemande,
+      produitsDemandes: produitsDemande,
       otherFields: JSON.stringify(otherFields),
     }
 

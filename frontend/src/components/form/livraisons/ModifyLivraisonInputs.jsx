@@ -120,7 +120,7 @@ export default function ModifyLivraisonInputs() {
         }))
         setOptionsRoles(optionsRoles)
         let role = roles_data.find((item) =>{
-          return item.id === delivery_data.role_id
+          return item.id_role === delivery_data.role_id
         })
         if(role){
           setNomRole(role.nom_role.split('_').join(' ').toLowerCase())

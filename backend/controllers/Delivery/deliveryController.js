@@ -163,7 +163,7 @@ const deliver = async (req, res) => {
     let serviceDemandeur = service.nom_service.toUpperCase();
 
     const url = GENERAL_URL
-    let deliveryLink = `${url}/formulaire-recu/${nouvelleLivraison.id_livraison}`;
+    let deliveryLink = `${url}/formulaire/${nouvelleLivraison.id_livraison}`;
 
     
     const commentaire_mail = commentaire ? commentaire : '(sans commentaire)' 

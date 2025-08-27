@@ -747,6 +747,7 @@ const updateDemande = async (req, res) => {
   const {
     produitsDemandes,
     commentaire,
+    nom_demandeur,
     user_id,
     type_demande_id,
     service_id,
@@ -780,7 +781,7 @@ const updateDemande = async (req, res) => {
     }
   
     const dataToUpdate = {
-      nom_demandeur: utilisateur.fullname || null,
+      nom_demandeur: nom_demandeur? nom_demandeur : '',
       date_demande: new Date(),
       commentaire,
       signature_demandeur: '',
