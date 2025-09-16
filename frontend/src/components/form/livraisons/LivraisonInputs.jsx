@@ -260,8 +260,8 @@ export default function LivraisonInputs() {
       setErrorAjout("Ce terminal est bancaire.");
       return;
     }
-    const localMobileMoney = [];
-     if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_ORANGE?.startsWith("07"))){
+
+    if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_ORANGE?.startsWith("07"))){
       setOrangeChecked(true)};
     if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_MTN?.startsWith("05"))){
       setMTNChecked(true)};

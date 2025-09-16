@@ -1902,10 +1902,10 @@ const validateRemplacement = async (req, res) => {
     const sendMail = require("../../utils/emailSender");
 
     if ((livreurs && livreurs.length > 0) || (superviseurs && superviseurs.length)) {
-      const subject = `NOUVEAU REMPLACEMENT TPE`;
+      const subject = `VALIDATION REMPLACEMENT TPE`;
       const html = `
         <p>Bonjour,</p>
-        <p>Un nouveau remplacement a été enregistré.</p>
+        <p>Le remplacement ${remplacement.id} a été validé.</p>
         <ul>
           <li><strong>Ancien model TPE:</strong> ${ancienModel.nom_model.toUpperCase()}</li>
           <li><strong>Nouveau model TPE:</strong> ${nouveModel.nom_model.toUpperCase()}</li>

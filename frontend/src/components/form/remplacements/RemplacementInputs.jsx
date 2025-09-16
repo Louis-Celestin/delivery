@@ -279,6 +279,13 @@ export default function RemplacementInputs() {
       setErrorAjout("Vous devez choisir le paramétrage du TPE !")
       return
     }
+
+    if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_ORANGE?.startsWith("07"))){
+      setOrangeChecked(true)};
+    if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_MTN?.startsWith("05"))){
+      setMTNChecked(true)};
+    if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_MOOV?.startsWith("01"))){
+      setMOOVChecked(true)};
     
     setErrorAjout('')
     setIsConfirmModalOpen(true)

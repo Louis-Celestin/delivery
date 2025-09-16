@@ -240,6 +240,8 @@ export default function AllRemplacementsList() {
         setselectedService([]);
         setStartDate(null);
         setEndDate(null);
+        setSelectedNewModels([]);
+        setSelectedOldModels([]);
         sessionStorage.removeItem(FILTERS_KEY);
     }
 
