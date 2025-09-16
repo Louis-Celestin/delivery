@@ -24,15 +24,18 @@ import { Modal } from "../../ui/modal/index.tsx";
 import SignatureCanvas from 'react-signature-canvas'
 import { Users } from "../../../backend/users/Users.js"
 import { Stock } from "../../../backend/stock/Stock.js"
+import { Remplacements } from "../../../backend/livraisons/Remplacements.js";
 
-export default function LivraisonInputs() {
+export default function RemplacementInputs() {
 
   const merchants = new Merchants();
   const productDeliveries = new ProductDeliveries();
   const usersData = new Users()
   const stockData = new Stock()
+  const remplacements = new Remplacements()
   const userId = localStorage.getItem('id');
   const navigate = useNavigate();
+
 
   const [isOrangeChecked, setOrangeChecked] = useState(false);
   const [isMTNChecked, setMTNChecked] = useState(false);
@@ -46,10 +49,8 @@ export default function LivraisonInputs() {
   const [livraisonID, setLivraisonID] = useState(null);
   const [message, setMessage] = useState("");
   const [mobileMoney, setMobileMoney] = useState([]);
-
   const [produitsLivreTable, setProduitsLivresTable] = useState([]);
   const [produitsLivre, setProduitsLivres] = useState([]);
-
   const [error, setError] = useState(null);
   const [errorFrom, setErrorForm] = useState(null);
   const [errorAjout, setErrorAjout] = useState(null);
@@ -78,23 +79,16 @@ export default function LivraisonInputs() {
 
   const [optionsModels, setOptionsModels] = useState([])
   const [listModels, setListModels] = useState([])
-  const [selectedModel, setSelectedModel] = useState(1)
-  const [nomModel, setNomModel] = useState('A920')
+  const [newModel, setNewModel] = useState(2)
+  const [nomNouveauModel, setNomNouveauModel] = useState('A8900')
+  const [oldModel, setOldModel] = useState(1)
+  const [nomAncienModel, setNomAncienModel] = useState('A920')
+  const [ancienSN, setAncienSN] = useState('')
 
-  // useEffect(() => {
-  //   const savedProduits = sessionStorage.getItem("produitsLivreTable");
-  //   if (savedProduits) {
-  //     const parsed = JSON.parse(savedProduits);
-  //     console.log("SAVED : ", parsed);
-  //     setProduitsLivresTable(parsed);
-  //     setProduitsLivres(parsed);
-  //     setQuantiteLivraison(parsed.length);
-  //   }
-  // }, []);
-
-  // useEffect(() => {
-  //   sessionStorage.setItem("produitsLivreTable", JSON.stringify(produitsLivreTable));
-  // }, [produitsLivreTable]);
+  const [optionsParametrages, setOptionsParametrages] = useState([])
+  const [listParametrages, setListParametrages] = useState([])
+  const [parametrageTPE, setParametrageTPE] = useState(null)
+  const [nomParametrage, setNomParametrage] = useState('')
 
   useEffect( ()=>{
     const fetchTerminalInfos = async () => {
@@ -139,6 +133,15 @@ export default function LivraisonInputs() {
         }))
         setOptionsModels(option_models)
 
+        let parametrages_data = await remplacements.getAllTypeParametrage()
+        setListParametrages(parametrages_data)
+        const options_parametrage = parametrages_data.map((item) =>({
+          value: item.id,
+          label: item.nom_parametrage,
+        }))
+        setOptionsParametrages(options_parametrage)
+
+
       }catch(error){
         console.log('Error fetching data ',error)
         setErrorForm('Erreur lors de la génération du formulaire')
@@ -153,14 +156,25 @@ export default function LivraisonInputs() {
   terminals.filter((terminal) => 
   terminal.SERIAL_NUMBER.includes(terminalSN)) : [];
 
-  const ChangeModel = (value) => {
-    console.log("Selected value (model) : ", value)
-    setSelectedModel(value)
+  const ChangeNewModel = (value) => {
+    console.log("Selected new value (model) : ", value)
+    setNewModel(value)
     const model = listModels.find((item) => {
       return item.id_model == parseInt(value)
     })
     if(model){
-      setNomModel(model.nom_model.toUpperCase())
+      setNomNouveauModel(model.nom_model.toUpperCase())
+    }
+  }
+
+  const ChangeOldModel = (value) => {
+    console.log("Selected old value (model) : ", value)
+    setOldModel(value)
+    const model = listModels.find((item) => {
+      return item.id_model == parseInt(value)
+    })
+    if(model){
+      setNomAncienModel(model.nom_model.toUpperCase())
     }
   }
 
@@ -205,72 +219,66 @@ export default function LivraisonInputs() {
     }    
   }
 
+  const ChangeParametrage = (value) => {
+    console.log("Selected parametrage: ", value)
+    setParametrageTPE(value)
+    const param = listParametrages.find((item) => {
+      return item.id == parseInt(value)
+    })
+    if(param){
+      setNomParametrage(param.nom_parametrage.toUpperCase())
+    }
+  }
+
   const handleConfirm = () => {
     
     let banque = ''
     banque = filteredPointMarchand.map((terminal) => terminal.BANQUE).join("-");
     console.log(banque)
 
-    if(!livraisonID){
-      setErrorAjout("Vous devez choisir le type de livraison !");
-      return;
-    }
-    if(!selectedModel){
-      setErrorAjout("Vous devez choisir le model du TPE !");
-      return;
-    }
+    // if(!livraisonID){
+    //   setErrorAjout("Vous devez choisir le type de livraison !");
+    //   return;
+    // }
     if(!serviceId){
       setErrorAjout("Vous devez choisir le service réceptionneur !");
       return;
     }
+    if(!oldModel){
+      setErrorAjout("Vous devez choisir le model du TPE à remplacer !");
+      return;
+    }
+    if(!newModel){
+      setErrorAjout("Vous devez choisir le model du TPE remplaçant !");
+      return;
+    }
     if (!filteredPointMarchand || filteredPointMarchand.length === 0 || terminalSN.length < 10) {
-      setErrorAjout("S/N invalide !");
+      setErrorAjout("S/N du TPE remplaçant invalide !");
       return;
     }
-    const isDuplicate = produitsLivre.some(prod => prod.serialNumber === terminalSN);
-    if (isDuplicate) {
-      setErrorAjout("Ce numéro de série a déjà été ajouté !");
+    if(ancienSN.length < 10){
+      setErrorAjout("S/N du TPE à remplacer invalide !")
+      return
+    }
+    const isDuplicateNew = produitsLivre.some(prod => prod.nouvelSN === terminalSN || prod.nouvelSN === ancienSN);
+    if (isDuplicateNew) {
+      setErrorAjout("Le nouvel SN a déjà été ajouté !");
       return;
     }
-    if (livraisonID == 1 && !banque){
-      setErrorAjout("Ce Terminal n'est pas bancaire !");
+    const isDuplicateOld = produitsLivre.some(prod => prod.ancienSN === ancienSN || prod.ancienSN === terminalSN);
+    if (isDuplicateOld) {
+      setErrorAjout("L'ancien SN a déjà été ajouté !");
       return;
+    } 
+    if(terminalSN == ancienSN){
+      setErrorAjout("Les SN sont identiques !")
+      return
     }
-    if (livraisonID == 6 && !banque){
-      setErrorAjout("Ce Terminal n'est pas bancaire !");
-      return;
+
+    if(!parametrageTPE){
+      setErrorAjout("Vous devez choisir le paramétrage du TPE !")
+      return
     }
-    if (livraisonID == 3 && !banque){
-      setErrorAjout("Ce Terminal n'est pas bancaire !");
-      return;
-    }
-    if (livraisonID == 6 && !(banque === 'ECOBANK' || banque === 'ECOBANK ACI' || banque === 'ECOBANK CI')){
-      setErrorAjout("Ce Terminal n'est pas ecobank !");
-      return;
-    }
-    if (livraisonID == 1 && (banque === 'ECOBANK' || banque === 'ECOBANK ACI' || banque === 'ECOBANK CI')){
-      setErrorAjout("Ce Terminal n'est pas GIM !");
-      return;
-    }
-    if (livraisonID == 3 && (banque === 'ECOBANK' || banque === 'ECOBANK ACI' || banque === 'ECOBANK CI')){
-      setErrorAjout("Ce Terminal n'est pas GIM !");
-      return;
-    }
-    if(livraisonID == 4 && banque){
-      setErrorAjout("Ce terminal est bancaire.");
-      return;
-    }
-    const localMobileMoney = [];
-     if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_ORANGE?.startsWith("07"))){
-      setOrangeChecked(true)};
-    if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_MTN?.startsWith("05"))){
-      setMTNChecked(true)};
-    if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_MOOV?.startsWith("01"))){
-      setMOOVChecked(true)};
-    
-    // if (isOrangeChecked) localMobileMoney.push("OM");
-    // if (isMTNChecked) localMobileMoney.push("MTN");
-    // if (isMOOVChecked) localMobileMoney.push("MOOV");
     
     setErrorAjout('')
     setIsConfirmModalOpen(true)
@@ -291,7 +299,9 @@ export default function LivraisonInputs() {
     const newProduit = {
       pointMarchand: filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(","),
       caisse: filteredPointMarchand.map((terminal) => terminal.TPE).join(","),
-      serialNumber: terminalSN,
+      parametrageTPE: nomParametrage,
+      nouvelSN: terminalSN, 
+      ancienSN: ancienSN,
       banque: filteredPointMarchand.map((terminal) => terminal.BANQUE).join(","),
       mobile_money: localMobileMoney,
       commentaireTPE: messageTPE,
@@ -299,10 +309,11 @@ export default function LivraisonInputs() {
   
     setProduitsLivresTable((prev) => [...prev, newProduit]);
     setProduitsLivres((prev) => [...prev, newProduit]);
-    setQuantiteLivraison((prev) => prev + 1);
+    setQuantiteLivraison(quantiteLivraison + 1)
   
     // Optional: Reset form fields
     setTerminalSN('');
+    setAncienSN('')
     setMessageTPE('')
     setOrangeChecked(false);
     setMTNChecked(false);
@@ -333,30 +344,23 @@ export default function LivraisonInputs() {
     setIsSignatureModalOpen(false)
     // setSignUrl(signature.toDataURL('image/png'))
     const sign = signature.toDataURL('image/png')
-
     const fd = new FormData();
-
     const commentaire = message;
-    const type_livraison_id = livraisonID
-    const user_id = userId;
-    const isAncienne = false;
-    
-    
+
     fd.append('commentaire',commentaire);
-    fd.append('type_livraison_id',livraisonID);
     fd.append('user_id',userId);
-    fd.append('isAncienne',isAncienne)
-    fd.append('produitsLivre',JSON.stringify(produitsLivre))
+    fd.append('detailsRemplacement',JSON.stringify(produitsLivre))
     fd.append('service_recepteur', serviceId)
     fd.append('role_recepteur', selectedRole)
-    fd.append('selected_model', selectedModel)
+    fd.append('ancien_model', oldModel)
+    fd.append('nouveau_model', newModel)
     if (sign) {
       const blob = await fetch(sign).then(res => res.blob());
       fd.append('signature_expediteur', blob, 'signature.png');
     }
     
     try{
-    const response = await productDeliveries.deliver(fd)
+    const response = await remplacements.makeRemplacement(fd)
 
     console.log(response);
     console.log('Formulaire créé')
@@ -365,17 +369,17 @@ export default function LivraisonInputs() {
       text: "Formulaire créé avec succès",
       icon: "success"
     });
-    navigate('/toutes-les-livraisons');
+    navigate('/tous-les-remplacements');
     }catch (error) {
       setLoadingDelivery(false)
       console.log('error')
       setError('Erreur lors de la génération du formulaire');
       Swal.fire({
         title: "Attention",
-        text: "Une erreur s'est produite lors de la livraison.",
+        text: "Une erreur s'est produite lors de la génération du formulaire.",
         icon: "warning"
       });
-      navigate('/toutes-les-livraisons');
+      navigate('/tous-les-remplacements');
     }finally{
       setProduitsLivres([])
       setProduitsLivresTable([])
@@ -390,7 +394,7 @@ export default function LivraisonInputs() {
     setProduitsLivres((prev) =>
       prev.filter((_, index) => index !== indexToRemove)
     );
-    setQuantiteLivraison((prev) => prev - 1);
+    setQuantiteLivraison(quantiteLivraison - 1)
   };
 
   const handleValidate = () =>{
@@ -405,19 +409,11 @@ export default function LivraisonInputs() {
     setIsSignatureModalOpen(true)
   }
 
-  // const handleSignature = () =>{
-  //   setSignUrl(signature.toDataURL('image/png'))
-  //   setIsModalOpen(false)
-  //   setShowSignButton(false)
-  //   setShowValidateButton(true)
-  // }
-
   const handleClear = () =>{
     console.log(signUrl)
     signature.clear()
   }
 
-  
   return (
     <>
       <div className="flex justify-center mb-6">
@@ -429,31 +425,11 @@ export default function LivraisonInputs() {
               </div>
             ) : (
                   <>
-                    <ComponentCard className="md:w-1/2 w-full" title={`Livraison ${typeLivraison}`}>
+                    <ComponentCard className="md:w-1/2 w-full" title="Livraison TPE remplacés">
                       <div className="pb-3 text-center">
                             <span className="text-sm font-semibold">Informations générales</span>
                       </div>
                       <div className="space-y-6">
-                        <div>
-                          <Label>Type de Livraison <span className="text-red-700">*</span></Label>
-                          <Select
-                            options={optionLivraisons}
-                            placeholder="Choisir une option"
-                            onChange={ChangeTypeLivraison}
-                            className="dark:bg-dark-900"
-                      
-                          />
-                        </div>
-                        <div>
-                          <Label>Model TPE <span className="text-red-700">*</span></Label>
-                          <Select
-                            options={optionsModels}
-                            placeholder="Choisir une option"
-                            onChange={ChangeModel}
-                            className="dark:bg-dark-900"
-                            defaultValue={1}
-                          />
-                        </div>
                         <div>
                           <Label>Service recepteur <span className="text-red-700">*</span></Label>
                           <Select
@@ -461,7 +437,6 @@ export default function LivraisonInputs() {
                             placeholder="Choisir une option"
                             onChange={ChangeService}
                             className="dark:bg-dark-900"
-                            
                           />
                         </div>
                         <div>
@@ -471,8 +446,49 @@ export default function LivraisonInputs() {
                             placeholder="Choisir un rôle"
                             onChange={ChangeRole}
                             className="dark:bg-dark-900"
-                            
                           />
+                        </div>
+                        <div>
+                          <Label>Ancien Model TPE <span className="text-red-700">*</span></Label>
+                          <Select
+                            options={optionsModels}
+                            placeholder="Choisir une option"
+                            defaultValue={1}
+                            onChange={ChangeOldModel}
+                            className="dark:bg-dark-900"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="input">Ancien S/N <span className="text-red-700">*</span></Label>
+                          <Input type="text" id="input" value={ancienSN} onChange={(e) =>{
+                            const value = e.target.value
+                            if (/^\d*$/.test(value)){
+                                if (value.length <= 10) {
+                                    setAncienSN(value);
+                                }} 
+                            }}/>
+                        </div>
+                        <div>
+                          <Label>Nouveau Model TPE <span className="text-red-700">*</span></Label>
+                          <Select
+                            options={optionsModels}
+                            defaultValue={2}
+                            placeholder="Choisir une option"
+                            onChange={ChangeNewModel}
+                            className="dark:bg-dark-900"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="input">Nouvel S/N <span className="text-red-700">*</span></Label>
+                          <Input type="text" id="input" value={terminalSN} onChange={(e) =>{
+                            const value = e.target.value
+                            // Allow only digits
+                            if (/^\d*$/.test(value)){
+                            // Only allow up to 10 characters
+                              if (value.length <= 10) {
+                                setTerminalSN(value);
+                              }} 
+                              }}/>
                         </div>
                         <div>
                           <Label>Commentaire</Label>
@@ -487,16 +503,14 @@ export default function LivraisonInputs() {
                             <span className="text-sm font-semibold">Informations sur produits</span>
                         </div>
                         <div>
-                          <Label htmlFor="input">Numéro de série <span className="text-red-700">*</span></Label>
-                          <Input type="text" id="input" value={terminalSN} onChange={(e) =>{
-                            const value = e.target.value
-                            // Allow only digits
-                            if (/^\d*$/.test(value)){
-                            // Only allow up to 10 characters
-                              if (value.length <= 10) {
-                                setTerminalSN(value);
-                              }} 
-                              }}/>
+                          <Label htmlFor="input">Parametrage <span className="text-red-700">*</span></Label>
+                          <Select 
+                            options={optionsParametrages}
+                            value={parametrageTPE}
+                            placeholder="Choisir une option"
+                            onChange={ChangeParametrage}
+                            className="dark:bg-dark-900"  
+                          />
                         </div>
                         <div>
                           <Label>Commentaire pour terminal</Label>
@@ -518,15 +532,16 @@ export default function LivraisonInputs() {
                         <div>
                           <Label>Banque</Label>
                           <Input type="text" id="input" 
-                                  className="cursor-default"
-                                  value={filteredPointMarchand.map((terminal) => terminal.BANQUE).join(" - ")}
-                                  readOnly
-                                  />
+                                className="cursor-default"
+                                value={filteredPointMarchand.map((terminal) => terminal.BANQUE).join(" - ")}
+                                readOnly
+                            />
                         </div>
                         <div>
                           <Input type="text" id="input" 
-                                  value={filteredPointMarchand.map((terminal) => terminal.TPE).join(" - ")}
-                                  className="hidden"/>
+                                value={filteredPointMarchand.map((terminal) => terminal.TPE).join(" - ")}
+                                className="hidden"
+                            />
                         </div>
                         <div className="flex flex-col">
                           <div className="flex items-center gap-3 my-2">
@@ -607,7 +622,12 @@ export default function LivraisonInputs() {
                   <TableCell
                     isHeader
                     className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
-                    S/N
+                    Remplacement S/N
+                  </TableCell>
+                  <TableCell 
+                    isHeader
+                    className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    Parametrage
                   </TableCell>
                   <TableCell
                     isHeader
@@ -654,10 +674,21 @@ export default function LivraisonInputs() {
                       ) : (
                         <></>
                       )}
-                      
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-start dark:text-gray-400">
+                      <span className="block">
+                        <span className="text-xs text-gray-400">
+                          Ancien S/N : <span className="text-theme-sm text-gray-600">{item.ancienSN}</span>
+                        </span>
+                      </span>
+                      <span className="block">
+                        <span className="text-xs text-gray-400">
+                          Nouvel S/N : <span className="text-theme-sm text-gray-600">{item.nouvelSN}</span>
+                        </span>
+                      </span>
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                      {item.serialNumber}
+                      {item.parametrageTPE}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       {item.banque}
@@ -710,22 +741,31 @@ export default function LivraisonInputs() {
         </div>
       </div>
       <Modal isOpen={isConfirmModalOpen} onClose={() => setIsConfirmModalOpen(false)} className="p-4 max-w-xl">
-        <div className="p-6 mt-5">
-          <div>
-            <span>Vous allez ajouter un terminal pour livraison :  <span className="font-bold text-red-700">{typeLivraison}</span></span>
+        <div className="p-6 mt-5 space-y-5">
+          <div className="w-full text-center">
+            <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium">Remplacement TPE</span>
           </div>
           <div>
             <div>
-              <span>Model : <span className="font-bold text-red-700">{nomModel}</span></span>
+              <span>Ancien model : <span className="font-bold text-red-700">{nomAncienModel}</span></span>
+            </div>
+            <div>
+              <span>Nouveau model : <span className="font-bold text-red-700">{nomNouveauModel}</span></span>
             </div>
             <div>
               <span>Service : <span className="font-bold text-red-700">{serviceRecepteur}</span></span>
             </div>
             <div>
-              <span>S/N terminal : <span className="font-bold text-red-700">{terminalSN}</span></span>
+              <span>S/N terminal à remplacer : <span className="font-bold text-red-700">{ancienSN}</span></span>
+            </div>
+            <div>
+              <span>S/N terminal remplaçant : <span className="font-bold text-red-700">{terminalSN}</span></span>
             </div>
             <div>
               <span>Point Marchand : <span className="font-bold text-red-700">{filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join("%")}</span></span>
+            </div>
+            <div>
+              <span>Parametrage : <span className="font-bold text-red-700">{nomParametrage}</span></span>
             </div>
             <div>
               <span> Banque : <span className="font-bold text-red-700">{filteredPointMarchand.map((terminal) => terminal.BANQUE).join("%")}</span></span>
@@ -752,8 +792,6 @@ export default function LivraisonInputs() {
                   }
                 </li>
               </ul>
-              
-              
             </div>
           </div>
         </div>

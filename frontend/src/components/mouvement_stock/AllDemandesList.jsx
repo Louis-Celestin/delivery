@@ -27,24 +27,48 @@ export default function AllDemandesList() {
     const usersData = new Users()
     const livraisonsData = new ProductDeliveries()
 
+    const savedPagination = JSON.parse(sessionStorage.getItem("demandesPaginationState"));
+    
+    const [first, setFirst] = useState(savedPagination?.first || 0);
+    const [rows, setRows] = useState(savedPagination?.rows || 5);
+
+    const FILTERS_KEY = "allDemandesFilters";
+
+    const saveFilters = (filters) => {
+        sessionStorage.setItem(FILTERS_KEY, JSON.stringify(filters));
+    };
+
+    const loadFilters = () => {
+        const stored = sessionStorage.getItem(FILTERS_KEY);
+        return stored ? JSON.parse(stored) : null;
+    };
+
+    const savedFilters = loadFilters();
+
     const [demandeForms, setDemandeForms] = useState([]);
     const [loading, setLoading] = useState(false);
     const [printingId, setPrintingId] = useState(null);
-    const [globalFilter, setGlobalFilter] = useState("");
-    const [selectedStatus, setSelectedStatus] = useState(null);
+    const [globalFilter, setGlobalFilter] = useState(savedFilters?.globalFilter || "");
+    const [selectedStatus, setSelectedStatus] = useState(savedFilters?.selectedStatus || []);
     const statusOptions = [
         { label: 'En cours', value: 'en_cours' },
         { label: 'Validée', value: 'valide' },
         { label: 'Retournée', value: 'retourne'},
         { label : 'Refusée', value: 'refuse'},
     ];
-    const [selectedTypes, setSelectedTypes] = useState(null)
-    const [startDate, setStartDate] = useState(null);
-    const [endDate, setEndDate] = useState(null);
+    const [selectedStatusLivraison, setSelectedStatusLivraison] = useState(savedFilters?.selectedStatusLivraison || [])
+    const statusLivraison = [
+        { label: 'En cours', value: 'en_cours' },
+        { label: 'Livré', value: 'livre' },
+        { label : 'Retourné', value: 'retourne'},
+    ];
+    const [selectedTypes, setSelectedTypes] = useState(savedFilters?.selectedTypes || []);
+    const [startDate, setStartDate] = useState(savedFilters?.startDate ? new Date(savedFilters.startDate) : null);
+    const [endDate, setEndDate] = useState(savedFilters?.endDate ? new Date(savedFilters.endDate) : null);
     
     const [optionsPieces, setOptionsPieces] = useState([])
     const [stockDT, setStockDT] = useState([])
-    const [serviceDemandeurs, setServiceDemandeurs] = useState('');
+    const [serviceDemandeurs, setServiceDemandeurs] = useState(savedFilters?.serviceDemandeurs || []);
 
     const [optionsServices, setOptionsServices] = useState([])
 
@@ -53,7 +77,19 @@ export default function AllDemandesList() {
     const [statutLivraison, setStatutLivraison] = useState('')
 
     const [optionsModels, setOptionsModels] = useState([])
-    const [selectedModels, setSelectedModels] = useState(null)
+    const [selectedModels, setSelectedModels] = useState(savedFilters?.selectedModels || []);
+
+    useEffect(() => {
+        saveFilters({
+            globalFilter,
+            selectedStatus,
+            selectedTypes,
+            startDate,
+            endDate,
+            serviceDemandeurs,
+            selectedModels
+        });
+    }, [globalFilter, selectedStatus, selectedTypes, startDate, endDate, serviceDemandeurs, selectedModels]);
 
     useEffect( ()=>{
         const fetchDemandeData = async () =>{
@@ -85,8 +121,7 @@ export default function AllDemandesList() {
                             label: piece.nom_piece.toUpperCase() + ' - ' + model.nom_model,
                             selected: false,
                         })
-                    }
-                    
+                    } 
                 });
                 setOptionsPieces(options_pieces);
 
@@ -108,6 +143,12 @@ export default function AllDemandesList() {
         }; 
         fetchDemandeData();
     },[])
+
+    const handlePageChange = (e) => {
+        setFirst(e.first);
+        setRows(e.rows);
+        sessionStorage.setItem("demandesPaginationState", JSON.stringify({ first: e.first, rows: e.rows }));
+    };
     
     const formatDate = (date) => {
         const d = new Date(date);
@@ -188,16 +229,16 @@ export default function AllDemandesList() {
         let statut =''
         if (demandeForms.statut_demande == 'en_cours'){
             statut = 'en cours';
-            statutClass = 'text-xs rounded-xl p-0.5 bg-orange-300'
+            statutClass = 'grid text-center text-xs rounded-xl p-0.5 bg-orange-300'
         } else if (demandeForms.statut_demande == 'valide'){
             statut = 'validée';
-            statutClass = 'text-xs rounded-xl p-0.5 px-1 bg-green-300'
+            statutClass = 'grid grid-cols-1 text-center text-xs rounded-xl p-0.5 bg-green-300'
         } else if (demandeForms.statut_demande == 'retourne'){
             statut = 'retournée';
-            statutClass = 'text-xs rounded-xl p-0.5 px-1 bg-red-300'
+            statutClass = 'grid grid-cols-1 text-center text-xs rounded-xl p-0.5 bg-red-300'
         } else if (demandeForms.statut_demande == 'refuse'){
             statut = 'refusée';
-            statutClass = 'text-xs text-white rounded-xl p-0.5 px-1 bg-black'
+            statutClass = 'grid grid-cols-1 text-center text-xs text-white rounded-xl p-0.5 bg-black'
         }
         return(
             <span className={statutClass}>{statut}</span>
@@ -266,16 +307,16 @@ export default function AllDemandesList() {
         if(livraison){
             if(livraison.Livraisons.statut_livraison == 'en_cours'){
                 statut = 'en cours'
-                statutClass = 'text-xs rounded-xl p-0.5 bg-orange-300' 
+                statutClass = 'grid grid-cols-1 text-center text-xs rounded-xl p-0.5 bg-orange-300' 
             } else if (livraison.Livraisons.statut_livraison == 'livre'){
                 statut = 'livrée';
-                statutClass = 'text-xs rounded-xl p-0.5 px-1 bg-green-300'
+                statutClass = 'grid grid-cols-1 text-center text-xs rounded-xl p-0.5 bg-green-300'
             } else if (livraison.Livraisons.statut_livraison == 'retourne'){
                 statut = 'retournée';
-                statutClass = 'text-xs rounded-xl p-0.5 px-1 bg-red-300'
+                statutClass = 'grid grid-cols-1 text-center text-xs rounded-xl p-0.5 bg-red-300'
             } else if (livraison.Livraisons.statut_livraison == 'refuse'){
                 statut = 'refusée';
-                statutClass = 'text-xs text-white rounded-xl p-0.5 px-1 bg-black'
+                statutClass = 'grid grid-cols-1 text-center text-xs text-white rounded-xl p-0.5 bg-black'
             }
         }
         return(
@@ -296,18 +337,37 @@ export default function AllDemandesList() {
         }
          return (<span className="text-gray-500 text-theme-sm dark:text-gray-400">{date}</span>)
     }
+
+    const handleClearFilters = () =>{
+        setGlobalFilter("");
+        setSelectedStatus([]);
+        setSelectedTypes([]);
+        setServiceDemandeurs([]);
+        setSelectedModels([]);
+        setSelectedStatusLivraison([]);
+        setStartDate(null);
+        setEndDate(null);
+        sessionStorage.removeItem(FILTERS_KEY);
+    }
     const filteredDemandeForms = demandeForms.filter((item) => {
         let itemDate = new Date(item.date_demande);
         if(item.validation_demande.length > 0){
             let index = item.validation_demande.length-1
             itemDate = new Date(item.validation_demande[index].date_validation_demande)
         }
-        const matchesStatus = selectedStatus ? selectedStatus.includes(item.statut_demande) : true;
-        const matchesType = selectedTypes ? selectedTypes.includes(item.type_demande_id) : true;
+        let livraison = livraisonsPieces.find((l) => {
+            return l.demande_id == item.id_demande
+        })
+        let matchesStatusLivraison = null
+        if(livraison){
+            matchesStatusLivraison = selectedStatusLivraison.length > 0 ? selectedStatusLivraison.includes(livraison.Livraisons.statut_livraison) : true
+        }
+        const matchesStatus = selectedStatus.length > 0 ? selectedStatus.includes(item.statut_demande) : true;
+        const matchesType = selectedTypes.length > 0 ? selectedTypes.includes(item.type_demande_id) : true;
         const matchesStartDate = startDate ? itemDate >= startDate : true;
         const matchesEndDate = endDate ? itemDate <= endDate : true;
-        const matchesService = serviceDemandeurs ? serviceDemandeurs.includes(item.service_demandeur) : true;
-        const matchesModel = selectedModels ? selectedModels.includes(item.model_id) : true;
+        const matchesService = serviceDemandeurs.length > 0 ? serviceDemandeurs.includes(item.service_demandeur) : true;
+        const matchesModel = selectedModels.length > 0 ? selectedModels.includes(item.model_id) : true;
         const matchesGlobalFilter = globalFilter
           ? JSON.stringify(item).toLowerCase().includes(globalFilter.toLowerCase())
           : true;
@@ -318,24 +378,32 @@ export default function AllDemandesList() {
     return(
         <>  
             <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
-                <div className="flex justify-normal flex-wrap gap-3 p-6 pb-0">
-                    <span>
+                <div className="px-6 pt-6 flex items-center">
+                    <div className="relative w-full">
                         <Input
-                            className="relative"
+                            className="pl-10"
                             value={globalFilter}
                             onChange={(e) => setGlobalFilter(e.target.value)}
                             placeholder="Rechercher une demande..."
-                        />
+                            />
+                        <span className="absolute top-1/4 left-3"><i className="pi pi-search"></i></span>
+                    </div>
+                    <span className="pl-4">
+                        <button onClick={handleClearFilters}>
+                            <i className="pi pi-refresh"></i>
+                        </button>
                     </span>
+                </div>
+                <div className="grid grid-cols-3 gap-3 p-6 pb-0">
                     <MultiSelect
                         value={selectedStatus}
+                        onChange={(e) => setSelectedStatus(e.value)}
                         options={statusOptions}
                         display="chip"
                         optionLabel="label"
                         maxSelectedLabels={2}
-                        onChange={(e) => setSelectedStatus(e.value)}
-                        placeholder="Filtrer par statut"
-                        className="w-full sm:w-64"
+                        placeholder="Filtrer par statut demande"
+                        className=""
                     />
                     <MultiSelect
                         value={serviceDemandeurs}
@@ -345,7 +413,7 @@ export default function AllDemandesList() {
                         maxSelectedLabels={2}
                         onChange={(e) => setServiceDemandeurs(e.value)}
                         placeholder="Filtrer par service demandeur"
-                        className="w-full sm:w-64"
+                        className=""
                     />                  
                     <MultiSelect
                         label="Type de demande"
@@ -355,7 +423,7 @@ export default function AllDemandesList() {
                         optionLabel="label"
                         maxSelectedLabels={2}
                         placeholder="Type de demande"
-                        className="w-full sm:w-90"
+                        className=""
                         onChange={(e) => setSelectedTypes(e.value)}
                     />
                     <MultiSelect
@@ -366,8 +434,18 @@ export default function AllDemandesList() {
                         optionLabel="label"
                         maxSelectedLabels={2}
                         placeholder="Model produit"
-                        className="w-full sm:w-90"
+                        className=""
                         onChange={(e) => setSelectedModels(e.value)}
+                    />
+                    <MultiSelect
+                        value={selectedStatusLivraison}
+                        onChange={(e) => setSelectedStatusLivraison(e.value)}
+                        options={statusLivraison}
+                        display="chip"
+                        optionLabel="label"
+                        maxSelectedLabels={2}
+                        placeholder="Filtrer par statut livraison"
+                        className=""
                     />
                 </div>
                 <div className="flex justify-normal flex-wrap gap-3 mb-3 p-6">
@@ -375,15 +453,16 @@ export default function AllDemandesList() {
                         <DatePicker
                             id="date-picker-debut"
                             label="Date de début"
-                            placeholder="Date de début"
+                            placeholder={startDate ? formatDate(startDate) : 'Date de début' }
                             value={startDate}
                             onChange={(dates, currentDateString) => {
-                                setStartDate(dates[0])}}
+                                setStartDate(dates[0])
+                            }}
                             dateFormat="dd/mm/yy"/>
                         <DatePicker
                             id="date-picker-fin"
                             label="Date de fin"
-                            placeholder="Date de fin"
+                            placeholder={endDate ? formatDate(endDate) : 'Date de fin' }
                             value={endDate}
                             onChange={(dates, currentDateString) => {
                                 if (dates && dates[0]) {
@@ -405,7 +484,11 @@ export default function AllDemandesList() {
                         value={filteredDemandeForms}
                         loading={loading}
                         removableSort 
-                        paginator rows={5} rowsPerPageOptions={[5, 10, 25, 50]}
+                        paginator 
+                        rows={rows} 
+                        first={first}
+                        onPage={handlePageChange}
+                        rowsPerPageOptions={[5, 10, 25, 50, 100, 200, 300, 500, 1000]}
                         tableStyle={{ minWidth: '50rem' }}
                         emptyMessage="Aucune demande trouvée"
                         className="p-datatable-sm">
@@ -413,10 +496,10 @@ export default function AllDemandesList() {
                         <Column field="type_demande_id" header="Demande" body={titleTemplate} sortable></Column>
                         <Column field="qte_total_demande" header="Nbre produit" sortable></Column>
                         <Column field="date_demande" header="Date d'émission" body={demandeDateTemplate} sortable></Column>
-                        <Column field="statut_demande" header="Statut validation" body={statutTemplate}></Column>
-                        <Column header="Date validation" body={dateValidationTemplate}></Column>
+                        <Column field="statut_demande" header="Statut Validation" body={statutTemplate}></Column>
+                        <Column header="Date Validation" body={dateValidationTemplate}></Column>
                         <Column header="Date Livraison" body={dateLivraisonTemplate}></Column>
-                        <Column header="Statut livraison" body={statutLivraisonTemplate}></Column>
+                        <Column header="Statut Livraison" body={statutLivraisonTemplate}></Column>
                         <Column header="Date Reception" body={dateReceptionTemplate}></Column>
                         <Column header="Actions" body={actionTemplate}></Column>
                     </DataTable>

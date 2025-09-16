@@ -98,6 +98,11 @@ export default function DemandeDetails() {
     const [otherFields, setOtherFields] = useState([])
     const [otherFieldsLivraison, setOtherFieldsLivraison] = useState([])
 
+    const [stockCartonDepart, setStockCartonDepart] = useState()
+    const [stockCartonDemande, setStockCartonDemande] = useState()
+
+    const [nomenclature, setNomenclature] = useState('')
+
     const formatDate = (date) => {
         const d = new Date(date);
         return d.toLocaleDateString('fr-FR'); // or use any locale you want
@@ -134,6 +139,9 @@ export default function DemandeDetails() {
                     setNomDemandeur(demandeData.nom_demandeur)
                     setDateDemande(formatDate(demandeData.date_demande))
                     setCommentaire(demandeData.commentaire)
+                    setStockCartonDepart(produits.cartonDepart)
+                    setStockCartonDemande(produits.stockCarton)
+                    setNomenclature(demandeData.nomenclature)
                     const autres = JSON.parse(demandeData.champs_autre)
                     setOtherFields(autres)
 
@@ -793,6 +801,29 @@ export default function DemandeDetails() {
                                         <th className='border w-1/2'>Demandeur</th>
                                         <th className='border w-1/2'>{nomDemandeur}</th>
                                     </tr>
+                                    {stockCartonDepart ? (
+                                        <tr className='border h-15'>
+                                            <th className='border w-1/2'>Stock de carton départ</th>
+                                            <th className='border w-1/2'>{stockCartonDepart}</th>
+                                        </tr>
+                                    ) : (
+                                        <></>
+                                    )}
+                                    {stockCartonDemande ? (
+                                        <>
+                                            <tr className='border h-15'>
+                                                <th className='border w-1/2'>Stock de carton demandé</th>
+                                                <th className='border w-1/2'>{stockCartonDemande}</th>
+                                            </tr>
+                                            <tr className='border h-15'>
+                                                <th className='border w-1/2'>Stock de carton restant</th>
+                                                <th className='border w-1/2'>{stockCartonDepart - stockCartonDemande}</th>
+                                            </tr>   
+                                        </>
+                                        
+                                    ) : (
+                                        <></>
+                                    )}
                                     <tr className='border h-15'>
                                         <th className='border w-1/2'>Stock de départ</th>
                                         <th className='border w-1/2'>{stockDepart}</th>
@@ -805,6 +836,14 @@ export default function DemandeDetails() {
                                         <th className='border w-1/2'>Stock final</th>
                                         <th className='border w-1/2'>{stockFinal}</th>
                                     </tr>
+                                    {nomenclature ? (
+                                        <tr className='border h-15'>
+                                            <th className='border w-1/2'>Nomenclature</th>
+                                            <th className='border w-1/2'>{nomenclature}</th>
+                                        </tr>
+                                    ) : (
+                                        <></>
+                                    )}
                                     {otherFields.map((field) => {
                                         return(
                                             <>

@@ -1,4 +1,4 @@
-import PageMeta from "../../components/common/PageMeta";
+// import PageMeta from "../../components/common/PageMeta";
 import AuthLayout from "./AuthPageLayout";
 // @ts-ignore
 import SignInForm from "../../components/auth/SignInForm";
@@ -6,10 +6,10 @@ import SignInForm from "../../components/auth/SignInForm";
 export default function SignIn() {
   return (
     <>
-      <PageMeta
+      {/* <PageMeta
         title="React.js SignIn Dashboard | TailAdmin - Next.js Admin Dashboard Template"
         description="This is React.js SignIn Tables Dashboard page for TailAdmin - React.js Tailwind CSS Admin Dashboard Template"
-      />
+      /> */}
       <AuthLayout>
         <SignInForm />
       </AuthLayout>

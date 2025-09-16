@@ -71,6 +71,8 @@ import ReceptionMaintenanceDetails from "./pages/MaintenancePages/ReceptionMaint
 // @ts-ignore
 import DemandeForm from "./pages/Forms/DemandesForms/DemandeForm"
 // @ts-ignore
+import DemandeTerminalForm from "./pages/Forms/DemandesForms/DemandeTerminalForm"
+// @ts-ignore
 import AllDemandes from "./pages/DemandesPages/AllDemandes"
 // @ts-ignore
 import DemandeDetails from "./pages/DemandesPages/DemandeDetails"
@@ -78,7 +80,6 @@ import DemandeDetails from "./pages/DemandesPages/DemandeDetails"
 import ModifyDemandeForm from "./pages/Forms/DemandesForms/ModifyDemandeForm"
 // @ts-ignore
 import DemandeVueDetails from "./pages/DemandesPages/DemandeVueDetails"
-
 
 
 // @ts-ignore
@@ -136,6 +137,13 @@ import ModifyLivraisonPiecesForm from "./pages/Forms/LivraisonForms/ModifyLivrai
 // @ts-ignore
 import ModifyDemandeAdminForm from "./pages/Forms/AdminForms/ModifyDemandeAdminForm"
 
+// @ts-ignore
+import RemplacementForm from "./pages/Forms/RemplacementForms/RemplacementForm"
+// @ts-ignore
+import AllRemplacements from "./pages/RemplacementPages/AllRemplacements"
+// @ts-ignore
+import RemplacementDetails from "./pages/RemplacementPages/RemplacementDetails"
+
 
 export default function App() {
   return (
@@ -174,7 +182,6 @@ export default function App() {
               <Route path="/modifier-livraison-pieces/:id" element={<ModifyLivraisonPiecesForm />} />
       
 
-
               {/* Receptions */}
               <Route path="/toutes-les-receptions" element={<AllReceptions />} />
               <Route path="/formulaire-recu/:id" element={<ReceptionDetails />} />
@@ -204,10 +211,16 @@ export default function App() {
 
               {/* Demandes */}
               <Route path="/nouvelle-demande" element={<DemandeForm />} />
+              <Route path="/nouvelle-demande-terminal" element={<DemandeTerminalForm />} />
               <Route path="/toutes-les-demandes" element={<AllDemandes />} />
               <Route path="/demande-details/:id" element={<DemandeDetails />} />
               <Route path="/modifier-demande/:id" element={<ModifyDemandeForm />} />
               <Route path="/demande-vue-details/:id" element={<DemandeVueDetails />} />
+
+              {/* Remplacement */}
+              <Route path="/nouveau-remplacement" element={<RemplacementForm />} />
+              <Route path="/tous-les-remplacements" element={<AllRemplacements />} />
+              <Route path="/remplacement-details/:id" element={<RemplacementDetails />} />
 
 
               {/****** Gestion *******/}

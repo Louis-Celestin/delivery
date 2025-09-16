@@ -1,7 +1,7 @@
 import {useState, useEffect} from "react";
 import { Link } from "react-router";
 
-import { ProductDeliveries } from "../../backend/livraisons/productDeliveries"
+import { Remplacements } from "../../backend/livraisons/Remplacements";
 import { generatePdf } from "../../backend/receptions/GeneratePDF";
 import { Users } from "../../backend/users/Users";
 import { Stock } from "../../backend/stock/Stock";
@@ -19,9 +19,9 @@ import { MultiSelect } from "primereact/multiselect";
 
 import Swal from "sweetalert2";
 
-export default function AllDeliveriesList({ filterType }) {
+export default function AllRemplacementsList() {
 
-    const productDeliveries = new ProductDeliveries();
+    const remplacements = new Remplacements();
     const userData = new Users();
     const stockData = new Stock();
 
@@ -62,10 +62,10 @@ export default function AllDeliveriesList({ filterType }) {
     const [optionsType, setOptionsType] = useState([])
     const [selectedType, setSelectedType] = useState(savedFilters?.selectedType || [])
 
-    const [typesLivraison, setTypesLivraison] = useState([])
-
     const [optionsModels, setOptionsModels] = useState([])
-    const [selectedModels, setSelectedModels] = useState(savedFilters?.selectedModels || [])
+    const [selectedOldModels, setSelectedOldModels] = useState(savedFilters?.selectedOldModels || [])
+    const [selectedNewModels, setSelectedNewModels] = useState(savedFilters?.selectedNewModels || [])
+    const [listModels, setListModels] = useState([])
 
     const [loadingDownload, setLoadingDownload] = useState(false)
 
@@ -77,28 +77,18 @@ export default function AllDeliveriesList({ filterType }) {
             startDate,
             endDate,
             selectedService,
-            selectedModels,
+            selectedOldModels,
+            selectedNewModels,
         });
-    }, [globalFilter, selectedStatus, selectedType, startDate, endDate, selectedService, selectedModels]);
+    }, [globalFilter, selectedStatus, startDate, endDate, selectedService, selectedOldModels, selectedNewModels]);
 
     useEffect( ()=>{
         const fetchDeliveriesData = async () =>{
             setLoading(true);
             try{
-                let delivery_data = await productDeliveries.getAllLivraisons();
+                let delivery_data = await remplacements.getAllRemplacements();
                 console.log(delivery_data)
                 setDeliveryForms(delivery_data)
-
-                let type_deliveries_data = await productDeliveries.getAllTypeLivraisonCommerciale();
-                let type_deliveries = type_deliveries_data.filter((type) =>{
-                    return type.is_deleted == false
-                })
-                setTypesLivraison(type_deliveries)
-                const options_type = type_deliveries.map((item) => ({
-                    value: item.id_type_livraison,
-                    label: item.nom_type_livraison,
-                }))
-                setOptionsType(options_type)
 
                 let services_data = await userData.getAllServices();
                 const options_services = services_data.map((item) => ({
@@ -108,6 +98,7 @@ export default function AllDeliveriesList({ filterType }) {
                 setOptionsServices(options_services)
 
                 let models_data = await stockData.getAllModels();
+                setListModels(models_data)
                 const options_models = models_data.map((item) => ({
                     value: item.id_model,
                     label: item.nom_model.toUpperCase()
@@ -151,56 +142,46 @@ export default function AllDeliveriesList({ filterType }) {
     }
     const titleTemplate = (deliveryForms) =>{
         let title = '';
-        let linkSee = `/formulaire/${deliveryForms.id_livraison}`;
+        let linkSee = `/remplacement-details/${deliveryForms.id}`;
         let titleClass = 'font-bold text-sm'
-        let typeLivraison = typesLivraison.find((item) =>{
-            return item.id_type_livraison == deliveryForms.type_livraison_id
+        const model = listModels.find((item) =>{
+            return item.id_model == deliveryForms.old_model_id
         })
-        if(typeLivraison){
-            title = typeLivraison.nom_type_livraison.toUpperCase()
+        if(model){
+            title = `Remplacement TPE ${model.nom_model.toUpperCase()}`
         }
-
-        // if (deliveryForms.type_livraison_id === 1) {
-        //     title = 'Livraison TPE GIM';
-        //     titleClass = "font-bold text-sm text-fuchsia-400"
-        // } else if (deliveryForms.type_livraison_id === 2) {
-        //     title = 'Livraison TPE REPARE'; // fallback or other types
-        //     titleClass = "font-bold text-sm text-red-400"
-        // } else if (deliveryForms.type_livraison_id === 3) {
-        //     title = 'Livraison TPE MAJ GIM'; // fallback or other types
-        //     titleClass = "font-bold text-sm text-purple-400"
-        // } else if (deliveryForms.type_livraison_id === 4) {
-        //     title = 'Livraison TPE MOBILE'; // fallback or other types
-        //     titleClass = "font-bold text-sm text-green-400"
-        // } else if (deliveryForms.type_livraison_id === 5 || deliveryForms.type_livraison_id === 7) {
-        //     title = 'Livraison CHARGEUR'; // fallback or other types
-        //     titleClass = "font-bold text-sm text-yellow-400"
-        //     linkSee = `/formulaire-chargeur/${deliveryForms.id_livraison}`
-        // } else if (deliveryForms.type_livraison_id === 6) {
-        //     title = 'Livraison TPE ECOBANK'; // fallback or other types
-        //     titleClass = "font-bold text-sm text-cyan-400"
-        // } else if (deliveryForms.type_livraison_id === 8) {
-        //     title = 'Livraison CHARGEUR (DECOM RI NOK)'; // fallback or other types
-        //     titleClass = "font-bold text-sm text-yellow-600";
-        //     linkSee = `/formulaire-chargeur/${deliveryForms.id_livraison}`;
-        // }
-        return (
+        return(
             <span className="flex flex-col">
-                <Link key={deliveryForms.id_livraison}
+                <Link key={deliveryForms.id}
                     to={linkSee} >
                     <span className={titleClass}>{title}</span>
                 </Link>
-              <span className="text-xs font-extralight">#{deliveryForms.id_livraison}</span>
+              <span className="text-xs font-extralight">#{deliveryForms.id}</span>
             </span>
-          );
+        );
     };
+    const newModelTemplate = (deliveryForms) =>{
+        const model = listModels.find((item) =>{
+            return item.id_model == deliveryForms.new_model_id
+        })
+        let nomModel = ''
+        if(model){
+            nomModel = model.nom_model.toUpperCase()
+        }
+
+        return(
+            <>
+                <span className="font-bold text-sm">{nomModel}</span>
+            </>
+        )
+    }
     const deliveryDateTemplate = (deliveryForms) =>{
-        return (<span className="text-gray-500 text-theme-sm dark:text-gray-400">{formatDate(deliveryForms.date_livraison)}</span>)
+        return (<span className="text-gray-500 text-theme-sm dark:text-gray-400">{formatDate(deliveryForms.date_remplacement)}</span>)
     }
     const receiveDateTemplate = (deliveryForms) =>{
-        if(deliveryForms.validations.length>0 && deliveryForms.statut_livraison != 'en_cours'){
-            let index = deliveryForms.validations.length-1
-            return (<span className="text-gray-500 text-theme-sm dark:text-gray-400">{formatDate(deliveryForms.validations[index].date_validation)}</span>) 
+        if(deliveryForms.validation_remplacement.length>0 && deliveryForms.statut != 'en_cours'){
+            let index = deliveryForms.validation_remplacement.length-1
+            return (<span className="text-gray-500 text-theme-sm dark:text-gray-400">{formatDate(deliveryForms.validation_remplacement[index].date_validation)}</span>) 
         }else{
             return (<></>)
         }
@@ -208,13 +189,13 @@ export default function AllDeliveriesList({ filterType }) {
     const statutTemplate = (deliveryForms) =>{
         let statutClass = ''
         let statut =''
-        if (deliveryForms.statut_livraison == 'en_cours'){
+        if (deliveryForms.statut == 'en_cours'){
             statut = 'en cours';
             statutClass = 'grid grid-cols-1 text-center text-xs rounded-xl p-0.5 bg-orange-300'
-        } else if (deliveryForms.statut_livraison == 'livre'){
+        } else if (deliveryForms.statut == 'livre'){
             statut = 'Livré';
             statutClass = 'grid grid-cols-1 text-center text-xs rounded-xl p-0.5 bg-green-300'
-        } else if (deliveryForms.statut_livraison == 'en_attente'){
+        } else if (deliveryForms.statut == 'en_attente'){
             statut = 'retourné';
             statutClass = 'grid grid-cols-1 text-center text-xs rounded-xl p-0.5 bg-red-300'
         }
@@ -225,8 +206,7 @@ export default function AllDeliveriesList({ filterType }) {
         )
     }
     const actionTemplate = (deliveryForms) =>{
-        let linkSee = `/formulaire/${deliveryForms.id_livraison}`;
-        let linkModify = `/form-modify-nouvelle-livraison/${deliveryForms.id_livraison}`
+        let linkSee = `/remplacement-details/${deliveryForms.id}`;
 
         return(
             <span className="flex items-center">
@@ -235,16 +215,16 @@ export default function AllDeliveriesList({ filterType }) {
                         <i className="pi pi-eye"></i>
                     </button>
                 </Link>
-                {deliveryForms.statut_livraison == 'livre' ? 
+                {deliveryForms.statut == 'livre' ? 
                 (
                     <>
-                        {printingId === deliveryForms.id_livraison ? (
+                        {/* {printingId === deliveryForms.id ? (
                             <span className='mx-1'>
                                 <ProgressSpinner style={{width: '15px', height: '15px'}} strokeWidth="8" animationDuration=".5s" />
                             </span>
                         ) : (
-                            <button onClick={() => handleGeneratePdf(deliveryForms.id_livraison)}><span className="mx-1 text-gray-500 text-theme-sm dark:text-gray-400"><i className="pi pi-print"></i></span></button>
-                        )}
+                            <button onClick={() => handleGeneratePdf(deliveryForms.id)}><span className="mx-1 text-gray-500 text-theme-sm dark:text-gray-400"><i className="pi pi-print"></i></span></button>
+                        )} */}
                     </>
                 ) : (
                     <>
@@ -258,36 +238,34 @@ export default function AllDeliveriesList({ filterType }) {
         setGlobalFilter("");
         setSelectedStatus([]);
         setselectedService([]);
-        setSelectedType([]);
-        setSelectedModels([]);
         setStartDate(null);
         setEndDate(null);
         sessionStorage.removeItem(FILTERS_KEY);
     }
 
     const filteredDeliveryForms = deliveryForms.filter((item) => {
-        let itemDate = new Date(item.date_livraison);
-        if(item.validations.length > 0){
-            let index = item.validations.length-1
-            itemDate = new Date(item.validations[index].date_validation)
+        let itemDate = new Date(item.date_remplacement);
+        if(item.validation_remplacement.length > 0){
+            let index = item.validation_remplacement.length-1
+            itemDate = new Date(item.validation_remplacement[index].date_validation)
         }
-        const matchesStatus = selectedStatus.length > 0 ? selectedStatus.includes(item.statut_livraison) : true;
-        const matchesType = selectedType.length > 0 ? selectedType.includes(item.type_livraison_id) : true;
+        const matchesStatus = selectedStatus.length > 0 ? selectedStatus.includes(item.statut) : true;
         const matchesService = selectedService.length > 0 ? selectedService.includes(item.service_id) : true;
-        const matchesModel = selectedModels.length > 0 ? selectedModels.includes(item.model_id) : true;
+        const matchesOldModel = selectedOldModels.length > 0 ? selectedOldModels.includes(item.old_model_id) : true;
+        const matchesNewModel = selectedNewModels.length > 0 ? selectedNewModels.includes(item.new_model_id) : true;
         const matchesStartDate = startDate ? itemDate >= startDate : true;
         const matchesEndDate = endDate ? itemDate <= endDate : true;
         const matchesGlobalFilter = globalFilter
           ? JSON.stringify(item).toLowerCase().includes(globalFilter.toLowerCase())
           : true;
-        return matchesStatus && matchesType && matchesService && matchesModel && matchesStartDate && matchesEndDate && matchesGlobalFilter;
+        return matchesStatus && matchesService && matchesOldModel && matchesNewModel && matchesStartDate && matchesEndDate && matchesGlobalFilter;
     });
 
     const handleGlobalDownload = async () =>{
         console.log(filteredDeliveryForms)
         try{
             setLoadingDownload(true)
-            const listId = filteredDeliveryForms.map((f) => f.id_livraison);
+            const listId = filteredDeliveryForms.map((f) => f.id);
             if(listId.length == 0){
                 Swal.fire({
                     title: "Attention",
@@ -340,14 +318,6 @@ export default function AllDeliveriesList({ filterType }) {
                     </span>
                 </div>
                 <div className="grid grid-cols-3 gap-3 p-6 pb-0">
-                    {/* <Dropdown
-                        value={selectedStatus}
-                        options={statusOptions}
-                        onChange={(e) => setSelectedStatus(e.value)}
-                        placeholder="Filtrer par statut"
-                        showClear
-                        className=""
-                    /> */}
                     <MultiSelect
                         value={selectedStatus}
                         options={statusOptions}
@@ -358,24 +328,6 @@ export default function AllDeliveriesList({ filterType }) {
                         placeholder="Filtrer par statut"
                         className=""
                     />
-                    <MultiSelect
-                        value={selectedType}
-                        options={optionsType}
-                        display="chip"
-                        optionLabel="label"
-                        maxSelectedLabels={2}
-                        onChange={(e) => setSelectedType(e.value)}
-                        placeholder="Filtrer par type de livraison"
-                        className=""
-                    />
-                    {/* <Dropdown
-                        value={selectedType}
-                        options={optionsType}
-                        onChange={(e) => setSelectedType(e.value)}
-                        placeholder="Filtrer par type de livraison"
-                        showClear
-                        className=""
-                    /> */}
                     <MultiSelect
                         value={selectedService}
                         options={optionsServices}
@@ -387,24 +339,25 @@ export default function AllDeliveriesList({ filterType }) {
                         className=""
                     />
                     <MultiSelect
-                        value={selectedModels}
+                        value={selectedOldModels}
                         options={optionsModels}
                         display="chip"
                         optionLabel="label"
                         maxSelectedLabels={2}
-                        onChange={(e) => setSelectedModels(e.value)}
-                        placeholder="Filtrer par model de TPE"
+                        onChange={(e) => setSelectedOldModels(e.value)}
+                        placeholder="Filtrer par model remplaçé"
                         className=""
                     />
-                    {/* <Dropdown
-                        value={selectedService}
-                        options={optionsServices}
-                        onChange={(e) => setselectedService(e.value)}
-                        placeholder="Filtrer par service"
-                        showClear
+                    <MultiSelect
+                        value={selectedNewModels}
+                        options={optionsModels}
+                        display="chip"
+                        optionLabel="label"
+                        maxSelectedLabels={2}
+                        onChange={(e) => setSelectedNewModels(e.value)}
+                        placeholder="Filtrer par model remplaçant"
                         className=""
-                    /> */}
-                    
+                    />
                 </div>
                 <div className="flex justify-normal flex-wrap gap-3 mb-3 p-6">
                     <div className="flex gap-2">
@@ -435,7 +388,7 @@ export default function AllDeliveriesList({ filterType }) {
                     <span className="text-md text-gray-600 dark:text-gray-300">
                         {filteredDeliveryForms.length} formulaire(s) trouvé(s)
                     </span>
-                    {loadingDownload ? 
+                    {/* {loadingDownload ? 
                     (
                         <span className='flex items-center justify-center'>
                             <ProgressSpinner style={{width: '20px', height: '20px'}} strokeWidth="8" animationDuration=".5s" />
@@ -458,7 +411,7 @@ export default function AllDeliveriesList({ filterType }) {
                                 )
                             }
                         </>
-                    )}
+                    )} */}
                 </div>
                 <div className="card">
                     <DataTable
@@ -474,11 +427,12 @@ export default function AllDeliveriesList({ filterType }) {
                         emptyMessage="Aucune livraison trouvée"
                         className="p-datatable-sm">
 
-                        <Column field="id_livraison" header="Formulaire" body={titleTemplate} sortable></Column>
-                        <Column field="qte_totale_livraison" header="Nbre produit" sortable></Column>
-                        <Column field="date_livraison" header="Date d'émission" body={deliveryDateTemplate} sortable></Column>
+                        <Column field="id" header="Formulaire" body={titleTemplate} sortable></Column>
+                        <Column field="new_model_id" header="Model remplaçant" body={newModelTemplate} sortable></Column>
+                        <Column field="quantite" header="Nbre produit" sortable></Column>
+                        <Column field="date_remplacement" header="Date d'émission" body={deliveryDateTemplate} sortable></Column>
                         <Column header="Date de cloture" body={receiveDateTemplate}></Column>
-                        <Column field="statut_livraison" header="Statut" body={statutTemplate}></Column>
+                        <Column field="statut" header="Statut" body={statutTemplate}></Column>
                         <Column header="Actions" body={actionTemplate}></Column>
                     </DataTable>
                 </div>

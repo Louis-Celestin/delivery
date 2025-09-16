@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "../../ui/table/index.tsx";
-import { PlusIcon } from "../../../icons/index.ts";
+import { PlusIcon, ReturnArrow } from "../../../icons/index.ts";
 import { ListIcon } from "../../../icons/index.ts";
 import 'primeicons/primeicons.css'; 
 import { ProgressSpinner } from 'primereact/progressspinner';
@@ -26,7 +26,7 @@ import { Modal } from "../../ui/modal/index.tsx";
 import { Dropdown } from "primereact/dropdown"
 import SignatureCanvas from 'react-signature-canvas'
 
-export default function DemandeInputs() {
+export default function DemandeTerminalInputs() {
 
   const demandes = new Demandes();
   const stock = new Stock();
@@ -59,7 +59,7 @@ export default function DemandeInputs() {
   const [usersSelection, setUsersSelection] = useState([])
   const [usersOptions, setUsersOptions] = useState([])
   const [idDemandeur, setIdDemandeur] = useState(null);
-  const [motifDemande, setMotifDemande] = useState('PIECES TPE');
+  const [motifDemande, setMotifDemande] = useState('PARAMETRAGE');
   
   const [motifAutre, setMotifAutre] = useState(false);
 
@@ -74,6 +74,8 @@ export default function DemandeInputs() {
   const [otherFields, setOtherFields] = useState([])
 
   const [optionsModels, setOptionsModels] = useState([])
+  const [modelsList, setModelsList] = useState([])
+  const [nomModel, setNomModel] = useState('')
 
   const [qteCartonInitiale, setQteCartonInitiale] = useState(0)
   const [qteCartonDemande, setQteCartonDemande] = useState(0)
@@ -95,11 +97,6 @@ export default function DemandeInputs() {
         stock_data = await stock.getAllStock()
         console.log(stock_data)
         setStockDT(stock_data)
-        // const optionsPieces = stock_data.map((item) => ({
-        //   value: item.id_piece,
-        //   label: item.nom_piece.toUpperCase(),
-        // }));
-        // setOptionsPieces(optionsPieces);
         
         const models_data = await stock.getAllModels()
         const options_model = models_data.map((item) =>({
@@ -107,28 +104,7 @@ export default function DemandeInputs() {
           label: item.nom_model.toUpperCase(),
         }))
         setOptionsModels(options_model)
-        // const piecesA920 = stock_data.filter(item =>{
-        //   return item.model_id == 1;
-        // });
-        // const groupeOptionsPieces = models_data.map((model) => {
-        //   let nom_model = model.nom_model;
-        //   let model_pieces = stock_data.filter(item => {
-        //     if (item.model_id == model.id_model){
-        //       return({
-        //         value: item.id_piece,
-        //         label: item.nom_piece,
-        //       })
-        //     }
-        //   })
-        //   if(model_pieces){
-        //     return({
-        //       label: nom_model,
-        //       items: model_pieces
-        //     })
-        //   }
-        // })
-        // setOptionsPieces(groupeOptionsPieces)
-
+        setModelsList(models_data)
 
         let users_data = await users.getAllUsers()
         setUsersSelection(users_data)
@@ -153,36 +129,26 @@ export default function DemandeInputs() {
         setLoadingDemandeData(false)
       }
     };
-    // const fetchUsers = async () => {
-    //   let data;
-    //   data = await users.getAllUsers()
-    //   setUsersSelection(data)
-    //   const options = data.map((item) => ({
-    //     value: item.id_user,
-    //     label: item.username.toUpperCase().replace("."," ")
-    //   }));
-    //   setUsersOptions(options);
-    // }
     fetchDemandeData();
   },[])
 
-  // const groupedItemTemplate = (option) => {
-  //   return (
-  //     <div className="flex align-items-center">
-  //       <div>{option.label}</div>
-  //     </div>
-  //   );
-  // };
-
   const ChangeModel = (value) => {
-    const pieces_model = stockDT.filter((item) => {
-      return item.model_id == value
+    const model = modelsList.find((item) => {
+      return item.id_model == parseInt(value)
     })
-    const optionsPieces = pieces_model.map((item) => ({
-      value: item.id_piece,
-      label: item.nom_piece.toUpperCase(),
-    }));
-    setOptionsPieces(optionsPieces);
+    console.log(stockDT)
+    if(model){
+      setNomModel(model.nom_model)
+      const terminal = stockDT.find((item) => {
+        return item.model_id == parseInt(model.id_model) && item.type == 'TERMINAL'
+      })
+      console.log(terminal)
+      if(terminal){
+        setDemandeID(parseInt(terminal.id_piece))
+        setQteCartonInitiale(terminal.stock_carton)
+        setStockInitial(terminal.quantite)
+      }
+    }
   }
 
   const ChangePieceType = (value) => {
@@ -198,7 +164,6 @@ export default function DemandeInputs() {
       const stockPiece = selectedStockItem.quantite
       setTypeDemande(nomPiece.toUpperCase());
       setStockInitial(stockPiece)
-      setQteCartonInitiale(selectedStockItem.stock_carton)
     } else {
       setTypeDemande('');
     }
@@ -231,7 +196,7 @@ export default function DemandeInputs() {
       setNomDemandeur(nomUser)
     }
   }
-
+  
   const ChangeMotif = (value) => {
     console.log("Selected value:", value);
     if(value == "AUTRE"){
@@ -244,9 +209,7 @@ export default function DemandeInputs() {
   }
 
   const options_motifs = [
-    { value: "PIECES TPE", label:"PIECES TPE"},
-    { value: "CHARGEURS DECOMMISSIONNES", label:"CHARGEURS DECOMMISSIONNES"},
-    { value: "TPE POUR PARAMETRAGE", label:"TPE POUR PARAMETRAGE"},
+    { value: "PARAMETRAGE", label:"PARAMETRAGE"},
     { value: "AUTRE", label:"AUTRE"},
   ]
 
@@ -322,7 +285,10 @@ export default function DemandeInputs() {
       setErrorAjout("Vous devez choisir le motif de la demande !");
       return;
     }
-
+    if(qteCartonDemande == 0){
+      setErrorAjout("Stock carton invalide !")
+      return;
+    }
     if(qteCartonInitiale - qteCartonDemande < 0){
       setErrorAjout("Stock carton insuffisant !")
       return;
@@ -348,6 +314,11 @@ export default function DemandeInputs() {
 
     if((stock - qteProduit) < 0){
       setErrorAjout("Stock insuffisant !");
+      return;
+    }
+
+    if(!nomenclature){
+      setErrorAjout("Vous devez saisir la nomenclature !")
       return;
     }
    
@@ -425,14 +396,14 @@ export default function DemandeInputs() {
       // console.log("Sending payload : ",payload)
       const response = await demandes.faireDemande(fd)
 
-    console.log(response);
-    console.log('Demande créée')
-    Swal.fire({
-      title: "Succès",
-      text: "Demande créée avec succès",
-      icon: "success"
-    });
-    navigate('/toutes-les-demandes');
+      console.log(response);
+      console.log('Demande créée')
+      Swal.fire({
+        title: "Succès",
+        text: "Demande créée avec succès",
+        icon: "success"
+      });
+      navigate('/toutes-les-demandes');
     }catch (error) {
       console.log('error')
       setError('Erreur lors de la génération du formulaire');
@@ -461,13 +432,13 @@ export default function DemandeInputs() {
               </div>
             ) : (
               <>
-                <ComponentCard className="md:w-1/2 w-full" title={`Demande ${typeDemande}`}>
+                <ComponentCard className="md:w-1/2 w-full" title={`Demande TPE ${nomModel}`}>
                   <div className="pb-3 text-center">
                     <span className="text-sm font-semibold">Informations générales</span>
                   </div>
                   <div className="space-y-6">
                     <div>
-                      <Label>Model pièce <span className="text-red-700">*</span></Label>
+                      <Label>Model TPE <span className="text-red-700">*</span></Label>
                       <Select
                         options={optionsModels}
                         placeholder="Choisir une option"
@@ -475,7 +446,7 @@ export default function DemandeInputs() {
                         className="dark:bg-dark-900"                          
                       />
                     </div>
-                    <div>
+                    {/* <div>
                       <Label>Pièce demandée <span className="text-red-700">*</span></Label>
                       <Select
                         options={optionsPieces}
@@ -483,7 +454,7 @@ export default function DemandeInputs() {
                         onChange={ChangePieceType}
                         className="dark:bg-dark-900"                          
                       />
-                    </div>
+                    </div> */}
                     {/* <div className="card flex justify-content-center">
                       <Dropdown options={optionsPieces} optionLabel="label" 
                         optionGroupLabel="label" optionGroupChildren="items" optionGroupTemplate={groupedItemTemplate} className="w-full md:w-14rem" />
@@ -569,7 +540,7 @@ export default function DemandeInputs() {
                     <div className="">
                       <div className="flex justify-center items-center">
                         <div className="me-1">
-                          <Label htmlFor="input">Stock carton de départ</Label>
+                          <Label htmlFor="input">Stock carton de départ <span className="text-red-700">*</span></Label>
                           <Input type="number" id="input" value={qteCartonInitiale} onChange={(e) =>{
                             const value = e.target.value
                             if(value>=0){
@@ -578,7 +549,7 @@ export default function DemandeInputs() {
                           }} />
                         </div>
                         <div className="ms-1">
-                          <Label htmlFor="input">Nombre carton demandé</Label>
+                          <Label htmlFor="input">Nombre carton demandé <span className="text-red-700">*</span></Label>
                           <Input type="number" id="input" value={qteCartonDemande} onChange={(e) =>{
                             const value = e.target.value
                             if(value>=0){
@@ -611,10 +582,10 @@ export default function DemandeInputs() {
                       </div>                        
                     </div>
                     <div>
-                      <Label htmlFor="input">Nomenclature</Label>
+                      <Label htmlFor="input">Nomenclature <span className="text-red-700">*</span></Label>
                       <Input type="text" id="input"
                         value={nomenclature} 
-                        placeholder="LOT X CARTONS A - Z"
+                        placeholder="LOT X CARTON X"
                         onChange={(e) => setNomenclature(e.target.value)}
                       />
                     </div>
@@ -728,24 +699,15 @@ export default function DemandeInputs() {
             <div>
               <span>Nom demandeur : <span className="font-bold text-red-700">{nomDemandeur}</span></span>
             </div>
-            {
-              qteCartonDemande > 0 ? 
-              (
-                <>
-                  <div>
-                    <span>Stock carton initial :  <span className="font-bold text-red-700">{qteCartonInitiale}</span></span>
-                  </div>
-                  <div>
-                    <span>Nombre carton demandé :  <span className="font-bold text-red-700">{qteCartonDemande}</span></span>
-                  </div>
-                  <div>
-                    <span>Stock carton restant : <span className="font-bold text-red-700">{qteCartonInitiale - qteCartonDemande}</span></span>
-                  </div>
-                </>
-              ) : (
-                <></>
-              )
-            }
+            <div>
+              <span>Stock carton initial :  <span className="font-bold text-red-700">{qteCartonInitiale}</span></span>
+            </div>
+            <div>
+              <span>Nombre carton demandé :  <span className="font-bold text-red-700">{qteCartonDemande}</span></span>
+            </div>
+            <div>
+              <span>Stock carton restant : <span className="font-bold text-red-700">{qteCartonInitiale - qteCartonDemande}</span></span>
+            </div>
             <div>
               <span>Stock initial : <span className="font-bold text-red-700">{stockInitial}</span></span>
             </div>
@@ -755,16 +717,9 @@ export default function DemandeInputs() {
             <div>
               <span>Stock restant : <span className="font-bold text-red-700">{stockInitial - qteDemande}</span></span>
             </div>
-            { nomenclature ? 
-            (
-              <>
-                <div>
-                  <span>Nomenclature : <span className="font-bold text-red-700">{nomenclature}</span></span>
-                </div>
-              </>
-            ) : (
-              <></>
-            )}
+            <div>
+              <span>Nomenclature : <span className="font-bold text-red-700">{nomenclature}</span></span>
+            </div>
             {otherFields.map((field) =>{
               return(
                 <>
