@@ -266,8 +266,6 @@ const getOneLivraison = async (req, res) => {
     }
 };
 
-
-
 /* 
   Modification de la fonction updateLivraison. Les données à update: produitsLivre, commentaire, type_livraison_id, 
   date_livraison, qte_totale_livraison
@@ -1600,6 +1598,7 @@ const makeRemplacement = async (req, res) => {
       role_recepteur,
       ancien_model,
       nouveau_model,
+      detailsParametrage,
     } = req.body;
 
     const produits = typeof detailsRemplacement === "string"
@@ -1611,6 +1610,10 @@ const makeRemplacement = async (req, res) => {
         id_user: parseInt(user_id)
       }
     });
+
+    const detailsParams = typeof detailsParametrage === "string"
+    ? JSON.parse(detailsParametrage)
+    : detailsParametrage;
 
     if (!utilisateur) {
       return res.status(404).json({ message: "Utilisateur non trouvé" });
@@ -1641,6 +1644,7 @@ const makeRemplacement = async (req, res) => {
         deleted: false,
         nom_livreur: utilisateur.fullname || null,
         signature_expediteur: signature_expediteur || null,
+        details_parametrage: JSON.stringify(detailsParams),
         statut: "en_cours",
       }
     });

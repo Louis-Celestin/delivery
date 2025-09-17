@@ -89,6 +89,7 @@ export default function RemplacementInputs() {
   const [listParametrages, setListParametrages] = useState([])
   const [parametrageTPE, setParametrageTPE] = useState(null)
   const [nomParametrage, setNomParametrage] = useState('')
+  const [detailsParametrage, setDetailsParametrage] = useState([])
 
   useEffect( ()=>{
     const fetchTerminalInfos = async () => {
@@ -140,7 +141,12 @@ export default function RemplacementInputs() {
           label: item.nom_parametrage,
         }))
         setOptionsParametrages(options_parametrage)
-
+        const details_parametrage = parametrages_data.map((item) =>({
+          id: item.id,
+          nom: item.nom_parametrage.toLowerCase(),
+          quantite: 0,
+        }))
+        setDetailsParametrage(details_parametrage)
 
       }catch(error){
         console.log('Error fetching data ',error)
@@ -313,6 +319,14 @@ export default function RemplacementInputs() {
       mobile_money: localMobileMoney,
       commentaireTPE: messageTPE,
     };
+
+    setDetailsParametrage((prev) =>
+      prev.map((param) =>
+        param.id === parseInt(parametrageTPE)
+          ? { ...param, quantite: param.quantite + 1 }
+          : param
+      )
+    );
   
     setProduitsLivresTable((prev) => [...prev, newProduit]);
     setProduitsLivres((prev) => [...prev, newProduit]);
@@ -361,6 +375,7 @@ export default function RemplacementInputs() {
     fd.append('role_recepteur', selectedRole)
     fd.append('ancien_model', oldModel)
     fd.append('nouveau_model', newModel)
+    fd.append('detailsParametrage', JSON.stringify(detailsParametrage))
     if (sign) {
       const blob = await fetch(sign).then(res => res.blob());
       fd.append('signature_expediteur', blob, 'signature.png');
@@ -395,9 +410,19 @@ export default function RemplacementInputs() {
   }
 
   const handleDelete = (indexToRemove) => {
-    setProduitsLivresTable((prev) =>
-      prev.filter((_, index) => index !== indexToRemove)
-    );
+    setProduitsLivresTable((prev) => {
+      const produitToRemove = prev[indexToRemove];
+
+      setDetailsParametrage((prevParams) =>
+        prevParams.map((param) =>
+          param.nom === produitToRemove.parametrageTPE
+            ? { ...param, quantite: Math.max(0, param.quantite - 1) }
+            : param
+        )
+      );
+
+      return prev.filter((_, index) => index !== indexToRemove);
+    });
     setProduitsLivres((prev) =>
       prev.filter((_, index) => index !== indexToRemove)
     );
@@ -434,7 +459,7 @@ export default function RemplacementInputs() {
                   <>
                     <ComponentCard className="md:w-1/2 w-full" title="Livraison TPE remplacés">
                       <div className="pb-3 text-center">
-                            <span className="text-sm font-semibold">Informations générales</span>
+                          <span className="text-sm font-semibold">Informations générales</span>
                       </div>
                       <div className="space-y-6">
                         <div>
@@ -510,16 +535,6 @@ export default function RemplacementInputs() {
                             <span className="text-sm font-semibold">Informations sur produits</span>
                         </div>
                         <div>
-                          <Label htmlFor="input">Parametrage <span className="text-red-700">*</span></Label>
-                          <Select 
-                            options={optionsParametrages}
-                            value={parametrageTPE}
-                            placeholder="Choisir une option"
-                            onChange={ChangeParametrage}
-                            className="dark:bg-dark-900"  
-                          />
-                        </div>
-                        <div>
                           <Label>Commentaire pour terminal</Label>
                           <TextArea
                           value={messageTPE}
@@ -543,6 +558,16 @@ export default function RemplacementInputs() {
                                 value={filteredPointMarchand.map((terminal) => terminal.BANQUE).join(" - ")}
                                 readOnly
                             />
+                        </div>
+                        <div>
+                          <Label htmlFor="input">Parametrage <span className="text-red-700">*</span></Label>
+                          <Select 
+                            options={optionsParametrages}
+                            value={parametrageTPE}
+                            placeholder="Choisir une option"
+                            onChange={ChangeParametrage}
+                            className="dark:bg-dark-900"  
+                          />
                         </div>
                         <div>
                           <Input type="text" id="input" 
@@ -613,8 +638,24 @@ export default function RemplacementInputs() {
       </div>
       <div>
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
-          <div className='p-4 text-xs text-gray-600'>
+          <div className='p-4 text-xs text-gray-600 flex'>
             <span>Quantité : {quantiteLivraison}</span>
+            <div className="ms-6 flex">
+              {detailsParametrage.map((param) =>{
+                let quantite = param.quantite
+                let classQuantite = "text-gray-600 font-medium"
+                if(quantite > 0){
+                  classQuantite = "text-blue-700 font-medium"
+                }
+                return(
+                  <>
+                    <div className="mx-6">
+                      <span className="text-xs text-gray-600">{param.nom} : <span className={classQuantite}>{param.quantite}</span></span>
+                    </div>
+                  </>
+                )
+              })}
+            </div>
           </div>
           <div className="max-w-full overflow-x-auto">
             <Table>

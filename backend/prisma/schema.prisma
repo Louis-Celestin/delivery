@@ -165,6 +165,7 @@ model remplacements {
   deleted                                             Boolean                   @default(false)
   nom_livreur                                         String?                   @db.VarChar(255)
   signature_expediteur                                String?                   @db.VarChar(255)
+  details_parametrage                                 String?                   @db.LongText
   statut                                              remplacements_statut
   users                                               users                     @relation(fields: [user_id], references: [id_user], onDelete: NoAction, map: "remplacements_ibfk_1")
   model_piece_remplacements_old_model_idTomodel_piece model_piece               @relation("remplacements_old_model_idTomodel_piece", fields: [old_model_id], references: [id_model], onDelete: NoAction, map: "remplacements_ibfk_2")

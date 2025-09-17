@@ -494,6 +494,15 @@ export default function ModifyLivraisonInputs() {
                             />
                         </div>
                         <div>
+                          <Label>Commentaire pour terminal</Label>
+                          <TextArea
+                          value={messageTPE}
+                          onChange={(value) => setMessageTPE(value)}
+                          rows={2}
+                          placeholder="Ajoutez un commentaire"
+                          />
+                        </div>
+                        <div>
                           <Label>Point Marchand</Label>
                           <Input type="text" id="input"
                                   className="cursor-default"

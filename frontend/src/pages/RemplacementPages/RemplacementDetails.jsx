@@ -8,7 +8,7 @@ import {
     TableCell,
     TableHeader,
     TableRow,
-  } from "../../components/ui/table"
+} from "../../components/ui/table"
 
 import 'primeicons/primeicons.css';
 
@@ -72,10 +72,12 @@ export default function RemplacementDetails() {
     const [oldModel, setOldModel] = useState('')
     const [newModel, setNewModel] = useState('')
 
+    const [detailsParametrage, setDetailsParametrage] = useState([])
+
     const formatDate = (date) => {
         const d = new Date(date);
         return d.toLocaleDateString('fr-FR'); // or use any locale you want
-      };
+    };
 
 
     useEffect( ()=>{
@@ -105,6 +107,10 @@ export default function RemplacementDetails() {
                     setQuantiteLivraison(produits.length)
                     setDateLivraison(formatDate(livraison_data.date_remplacement))
                     setCommentaire(livraison_data.commentaire)
+
+                    let details_parametrage = JSON.parse(livraison_data.details_parametrage)
+                    console.log(details_parametrage)
+                    setDetailsParametrage(details_parametrage)
 
                     const models_data = await stockData.getAllModels()
                     const ancienModel = models_data.find((item) =>{
@@ -393,8 +399,24 @@ export default function RemplacementDetails() {
                         <></>
                     )}
                     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
-                        <div className='p-4 text-xs text-gray-600'>
+                        <div className='p-4 text-xs text-gray-600 flex'>
                             <span>Quantité : {quantiteLivraison}</span>
+                            <div className="ms-6 flex">
+                            {detailsParametrage.map((param) =>{
+                                let quantite = param.quantite
+                                let classQuantite = "text-gray-600 font-medium"
+                                if(quantite > 0){
+                                classQuantite = "text-blue-700 font-medium"
+                                }
+                                return(
+                                <>
+                                    <div className="mx-6">
+                                    <span className="text-xs text-gray-600">{param.nom} : <span className={classQuantite}>{param.quantite}</span></span>
+                                    </div>
+                                </>
+                                )
+                            })}
+                            </div>
                         </div>
                         <div className="max-w-full overflow-x-auto">
                             <Table>
@@ -435,11 +457,6 @@ export default function RemplacementDetails() {
                                         isHeader
                                         className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                                         MOOV
-                                    </TableCell>
-                                    <TableCell
-                                        isHeader
-                                        className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
-                                        Supprimer
                                     </TableCell>
                                     </TableRow>
                                 </TableHeader>
@@ -491,14 +508,6 @@ export default function RemplacementDetails() {
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                                         {item.mobile_money.includes("MOOV") ?
                                             ( <i className="pi pi-check" style={{ color: 'green' }}></i> ) : ""}
-                                        </TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                                        <button
-                                            className="text-red-500 hover:text-red-700"
-                                            onClick={() => handleDelete(index)}
-                                            >
-                                            <i className="pi pi-trash" style={{ color: 'black' }}></i>
-                                        </button>
                                         </TableCell>
                                     </TableRow>
                                     ))}
