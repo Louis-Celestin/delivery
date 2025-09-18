@@ -25,12 +25,12 @@ export default function AllRemplacementsList() {
     const userData = new Users();
     const stockData = new Stock();
 
-    const savedPagination = JSON.parse(sessionStorage.getItem("paginationState"));
+    const savedPagination = JSON.parse(sessionStorage.getItem("remplacementPaginationState"));
 
     const [first, setFirst] = useState(savedPagination?.first || 0);
     const [rows, setRows] = useState(savedPagination?.rows || 5); 
 
-    const FILTERS_KEY = "allDeliveriesFilters";
+    const FILTERS_KEY = "allRemplacementsFilters";
 
     const saveFilters = (filters) => {
         sessionStorage.setItem(FILTERS_KEY, JSON.stringify(filters));
@@ -116,7 +116,7 @@ export default function AllRemplacementsList() {
     const handlePageChange = (e) => {
         setFirst(e.first);
         setRows(e.rows);
-        sessionStorage.setItem("paginationState", JSON.stringify({ first: e.first, rows: e.rows }));
+        sessionStorage.setItem("remplacementPaginationState", JSON.stringify({ first: e.first, rows: e.rows }));
     };
     
     const formatDate = (date) => {
