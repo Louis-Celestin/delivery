@@ -9,6 +9,7 @@ const { type } = require("os");
 const { sign } = require("crypto");
 const sendMail = require("../../utils/emailSender");
 const JSZip = require("jszip");
+const ExcelJS = require("exceljs");
 
 const formatDate = (isoDate) => {
   const date = new Date(isoDate);
@@ -1955,6 +1956,186 @@ const validateRemplacement = async (req, res) => {
 }
 
 
+const generateDeliveriesXLSX = async (req, res) => {
+  const { listId } = req.body
+
+  try{
+
+    const workbook = new ExcelJS.Workbook();
+  
+    const resumeSheet = workbook.addWorksheet("Résumé");
+
+    const resumeHeaders = [
+      "ID Livraison",
+      "Type Livraison",
+      "Date Livraison",
+      "Quantité produits",
+      "Date Réception",
+      "Nom Livreur",
+      "Commentaire Livraison",
+      "Nom Récepteur",
+      "Commentaire Réception",
+    ]
+    const headerRow = resumeSheet.addRow(resumeHeaders);
+
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true };
+      cell.border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
+      cell.alignment = { vertical: "middle", horizontal: "center" };
+    });
+
+    for(const id of listId){
+      const livraison_data = await prisma.livraison.findUnique({
+        where: {
+          id_livraison: parseInt(id)
+        },
+        include: {
+          validations: true,
+        }
+      })
+  
+      if (!livraison_data || livraison_data.validations.length < 1 || livraison_data.statut_livraison != 'livre') continue;
+  
+      const livraison = {
+        ...livraison_data,
+        produitsLivre: typeof livraison_data.produitsLivre === "string"
+          ? JSON.parse(livraison_data.produitsLivre)
+          : livraison_data.produitsLivre
+      };
+  
+      let expediteurNom = livraison.nom_livreur || "N/A";
+      if (!livraison.nom_livreur && livraison.user_id) {
+        const user = await prisma.users.findUnique({
+          where: { id_user: livraison.user_id },
+        });
+        if (user) expediteurNom = user.fullname;
+      }
+
+      const index = livraison.validations.length - 1;
+
+      const recepteurNom = livraison.validations[index]?.nom_recepteur || "Réception";
+
+      const typeLivraison = await prisma.type_livraison_commerciale.findUnique({
+        where:{
+          id_type_livraison: livraison.type_livraison_id
+        }
+      })
+
+      resumeSheet.addRow([
+        livraison.id_livraison,
+        typeLivraison.nom_type_livraison.toUpperCase(),
+        livraison.date_livraison,
+        livraison.qte_totale_livraison,
+        livraison.validations[index]?.date_validation,
+        expediteurNom,
+        livraison.commentaire,
+        recepteurNom,
+        livraison.validations[index]?.commentaire,
+      ])
+
+      // resumeSheet.columns.forEach((col) => {
+      //   let maxLength = 0;
+      //   col.eachCell({ includeEmpty: true }, (cell) => {
+      //     const cellLength = cell.value ? cell.value.toString().length : 10;
+      //     if (cellLength > maxLength) maxLength = cellLength;
+      //   });
+      //   col.width = maxLength < 15 ? 15 : maxLength;
+      // });
+
+      const detailSheet = workbook.addWorksheet(`Livraison_${livraison.id_livraison}`)
+
+      const title = `${typeLivraison.nom_type_livraison.toUpperCase()}(${livraison.id_livraison}) DU ${formatDate(livraison.validations[index]?.date_validation)}  `
+      detailSheet.mergeCells("A1:G1")
+      const titleCell = detailSheet.getCell("A1");
+      titleCell.value = title;
+      titleCell.font = { bold: true, size: 14 };
+      titleCell.alignment = { vertical: "middle", horizontal: "center" };
+
+      const detailHeaders = [
+        "Point Marchand",
+        "Caisse",
+        "S/N",
+        "Banque",
+        "OM",
+        "MTN",
+        "MOOV",
+      ]
+
+      const detailHeaderRow = detailSheet.addRow(detailHeaders)
+      detailHeaderRow.eachCell((cell) => {
+        cell.font = { bold: true };
+        cell.border = {
+          top: { style: "thin" },
+          left: { style: "thin" },
+          bottom: { style: "thin" },
+          right: { style: "thin" },
+        };
+        cell.alignment = { vertical: "middle", horizontal: "center" };
+      });
+
+      livraison.produitsLivre.forEach((p) => {
+        const has = (m) => (p.mobile_money?.includes(m) ? "OUI" : "");
+        detailSheet.addRow([
+          p.pointMarchand,
+          p.caisse,
+          p.serialNumber,
+          p.banque || "",
+          has("OM"),
+          has("MTN"),
+          has("MOOV"),
+        ])
+      })
+
+      // const totalRow = detailSheet.addRow([
+      //   "TOTAL",
+      //   { formula: `SUM(B${detailHeaderRow.number + 1}:B${detailSheet.lastRow.number})` },
+      //   { formula: `SUM(C${detailHeaderRow.number + 1}:C${detailSheet.lastRow.number})` },
+      // ]);
+
+      // totalRow.eachCell((cell, colNumber) => {
+      //   cell.font = { bold: true };
+      //   cell.border = {
+      //     top: { style: "double" },
+      //     left: { style: "thin" },
+      //     bottom: { style: "thin" },
+      //     right: { style: "thin" },
+      //   };
+      //   if (colNumber > 1) {
+      //     cell.alignment = { horizontal: "center" };
+      //   }
+      // });
+
+      // detailSheet.columns.forEach((col) => {
+      //   let maxLength = 0;
+      //   col.eachCell({ includeEmpty: true }, (cell) => {
+      //     const cellLength = cell.value ? cell.value.toString().length : 10;
+      //     if (cellLength > maxLength) maxLength = cellLength;
+      //   });
+      //   col.width = maxLength < 15 ? 15 : maxLength;
+      // });
+
+    }
+
+    const buffer = await workbook.xlsx.writeBuffer();
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const fileName = `livraisons_${timestamp}.xlsx`;
+
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename=${fileName}`);
+    res.send(buffer);
+
+  } catch(err){
+    console.error("Erreur XLSX:", err);
+    res.status(500).json({ message: "Erreur lors de la génération du XLSX" });
+  }
+}
+
 
 
 
@@ -1982,4 +2163,5 @@ module.exports = {
   getAllRemplacements,
   getOneRemplacement,
   validateRemplacement,
+  generateDeliveriesXLSX,
 }

@@ -69,6 +69,8 @@ export default function AllDeliveriesList({ filterType }) {
 
     const [loadingDownload, setLoadingDownload] = useState(false)
 
+    const [loadingExtract, setLoadingExtract] = useState(false)
+
     useEffect(() => {
         saveFilters({
             globalFilter,
@@ -319,6 +321,42 @@ export default function AllDeliveriesList({ filterType }) {
         }
     }
 
+    const handleExtractXLSX = async () =>{
+        console.log(filteredDeliveryForms)
+        try{
+            setLoadingExtract(true)
+            const listId = filteredDeliveryForms.map((f) => f.id_livraison);
+            if(listId.length == 0){
+                Swal.fire({
+                    title: "Attention",
+                    text: "Aucune livraison enregistrée",
+                    icon: "warning"
+                });
+                return
+            }
+            const blob = await productDeliveries.generateDeliveriesXLSX(listId)
+
+            const url = window.URL.createObjectURL(blob);
+
+            const a = document.createElement("a");
+            a.href = url;
+            const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+            a.download = `livraisons_${timestamp}.xlsx`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+
+        }catch(error){
+            console.log(error)
+            Swal.fire({
+                title: "Attention",
+                text: "Une erreur s'est produite lors du téléchargement",
+                icon: "warning"
+            });
+        }finally{
+            setLoadingExtract(false);
+        }
+    }
+
 
     return(
         <>  
@@ -435,30 +473,56 @@ export default function AllDeliveriesList({ filterType }) {
                     <span className="text-md text-gray-600 dark:text-gray-300">
                         {filteredDeliveryForms.length} formulaire(s) trouvé(s)
                     </span>
-                    {loadingDownload ? 
-                    (
-                        <span className='flex items-center justify-center'>
-                            <ProgressSpinner style={{width: '20px', height: '20px'}} strokeWidth="8" animationDuration=".5s" />
-                        </span>
-                    ) : (
-                        <>
-                            {filteredDeliveryForms.length > 0 ? 
-                                (
-                                    <>
-                                        <button className="flex items-center justify-center border rounded-full h-5 w-5 p-5 hover:text-white hover:bg-gray-dark hover:border-black transition-colors"
-                                            onClick={handleGlobalDownload}
-                                            >
-                                            <span className="">
-                                                <i className="pi pi-download"></i>
-                                            </span>
-                                        </button>
-                                    </>
-                                ) : (
-                                    <></>
-                                )
-                            }
-                        </>
-                    )}
+                    <div className="flex space-x-3">
+                        {loadingDownload ? 
+                        (
+                            <span className='flex items-center justify-center'>
+                                <ProgressSpinner style={{width: '20px', height: '20px'}} strokeWidth="8" animationDuration=".5s" />
+                            </span>
+                        ) : (
+                            <>
+                                {filteredDeliveryForms.length > 0 ? 
+                                    (
+                                        <>
+                                            <button className="flex items-center justify-center border rounded-full h-5 w-5 p-5 hover:text-white hover:bg-gray-dark hover:border-black transition-colors"
+                                                onClick={handleGlobalDownload}
+                                                >
+                                                <span className="">
+                                                    <i className="pi pi-folder"></i>
+                                                </span>
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <></>
+                                    )
+                                }
+                            </>
+                        )}
+                        {loadingExtract ? 
+                        (
+                            <span className='flex items-center justify-center'>
+                                <ProgressSpinner style={{width: '20px', height: '20px'}} strokeWidth="8" animationDuration=".5s" />
+                            </span>
+                        ) : (
+                            <>
+                                {filteredDeliveryForms.length > 0 ? 
+                                    (
+                                        <>
+                                            <button className="flex items-center justify-center border rounded-full h-5 w-5 p-5 hover:text-white hover:bg-gray-dark hover:border-black transition-colors"
+                                                onClick={handleExtractXLSX}
+                                                >
+                                                <span className="">
+                                                    <i className="pi pi-download"></i>
+                                                </span>
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <></>
+                                    )
+                                }
+                            </>
+                        )}
+                    </div>
                 </div>
                 <div className="card">
                     <DataTable

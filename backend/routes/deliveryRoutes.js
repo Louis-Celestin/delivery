@@ -7,7 +7,7 @@ const {deliver,getAllLivraisons, getOneLivraison,deleteLivraison,updateLivraison
     deliverOld, deliverStock, getAllTypeLivraisonCommerciale, getAllStockDeliveries,
     getOneLivraisonDemande, receiveStock, addDeliveryType, getOneTypeLivraison, updateTypeLivraison,
     deleteTypeLivraison, updateDeliveryStock, generateTotalLivraisonPDF,getAllTypeParametrage, makeRemplacement,
-    getAllRemplacements, getOneRemplacement, validateRemplacement
+    getAllRemplacements, getOneRemplacement, validateRemplacement, generateDeliveriesXLSX
 } = require("../controllers/Delivery/deliveryController")
 
 router.post('/deliver', upload.single('signature_expediteur'), deliver);
@@ -33,6 +33,7 @@ router.post("/makeRemplacement", upload.single('signature_expediteur'), makeRemp
 router.get("/getAllRemplacements", getAllRemplacements);
 router.get("/getOneRemplacement/:id", getOneRemplacement);
 router.post("/validateRemplacement", upload.single('signature'), validateRemplacement);
+router.post("/generateDeliveriesXLSX", generateDeliveriesXLSX);
 
 
 module.exports = router

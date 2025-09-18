@@ -426,7 +426,7 @@ export default function AllRemplacementsList() {
                         onPage={handlePageChange}
                         rowsPerPageOptions={[5, 10, 25, 50, 100, 200, 300, 500, 1000]}
                         tableStyle={{ minWidth: '50rem' }}
-                        emptyMessage="Aucune livraison trouvée"
+                        emptyMessage="Aucun remplacement trouvé"
                         className="p-datatable-sm">
 
                         <Column field="id" header="Formulaire" body={titleTemplate} sortable></Column>
