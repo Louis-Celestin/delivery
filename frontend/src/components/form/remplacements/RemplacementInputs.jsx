@@ -323,8 +323,8 @@ export default function RemplacementInputs() {
     setDetailsParametrage((prev) =>
       prev.map((param) =>
         param.id === parseInt(parametrageTPE)
-          ? { ...param, quantite: param.quantite + 1 }
-          : param
+        ? { ...param, quantite: param.quantite + 1 }
+        : param
       )
     );
   
@@ -642,14 +642,12 @@ export default function RemplacementInputs() {
             <span>Quantité : {quantiteLivraison}</span>
             <div className="ms-6 flex">
               {detailsParametrage.map((param) =>{
-                let quantite = param.quantite
-                let classQuantite = "text-gray-600 font-medium"
-                if(quantite > 0){
-                  classQuantite = "text-blue-700 font-medium"
-                }
+
+                let classQuantite = param.quantite > 0 ? "text-blue-700 font-medium" : "text-gray-600 font-medium"
+
                 return(
                   <>
-                    <div className="mx-6">
+                    <div key={param.id} className="mx-6">
                       <span className="text-xs text-gray-600">{param.nom} : <span className={classQuantite}>{param.quantite}</span></span>
                     </div>
                   </>

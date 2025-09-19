@@ -143,6 +143,8 @@ import RemplacementForm from "./pages/Forms/RemplacementForms/RemplacementForm"
 import AllRemplacements from "./pages/RemplacementPages/AllRemplacements"
 // @ts-ignore
 import RemplacementDetails from "./pages/RemplacementPages/RemplacementDetails"
+// @ts-ignore
+import ModifyRemplacementForm from "./pages/Forms/RemplacementForms/ModifyRemplacementForm"
 
 
 export default function App() {
@@ -221,6 +223,7 @@ export default function App() {
               <Route path="/nouveau-remplacement" element={<RemplacementForm />} />
               <Route path="/tous-les-remplacements" element={<AllRemplacements />} />
               <Route path="/remplacement-details/:id" element={<RemplacementDetails />} />
+              <Route path="/modifier-remplacement/:id" element={<ModifyRemplacementForm />} />
 
 
               {/****** Gestion *******/}

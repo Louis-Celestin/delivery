@@ -104,7 +104,7 @@ export default function RemplacementDetails() {
                         produitsLivre: JSON.parse(livraison_data.details_remplacement)
                     });
                     const produits = JSON.parse(livraison_data.details_remplacement)
-                    setQuantiteLivraison(produits.length)
+                    setQuantiteLivraison(livraison_data.quantite)
                     setDateLivraison(formatDate(livraison_data.date_remplacement))
                     setCommentaire(livraison_data.commentaire)
 
@@ -133,8 +133,8 @@ export default function RemplacementDetails() {
                         setAttente(false)
                         setStatutClass('text-sm border rounded-xl p-1 bg-green-100 text-green-500 font-bold')
                         setRecu(true)
-                        index = livraison_data.validations.length-1
-                        setCommentaireReception(livraison_data.validations[index].commentaire)
+                        index = livraison_data.validation_remplacement.length-1
+                        setCommentaireReception(livraison_data.validation_remplacement[index].commentaire)
                     }
                     else if(livraison_data.statut == 'en_cours'){
                         if(roles_id.includes(livraison_data.role_id) || roles_id.includes(2)){
@@ -150,8 +150,8 @@ export default function RemplacementDetails() {
                         setAttente(true)
                         setStatutLivraison('Retourné')
                         setStatutClass('text-sm border rounded-xl p-1 bg-red-100 text-red-500 font-bold')
-                        index = livraison_data.validations.length-1
-                        setCommentaireReception(livraison_data.validations[index].commentaire)
+                        index = livraison_data.validation_remplacement.length-1
+                        setCommentaireReception(livraison_data.validation_remplacement[index].commentaire)
                         if(roles_id.includes(1)){
                             setIsLivreur(true)
                         }
@@ -240,23 +240,22 @@ export default function RemplacementDetails() {
             return;
         }
         const payload = {
-            livraison_id: livraisonID,
+            remplacement_id: id,
             commentaire_return: messageReturnLivraison,
             user_id: userId,
         }
-        console.log(livraisonID)
         try{
             setLoadingReception(true);
             setIsModalReturnLivraisonOpen(false);
             console.log("Sending payload: ", payload);
-            const response = await reception.returnDelivery(payload);
+            const response = await remplacements.returnRemplacement(payload);
             Swal.fire({
                 title: "Succès",
                 text: "Livraison retournée avec succès",
                 icon: "success"
             });
             console.log(response)
-            navigate('/toutes-les-livraisons');
+            navigate('/tous-les-remplacements');
         } catch(error){
             console.log(error)
             Swal.fire({
@@ -264,7 +263,7 @@ export default function RemplacementDetails() {
                 text: "Une erreur s'est produite lors du retour de la livraison",
                 icon: "warning"
             });
-            navigate('/toutes-les-livraisons');
+            navigate('/tous-les-remplacements');
         } finally{
             setLoadingReception(false)
         }
@@ -326,9 +325,9 @@ export default function RemplacementDetails() {
                                     )}
                                     {isLivreur ? (
                                         <>
-                                            <Link to={``} className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'>
+                                            <Link to={`/modifier-remplacement/${id}`} className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'>
                                                <span className='mr-4'><i className="pi pi-pencil"></i></span>
-                                               <span className='text-sm text-gray-700 font-medium'>Modifier Livraison</span> 
+                                               <span className='text-sm text-gray-700 font-medium'>Modifier Remplacement</span> 
                                             </Link>
                                         </>
                                     ) : (
@@ -355,7 +354,7 @@ export default function RemplacementDetails() {
                                                     </button>
                                                     <button className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'
                                                         onClick={() =>{
-                                                            setIsModalReturnLivraisonOpen(false)
+                                                            setIsModalReturnLivraisonOpen(true)
                                                         }}>
                                                         <span className='mr-4'><i className="pi pi-arrow-left"></i></span>
                                                         <span className='text-sm text-gray-700 font-medium'>Retourner Livraison</span> 

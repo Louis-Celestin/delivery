@@ -57,4 +57,36 @@ export class Remplacements{
         throw error.response.data;
         }
     }
+
+    async generateRemplacementsXLSX(listId){
+        try{
+            const response = await axios.post(`${urlBase}/api/delivery/generateRemplacementsXLSX`,
+            {listId},
+            {responseType: 'blob',} // important!
+            );
+            console.log(response)
+            return response.data;
+        }catch(error){
+            throw error.response?.data || error;
+        }
+    }
+
+    async updateRemplacement(id, payload){
+        try{
+            const response = await axios.put(`${urlBase}/api/delivery/updateRemplacement/${id}`,payload);
+            return response.data;
+        } catch(error){
+            throw error.response.data
+        }
+    };
+
+    async returnRemplacement(payload){
+        try{
+            const response = await axios.post(`${urlBase}/api/delivery/returnRemplacement`,payload)
+        console.log(response)
+            return response.data;
+        } catch (error) {
+            throw error.response.data;
+        }
+    };
 }

@@ -357,6 +357,10 @@ export default function AllDeliveriesList({ filterType }) {
         }
     }
 
+    const totalProduit = filteredDeliveryForms.reduce((sum, item) => sum + Number(item.qte_totale_livraison || 0), 0);
+
+
+
 
     return(
         <>  
@@ -470,9 +474,14 @@ export default function AllDeliveriesList({ filterType }) {
                     </div>
                 </div>
                 <div className="flex justify-between p-6 pt-0 items-center">
-                    <span className="text-md text-gray-600 dark:text-gray-300">
-                        {filteredDeliveryForms.length} formulaire(s) trouvé(s)
-                    </span>
+                    <div className="flex space-x-3 items-center">
+                        <span className="text-md text-gray-600 dark:text-gray-300">
+                            {filteredDeliveryForms.length} formulaire(s) trouvé(s)
+                        </span>
+                        <span className="text-sm text-blue-700 dark:text-gray-300">
+                            {totalProduit} produit(s) trouvé(s)
+                        </span>
+                    </div>
                     <div className="flex space-x-3">
                         {loadingDownload ? 
                         (

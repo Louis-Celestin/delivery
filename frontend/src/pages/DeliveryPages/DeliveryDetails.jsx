@@ -96,7 +96,7 @@ export default function DeliveryDetails() {
                         produitsLivre: JSON.parse(livraison_data.produitsLivre)
                     });
                     const produits = JSON.parse(livraison_data.produitsLivre)
-                    setQuantiteLivraison(produits.length)
+                    setQuantiteLivraison(livraison_data.qte_totale_livraison)
                     setLivraisonID(livraison_data.id_livraison)
                     setDateLivraison(formatDate(livraison_data.date_livraison))
                     setCommentaire(livraison_data.commentaire)

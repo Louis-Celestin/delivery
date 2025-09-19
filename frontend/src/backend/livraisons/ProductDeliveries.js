@@ -176,7 +176,7 @@ export class ProductDeliveries{
         throw error.response?.data || error;
     }
   }
-
+  
   async generateDeliveriesXLSX(listId){
     try{
         const response = await axios.post(`${urlBase}/api/delivery/generateDeliveriesXLSX`,

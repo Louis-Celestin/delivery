@@ -1,4 +1,4 @@
-import {useState, useEffect} from "react";
+import {useState, useEffect, useMemo} from "react";
 import { Link } from "react-router";
 
 import { Remplacements } from "../../backend/livraisons/Remplacements";
@@ -67,7 +67,11 @@ export default function AllRemplacementsList() {
     const [selectedNewModels, setSelectedNewModels] = useState(savedFilters?.selectedNewModels || [])
     const [listModels, setListModels] = useState([])
 
+    const [listParametrages, setListParametrages] = useState([])
+
     const [loadingDownload, setLoadingDownload] = useState(false)
+
+    const [loadingExtract, setLoadingExtract] = useState(false)
 
     useEffect(() => {
         saveFilters({
@@ -104,6 +108,9 @@ export default function AllRemplacementsList() {
                     label: item.nom_model.toUpperCase()
                 }))
                 setOptionsModels(options_models)
+
+                let parametrages_data = await remplacements.getAllTypeParametrage()
+                setListParametrages(parametrages_data)
                 
             } catch(error){
                 console.log('Error fetching data ',error)
@@ -263,40 +270,72 @@ export default function AllRemplacementsList() {
         return matchesStatus && matchesService && matchesOldModel && matchesNewModel && matchesStartDate && matchesEndDate && matchesGlobalFilter;
     });
 
-    const handleGlobalDownload = async () =>{
-        console.log(filteredDeliveryForms)
-        try{
-            setLoadingDownload(true)
-            const listId = filteredDeliveryForms.map((f) => f.id);
-            if(listId.length == 0){
+    const totalProduit = filteredDeliveryForms.reduce((sum, item) => sum + Number(item.quantite || 0), 0);
+
+    const detailsParametrage = useMemo(() => {
+        let totals = listParametrages.map((param) => ({
+            id: param.id,
+            nom: param.nom_parametrage.toLowerCase(),
+            quantite: 0,
+        }));
+
+        filteredDeliveryForms.forEach((delivery) => {
+            if (delivery.details_parametrage) {
+                let parsedDetails;
+                try {
+                    parsedDetails = JSON.parse(delivery.details_parametrage);
+                } catch {
+                    parsedDetails = [];
+                }
+
+                if (Array.isArray(parsedDetails)) {
+                    parsedDetails.forEach((detail) => {
+                        let match = totals.find((p) => p.id === detail.id);
+                        if (match) {
+                            match.quantite += detail.quantite || 0;
+                        }
+                    });
+                }
+            }
+        });
+
+        return totals;
+    }, [filteredDeliveryForms, listParametrages]);
+
+    const handleExtractXLSX = async () =>{
+            console.log(filteredDeliveryForms)
+            try{
+                setLoadingExtract(true)
+                const listId = filteredDeliveryForms.map((f) => f.id);
+                if(listId.length == 0){
+                    Swal.fire({
+                        title: "Attention",
+                        text: "Aucun remplacement enregistré",
+                        icon: "warning"
+                    });
+                    return
+                }
+                const blob = await remplacements.generateRemplacementsXLSX(listId)
+    
+                const url = window.URL.createObjectURL(blob);
+    
+                const a = document.createElement("a");
+                a.href = url;
+                const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+                a.download = `remplacements_${timestamp}.xlsx`;
+                a.click();
+                window.URL.revokeObjectURL(url);
+    
+            }catch(error){
+                console.log(error)
                 Swal.fire({
                     title: "Attention",
-                    text: "Aucune livraison enregistrée",
+                    text: "Une erreur s'est produite lors du téléchargement",
                     icon: "warning"
                 });
-                return
+            }finally{
+                setLoadingExtract(false);
             }
-            const blob = await productDeliveries.generateTotalPf(listId)
-
-            const url = window.URL.createObjectURL(blob);
-
-            const a = document.createElement("a");
-            a.href = url;
-            const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-            a.download = `livraisons_${timestamp}.zip`;
-            a.click();
-            window.URL.revokeObjectURL(url);
-
-        }catch(error){
-            console.log(error)
-            Swal.fire({
-                title: "Attention",
-                text: "Une erreur s'est produite lors du téléchargement",
-                icon: "warning"
-            });
-        }finally{
-            setLoadingDownload(false);
-        }
     }
 
 
@@ -387,33 +426,78 @@ export default function AllRemplacementsList() {
                     </div>
                 </div>
                 <div className="flex justify-between p-6 pt-0 items-center">
-                    <span className="text-md text-gray-600 dark:text-gray-300">
-                        {filteredDeliveryForms.length} formulaire(s) trouvé(s)
-                    </span>
-                    {/* {loadingDownload ? 
-                    (
-                        <span className='flex items-center justify-center'>
-                            <ProgressSpinner style={{width: '20px', height: '20px'}} strokeWidth="8" animationDuration=".5s" />
+                    <div className="flex space-x-3 items-center">
+                        <span className="text-md text-gray-600 dark:text-gray-300">
+                            {filteredDeliveryForms.length} formulaire(s) trouvé(s)
                         </span>
-                    ) : (
-                        <>
-                            {filteredDeliveryForms.length > 0 ? 
-                                (
-                                    <>
-                                        <button className="flex items-center justify-center border rounded-full h-5 w-5 p-5 hover:text-white hover:bg-gray-dark hover:border-black transition-colors"
-                                            onClick={handleGlobalDownload}
-                                            >
-                                            <span className="">
-                                                <i className="pi pi-download"></i>
-                                            </span>
-                                        </button>
-                                    </>
-                                ) : (
-                                    <></>
+                        <span className="text-sm text-gray-700 dark:text-gray-300">
+                            {totalProduit} TPE(s) remplacé(s)
+                        </span>
+                        <div className="flex space-x-2">
+                            {detailsParametrage.map((param) =>{
+
+                                let classQuantite = param.quantite > 0 ? "text-blue-700 font-medium" : "text-gray-600 font-medium"
+
+                                return(
+                                <>
+                                    <div key={param.id} className="">
+                                        <span className="text-xs text-gray-600">{param.nom} : <span className={classQuantite}>{param.quantite}</span></span>
+                                    </div>
+                                </>
                                 )
-                            }
-                        </>
-                    )} */}
+                            })}
+                        </div>
+                    </div>
+                    <div className="flex space-x-3">
+                        {/* {loadingDownload ? 
+                        (
+                            <span className='flex items-center justify-center'>
+                                <ProgressSpinner style={{width: '20px', height: '20px'}} strokeWidth="8" animationDuration=".5s" />
+                            </span>
+                        ) : (
+                            <>
+                                {filteredDeliveryForms.length > 0 ? 
+                                    (
+                                        <>
+                                            <button className="flex items-center justify-center border rounded-full h-5 w-5 p-5 hover:text-white hover:bg-gray-dark hover:border-black transition-colors"
+                                                onClick={handleGlobalDownload}
+                                                >
+                                                <span className="">
+                                                    <i className="pi pi-folder"></i>
+                                                </span>
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <></>
+                                    )
+                                }
+                            </>
+                        )} */}
+                        {loadingExtract ? 
+                        (
+                            <span className='flex items-center justify-center'>
+                                <ProgressSpinner style={{width: '20px', height: '20px'}} strokeWidth="8" animationDuration=".5s" />
+                            </span>
+                        ) : (
+                            <>
+                                {filteredDeliveryForms.length > 0 ? 
+                                    (
+                                        <>
+                                            <button className="flex items-center justify-center border rounded-full h-5 w-5 p-5 hover:text-white hover:bg-gray-dark hover:border-black transition-colors"
+                                                onClick={handleExtractXLSX}
+                                                >
+                                                <span className="">
+                                                    <i className="pi pi-download"></i>
+                                                </span>
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <></>
+                                    )
+                                }
+                            </>
+                        )}
+                    </div>
                 </div>
                 <div className="card">
                     <DataTable

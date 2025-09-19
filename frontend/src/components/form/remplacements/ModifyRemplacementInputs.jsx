@@ -16,7 +16,7 @@ import { PlusIcon } from "../../../icons/index.ts";
 import { ListIcon } from "../../../icons/index.ts";
 import 'primeicons/primeicons.css'; 
 import { ProgressSpinner } from 'primereact/progressspinner';
-import { useNavigate } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { Merchants } from "../../../backend/livraisons/Merchants.js";
 import { ProductDeliveries } from "../../../backend/livraisons/ProductDeliveries.js";
 import Swal from 'sweetalert2'
@@ -28,6 +28,7 @@ import { Remplacements } from "../../../backend/livraisons/Remplacements.js";
 
 export default function ModifyRemplacementInputs() {
 
+  const { id } = useParams();
   const merchants = new Merchants();
   const productDeliveries = new ProductDeliveries();
   const usersData = new Users()
@@ -80,9 +81,9 @@ export default function ModifyRemplacementInputs() {
   const [optionsModels, setOptionsModels] = useState([])
   const [listModels, setListModels] = useState([])
   const [newModel, setNewModel] = useState(2)
-  const [nomNouveauModel, setNomNouveauModel] = useState('A8900')
+  const [nomNouveauModel, setNomNouveauModel] = useState('')
   const [oldModel, setOldModel] = useState(1)
-  const [nomAncienModel, setNomAncienModel] = useState('A920')
+  const [nomAncienModel, setNomAncienModel] = useState('')
   const [ancienSN, setAncienSN] = useState('')
 
   const [optionsParametrages, setOptionsParametrages] = useState([])
@@ -98,6 +99,17 @@ export default function ModifyRemplacementInputs() {
         let data;
         data = await merchants.findMerchant();
         setTerminals(data)
+
+        const delivery_data = await remplacements.getOneRemplacement(id)
+        setMessage(delivery_data.commentaire)
+        const parsedDetails = JSON.parse(delivery_data.details_remplacement)
+        setProduitsLivres(parsedDetails)
+        setProduitsLivresTable(parsedDetails)
+        setQuantiteLivraison(parsedDetails.length)
+        setServiceId(delivery_data.service_id)
+        setSelectedRole(delivery_data.role_id)
+        setOldModel(delivery_data.old_model_id)
+        setNewModel(delivery_data.new_model_id)
 
         let type_delivery_data = await productDeliveries.getAllTypeLivraisonCommerciale()
         let type_delivery = type_delivery_data.filter((type) =>{
@@ -117,7 +129,13 @@ export default function ModifyRemplacementInputs() {
           label: item.nom_service,
         }))
         setOptionServices(optionsServices)
-
+        const selected_service = services_data.find((item) =>{
+          return item.id == delivery_data.service_id
+        })
+        if(selected_service){
+          setServiceRecepteur(selected_service.nom_service.toUpperCase())
+        }
+        
         let roles_data = await usersData.getAllRoles()
         setListRoles(roles_data)
         const optionsRoles = roles_data.map((item) =>({
@@ -133,20 +151,45 @@ export default function ModifyRemplacementInputs() {
           label: item.nom_model.toUpperCase(),
         }))
         setOptionsModels(option_models)
+        const old_model = models_data.find((item) =>{
+          return item.id_model == delivery_data.old_model_id
+        })
+        if(old_model){
+          setNomAncienModel(old_model.nom_model.toUpperCase())
+        }
+        const new_model = models_data.find((item) =>{
+          return item.id_model == delivery_data.new_model_id
+        })
+        if(new_model){
+          setNomNouveauModel(new_model.nom_model.toUpperCase())
+        }
+
+        const parsedParametrages = JSON.parse(delivery_data.details_parametrage)
+        console.log(parsedParametrages)
 
         let parametrages_data = await remplacements.getAllTypeParametrage()
+
         setListParametrages(parametrages_data)
         const options_parametrage = parametrages_data.map((item) =>({
           value: item.id,
           label: item.nom_parametrage,
         }))
         setOptionsParametrages(options_parametrage)
-        const details_parametrage = parametrages_data.map((item) =>({
-          id: item.id,
-          nom: item.nom_parametrage.toLowerCase(),
+
+        let totals = parametrages_data.map((param) => ({
+          id: param.id,
+          nom: param.nom_parametrage.toLowerCase(),
           quantite: 0,
-        }))
-        setDetailsParametrage(details_parametrage)
+        }));
+
+        parsedParametrages.forEach((params) => {
+          let match = totals.find((p) => p.id === params.id);
+          if (match) {
+            match.quantite += params.quantite || 0;
+          }
+        });
+
+        setDetailsParametrage(totals)
 
       }catch(error){
         console.log('Error fetching data ',error)
@@ -323,8 +366,8 @@ export default function ModifyRemplacementInputs() {
     setDetailsParametrage((prev) =>
       prev.map((param) =>
         param.id === parseInt(parametrageTPE)
-          ? { ...param, quantite: param.quantite + 1 }
-          : param
+        ? { ...param, quantite: param.quantite + 1 }
+        : param
       )
     );
   
@@ -357,40 +400,52 @@ export default function ModifyRemplacementInputs() {
       return;
     }
 
-    if(signature.isEmpty()){
-      setErrorSign('Vous devez signer pour valider !')
-      return;
-    }
+    // if(signature.isEmpty()){
+    //   setErrorSign('Vous devez signer pour valider !')
+    //   return;
+    // }
     setLoadingDelivery(true);
     setIsSignatureModalOpen(false)
     // setSignUrl(signature.toDataURL('image/png'))
-    const sign = signature.toDataURL('image/png')
-    const fd = new FormData();
+    // const sign = signature.toDataURL('image/png')
+    // const fd = new FormData();
     const commentaire = message;
 
-    fd.append('commentaire',commentaire);
-    fd.append('user_id',userId);
-    fd.append('detailsRemplacement',JSON.stringify(produitsLivre))
-    fd.append('service_recepteur', serviceId)
-    fd.append('role_recepteur', selectedRole)
-    fd.append('ancien_model', oldModel)
-    fd.append('nouveau_model', newModel)
-    if (sign) {
-      const blob = await fetch(sign).then(res => res.blob());
-      fd.append('signature_expediteur', blob, 'signature.png');
+    // fd.append('commentaire',commentaire);
+    // fd.append('user_id',userId);
+    // fd.append('detailsRemplacement',JSON.stringify(produitsLivre))
+    // fd.append('service_recepteur', serviceId)
+    // fd.append('role_recepteur', selectedRole)
+    // fd.append('ancien_model', oldModel)
+    // fd.append('nouveau_model', newModel)
+    // fd.append('detailsParametrage', JSON.stringify(detailsParametrage))
+    // if (sign) {
+    //   const blob = await fetch(sign).then(res => res.blob());
+    //   fd.append('signature_expediteur', blob, 'signature.png');
+    // }
+
+    const payload = {
+      commentaire: commentaire,
+      user_id: userId,
+      detailsRemplacement: JSON.stringify(produitsLivre),
+      service_recepteur: serviceId,
+      role_recepteur: selectedRole,
+      ancien_model: oldModel,
+      nouveau_model: newModel,
+      detailsParametrage: JSON.stringify(detailsParametrage)
     }
     
     try{
-    const response = await remplacements.makeRemplacement(fd)
+      const response = await remplacements.updateRemplacement(id, payload)
 
-    console.log(response);
-    console.log('Formulaire créé')
-    Swal.fire({
-      title: "Succès",
-      text: "Formulaire créé avec succès",
-      icon: "success"
-    });
-    navigate('/tous-les-remplacements');
+      console.log(response);
+      console.log('Formulaire créé')
+      Swal.fire({
+        title: "Succès",
+        text: "Formulaire modifié avec succès",
+        icon: "success"
+      });
+      navigate('/tous-les-remplacements');
     }catch (error) {
       setLoadingDelivery(false)
       console.log('error')
@@ -468,6 +523,7 @@ export default function ModifyRemplacementInputs() {
                             placeholder="Choisir une option"
                             onChange={ChangeService}
                             className="dark:bg-dark-900"
+                            defaultValue={serviceId}
                           />
                         </div>
                         <div>
@@ -477,6 +533,7 @@ export default function ModifyRemplacementInputs() {
                             placeholder="Choisir un rôle"
                             onChange={ChangeRole}
                             className="dark:bg-dark-900"
+                            defaultValue={selectedRole}
                           />
                         </div>
                         <div>
@@ -484,7 +541,7 @@ export default function ModifyRemplacementInputs() {
                           <Select
                             options={optionsModels}
                             placeholder="Choisir une option"
-                            defaultValue={1}
+                            defaultValue={oldModel}
                             onChange={ChangeOldModel}
                             className="dark:bg-dark-900"
                           />
@@ -503,7 +560,7 @@ export default function ModifyRemplacementInputs() {
                           <Label>Nouveau Model TPE <span className="text-red-700">*</span></Label>
                           <Select
                             options={optionsModels}
-                            defaultValue={2}
+                            defaultValue={newModel}
                             placeholder="Choisir une option"
                             onChange={ChangeNewModel}
                             className="dark:bg-dark-900"
@@ -641,14 +698,12 @@ export default function ModifyRemplacementInputs() {
             <span>Quantité : {quantiteLivraison}</span>
             <div className="ms-6 flex">
               {detailsParametrage.map((param) =>{
-                let quantite = param.quantite
-                let classQuantite = "text-gray-600 font-medium"
-                if(quantite > 0){
-                  classQuantite = "text-blue-700 font-medium"
-                }
+
+                let classQuantite = param.quantite > 0 ? "text-blue-700 font-medium" : "text-gray-600 font-medium"
+
                 return(
                   <>
-                    <div className="mx-6">
+                    <div key={param.id} className="mx-6">
                       <span className="text-xs text-gray-600">{param.nom} : <span className={classQuantite}>{param.quantite}</span></span>
                     </div>
                   </>
@@ -773,7 +828,7 @@ export default function ModifyRemplacementInputs() {
               <ProgressSpinner style={{width: '50px', height: '50px'}} strokeWidth="8" animationDuration=".5s" />
             </span>
           :
-            <button onClick={handleValidate} className="w-1/4 bg-green-400 rounded-2xl h-10 flex justify-center items-center">
+            <button onClick={handleDeliver} className="w-1/4 bg-green-400 rounded-2xl h-10 flex justify-center items-center">
               <span>Valider formulaire</span>
               <span className="text-2xl"><ListIcon /></span>
             </button> 

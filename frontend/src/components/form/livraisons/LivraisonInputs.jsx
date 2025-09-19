@@ -161,6 +161,7 @@ export default function LivraisonInputs() {
     })
     if(model){
       setNomModel(model.nom_model.toUpperCase())
+      setMessageTPE(model.nom_model.toUpperCase())
     }
   }
 
@@ -518,15 +519,15 @@ export default function LivraisonInputs() {
                         <div>
                           <Label>Banque</Label>
                           <Input type="text" id="input" 
-                                  className="cursor-default"
-                                  value={filteredPointMarchand.map((terminal) => terminal.BANQUE).join(" - ")}
-                                  readOnly
-                                  />
+                            className="cursor-default"
+                            value={filteredPointMarchand.map((terminal) => terminal.BANQUE).join(" - ")}
+                            readOnly
+                            />
                         </div>
                         <div>
                           <Input type="text" id="input" 
-                                  value={filteredPointMarchand.map((terminal) => terminal.TPE).join(" - ")}
-                                  className="hidden"/>
+                            value={filteredPointMarchand.map((terminal) => terminal.TPE).join(" - ")}
+                            className="hidden"/>
                         </div>
                         <div className="flex flex-col">
                           <div className="flex items-center gap-3 my-2">

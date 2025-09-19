@@ -190,6 +190,7 @@ export default function ModifyLivraisonInputs() {
     })
     if(model){
       setNomModel(model.nom_model.toUpperCase())
+      setMessageTPE(model.nom_model.toUpperCase())
     }
   }
 
@@ -433,7 +434,7 @@ export default function ModifyLivraisonInputs() {
                           <Label>Type de Livraison <span className="text-red-700">*</span></Label>
                           <Select
                             options={optionLivraisons}
-                            placeholder={typeLivraison}
+                            defaultValue={livraisonID}
                             onChange={ChangeTypeLivraison}
                             className="dark:bg-dark-900"
                           />
@@ -442,7 +443,6 @@ export default function ModifyLivraisonInputs() {
                           <Label>Model TPE <span className="text-red-700">*</span></Label>
                           <Select
                             options={optionsModels}
-                            placeholder={nomModel}
                             onChange={ChangeModel}
                             className="dark:bg-dark-900"
                             defaultValue={selectedModel}
@@ -452,7 +452,7 @@ export default function ModifyLivraisonInputs() {
                           <Label>Service recepteur <span className="text-red-700">*</span></Label>
                           <Select
                             options={optionServices}
-                            placeholder={serviceRecepteur}
+                            defaultValue={serviceId}
                             onChange={ChangeService}
                             className="dark:bg-dark-900"       
                           />
@@ -461,7 +461,7 @@ export default function ModifyLivraisonInputs() {
                           <Label>Associer un rôle</Label>
                           <Select
                             options={optionsRoles}
-                            placeholder={nomRole}
+                            defaultValue={selectedRole}
                             onChange={ChangeRole}
                             className="dark:bg-dark-900"
                           />
@@ -711,6 +711,9 @@ export default function ModifyLivraisonInputs() {
             <span>Vous allez ajouter un terminal pour livraison :  <span className="font-bold text-red-700">{typeLivraison}</span></span>
           </div>
           <div>
+            <div>
+              <span>Model : <span className="font-bold text-red-700">{nomModel}</span></span>
+            </div>
             <div>
               <span>Service : <span className="font-bold text-red-700">{serviceRecepteur}</span></span>
             </div>
