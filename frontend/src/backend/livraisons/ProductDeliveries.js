@@ -163,4 +163,30 @@ export class ProductDeliveries{
       throw error.response.data
     }
   }
+
+  async generateTotalPf(listId){
+    try{
+        const response = await axios.post(`${urlBase}/api/delivery/totalPdf`,
+          {listId},
+          {responseType: 'blob',} // important!
+        );
+        console.log(response)
+        return response.data;
+    }catch(error){
+        throw error.response?.data || error;
+    }
+  }
+  
+  async generateDeliveriesXLSX(listId){
+    try{
+        const response = await axios.post(`${urlBase}/api/delivery/generateDeliveriesXLSX`,
+          {listId},
+          {responseType: 'blob',} // important!
+        );
+        console.log(response)
+        return response.data;
+    }catch(error){
+        throw error.response?.data || error;
+    }
+  }
 }

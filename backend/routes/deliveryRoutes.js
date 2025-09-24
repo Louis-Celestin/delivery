@@ -3,7 +3,13 @@ const router = express.Router();
 const upload = require("../middlewares/uploads");
 // const multer = require("multer")
 // const upload = multer({ storage: multer.memoryStorage() });
-const {deliver,getAllLivraisons, getOneLivraison,deleteLivraison,updateLivraison, generateLivraisonPDF, deliverOld, deliverStock, getAllTypeLivraisonCommerciale, getAllStockDeliveries, getOneLivraisonDemande, receiveStock, addDeliveryType, getOneTypeLivraison, updateTypeLivraison, deleteTypeLivraison, updateDeliveryStock} = require("../controllers/Delivery/deliveryController")
+const {deliver,getAllLivraisons, getOneLivraison,deleteLivraison,updateLivraison, generateLivraisonPDF,
+    deliverOld, deliverStock, getAllTypeLivraisonCommerciale, getAllStockDeliveries,
+    getOneLivraisonDemande, receiveStock, addDeliveryType, getOneTypeLivraison, updateTypeLivraison,
+    deleteTypeLivraison, updateDeliveryStock, generateTotalLivraisonPDF,getAllTypeParametrage, makeRemplacement,
+    getAllRemplacements, getOneRemplacement, validateRemplacement, generateDeliveriesXLSX, generateRemplacementsXLSX,
+    updateRemplacement, returnRemplacement,
+} = require("../controllers/Delivery/deliveryController")
 
 router.post('/deliver', upload.single('signature_expediteur'), deliver);
 router.get("/getAllLivraisons", getAllLivraisons);
@@ -22,7 +28,15 @@ router.get("/getOneTypeLivraison/:id", getOneTypeLivraison);
 router.put("/updateTypeLivraison/:id", updateTypeLivraison);
 router.put("/deleteTypeLivraison/:id", deleteTypeLivraison);
 router.put("/updateDeliveryStock/:id", updateDeliveryStock);
-
-
+router.post("/totalPdf", generateTotalLivraisonPDF);
+router.get("/getAllTypeParametrage", getAllTypeParametrage);
+router.post("/makeRemplacement", upload.single('signature_expediteur'), makeRemplacement);
+router.get("/getAllRemplacements", getAllRemplacements);
+router.get("/getOneRemplacement/:id", getOneRemplacement);
+router.post("/validateRemplacement", upload.single('signature'), validateRemplacement);
+router.post("/generateDeliveriesXLSX", generateDeliveriesXLSX);
+router.post("/generateRemplacementsXLSX", generateRemplacementsXLSX);
+router.put("/updateRemplacement/:id", updateRemplacement);
+router.post("/returnRemplacement", returnRemplacement);
 
 module.exports = router

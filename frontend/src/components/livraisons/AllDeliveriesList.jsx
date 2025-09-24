@@ -4,6 +4,7 @@ import { Link } from "react-router";
 import { ProductDeliveries } from "../../backend/livraisons/productDeliveries"
 import { generatePdf } from "../../backend/receptions/GeneratePDF";
 import { Users } from "../../backend/users/Users";
+import { Stock } from "../../backend/stock/Stock";
 
 import Input from "../form/input/InputField";
 import { Calendar } from 'primereact/calendar';
@@ -16,32 +17,71 @@ import { Column } from 'primereact/column';
 import { Dropdown } from 'primereact/dropdown';
 import { MultiSelect } from "primereact/multiselect";
 
+import Swal from "sweetalert2";
+
 export default function AllDeliveriesList({ filterType }) {
 
     const productDeliveries = new ProductDeliveries();
     const userData = new Users();
+    const stockData = new Stock();
+
+    const savedPagination = JSON.parse(sessionStorage.getItem("paginationState"));
+
+    const [first, setFirst] = useState(savedPagination?.first || 0);
+    const [rows, setRows] = useState(savedPagination?.rows || 5); 
+
+    const FILTERS_KEY = "allDeliveriesFilters";
+
+    const saveFilters = (filters) => {
+        sessionStorage.setItem(FILTERS_KEY, JSON.stringify(filters));
+    };
+
+    const loadFilters = () => {
+        const stored = sessionStorage.getItem(FILTERS_KEY);
+        return stored ? JSON.parse(stored) : null;
+    };
+
+    const savedFilters = loadFilters();
 
     const [deliveryForms, setDeliveryForms] = useState([]);
     const [loading, setLoading] = useState(false);
     const [printingId, setPrintingId] = useState(null);
-    const [globalFilter, setGlobalFilter] = useState("");
-    const [selectedStatus, setSelectedStatus] = useState(null);
+    const [globalFilter, setGlobalFilter] = useState(savedFilters?.globalFilter || "");
+    const [selectedStatus, setSelectedStatus] = useState(savedFilters?.selectedStatus || []);
     const statusOptions = [
         { label: 'En cours', value: 'en_cours' },
         { label: 'Livré', value: 'livre' },
         { label : 'Retourné', value: 'en_attente'},
     ];
-    const [startDate, setStartDate] = useState(null);
-    const [endDate, setEndDate] = useState(null);
+    const [startDate, setStartDate] = useState(savedFilters?.startDate ? new Date(savedFilters.startDate) : null);
+    const [endDate, setEndDate] = useState(savedFilters?.endDate ? new Date(savedFilters.endDate) : null);
     
     const [optionsServices, setOptionsServices] = useState([])
-    const [selectedService, setselectedService] = useState(null)
+    const [selectedService, setselectedService] = useState(savedFilters?.selectedService || [])
     
     const [optionsType, setOptionsType] = useState([])
-    const [selectedType, setSelectedType] = useState(null)
+    const [selectedType, setSelectedType] = useState(savedFilters?.selectedType || [])
 
     const [typesLivraison, setTypesLivraison] = useState([])
 
+    const [optionsModels, setOptionsModels] = useState([])
+    const [selectedModels, setSelectedModels] = useState(savedFilters?.selectedModels || [])
+
+    const [loadingDownload, setLoadingDownload] = useState(false)
+
+    const [loadingExtract, setLoadingExtract] = useState(false)
+
+    useEffect(() => {
+        saveFilters({
+            globalFilter,
+            selectedStatus,
+            selectedType,
+            startDate,
+            endDate,
+            selectedService,
+            selectedModels,
+        });
+    }, [globalFilter, selectedStatus, selectedType, startDate, endDate, selectedService, selectedModels]);
 
     useEffect( ()=>{
         const fetchDeliveriesData = async () =>{
@@ -68,6 +108,13 @@ export default function AllDeliveriesList({ filterType }) {
                     label: item.nom_service.toUpperCase()
                 }))
                 setOptionsServices(options_services)
+
+                let models_data = await stockData.getAllModels();
+                const options_models = models_data.map((item) => ({
+                    value: item.id_model,
+                    label: item.nom_model.toUpperCase()
+                }))
+                setOptionsModels(options_models)
                 
             } catch(error){
                 console.log('Error fetching data ',error)
@@ -76,12 +123,17 @@ export default function AllDeliveriesList({ filterType }) {
             }
         }; fetchDeliveriesData();
     },[])
+
+    const handlePageChange = (e) => {
+        setFirst(e.first);
+        setRows(e.rows);
+        sessionStorage.setItem("paginationState", JSON.stringify({ first: e.first, rows: e.rows }));
+    };
     
     const formatDate = (date) => {
         const d = new Date(date);
         return d.toLocaleDateString('fr-FR'); // or use any locale you want
     };
-
     const handleGeneratePdf = async (id) =>{
         setPrintingId(id);
         try{
@@ -160,16 +212,18 @@ export default function AllDeliveriesList({ filterType }) {
         let statut =''
         if (deliveryForms.statut_livraison == 'en_cours'){
             statut = 'en cours';
-            statutClass = 'text-xs border rounded-xl p-0.5 bg-orange-300'
+            statutClass = 'grid grid-cols-1 text-center text-xs rounded-xl p-0.5 bg-orange-300'
         } else if (deliveryForms.statut_livraison == 'livre'){
             statut = 'Livré';
-            statutClass = 'text-xs border rounded-xl p-0.5 px-1 bg-green-300'
+            statutClass = 'grid grid-cols-1 text-center text-xs rounded-xl p-0.5 bg-green-300'
         } else if (deliveryForms.statut_livraison == 'en_attente'){
             statut = 'retourné';
-            statutClass = 'text-xs border rounded-xl p-0.5 px-1 bg-red-300'
+            statutClass = 'grid grid-cols-1 text-center text-xs rounded-xl p-0.5 bg-red-300'
         }
         return(
-            <span className={statutClass}>{statut}</span>
+            <div>
+                <span className={statutClass}>{statut}</span>
+            </div>
         )
     }
     const actionTemplate = (deliveryForms) =>{
@@ -201,43 +255,140 @@ export default function AllDeliveriesList({ filterType }) {
             </span>
         )
     }
+
+    const handleClearFilters = () =>{
+        setGlobalFilter("");
+        setSelectedStatus([]);
+        setselectedService([]);
+        setSelectedType([]);
+        setSelectedModels([]);
+        setStartDate(null);
+        setEndDate(null);
+        sessionStorage.removeItem(FILTERS_KEY);
+    }
+
     const filteredDeliveryForms = deliveryForms.filter((item) => {
         let itemDate = new Date(item.date_livraison);
         if(item.validations.length > 0){
             let index = item.validations.length-1
             itemDate = new Date(item.validations[index].date_validation)
         }
-        const matchesStatus = selectedStatus ? selectedStatus.includes(item.statut_livraison) : true;
-        const matchesType = selectedType ? selectedType.includes(item.type_livraison_id) : true;
-        const matchesService = selectedService ? selectedService.includes(item.service_id) : true;
+        const matchesStatus = selectedStatus.length > 0 ? selectedStatus.includes(item.statut_livraison) : true;
+        const matchesType = selectedType.length > 0 ? selectedType.includes(item.type_livraison_id) : true;
+        const matchesService = selectedService.length > 0 ? selectedService.includes(item.service_id) : true;
+        const matchesModel = selectedModels.length > 0 ? selectedModels.includes(item.model_id) : true;
         const matchesStartDate = startDate ? itemDate >= startDate : true;
         const matchesEndDate = endDate ? itemDate <= endDate : true;
         const matchesGlobalFilter = globalFilter
           ? JSON.stringify(item).toLowerCase().includes(globalFilter.toLowerCase())
           : true;
-        return matchesStatus && matchesType && matchesService && matchesStartDate && matchesEndDate && matchesGlobalFilter;
+        return matchesStatus && matchesType && matchesService && matchesModel && matchesStartDate && matchesEndDate && matchesGlobalFilter;
     });
+
+    const handleGlobalDownload = async () =>{
+        console.log(filteredDeliveryForms)
+        try{
+            setLoadingDownload(true)
+            const listId = filteredDeliveryForms.map((f) => f.id_livraison);
+            if(listId.length == 0){
+                Swal.fire({
+                    title: "Attention",
+                    text: "Aucune livraison enregistrée",
+                    icon: "warning"
+                });
+                return
+            }
+            const blob = await productDeliveries.generateTotalPf(listId)
+
+            const url = window.URL.createObjectURL(blob);
+
+            const a = document.createElement("a");
+            a.href = url;
+            const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+            a.download = `livraisons_${timestamp}.zip`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+
+        }catch(error){
+            console.log(error)
+            Swal.fire({
+                title: "Attention",
+                text: "Une erreur s'est produite lors du téléchargement",
+                icon: "warning"
+            });
+        }finally{
+            setLoadingDownload(false);
+        }
+    }
+
+    const handleExtractXLSX = async () =>{
+        console.log(filteredDeliveryForms)
+        try{
+            setLoadingExtract(true)
+            const listId = filteredDeliveryForms.map((f) => f.id_livraison);
+            if(listId.length == 0){
+                Swal.fire({
+                    title: "Attention",
+                    text: "Aucune livraison enregistrée",
+                    icon: "warning"
+                });
+                return
+            }
+            const blob = await productDeliveries.generateDeliveriesXLSX(listId)
+
+            const url = window.URL.createObjectURL(blob);
+
+            const a = document.createElement("a");
+            a.href = url;
+            const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+            a.download = `livraisons_${timestamp}.xlsx`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+
+        }catch(error){
+            console.log(error)
+            Swal.fire({
+                title: "Attention",
+                text: "Une erreur s'est produite lors du téléchargement",
+                icon: "warning"
+            });
+        }finally{
+            setLoadingExtract(false);
+        }
+    }
+
+    const totalProduit = filteredDeliveryForms.reduce((sum, item) => sum + Number(item.qte_totale_livraison || 0), 0);
+
+
 
 
     return(
         <>  
             <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
-                <div className="flex justify-normal flex-wrap gap-3 p-6">
-                    <span>
+                 <div className="px-6 pt-6 flex items-center">
+                    <div className="relative w-full">
                         <Input
-                            className="relative"
+                            className="pl-10"
                             value={globalFilter}
                             onChange={(e) => setGlobalFilter(e.target.value)}
                             placeholder="Rechercher un formulaire..."
-                        />
+                            />
+                        <span className="absolute top-1/4 left-3"><i className="pi pi-search"></i></span>
+                    </div>
+                    <span className="pl-4">
+                        <button onClick={handleClearFilters}>
+                            <i className="pi pi-refresh"></i>
+                        </button>
                     </span>
+                </div>
+                <div className="grid grid-cols-3 gap-3 p-6 pb-0">
                     {/* <Dropdown
                         value={selectedStatus}
                         options={statusOptions}
                         onChange={(e) => setSelectedStatus(e.value)}
                         placeholder="Filtrer par statut"
                         showClear
-                        className="w-full sm:w-64"
+                        className=""
                     /> */}
                     <MultiSelect
                         value={selectedStatus}
@@ -247,7 +398,7 @@ export default function AllDeliveriesList({ filterType }) {
                         maxSelectedLabels={2}
                         onChange={(e) => setSelectedStatus(e.value)}
                         placeholder="Filtrer par statut"
-                        className="w-full sm:w-64"
+                        className=""
                     />
                     <MultiSelect
                         value={selectedType}
@@ -257,7 +408,7 @@ export default function AllDeliveriesList({ filterType }) {
                         maxSelectedLabels={2}
                         onChange={(e) => setSelectedType(e.value)}
                         placeholder="Filtrer par type de livraison"
-                        className="w-full sm:w-64"
+                        className=""
                     />
                     {/* <Dropdown
                         value={selectedType}
@@ -265,7 +416,7 @@ export default function AllDeliveriesList({ filterType }) {
                         onChange={(e) => setSelectedType(e.value)}
                         placeholder="Filtrer par type de livraison"
                         showClear
-                        className="w-full sm:w-64"
+                        className=""
                     /> */}
                     <MultiSelect
                         value={selectedService}
@@ -275,7 +426,17 @@ export default function AllDeliveriesList({ filterType }) {
                         maxSelectedLabels={2}
                         onChange={(e) => setselectedService(e.value)}
                         placeholder="Filtrer par service"
-                        className="w-full sm:w-64"
+                        className=""
+                    />
+                    <MultiSelect
+                        value={selectedModels}
+                        options={optionsModels}
+                        display="chip"
+                        optionLabel="label"
+                        maxSelectedLabels={2}
+                        onChange={(e) => setSelectedModels(e.value)}
+                        placeholder="Filtrer par model de TPE"
+                        className=""
                     />
                     {/* <Dropdown
                         value={selectedService}
@@ -283,7 +444,7 @@ export default function AllDeliveriesList({ filterType }) {
                         onChange={(e) => setselectedService(e.value)}
                         placeholder="Filtrer par service"
                         showClear
-                        className="w-full sm:w-64"
+                        className=""
                     /> */}
                     
                 </div>
@@ -312,17 +473,76 @@ export default function AllDeliveriesList({ filterType }) {
                             dateFormat="dd/mm/yy"/>
                     </div>
                 </div>
-                <div className="p-6 pt-0">
-                    <span className="text-md text-gray-600 dark:text-gray-300">
-                        {filteredDeliveryForms.length} formulaire(s) trouvé(s)
-                    </span>
+                <div className="flex justify-between p-6 pt-0 items-center">
+                    <div className="flex space-x-3 items-center">
+                        <span className="text-md text-gray-600 dark:text-gray-300">
+                            {filteredDeliveryForms.length} formulaire(s) trouvé(s)
+                        </span>
+                        <span className="text-sm text-blue-700 dark:text-gray-300">
+                            {totalProduit} produit(s) trouvé(s)
+                        </span>
+                    </div>
+                    <div className="flex space-x-3">
+                        {loadingDownload ? 
+                        (
+                            <span className='flex items-center justify-center'>
+                                <ProgressSpinner style={{width: '20px', height: '20px'}} strokeWidth="8" animationDuration=".5s" />
+                            </span>
+                        ) : (
+                            <>
+                                {filteredDeliveryForms.length > 0 ? 
+                                    (
+                                        <>
+                                            <button className="flex items-center justify-center border rounded-full h-5 w-5 p-5 hover:text-white hover:bg-gray-dark hover:border-black transition-colors"
+                                                onClick={handleGlobalDownload}
+                                                >
+                                                <span className="">
+                                                    <i className="pi pi-folder"></i>
+                                                </span>
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <></>
+                                    )
+                                }
+                            </>
+                        )}
+                        {loadingExtract ? 
+                        (
+                            <span className='flex items-center justify-center'>
+                                <ProgressSpinner style={{width: '20px', height: '20px'}} strokeWidth="8" animationDuration=".5s" />
+                            </span>
+                        ) : (
+                            <>
+                                {filteredDeliveryForms.length > 0 ? 
+                                    (
+                                        <>
+                                            <button className="flex items-center justify-center border rounded-full h-5 w-5 p-5 hover:text-white hover:bg-gray-dark hover:border-black transition-colors"
+                                                onClick={handleExtractXLSX}
+                                                >
+                                                <span className="">
+                                                    <i className="pi pi-download"></i>
+                                                </span>
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <></>
+                                    )
+                                }
+                            </>
+                        )}
+                    </div>
                 </div>
                 <div className="card">
                     <DataTable
                         value={filteredDeliveryForms}
                         loading={loading}
                         removableSort 
-                        paginator rows={5} rowsPerPageOptions={[5, 10, 25, 50]}
+                        paginator 
+                        rows={rows} 
+                        first={first}
+                        onPage={handlePageChange}
+                        rowsPerPageOptions={[5, 10, 25, 50, 100, 200, 300, 500, 1000]}
                         tableStyle={{ minWidth: '50rem' }}
                         emptyMessage="Aucune livraison trouvée"
                         className="p-datatable-sm">

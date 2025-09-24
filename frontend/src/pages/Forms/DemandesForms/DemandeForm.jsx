@@ -5,7 +5,7 @@ import DemandeInputs from "../../../components/form/demandes/DemandeInputs"
 export default function DemandeForm() {
     return (
         <div>
-          <PageBreadcrumb pageTitle="Demande" />
+          <PageBreadcrumb pageTitle="Demande Pièce" />
           <div className="grid grid-cols-1 xl:grid-cols-1">
             <DemandeInputs />
           </div>  

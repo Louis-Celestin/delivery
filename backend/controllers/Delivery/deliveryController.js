@@ -8,6 +8,8 @@ const cloudinary = require("../../config/clouddinaryConifg");
 const { type } = require("os");
 const { sign } = require("crypto");
 const sendMail = require("../../utils/emailSender");
+const JSZip = require("jszip");
+const ExcelJS = require("exceljs");
 
 const formatDate = (isoDate) => {
   const date = new Date(isoDate);
@@ -43,6 +45,7 @@ const deliver = async (req, res) => {
       isAncienne,
       service_recepteur,
       role_recepteur,
+      selected_model,
     } = req.body;
 
     // Correction ici : gestion de produitsLivre (string JSON venant de form-data)
@@ -101,6 +104,7 @@ const deliver = async (req, res) => {
         signature_expediteur: signature_expediteur || null,
         service_id: parseInt(service_recepteur),
         role_id: role_recepteur ? parseInt(role_recepteur) : null,
+        model_id: selected_model ? parseInt(selected_model) : null,
       }
     });
 
@@ -263,8 +267,6 @@ const getOneLivraison = async (req, res) => {
     }
 };
 
-
-
 /* 
   Modification de la fonction updateLivraison. Les données à update: produitsLivre, commentaire, type_livraison_id, 
   date_livraison, qte_totale_livraison
@@ -278,6 +280,7 @@ const updateLivraison = async (req, res) => {
     user_id,
     service_recepteur,
     role_recepteur,
+    selected_model,
   } = req.body;
 
   try {
@@ -319,6 +322,7 @@ const updateLivraison = async (req, res) => {
       nom_livreur: utilisateur.fullname,
       service_id: parseInt(service_recepteur),
       role_id: parseInt(role_recepteur),
+      model_id: selected_model ? parseInt(selected_model) : null,
     };
 
     // Mise à jour de la livraison
@@ -1119,6 +1123,157 @@ const deleteTypeLivraison = async (req, res) => {
   }
 }
 
+const updateDeliveryStock = async (req, res) => {
+  const { id } = req.params;
+  const {
+    commentaire,
+    type_livraison_id,
+    user_id,
+    role_reception,
+    quantite,
+    service_reception,
+    otherFields,
+  } = req.body;
+
+  try {
+    
+    let utilisateur = null;
+    
+    utilisateur = await prisma.users.findUnique({
+      where: {
+        id_user: parseInt(user_id)
+      }
+    })
+    
+    if (!utilisateur) {
+      return res.status(404).json({ message: "Utilisateur non trouvé" });
+    }
+
+    let nomLivreur = utilisateur.fullname
+
+    const autres = typeof otherFields === "string"
+    ? JSON.parse(otherFields)
+    : otherFields
+    
+    // Données à mettre à jour
+    const dataToUpdate = {
+      user_id: utilisateur ? utilisateur.id_user : null,
+      quantite_livraison: parseInt(quantite),
+      nom_livreur: nomLivreur ? nomLivreur : null,
+      commentaire_livraison : commentaire,
+      type: "livraison_piece",
+      statut_livraison: "en_cours",
+      role_id: role_reception ? parseInt(role_reception) : null,
+      service_id: service_reception ? parseInt(service_reception) : null,
+      date_livraison: new Date(),
+      autres_champs_livraison: JSON.stringify(autres),
+    };
+
+    // Mise à jour de la livraison
+    const updated = await prisma.livraison_piece.update({
+      where: { demande_id: parseInt(id) },
+      data: {
+        Livraisons: {
+          update: {
+            data: dataToUpdate,
+          }
+        }
+      },
+      include: {
+        Livraisons: true
+      }
+    });
+
+
+    // *********** GESTION DES MAILS ************
+
+    const piece = await prisma.stock_dt.findUnique({
+      where:{
+        id_piece: parseInt(type_livraison_id)
+      }
+    });
+
+    const service = await prisma.services.findUnique({
+      where:{
+        id: parseInt(service_reception)
+      }
+    })
+
+    const userService = await prisma.user_services.findMany({
+      where:{
+        service_id: parseInt(service_reception)
+      },
+      include:{
+        users: true
+      }
+    })
+
+    const userRole = await prisma.user_roles.findMany({
+      where:{
+        role_id: 12
+      },
+      include:{
+        users: true
+      }
+    })
+    let recepteurs = userRole.map(us => us.users)
+    const service_users = userService.map(us => us.users)
+
+    let livraisonTypeName = piece.nom_piece.toUpperCase();
+    let serviceReception = service.nom_service.toUpperCase();
+    let quantiteProduits = quantite
+    let commentaire_mail = commentaire ? commentaire : "(Sans commentaire)"
+    
+    const url = GENERAL_URL
+    const deliveryLink = `${url}/demande-details/${updated.demande_id}`;
+
+    if ((recepteurs && recepteurs.length > 0) || (service_users && service_users.length > 0)) {
+      const subject = `NOUVELLE LIVRAISON ${livraisonTypeName}`;
+      const html = `
+        <p>Bonjour,</p>
+        <p>La livraison ${updated.id} a été modifiée.</p>
+        <ul>
+          <li><strong>Type de livraison:</strong> ${livraisonTypeName}</li>
+          <li><strong>Nombre de produits:</strong> ${quantiteProduits}</li>
+          <li><strong>Service:</strong> ${serviceReception}</li>
+        </ul>
+        <br>
+          <p>Commentaire : ${commentaire_mail}<p>
+        <br>
+        <p>Retrouvez la livraison à ce lien : 
+          <span>
+            <a href="${deliveryLink}" target="_blank" style="background-color: #73dced; color: white; padding: 7px 12px; text-decoration: none; border-radius: 5px;">
+              Cliquez ici !
+            </a>
+          </span>
+        </p>
+        <br><br>
+        <p>Green - Pay vous remercie.</p>
+      `;
+
+      for (const recepteur of recepteurs) {
+        await sendMail({
+          to: recepteur.email,
+          subject,
+          html,
+        });
+      }
+      for (const service_user of service_users) {
+        await sendMail({
+          to: service_user.email,
+          subject,
+          html,
+        });
+      }
+    }
+
+    return res.status(200).json(updated);
+  } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: "Erreur lors de la mise à jour", error });
+  }
+}
+
 const generateLivraisonPDF = async (req, res) => {
     const { id } = req.params;
   
@@ -1290,119 +1445,282 @@ const generateLivraisonPDF = async (req, res) => {
     }
 };
 
-const updateDeliveryStock = async (req, res) => {
-  const { id } = req.params;
-  const {
-    commentaire,
-    type_livraison_id,
-    user_id,
-    role_reception,
-    quantite,
-    service_reception,
-    otherFields,
-  } = req.body;
+const generateTotalLivraisonPDF = async (req, res) => {
+  const { listId } = req.body
+  const zip = new JSZip();
 
+  for(const id of listId){
+    try{
+      livraison_data = await prisma.livraison.findUnique({
+        where: {
+          id_livraison: parseInt(id)
+        },
+        include: {
+          validations: true,
+        }
+      })
+
+      if (!livraison_data || livraison_data.validations.length < 1 || livraison_data.statut_livraison != 'livre') continue;
+
+      const livraison = {
+        ...livraison_data,
+        produitsLivre: typeof livraison_data.produitsLivre === "string"
+          ? JSON.parse(livraison_data.produitsLivre)
+          : livraison_data.produitsLivre
+      };
+  
+      let expediteurNom = livraison.nom_livreur || "N/A";
+      if (!livraison.nom_livreur && livraison.user_id) {
+        const user = await prisma.users.findUnique({
+          where: { id_user: livraison.user_id },
+        });
+        if (user) expediteurNom = user.fullname;
+      }
+  
+      const templateFile = "livraison_base.html";
+  
+      const filePath = path.join(__dirname, "../../statics/templates/", templateFile);
+      let html = fs.readFileSync(filePath, "utf8");
+  
+      // 🧱 Construction du tableau
+      const produitsRows = livraison.produitsLivre.map((p, index) => {
+        let row = "";
+        const has = (m) => p.mobile_money?.includes(m) ? "✔" : "";
+        row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${p.banque}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
+      
+        // ➕ Ajout du saut de page toutes les 20 lignes
+        if ((index + 1) % 20 === 0) {
+          row += `<tr class="page-break"></tr>`;
+        }
+      
+        return row;
+      }).join("\n");
+
+      const typeLivraison = await prisma.type_livraison_commerciale.findUnique({
+        where: {
+          id_type_livraison: livraison.type_livraison_id
+        }
+      })
+      
+      // console.log(livraison.validations[0].signature)
+      // 🧩 Remplacement des balises HTML
+      let index = livraison.validations.length-1
+      html = html
+        .replaceAll("{{type_livraison}}", typeLivraison.nom_type_livraison.toUpperCase())
+        .replace("{{commentaire}}", livraison.commentaire || "")
+        .replace("{{commentaire_reception}}", livraison.validations[index].commentaire)
+        .replace("{{date_livraison}}", formatDate(livraison.date_livraison))
+        .replace("{{qte_totale_livraison}}", livraison.qte_totale_livraison || livraison.produitsLivre.length)
+        .replace("{{nom_expediteur}}", expediteurNom)
+        .replace("{{nom_recepteur}}", livraison.validations[index].nom_recepteur || "Receveur")
+        .replace("{{produitsRows}}", produitsRows)
+        .replace("{{signature}}", livraison.validations[index].signature || "Validé")
+        .replace("{{date_validation}}", livraison.validations[index].date_validation ? formatDate(livraison.validations[index].date_validation) : "N/A")
+        .replace("{{signature_expediteur}}", livraison.signature_expediteur || "Signé")
+        .replace(/(\.title_type\s*\{)([\s\S]*?)(\})/gi, (match, open, content, close) => {
+          let newContent = " background-color: white; color: black;";
+          switch(livraison.type_livraison_id){
+            case 1:
+              newContent = " background-color: #cda5f5; color: #ffff;"
+            break;
+            case 2:
+              newContent = " background-color: #ee6060; color: #ffff;"
+            break;
+            case 3:
+              newContent = " background-color: #a476d2; color: #ffff;"
+            break;
+            case 4:
+              newContent = " background-color: #77ef83; color: #ffff;"
+            break;
+            case 5:
+              newContent = " background-color: #eaee7f; color: #ffff;"
+            break;
+            case 6:
+              newContent = " background-color: #80d8e6; color: #ffff;"
+            break;
+            default:
+              newContent = " background-color: white; color: black;"
+          }
+          return open + newContent + close;
+        })
+
+      // 🖨️ Génération PDF
+      const browser = await puppeteer.launch({ headless: "new", args : ["--no-sandbox", "--disable-setuid-sandbox"] });
+      const page = await browser.newPage();
+      await page.setContent(html, { waitUntil: "networkidle0" });
+  
+      const pdfBuffer = await page.pdf({
+        format: "A4",
+        printBackground: true,
+      });
+  
+      await browser.close();
+      const date_text = new Date(livraison.validations[index].date_validation).toISOString().replace(/[:.]/g, "-")
+
+      zip.file(`livraison_${livraison.id_livraison}_${typeLivraison.nom_type_livraison.toUpperCase()}_${date_text}.pdf`, pdfBuffer);
+  
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Erreur lors de la génération du PDF" });
+    }
+  }
+  const zipBuffer = await zip.generateAsync({ type: "nodebuffer" });
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-"); 
+  const zipName = `livraisons_${timestamp}.zip`;
+
+  res.set({
+    "Content-Type": "application/zip",
+    "Content-Disposition": `attachment; filename=${zipName}`,
+  });
+
+  return res.send(zipBuffer);
+}
+
+const getAllTypeParametrage = async (req, res) => {
   try {
-    
-    let utilisateur = null;
-    
-    utilisateur = await prisma.users.findUnique({
+    const typeParametrage = await prisma.type_parametrage.findMany({
+      orderBy: { id : 'asc' },
+    });
+
+    res.status(200).json(typeParametrage);
+  } catch (error) {
+    res.status(500).json({ message: "Erreur lors de la récupération des types de paramétrage", error });
+  }
+}
+
+const makeRemplacement = async (req, res) => {
+  try {
+    const {
+      commentaire,
+      user_id,
+      detailsRemplacement,
+      service_recepteur,
+      role_recepteur,
+      ancien_model,
+      nouveau_model,
+      detailsParametrage,
+    } = req.body;
+
+    const produits = typeof detailsRemplacement === "string"
+    ? JSON.parse(detailsRemplacement)
+    : detailsRemplacement;
+
+    let utilisateur = await prisma.users.findUnique({
       where: {
         id_user: parseInt(user_id)
       }
-    })
-    
+    });
+
+    const detailsParams = typeof detailsParametrage === "string"
+    ? JSON.parse(detailsParametrage)
+    : detailsParametrage;
+
     if (!utilisateur) {
       return res.status(404).json({ message: "Utilisateur non trouvé" });
     }
-
-    let nomLivreur = utilisateur.fullname
-
-    const autres = typeof otherFields === "string"
-    ? JSON.parse(otherFields)
-    : otherFields
     
-    // Données à mettre à jour
-    const dataToUpdate = {
-      user_id: utilisateur ? utilisateur.id_user : null,
-      quantite_livraison: parseInt(quantite),
-      nom_livreur: nomLivreur ? nomLivreur : null,
-      commentaire_livraison : commentaire,
-      type: "livraison_piece",
-      statut_livraison: "en_cours",
-      role_id: role_reception ? parseInt(role_reception) : null,
-      service_id: service_reception ? parseInt(service_reception) : null,
-      date_livraison: new Date(),
-      autres_champs_livraison: JSON.stringify(autres),
-    };
+    // Gestion de l'upload Cloudinary
+    const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+      folder: "greenpay/signatures",
+    });
 
-    // Mise à jour de la livraison
-    const updated = await prisma.livraison_piece.update({
-      where: { demande_id: parseInt(id) },
+    const signature_expediteur = uploadResult.secure_url;
+
+    if (!signature_expediteur) {
+      return res.status(400).json({ message: "Vous devez fournir une signature d'expéditeur." });
+    }
+
+    const nouveauRemplacement = await prisma.remplacements.create({
       data: {
-        Livraisons: {
-          update: {
-            data: dataToUpdate,
-          }
-        }
-      },
-      include: {
-        Livraisons: true
+        quantite: produits.length,
+        details_remplacement: JSON.stringify(produits),
+        commentaire,
+        date_remplacement: new Date(),
+        user_id: utilisateur ? utilisateur.id_user : null,
+        old_model_id: parseInt(ancien_model),
+        new_model_id: parseInt(nouveau_model),
+        service_id: parseInt(service_recepteur),
+        role_id: role_recepteur ? parseInt(role_recepteur) : null,
+        deleted: false,
+        nom_livreur: utilisateur.fullname || null,
+        signature_expediteur: signature_expediteur || null,
+        details_parametrage: JSON.stringify(detailsParams),
+        statut: "en_cours",
       }
     });
 
+    /******************************** GESTION DES MAILS  ***********************************/
 
-    // *********** GESTION DES MAILS ************
-
-    const piece = await prisma.stock_dt.findUnique({
+    const ancienModel = await prisma.model_piece.findUnique({
       where:{
-        id_piece: parseInt(type_livraison_id)
+        id_model: parseInt(ancien_model)
       }
-    });
-
-    const service = await prisma.services.findUnique({
+    })
+    const nouveModel = await prisma.model_piece.findUnique({
       where:{
-        id: parseInt(service_reception)
+        id_model: parseInt(nouveau_model)
       }
     })
 
     const userService = await prisma.user_services.findMany({
       where:{
-        service_id: parseInt(service_reception)
+        service_id: parseInt(service_recepteur)
       },
       include:{
         users: true
       }
     })
-
-    const userRole = await prisma.user_roles.findMany({
-      where:{
-        role_id: 12
-      },
-      include:{
-        users: true
-      }
-    })
-    let recepteurs = userRole.map(us => us.users)
-    const service_users = userService.map(us => us.users)
-
-    let livraisonTypeName = piece.nom_piece.toUpperCase();
-    let serviceReception = service.nom_service.toUpperCase();
-    let quantiteProduits = quantite
-    let commentaire_mail = commentaire ? commentaire : "(Sans commentaire)"
     
-    const url = GENERAL_URL
-    const deliveryLink = `${url}/demande-details/${updated.demande_id}`;
+    let recepteurs
+    if(role_recepteur){
+      const userRole = await prisma.user_roles.findMany({
+        where:{
+          role_id: parseInt(role_recepteur)
+        },
+        include:{
+          users: true
+        }
+      })
+      recepteurs = userRole.map(us => us.users)
+    }else{
+      const userRole = await prisma.user_roles.findMany({
+        where:{
+          role_id: 2
+        },
+        include:{
+          users: true
+        }
+      })
+      recepteurs = userRole.map(us => us.users)
+    }
 
-    if ((recepteurs && recepteurs.length > 0) || (service_users && service_users.length > 0)) {
-      const subject = `NOUVELLE LIVRAISON ${livraisonTypeName}`;
+    const supervisionRole = await prisma.user_roles.findMany({
+      where:{
+        role_id: 13
+      },
+      include:{
+        users: true
+      }
+    })
+            
+    const service_users = userService.map(us => us.users)
+    const superviseurs = supervisionRole.map(us => us.users)
+
+    const url = GENERAL_URL
+    let deliveryLink = `${url}/remplacement-details/${nouveauRemplacement.id}`;
+
+    
+    const commentaire_mail = commentaire ? commentaire : '(sans commentaire)' 
+    if ((service_users && service_users.length > 0) || (recepteurs && recepteurs.length > 0) ) {
+      const subject = `NOUVEAU REMPLACEMENT TPE`;
       const html = `
         <p>Bonjour,</p>
-        <p>La livraison ${updated.id} a été modifiée.</p>
+        <p>Un nouveau remplacement a été enregistré.</p>
         <ul>
-          <li><strong>Type de livraison:</strong> ${livraisonTypeName}</li>
-          <li><strong>Nombre de produits:</strong> ${quantiteProduits}</li>
-          <li><strong>Service:</strong> ${serviceReception}</li>
+          <li><strong>Ancien model TPE:</strong> ${ancienModel.nom_model.toUpperCase()}</li>
+          <li><strong>Nouveau model TPE:</strong> ${nouveModel.nom_model.toUpperCase()}</li>
+          <li><strong>Nombre de produits:</strong> ${produits.length}</li>
         </ul>
         <br>
           <p>Commentaire : ${commentaire_mail}<p>
@@ -1418,13 +1736,6 @@ const updateDeliveryStock = async (req, res) => {
         <p>Green - Pay vous remercie.</p>
       `;
 
-      for (const recepteur of recepteurs) {
-        await sendMail({
-          to: recepteur.email,
-          subject,
-          html,
-        });
-      }
       for (const service_user of service_users) {
         await sendMail({
           to: service_user.email,
@@ -1432,14 +1743,902 @@ const updateDeliveryStock = async (req, res) => {
           html,
         });
       }
+      for (const recepteur of recepteurs) {
+        await sendMail({
+          to: recepteur.email,
+          subject,
+          html,
+        });
+      }
+      if (superviseurs){
+        for (const superviseur of superviseurs) {
+        await sendMail({
+          to: superviseur.email,
+          subject,
+          html,
+        });
+      }
+      }
     }
 
-    return res.status(200).json(updated);
+    res.status(201).json({
+      message: "Remplacement enregistré avec succès",
+      remplacements: nouveauRemplacement
+    });
+
   } catch (error) {
-      console.error(error);
-      return res.status(500).json({ message: "Erreur lors de la mise à jour", error });
+    console.error("Erreur lors de la livraison :", error);
+    res.status(500).json({ message: "Erreur interne", error });
   }
 }
+
+const getAllRemplacements = async (req, res) => {
+  try {
+    const remplacements = await prisma.remplacements.findMany({
+      where: { deleted: false },
+      orderBy: { date_remplacement: 'desc' },
+      include : {
+        validation_remplacement : true
+      }
+    });
+
+    res.status(200).json(remplacements);
+  } catch (error) {
+    res.status(500).json({ message: "Erreur lors de la récupération des remplacements", error });
+  }
+}
+
+const getOneRemplacement = async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    const remplacement = await prisma.remplacements.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        validation_remplacement: true,
+      }
+    });
+
+    if (!remplacement || remplacement.deleted) {
+      return res.status(404).json({ message: "Remplacement introuvable" });
+    }
+
+    res.status(200).json(remplacement);
+  } catch (error) {
+    res.status(500).json({ message: "Erreur serveur", error });
+  }
+}
+
+const validateRemplacement = async (req, res) => {
+  const {
+    remplacement_id,
+    commentaire,
+    user_id,
+  } = req.body;
+
+  try {
+    const remplacement = await prisma.remplacements.findUnique({
+      where: { id: parseInt(remplacement_id) },
+    });
+
+    if (!remplacement) return res.status(404).json({ message: "Remplacement introuvable." });
+
+    if (remplacement.statut_livraison === "livre") {
+      return res.status(400).json({ message: "Remplacement déjà validée." });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ message: "Signature du récepteur requise." });
+    }
+
+    const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+      folder: "greenpay/signatures",
+    });
+    const signature = uploadResult.secure_url;
+
+    if (!user_id) return res.status(403).json({ message: "Utilisateur non authentifié." });
+
+    const user = await prisma.users.findUnique({
+      where: { id_user: parseInt(user_id) },
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "Utilisateur non trouvé." });
+    }
+
+    const newValidation = await prisma.validation_remplacement.create({
+      data: {
+        remplacement_id: parseInt(remplacement_id),
+        date_validation: new Date(),
+        user_id: user_id ? parseInt(user_id) : null,
+        commentaire,
+        nom_recepteur: user.fullname,
+        signature,
+      },
+    });
+
+    await prisma.remplacements.update({
+      where: { id: parseInt(remplacement_id) },
+      data: { statut: "livre" },
+    });
+
+    /******************************* GESTION DES MAILS  *******************************/
+
+    const ancienModel = await prisma.model_piece.findUnique({
+      where:{
+        id_model: parseInt(remplacement.old_model_id)
+      }
+    })
+    const nouveModel = await prisma.model_piece.findUnique({
+      where:{
+        id_model: parseInt(remplacement.new_model_id)
+      }
+    })
+
+    let produitsLivre = remplacement.details_remplacement
+
+    const produits = typeof produitsLivre === "string"
+    ? JSON.parse(produitsLivre)
+    : produitsLivre;
+
+    const supervisionRole = await prisma.user_roles.findMany({
+      where:{
+        role_id: 13
+      },
+      include:{
+        users: true
+      }
+    })
+    const superviseurs = supervisionRole.map(us => us.users)
+
+    const roleLivraison = await prisma.user_roles.findMany({
+      where:{
+        role_id: 1
+      },
+      include:{
+        users: true
+      }
+    })
+    const livreurs = roleLivraison.map(us => us.users)
+    
+    const url = GENERAL_URL
+    let deliveryLink = `${url}/remplacement-details/${remplacement.id}`;
+    let commentaire_mail = commentaire ? commentaire : '(sans commentaire)'
+    const sendMail = require("../../utils/emailSender");
+
+    if ((livreurs && livreurs.length > 0) || (superviseurs && superviseurs.length)) {
+      const subject = `VALIDATION REMPLACEMENT TPE`;
+      const html = `
+        <p>Bonjour,</p>
+        <p>Le remplacement ${remplacement.id} a été validé.</p>
+        <ul>
+          <li><strong>Ancien model TPE:</strong> ${ancienModel.nom_model.toUpperCase()}</li>
+          <li><strong>Nouveau model TPE:</strong> ${nouveModel.nom_model.toUpperCase()}</li>
+          <li><strong>Nombre de produits:</strong> ${produits.length}</li>
+        </ul>
+        <br>
+          <p>Commentaire : ${commentaire_mail}<p>
+        <br>
+        <p>Retrouvez la livraison à ce lien : 
+          <span>
+            <a href="${deliveryLink}" target="_blank" style="background-color: #73dced; color: white; padding: 7px 12px; text-decoration: none; border-radius: 5px;">
+              Cliquez ici !
+            </a>
+          </span>
+        </p>
+        <br><br>
+        <p>Green - Pay vous remercie.</p>
+      `;
+
+      for (const livreur of livreurs) {
+        await sendMail({
+          to: livreur.email,
+          subject,
+          html,
+        });
+      }
+      if (superviseurs){
+        for (const superviseur of superviseurs) {
+          await sendMail({
+            to: superviseur.email,
+            subject,
+            html,
+          });
+        }
+      }
+    }
+
+    return res.status(201).json(newValidation);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Erreur serveur." });
+  }
+}
+
+const generateDeliveriesXLSX = async (req, res) => {
+  const { listId } = req.body
+
+  try{
+
+    const workbook = new ExcelJS.Workbook();
+  
+    const resumeSheet = workbook.addWorksheet("Résumé");
+
+    const resumeHeaders = [
+      "ID Livraison",
+      "Type Livraison",
+      "Model",
+      "Date Livraison",
+      "Quantité produits",
+      "Date Réception",
+      "Nom Livreur",
+      "Commentaire Livraison",
+      "Nom Récepteur",
+      "Commentaire Réception",
+    ]
+    const headerRow = resumeSheet.addRow(resumeHeaders);
+
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true };
+      cell.border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
+      cell.alignment = { vertical: "middle", horizontal: "center" };
+    });
+
+    for(const id of listId){
+      const livraison_data = await prisma.livraison.findUnique({
+        where: {
+          id_livraison: parseInt(id)
+        },
+        include: {
+          validations: true,
+        }
+      })
+  
+      if (!livraison_data || livraison_data.validations.length < 1 || livraison_data.statut_livraison != 'livre') continue;
+  
+      const livraison = {
+        ...livraison_data,
+        produitsLivre: typeof livraison_data.produitsLivre === "string"
+          ? JSON.parse(livraison_data.produitsLivre)
+          : livraison_data.produitsLivre
+      };
+  
+      let expediteurNom = livraison.nom_livreur || "N/A";
+      if (!livraison.nom_livreur && livraison.user_id) {
+        const user = await prisma.users.findUnique({
+          where: { id_user: livraison.user_id },
+        });
+        if (user) expediteurNom = user.fullname;
+      }
+
+      const index = livraison.validations.length - 1;
+
+      const recepteurNom = livraison.validations[index]?.nom_recepteur || "Réception";
+
+      const typeLivraison = await prisma.type_livraison_commerciale.findUnique({
+        where:{
+          id_type_livraison: livraison.type_livraison_id
+        }
+      })
+
+      let typeModel = null
+      if(livraison.model_id){
+        typeModel = await prisma.model_piece.findUnique({
+          where:{
+            id_model: livraison.model_id
+          }
+        })
+      }
+
+      resumeSheet.addRow([
+        livraison.id_livraison,
+        typeLivraison.nom_type_livraison.toUpperCase(),
+        typeModel? typeModel.nom_model.toUpperCase() : 'N/A',
+        livraison.date_livraison,
+        livraison.qte_totale_livraison,
+        livraison.validations[index]?.date_validation,
+        expediteurNom,
+        livraison.commentaire,
+        recepteurNom,
+        livraison.validations[index]?.commentaire,
+      ])
+
+      // resumeSheet.columns.forEach((col) => {
+      //   let maxLength = 0;
+      //   col.eachCell({ includeEmpty: true }, (cell) => {
+      //     const cellLength = cell.value ? cell.value.toString().length : 10;
+      //     if (cellLength > maxLength) maxLength = cellLength;
+      //   });
+      //   col.width = maxLength < 15 ? 15 : maxLength;
+      // });
+
+      const detailSheet = workbook.addWorksheet(`Livraison_${livraison.id_livraison}`)
+
+      const title = `${typeLivraison.nom_type_livraison.toUpperCase()}(${livraison.id_livraison}) DU ${formatDate(livraison.validations[index]?.date_validation)}  `
+      detailSheet.mergeCells("A1:H1")
+      const titleCell = detailSheet.getCell("A1");
+      titleCell.value = title;
+      titleCell.font = { bold: true, size: 14 };
+      titleCell.alignment = { vertical: "middle", horizontal: "center" };
+
+      const detailHeaders = [
+        "Point Marchand",
+        "Caisse",
+        "S/N",
+        "Banque",
+        "OM",
+        "MTN",
+        "MOOV",
+        "Commentaire TPE",
+      ]
+
+      const detailHeaderRow = detailSheet.addRow(detailHeaders)
+      detailHeaderRow.eachCell((cell) => {
+        cell.font = { bold: true };
+        cell.border = {
+          top: { style: "thin" },
+          left: { style: "thin" },
+          bottom: { style: "thin" },
+          right: { style: "thin" },
+        };
+        cell.alignment = { vertical: "middle", horizontal: "center" };
+      });
+
+      livraison.produitsLivre.forEach((p) => {
+        const has = (m) => (p.mobile_money?.includes(m) ? "OUI" : "");
+        detailSheet.addRow([
+          p.pointMarchand,
+          p.caisse,
+          p.serialNumber,
+          p.banque || "",
+          has("OM"),
+          has("MTN"),
+          has("MOOV"),
+          p.commentaireTPE,
+        ])
+      })
+
+      // const totalRow = detailSheet.addRow([
+      //   "TOTAL",
+      //   { formula: `SUM(B${detailHeaderRow.number + 1}:B${detailSheet.lastRow.number})` },
+      //   { formula: `SUM(C${detailHeaderRow.number + 1}:C${detailSheet.lastRow.number})` },
+      // ]);
+
+      // totalRow.eachCell((cell, colNumber) => {
+      //   cell.font = { bold: true };
+      //   cell.border = {
+      //     top: { style: "double" },
+      //     left: { style: "thin" },
+      //     bottom: { style: "thin" },
+      //     right: { style: "thin" },
+      //   };
+      //   if (colNumber > 1) {
+      //     cell.alignment = { horizontal: "center" };
+      //   }
+      // });
+
+      // detailSheet.columns.forEach((col) => {
+      //   let maxLength = 0;
+      //   col.eachCell({ includeEmpty: true }, (cell) => {
+      //     const cellLength = cell.value ? cell.value.toString().length : 10;
+      //     if (cellLength > maxLength) maxLength = cellLength;
+      //   });
+      //   col.width = maxLength < 15 ? 15 : maxLength;
+      // });
+
+    }
+
+    const buffer = await workbook.xlsx.writeBuffer();
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const fileName = `livraisons_${timestamp}.xlsx`;
+
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename=${fileName}`);
+    res.send(buffer);
+
+  } catch(err){
+    console.error("Erreur XLSX:", err);
+    res.status(500).json({ message: "Erreur lors de la génération du XLSX" });
+  }
+}
+
+const generateRemplacementsXLSX = async (req, res) => {
+  const { listId } = req.body
+
+  try{
+
+    const workbook = new ExcelJS.Workbook();
+  
+    const resumeSheet = workbook.addWorksheet("Résumé");
+
+    const parametrages = await prisma.type_parametrage.findMany({
+      orderBy:{
+        id: 'asc'
+      }
+    })
+    const listParams = parametrages.map((item) =>{
+      return item.nom_parametrage.toUpperCase()
+    })
+    const resumeHeaders = [
+      "ID",
+      "Model TPE remplacé",
+      "Model TPE remplaçant",
+      "Date Livraison",
+      "Quantité produits",
+      "Date Réception",
+      "Nom Livreur",
+      "Commentaire Livraison",
+      "Nom Récepteur",
+      "Commentaire Réception",
+    ]
+    const finalHeaders = [...resumeHeaders, ...listParams];
+
+    const headerRow = resumeSheet.addRow(finalHeaders);
+
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true };
+      cell.border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
+      cell.alignment = { vertical: "middle", horizontal: "center" };
+    });
+
+    for(const id of listId){
+      const livraison_data = await prisma.remplacements.findUnique({
+        where: {
+          id: parseInt(id)
+        },
+        include: {
+          validation_remplacement: true,
+        }
+      })
+  
+      if (!livraison_data || livraison_data.validation_remplacement.length < 1 || livraison_data.statut != 'livre') continue;
+  
+      const livraison = {
+        ...livraison_data,
+        details_remplacement: typeof livraison_data.details_remplacement === "string"
+        ? JSON.parse(livraison_data.details_remplacement)
+        : livraison_data.details_remplacement,
+        details_parametrage: typeof livraison_data.details_parametrage === "string"
+        ? JSON.parse(livraison_data.details_parametrage)
+        : livraison_data.details_parametrage,
+      };
+  
+      let expediteurNom = livraison.nom_livreur || "N/A";
+      if (!livraison.nom_livreur && livraison.user_id) {
+        const user = await prisma.users.findUnique({
+          where: { id_user: livraison.user_id },
+        });
+        if (user) expediteurNom = user.fullname;
+      }
+
+      const index = livraison.validation_remplacement.length - 1;
+
+      const recepteurNom = livraison.validation_remplacement[index]?.nom_recepteur || "Réception";
+
+      const oldModel = await prisma.model_piece.findUnique({
+        where:{
+          id_model: livraison.old_model_id
+        }
+      })
+
+      const newModel = await prisma.model_piece.findUnique({
+        where:{
+          id_model: livraison.new_model_id
+        }
+      })
+
+      resumeSheet.addRow([
+        livraison.id,
+        oldModel? oldModel.nom_model.toUpperCase() : 'N/A',
+        newModel? newModel.nom_model.toUpperCase() : 'N/A',
+        livraison.date_remplacement,
+        livraison.quantite,
+        livraison.validation_remplacement[index]?.date_validation,
+        expediteurNom,
+        livraison.commentaire,
+        recepteurNom,
+        livraison.validation_remplacement[index]?.commentaire,
+        ...livraison.details_parametrage.map((param) => param.quantite),
+      ])
+
+      const detailSheet = workbook.addWorksheet(`Remplacement_${livraison.id}`)
+
+      const title = `Remplacement(${livraison.id}) TPE ${oldModel.nom_model.toUpperCase()} pour ${newModel.nom_model.toUpperCase()} DU ${formatDate(livraison.validation_remplacement[index]?.date_validation)}`
+      detailSheet.mergeCells("A1:J1")
+      const titleCell = detailSheet.getCell("A1");
+      titleCell.value = title;
+      titleCell.font = { bold: true, size: 14 };
+      titleCell.alignment = { vertical: "middle", horizontal: "center" };
+
+      const detailHeaders = [
+        "Point Marchand",
+        "Caisse",
+        "Ancien S/N",
+        "Nouvel S/N",
+        "Parametrage",
+        "Banque",
+        "OM",
+        "MTN",
+        "MOOV",
+        "Commentaire TPE",
+      ]
+
+      const detailHeaderRow = detailSheet.addRow(detailHeaders)
+      detailHeaderRow.eachCell((cell) => {
+        cell.font = { bold: true };
+        cell.border = {
+          top: { style: "thin" },
+          left: { style: "thin" },
+          bottom: { style: "thin" },
+          right: { style: "thin" },
+        };
+        cell.alignment = { vertical: "middle", horizontal: "center" };
+      });
+
+      livraison.details_remplacement.forEach((p) => {
+        const has = (m) => (p.mobile_money?.includes(m) ? "OUI" : "");
+        detailSheet.addRow([
+          p.pointMarchand,
+          p.caisse,
+          p.ancienSN,
+          p.nouvelSN,
+          p.parametrageTPE,
+          p.banque || "",
+          has("OM"),
+          has("MTN"),
+          has("MOOV"),
+          p.commentaireTPE,
+        ])
+      })
+    }
+
+    const buffer = await workbook.xlsx.writeBuffer();
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const fileName = `remplacements_${timestamp}.xlsx`;
+
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename=${fileName}`);
+    res.send(buffer);
+
+  } catch(err){
+    console.error("Erreur XLSX:", err);
+    res.status(500).json({ message: "Erreur lors de la génération du XLSX" });
+  }
+}
+
+const updateRemplacement = async (req, res) => {
+  try {
+    const { id } = req.params
+    const {
+      commentaire,
+      user_id,
+      detailsRemplacement,
+      service_recepteur,
+      role_recepteur,
+      ancien_model,
+      nouveau_model,
+      detailsParametrage,
+    } = req.body;
+
+    const produits = typeof detailsRemplacement === "string"
+    ? JSON.parse(detailsRemplacement)
+    : detailsRemplacement;
+
+    let utilisateur = await prisma.users.findUnique({
+      where: {
+        id_user: parseInt(user_id)
+      }
+    });
+
+    const detailsParams = typeof detailsParametrage === "string"
+    ? JSON.parse(detailsParametrage)
+    : detailsParametrage;
+
+    if (!utilisateur) {
+      return res.status(404).json({ message: "Utilisateur non trouvé" });
+    }
+  
+    const dataToUpdate = {
+      quantite: produits.length,
+      details_remplacement: JSON.stringify(produits),
+      commentaire,
+      date_remplacement: new Date(),
+      user_id: utilisateur ? utilisateur.id_user : null,
+      old_model_id: parseInt(ancien_model),
+      new_model_id: parseInt(nouveau_model),
+      service_id: parseInt(service_recepteur),
+      role_id: role_recepteur ? parseInt(role_recepteur) : null,
+      deleted: false,
+      nom_livreur: utilisateur.fullname || null,
+      details_parametrage: JSON.stringify(detailsParams),
+      statut: "en_cours",
+    }
+    const nouveauRemplacement = await prisma.remplacements.update({
+      where: {
+        id: parseInt(id)
+      },
+      data : dataToUpdate,
+    });
+
+    /******************************** GESTION DES MAILS  ***********************************/
+
+    const ancienModel = await prisma.model_piece.findUnique({
+      where:{
+        id_model: parseInt(ancien_model)
+      }
+    })
+    const nouveModel = await prisma.model_piece.findUnique({
+      where:{
+        id_model: parseInt(nouveau_model)
+      }
+    })
+
+    const userService = await prisma.user_services.findMany({
+      where:{
+        service_id: parseInt(service_recepteur)
+      },
+      include:{
+        users: true
+      }
+    })
+    
+    let recepteurs
+    if(role_recepteur){
+      const userRole = await prisma.user_roles.findMany({
+        where:{
+          role_id: parseInt(role_recepteur)
+        },
+        include:{
+          users: true
+        }
+      })
+      recepteurs = userRole.map(us => us.users)
+    }else{
+      const userRole = await prisma.user_roles.findMany({
+        where:{
+          role_id: 2
+        },
+        include:{
+          users: true
+        }
+      })
+      recepteurs = userRole.map(us => us.users)
+    }
+
+    const supervisionRole = await prisma.user_roles.findMany({
+      where:{
+        role_id: 13
+      },
+      include:{
+        users: true
+      }
+    })
+            
+    const service_users = userService.map(us => us.users)
+    const superviseurs = supervisionRole.map(us => us.users)
+
+    const url = GENERAL_URL
+    let deliveryLink = `${url}/remplacement-details/${nouveauRemplacement.id}`;
+
+    
+    const commentaire_mail = commentaire ? commentaire : '(sans commentaire)' 
+    if ((service_users && service_users.length > 0) || (recepteurs && recepteurs.length > 0) ) {
+      const subject = `MODIFICATION REMPLACEMENT TPE`;
+      const html = `
+        <p>Bonjour,</p>
+        <p>Le formulaire de remplacement ${nouveauRemplacement.id} a été modifié.</p>
+        <ul>
+          <li><strong>Ancien model TPE:</strong> ${ancienModel.nom_model.toUpperCase()}</li>
+          <li><strong>Nouveau model TPE:</strong> ${nouveModel.nom_model.toUpperCase()}</li>
+          <li><strong>Nombre de produits:</strong> ${produits.length}</li>
+        </ul>
+        <br>
+          <p>Commentaire : ${commentaire_mail}<p>
+        <br>
+        <p>Retrouvez la livraison à ce lien : 
+          <span>
+            <a href="${deliveryLink}" target="_blank" style="background-color: #73dced; color: white; padding: 7px 12px; text-decoration: none; border-radius: 5px;">
+              Cliquez ici !
+            </a>
+          </span>
+        </p>
+        <br><br>
+        <p>Green - Pay vous remercie.</p>
+      `;
+
+      for (const service_user of service_users) {
+        await sendMail({
+          to: service_user.email,
+          subject,
+          html,
+        });
+      }
+      for (const recepteur of recepteurs) {
+        await sendMail({
+          to: recepteur.email,
+          subject,
+          html,
+        });
+      }
+      if (superviseurs){
+        for (const superviseur of superviseurs) {
+        await sendMail({
+          to: superviseur.email,
+          subject,
+          html,
+        });
+      }
+      }
+    }
+
+    res.status(201).json({
+      message: "Remplacement modifié avec succès",
+      remplacements: nouveauRemplacement
+    });
+
+  } catch (error) {
+    console.error("Erreur lors de la livraison :", error);
+    res.status(500).json({ message: "Erreur interne", error });
+  }
+}
+
+const returnRemplacement = async (req, res) => {
+  const {
+    remplacement_id,
+    commentaire_return,
+    user_id,
+  } = req.body;
+  try {
+    const remplacement = await prisma.remplacements.findUnique({
+      where: { id: parseInt(remplacement_id) },
+    });
+
+    if (!remplacement) return res.status(404).json({ message: "Remplacement introuvable." });
+
+    if (remplacement.statut === "livre") {
+      return res.status(400).json({ message: "Remplacement déjà validé." });
+    }
+
+    if (!commentaire_return) {
+      return res.status(400).json({ message: "Commentaire de retour requis." });
+    }
+
+    if (!user_id) return res.status(403).json({ message: "Utilisateur non authentifié." });
+
+      const user = await prisma.users.findUnique({
+        where: { id_user: parseInt(user_id) },
+      });
+
+      if (!user) {
+        return res.status(404).json({ message: "Utilisateur non trouvé." });
+      }
+
+      const newValidation = await prisma.validation_remplacement.create({
+      data: {
+        remplacement_id: parseInt(remplacement_id),
+        commentaire: commentaire_return,
+        user_id: user_id ? parseInt(user_id) : null,
+        nom_recepteur: user.fullname,
+        date_validation: new Date(),
+        signature: 'retournée',
+      },
+    });
+
+    await prisma.remplacements.update({
+      where: { id: parseInt(remplacement_id) },
+      data: { statut: 'en_attente' },
+    });
+
+    /******************************* GESTION DES MAILS  *******************************/
+
+    const ancienModel = await prisma.model_piece.findUnique({
+      where:{
+        id_model: parseInt(remplacement.old_model_id)
+      }
+    })
+    
+    const nouveModel = await prisma.model_piece.findUnique({
+      where:{
+        id_model: parseInt(remplacement.new_model_id)
+      }
+    })
+
+    let produitsLivre = remplacement.produitsLivre
+
+    const produits = typeof produitsLivre === "string"
+    ? JSON.parse(produitsLivre)
+    : produitsLivre;
+
+    const supervisionRole = await prisma.user_roles.findMany({
+      where:{
+        role_id: 13
+      },
+      include:{
+        users: true
+      }
+    })
+    const superviseurs = supervisionRole.map(us => us.users)
+
+    const roleLivraison = await prisma.user_roles.findMany({
+      where:{
+        role_id: 1
+      },
+      include:{
+        users: true
+      }
+    })
+    const livreurs = roleLivraison.map(us => us.users)
+    
+    const url = GENERAL_URL
+    let deliveryLink = `${url}/remplacement-details/${remplacement.id}`;
+    let commentaire_mail = commentaire_return ? commentaire_return : '(sans commentaire)'
+    const sendMail = require("../../utils/emailSender");
+
+    if ((livreurs && livreurs.length > 0) || (superviseurs && superviseurs.length)) {
+      const subject = `RETOUR DE REMPLACEMENT`;
+      const html = `
+        <p>Bonjour,</p>
+        <p>Le remplacement ${remplacement.id} a été retourné.</p>
+        <ul>
+          <li><strong>Ancien model TPE:</strong> ${ancienModel.nom_model.toUpperCase()}</li>
+          <li><strong>Nouveau model TPE:</strong> ${nouveModel.nom_model.toUpperCase()}</li>
+          <li><strong>Nombre de produits:</strong> ${remplacement.quantite}</li>
+        </ul>
+        <br>
+          <p>Commentaire : ${commentaire_mail}<p>
+        <br>
+        <p>Retrouvez la livraison à ce lien : 
+          <span>
+            <a href="${deliveryLink}" target="_blank" style="background-color: #73dced; color: white; padding: 7px 12px; text-decoration: none; border-radius: 5px;">
+              Cliquez ici !
+            </a>
+          </span>
+        </p>
+        <br><br>
+        <p>Green - Pay vous remercie.</p>
+      `;
+
+      for (const livreur of livreurs) {
+        await sendMail({
+          to: livreur.email,
+          subject,
+          html,
+        });
+      }
+      if (superviseurs){
+        for (const superviseur of superviseurs) {
+          await sendMail({
+            to: superviseur.email,
+            subject,
+            html,
+          });
+        }
+      }
+    }
+
+    return res.status(201).json({ 
+      message: "Livraison retournée avec succès.",
+      newValidation,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Erreur serveur." });
+  }
+}
+
+
 
 
 module.exports = {
@@ -1460,4 +2659,14 @@ module.exports = {
   updateTypeLivraison,
   deleteTypeLivraison,
   updateDeliveryStock,
+  generateTotalLivraisonPDF,
+  getAllTypeParametrage,
+  makeRemplacement,
+  getAllRemplacements,
+  getOneRemplacement,
+  validateRemplacement,
+  generateDeliveriesXLSX,
+  generateRemplacementsXLSX,
+  updateRemplacement,
+  returnRemplacement,
 }

@@ -21,6 +21,7 @@ import { Users } from "../../../backend/users/Users.js";
 import { ProductDeliveries } from "../../../backend/livraisons/ProductDeliveries.js";
 import { Modal } from "../../ui/modal/index.tsx";
 import Swal from 'sweetalert2'
+import { Stock } from "../../../backend/stock/Stock.js"
 
 
 export default function ModifyLivraisonInputs() {
@@ -29,6 +30,7 @@ export default function ModifyLivraisonInputs() {
   const productDeliveries = new ProductDeliveries();
   const userId = localStorage.getItem('id');
   const usersData = new Users()
+  const stockData = new Stock()
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -69,6 +71,11 @@ export default function ModifyLivraisonInputs() {
   const [serviceId, setServiceId] = useState(null)
 
   const [quantiteLivraison, setQuantiteLivraison] = useState(0)
+
+  const [optionsModels, setOptionsModels] = useState([])
+  const [listModels, setListModels] = useState([])
+  const [selectedModel, setSelectedModel] = useState()
+  const [nomModel, setNomModel] = useState('')
   
   useEffect( ()=>{
     const fetchDeliveryInfos = async () => {
@@ -81,6 +88,7 @@ export default function ModifyLivraisonInputs() {
         const parsedProduitsLivre = JSON.parse(delivery_data.produitsLivre);
         setProduitsLivres(parsedProduitsLivre);
         setProduitsLivresTable(parsedProduitsLivre);
+        setQuantiteLivraison(parsedProduitsLivre.length)
 
         let type_delivery = await productDeliveries.getAllTypeLivraisonCommerciale()
         setListTypeLivraison(type_delivery)
@@ -127,6 +135,21 @@ export default function ModifyLivraisonInputs() {
           setSelectedRole(role.id_role)
         }
 
+        let models_data = await stockData.getAllModels()
+        setListModels(models_data)
+        const option_models = models_data.map((item) =>({
+          value: item.id_model,
+          label: item.nom_model.toUpperCase(),
+        }))
+        setOptionsModels(option_models)
+        const model = models_data.find((item) => {
+          return item.id_model == parseInt(delivery_data.model_id)
+        })
+        if(model){
+          setNomModel(model.nom_model.toUpperCase())
+          setSelectedModel(model.id_model)
+        }
+
       }catch(error){
         console.log('Error fetching data ',error)
         setErrorForm('Erreur lors de la génération du formulaire')
@@ -158,6 +181,18 @@ export default function ModifyLivraisonInputs() {
   const filteredPointMarchand = terminalSN ? 
   terminals.filter((terminal) => 
   terminal.SERIAL_NUMBER.includes(terminalSN)) : [];
+
+  const ChangeModel = (value) => {
+    console.log("Selected value (model) : ", value)
+    setSelectedModel(value)
+    const model = listModels.find((item) => {
+      return item.id_model == parseInt(value)
+    })
+    if(model){
+      setNomModel(model.nom_model.toUpperCase())
+      setMessageTPE(model.nom_model.toUpperCase())
+    }
+  }
 
   const ChangeRole = (value) => {
     console.log("Selected value : ",value)
@@ -207,6 +242,10 @@ export default function ModifyLivraisonInputs() {
 
     if(!livraisonID){
       setErrorAjout("Vous devez choisir le type de livraison !");
+      return;
+    }
+    if(!selectedModel){
+      setErrorAjout("Vous devez choisir le model du TPE !");
       return;
     }
     if(!serviceId){
@@ -328,6 +367,7 @@ export default function ModifyLivraisonInputs() {
       user_id: userId,
       service_recepteur: serviceId,
       role_recepteur: selectedRole,
+      selected_model: selectedModel,
     }
     
     try{
@@ -394,17 +434,25 @@ export default function ModifyLivraisonInputs() {
                           <Label>Type de Livraison <span className="text-red-700">*</span></Label>
                           <Select
                             options={optionLivraisons}
-                            placeholder={typeLivraison}
+                            defaultValue={livraisonID}
                             onChange={ChangeTypeLivraison}
                             className="dark:bg-dark-900"
-                            
+                          />
+                        </div>
+                        <div>
+                          <Label>Model TPE <span className="text-red-700">*</span></Label>
+                          <Select
+                            options={optionsModels}
+                            onChange={ChangeModel}
+                            className="dark:bg-dark-900"
+                            defaultValue={selectedModel}
                           />
                         </div>
                         <div>
                           <Label>Service recepteur <span className="text-red-700">*</span></Label>
                           <Select
                             options={optionServices}
-                            placeholder={serviceRecepteur}
+                            defaultValue={serviceId}
                             onChange={ChangeService}
                             className="dark:bg-dark-900"       
                           />
@@ -413,7 +461,7 @@ export default function ModifyLivraisonInputs() {
                           <Label>Associer un rôle</Label>
                           <Select
                             options={optionsRoles}
-                            placeholder={nomRole}
+                            defaultValue={selectedRole}
                             onChange={ChangeRole}
                             className="dark:bg-dark-900"
                           />
@@ -444,6 +492,15 @@ export default function ModifyLivraisonInputs() {
                               }} 
                               }}
                             />
+                        </div>
+                        <div>
+                          <Label>Commentaire pour terminal</Label>
+                          <TextArea
+                          value={messageTPE}
+                          onChange={(value) => setMessageTPE(value)}
+                          rows={2}
+                          placeholder="Ajoutez un commentaire"
+                          />
                         </div>
                         <div>
                           <Label>Point Marchand</Label>
@@ -654,6 +711,9 @@ export default function ModifyLivraisonInputs() {
             <span>Vous allez ajouter un terminal pour livraison :  <span className="font-bold text-red-700">{typeLivraison}</span></span>
           </div>
           <div>
+            <div>
+              <span>Model : <span className="font-bold text-red-700">{nomModel}</span></span>
+            </div>
             <div>
               <span>Service : <span className="font-bold text-red-700">{serviceRecepteur}</span></span>
             </div>

@@ -10,7 +10,7 @@ export default function StockDTInfos() {
 
 
     const [loadingStock, setLoadingStock] = useState(false)
-    const [sotckDT, setStockDT] = useState([])
+    const [stockDT, setStockDT] = useState([])
 
     useEffect( ()=>{
         const fetchStock = async () => {
@@ -19,10 +19,10 @@ export default function StockDTInfos() {
             let data;
             data = await stock.getAllStock()
             console.log(data)
-            const piecesA920 = data.filter(item =>{
-                return item.model_id == 1 && item.service == 5;
+            const stock_dt = data.filter(item =>{
+                return item.service == 5;
             });
-            setStockDT(data)
+            setStockDT(stock_dt)
         }catch(error){
         console.log('Error fetching data ',error)
         setErrorForm('Erreur lors de la génération du formulaire')        
@@ -55,7 +55,7 @@ export default function StockDTInfos() {
                         ) : (
                             <>
                             <div className="grid grid-cols-3 gap-4">
-                                {sotckDT.map((piece => {
+                                {stockDT.map((piece => {
                                     let nomPiece = piece.nom_piece.toUpperCase()
                                     let quantite = piece.quantite
         

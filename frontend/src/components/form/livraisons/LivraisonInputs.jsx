@@ -23,15 +23,16 @@ import Swal from 'sweetalert2'
 import { Modal } from "../../ui/modal/index.tsx";
 import SignatureCanvas from 'react-signature-canvas'
 import { Users } from "../../../backend/users/Users.js"
+import { Stock } from "../../../backend/stock/Stock.js"
 
 export default function LivraisonInputs() {
 
   const merchants = new Merchants();
   const productDeliveries = new ProductDeliveries();
   const usersData = new Users()
+  const stockData = new Stock()
   const userId = localStorage.getItem('id');
   const navigate = useNavigate();
-
 
   const [isOrangeChecked, setOrangeChecked] = useState(false);
   const [isMTNChecked, setMTNChecked] = useState(false);
@@ -45,8 +46,10 @@ export default function LivraisonInputs() {
   const [livraisonID, setLivraisonID] = useState(null);
   const [message, setMessage] = useState("");
   const [mobileMoney, setMobileMoney] = useState([]);
+
   const [produitsLivreTable, setProduitsLivresTable] = useState([]);
   const [produitsLivre, setProduitsLivres] = useState([]);
+
   const [error, setError] = useState(null);
   const [errorFrom, setErrorForm] = useState(null);
   const [errorAjout, setErrorAjout] = useState(null);
@@ -72,6 +75,26 @@ export default function LivraisonInputs() {
   const [serviceId, setServiceId] = useState(null)
 
   const [quantiteLivraison, setQuantiteLivraison] = useState(0)
+
+  const [optionsModels, setOptionsModels] = useState([])
+  const [listModels, setListModels] = useState([])
+  const [selectedModel, setSelectedModel] = useState(1)
+  const [nomModel, setNomModel] = useState('A920')
+
+  // useEffect(() => {
+  //   const savedProduits = sessionStorage.getItem("produitsLivreTable");
+  //   if (savedProduits) {
+  //     const parsed = JSON.parse(savedProduits);
+  //     console.log("SAVED : ", parsed);
+  //     setProduitsLivresTable(parsed);
+  //     setProduitsLivres(parsed);
+  //     setQuantiteLivraison(parsed.length);
+  //   }
+  // }, []);
+
+  // useEffect(() => {
+  //   sessionStorage.setItem("produitsLivreTable", JSON.stringify(produitsLivreTable));
+  // }, [produitsLivreTable]);
 
   useEffect( ()=>{
     const fetchTerminalInfos = async () => {
@@ -108,6 +131,13 @@ export default function LivraisonInputs() {
         }))
         setOptionsRoles(optionsRoles)
 
+        let models_data = await stockData.getAllModels()
+        setListModels(models_data)
+        const option_models = models_data.map((item) =>({
+          value: item.id_model,
+          label: item.nom_model.toUpperCase(),
+        }))
+        setOptionsModels(option_models)
 
       }catch(error){
         console.log('Error fetching data ',error)
@@ -122,6 +152,18 @@ export default function LivraisonInputs() {
   const filteredPointMarchand = terminalSN ? 
   terminals.filter((terminal) => 
   terminal.SERIAL_NUMBER.includes(terminalSN)) : [];
+
+  const ChangeModel = (value) => {
+    console.log("Selected value (model) : ", value)
+    setSelectedModel(value)
+    const model = listModels.find((item) => {
+      return item.id_model == parseInt(value)
+    })
+    if(model){
+      setNomModel(model.nom_model.toUpperCase())
+      setMessageTPE(model.nom_model.toUpperCase())
+    }
+  }
 
   const ChangeRole = (value) => {
     console.log("Selected value : ",value)
@@ -174,6 +216,10 @@ export default function LivraisonInputs() {
       setErrorAjout("Vous devez choisir le type de livraison !");
       return;
     }
+    if(!selectedModel){
+      setErrorAjout("Vous devez choisir le model du TPE !");
+      return;
+    }
     if(!serviceId){
       setErrorAjout("Vous devez choisir le service réceptionneur !");
       return;
@@ -215,8 +261,8 @@ export default function LivraisonInputs() {
       setErrorAjout("Ce terminal est bancaire.");
       return;
     }
-    const localMobileMoney = [];
-     if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_ORANGE?.startsWith("07"))){
+
+    if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_ORANGE?.startsWith("07"))){
       setOrangeChecked(true)};
     if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_MTN?.startsWith("05"))){
       setMTNChecked(true)};
@@ -242,24 +288,6 @@ export default function LivraisonInputs() {
       localMobileMoney.push("MTN")};
     if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_MOOV?.startsWith("01"))){
       localMobileMoney.push("MOOV")};
-    // if(!livraisonID){
-    //   setErrorAjout("Vous devez choisir le type de livraison !");
-    //   return;
-    // }
-    // if (!filteredPointMarchand || filteredPointMarchand.length === 0) {
-    //   setErrorAjout("S/N invalide !");
-    //   return;
-    // }
-
-    // const isDuplicate = produitsLivre.some(prod => prod.serialNumber === terminalSN);
-    // if (isDuplicate) {
-    //   setErrorAjout("Ce numéro de série a déjà été ajouté.");
-    //   return;
-    // }
-    // if (livraisonID == 1 && !filteredPointMarchand.map((terminal) => terminal.BANQUE).join("-")){
-    //   setErrorAjout("Ce Ternminal n'est pas un TPE GIM");
-    //   return;
-    // }
     
     const newProduit = {
       pointMarchand: filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(","),
@@ -272,7 +300,7 @@ export default function LivraisonInputs() {
   
     setProduitsLivresTable((prev) => [...prev, newProduit]);
     setProduitsLivres((prev) => [...prev, newProduit]);
-    setQuantiteLivraison(quantiteLivraison + 1)
+    setQuantiteLivraison((prev) => prev + 1);
   
     // Optional: Reset form fields
     setTerminalSN('');
@@ -290,10 +318,10 @@ export default function LivraisonInputs() {
     e.preventDefault();
 
     if(produitsLivre.length == 0){
-       Swal.fire({
-      title: "Error",
-      text: "Vous devez ajouter au moins un TPE.",
-      icon: "error"
+      Swal.fire({
+        title: "Error",
+        text: "Vous devez ajouter au moins un TPE.",
+        icon: "error"
       });
       return;
     }
@@ -322,22 +350,13 @@ export default function LivraisonInputs() {
     fd.append('produitsLivre',JSON.stringify(produitsLivre))
     fd.append('service_recepteur', serviceId)
     fd.append('role_recepteur', selectedRole)
+    fd.append('selected_model', selectedModel)
     if (sign) {
       const blob = await fetch(sign).then(res => res.blob());
       fd.append('signature_expediteur', blob, 'signature.png');
     }
-
-    // console.log(blob)
-    console.log('Trying to create form...')
-    console.log('Commentaire : ',commentaire)
-    console.log('ID Livraison : ',type_livraison_id)
-    console.log('ID User', user_id)
-    console.log('Ancienne ? ', isAncienne)
-    console.log('Produits livrés : ',produitsLivre)
     
-
     try{
-    // const response = await productDeliveries.deliver(commentaire, type_livraison_id, user_id, isAncienne, produitsLivre)
     const response = await productDeliveries.deliver(fd)
 
     console.log(response);
@@ -372,7 +391,7 @@ export default function LivraisonInputs() {
     setProduitsLivres((prev) =>
       prev.filter((_, index) => index !== indexToRemove)
     );
-    setQuantiteLivraison(quantiteLivraison - 1)
+    setQuantiteLivraison((prev) => prev - 1);
   };
 
   const handleValidate = () =>{
@@ -424,6 +443,16 @@ export default function LivraisonInputs() {
                             onChange={ChangeTypeLivraison}
                             className="dark:bg-dark-900"
                       
+                          />
+                        </div>
+                        <div>
+                          <Label>Model TPE <span className="text-red-700">*</span></Label>
+                          <Select
+                            options={optionsModels}
+                            placeholder="Choisir une option"
+                            onChange={ChangeModel}
+                            className="dark:bg-dark-900"
+                            defaultValue={1}
                           />
                         </div>
                         <div>
@@ -490,15 +519,15 @@ export default function LivraisonInputs() {
                         <div>
                           <Label>Banque</Label>
                           <Input type="text" id="input" 
-                                  className="cursor-default"
-                                  value={filteredPointMarchand.map((terminal) => terminal.BANQUE).join(" - ")}
-                                  readOnly
-                                  />
+                            className="cursor-default"
+                            value={filteredPointMarchand.map((terminal) => terminal.BANQUE).join(" - ")}
+                            readOnly
+                            />
                         </div>
                         <div>
                           <Input type="text" id="input" 
-                                  value={filteredPointMarchand.map((terminal) => terminal.TPE).join(" - ")}
-                                  className="hidden"/>
+                            value={filteredPointMarchand.map((terminal) => terminal.TPE).join(" - ")}
+                            className="hidden"/>
                         </div>
                         <div className="flex flex-col">
                           <div className="flex items-center gap-3 my-2">
@@ -687,6 +716,9 @@ export default function LivraisonInputs() {
             <span>Vous allez ajouter un terminal pour livraison :  <span className="font-bold text-red-700">{typeLivraison}</span></span>
           </div>
           <div>
+            <div>
+              <span>Model : <span className="font-bold text-red-700">{nomModel}</span></span>
+            </div>
             <div>
               <span>Service : <span className="font-bold text-red-700">{serviceRecepteur}</span></span>
             </div>

@@ -74,6 +74,11 @@ export default function DemandeInputs() {
   const [otherFields, setOtherFields] = useState([])
 
   const [optionsModels, setOptionsModels] = useState([])
+
+  const [qteCartonInitiale, setQteCartonInitiale] = useState(0)
+  const [qteCartonDemande, setQteCartonDemande] = useState(0)
+
+  const [nomenclature, setNomenclature] = useState('')
   
   useEffect( ()=>{
     const fetchDemandeData = async () => {
@@ -179,6 +184,7 @@ export default function DemandeInputs() {
     }));
     setOptionsPieces(optionsPieces);
   }
+
   const ChangePieceType = (value) => {
     console.log("Selected value:", value);
     setDemandeID(value);
@@ -192,6 +198,7 @@ export default function DemandeInputs() {
       const stockPiece = selectedStockItem.quantite
       setTypeDemande(nomPiece.toUpperCase());
       setStockInitial(stockPiece)
+      setQteCartonInitiale(selectedStockItem.stock_carton)
     } else {
       setTypeDemande('');
     }
@@ -239,6 +246,7 @@ export default function DemandeInputs() {
   const options_motifs = [
     { value: "PIECES TPE", label:"PIECES TPE"},
     { value: "CHARGEURS DECOMMISSIONNES", label:"CHARGEURS DECOMMISSIONNES"},
+    { value: "TPE POUR PARAMETRAGE", label:"TPE POUR PARAMETRAGE"},
     { value: "AUTRE", label:"AUTRE"},
   ]
 
@@ -315,6 +323,11 @@ export default function DemandeInputs() {
       return;
     }
 
+    if(qteCartonInitiale - qteCartonDemande < 0){
+      setErrorAjout("Stock carton insuffisant !")
+      return;
+    }
+
     let qteProduit = qteDemande;
 
     console.log("Quantité demandée :", qteProduit)
@@ -342,6 +355,8 @@ export default function DemandeInputs() {
       typeProduit: typeDemande,
       stockDepart: stock,
       quantite: qteProduit,
+      cartonDepart: qteCartonInitiale,
+      stockCarton: qteCartonDemande,
     };
     setProduitsDemandes(newProduit)
     
@@ -397,22 +412,14 @@ export default function DemandeInputs() {
     fd.append('role_validateur', role_validateur);
     fd.append('nom_demandeur', nom_demandeur);
     fd.append('qte_total_demande',quantite);
+    fd.append('stockCarton', qteCartonDemande);
+    fd.append('nomenclature', nomenclature);
     fd.append('id_demandeur', id_demandeur);
     fd.append('motif_demande', motifDemande);
     fd.append('otherFields', JSON.stringify(otherFields));
     selectedFiles.forEach((file, i) => {
       fd.append('files_selected', file); // 👈 keep the same key name
     });
-
-    console.log('------  DEMANDE  ------')
-    console.log('ID DEMANDE : ',type_demande_id)
-    console.log('ID User : ', user_id)
-    console.log('Produits demandés : ',produitsDemande)
-    console.log('commentaire : ',commentaire)
-    console.log('quantite totale demande : ',quantite)
-    console.log('Motif de la demande : ', motifDemande)
-    console.log('Demandeur : ',nom_demandeur)
-    console.log('id demandeur : ',id_demandeur)
 
     try{
       // console.log("Sending payload : ",payload)
@@ -562,6 +569,28 @@ export default function DemandeInputs() {
                     <div className="">
                       <div className="flex justify-center items-center">
                         <div className="me-1">
+                          <Label htmlFor="input">Stock carton de départ</Label>
+                          <Input type="number" id="input" value={qteCartonInitiale} onChange={(e) =>{
+                            const value = e.target.value
+                            if(value>=0){
+                              setQteCartonInitiale(value)
+                            }
+                          }} />
+                        </div>
+                        <div className="ms-1">
+                          <Label htmlFor="input">Nombre carton demandé</Label>
+                          <Input type="number" id="input" value={qteCartonDemande} onChange={(e) =>{
+                            const value = e.target.value
+                            if(value>=0){
+                              setQteCartonDemande(value)
+                            }
+                          }} />
+                        </div>
+                      </div>                        
+                    </div>
+                    <div className="">
+                      <div className="flex justify-center items-center">
+                        <div className="me-1">
                           <Label htmlFor="input">Stock de départ <span className="text-red-700">*</span></Label>
                           <Input type="number" id="input" value={stockInitial} onChange={(e) =>{
                             const value = e.target.value
@@ -580,6 +609,14 @@ export default function DemandeInputs() {
                           }} />
                         </div>
                       </div>                        
+                    </div>
+                    <div>
+                      <Label htmlFor="input">Nomenclature</Label>
+                      <Input type="text" id="input"
+                        value={nomenclature} 
+                        placeholder="LOT X CARTONS A - Z"
+                        onChange={(e) => setNomenclature(e.target.value)}
+                      />
                     </div>
                     <div>
                       {fields.map((field, index) => (
@@ -691,6 +728,24 @@ export default function DemandeInputs() {
             <div>
               <span>Nom demandeur : <span className="font-bold text-red-700">{nomDemandeur}</span></span>
             </div>
+            {
+              qteCartonDemande > 0 ? 
+              (
+                <>
+                  <div>
+                    <span>Stock carton initial :  <span className="font-bold text-red-700">{qteCartonInitiale}</span></span>
+                  </div>
+                  <div>
+                    <span>Nombre carton demandé :  <span className="font-bold text-red-700">{qteCartonDemande}</span></span>
+                  </div>
+                  <div>
+                    <span>Stock carton restant : <span className="font-bold text-red-700">{qteCartonInitiale - qteCartonDemande}</span></span>
+                  </div>
+                </>
+              ) : (
+                <></>
+              )
+            }
             <div>
               <span>Stock initial : <span className="font-bold text-red-700">{stockInitial}</span></span>
             </div>
@@ -700,6 +755,16 @@ export default function DemandeInputs() {
             <div>
               <span>Stock restant : <span className="font-bold text-red-700">{stockInitial - qteDemande}</span></span>
             </div>
+            { nomenclature ? 
+            (
+              <>
+                <div>
+                  <span>Nomenclature : <span className="font-bold text-red-700">{nomenclature}</span></span>
+                </div>
+              </>
+            ) : (
+              <></>
+            )}
             {otherFields.map((field) =>{
               return(
                 <>

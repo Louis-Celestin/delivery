@@ -48,11 +48,20 @@ const navItems: NavItem[] = [
     
   },
   {
+    name: "Remplacement TPE",
+    icon: <ListIcon />,
+    subItems: [
+      { name: "Nouveau Remplacement", path: "/nouveau-remplacement", roles:[1], pro: false},
+      { name: "Tous les remplacements", path: "/tous-les-remplacements", pro: false},
+    ]
+  },
+  {
     name: "Mouvement Stock",
     icon: <ClipboardCheck />,
     roles:[3, 11],
     subItems: [
-      {name: "Nouvelle Demande", path:"/nouvelle-demande", roles:[3], pro: false},
+      { name: "Nouvelle Demande", path:"/nouvelle-demande", roles:[3], pro: false},
+      // { name: "Nouvelle Demande TPE", path:"/nouvelle-demande-terminal", roles:[3], pro: false},
       { name: "Toutes les demandes", path: "/toutes-les-demandes", pro: false },
     ], 
   },

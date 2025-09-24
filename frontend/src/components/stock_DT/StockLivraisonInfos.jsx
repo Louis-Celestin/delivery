@@ -19,10 +19,10 @@ export default function StockLivraisonInfos() {
             let data;
             data = await stock.getAllStock()
             console.log(data)
-            const piecesA920 = data.filter(item =>{
-                return item.model_id == 1 && item.service == 3;
+            const stock_livraison = data.filter(item =>{
+                return item.service == 3;
             });
-            setStockDT(piecesA920)
+            setStockDT(stock_livraison)
         }catch(error){
         console.log('Error fetching data ',error)
         setErrorForm('Erreur lors de la génération du formulaire')        

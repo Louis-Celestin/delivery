@@ -55,6 +55,8 @@ const faireDemande = async (req, res) =>{
         role_validateur,
         id_demandeur,
         qte_total_demande,
+        stockCarton,
+        nomenclature,
         motif_demande,
         otherFields,
       } = req.body;
@@ -75,7 +77,7 @@ const faireDemande = async (req, res) =>{
       })
 
       if (!typeDemande) {
-      return res.status(404).json({ message: "Type de demande non trouvé" });
+        return res.status(404).json({ message: "Type de demande non trouvé" });
       }
 
       let utilisateur = null;
@@ -86,7 +88,7 @@ const faireDemande = async (req, res) =>{
       });
 
       if (!utilisateur) {
-          return res.status(404).json({ message: "Utilisateur non trouvé" });
+        return res.status(404).json({ message: "Utilisateur non trouvé" });
       }
 
       // Gestion de l'upload Cloudinary
@@ -118,23 +120,25 @@ const faireDemande = async (req, res) =>{
       let final_type_demande_id = type_demande_id
 
       const nouvelleDemande = await prisma.demandes.create({
-      data: {
-        statut_demande: "en_cours",
-        qte_total_demande: parseInt(qte_total_demande),
-        produit_demande: JSON.stringify(produits),
-        commentaire,
-        nom_demandeur: nom_demandeur || null,
-        date_demande: new Date(),
-        signature_demandeur: 'signé',
-        type_demande_id: parseInt(final_type_demande_id),
-        user_id: utilisateur ? utilisateur.id_user : null,
-        role_id_recepteur: parseInt(role_validateur),
-        service_demandeur: parseInt(service_id),
-        id_demandeur: parseInt(id_demandeur) || null,
-        motif_demande: motif_demande || null,
-        champs_autre: JSON.stringify(autres),
-        files: JSON.stringify(uploadedFiles),
-      }
+        data: {
+          statut_demande: "en_cours",
+          qte_total_demande: parseInt(qte_total_demande),
+          stock_carton: stockCarton ? parseInt(stockCarton) : null,
+          produit_demande: JSON.stringify(produits),
+          commentaire,
+          nomenclature: nomenclature ? nomenclature : null,
+          nom_demandeur: nom_demandeur || null,
+          date_demande: new Date(),
+          signature_demandeur: 'signé',
+          type_demande_id: parseInt(final_type_demande_id),
+          user_id: utilisateur ? utilisateur.id_user : null,
+          role_id_recepteur: parseInt(role_validateur),
+          service_demandeur: parseInt(service_id),
+          id_demandeur: parseInt(id_demandeur) || null,
+          motif_demande: motif_demande || null,
+          champs_autre: JSON.stringify(autres),
+          files: JSON.stringify(uploadedFiles),
+        }
       });
 
        
