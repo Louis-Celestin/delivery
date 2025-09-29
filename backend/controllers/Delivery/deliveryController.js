@@ -1989,6 +1989,37 @@ const generateDeliveriesXLSX = async (req, res) => {
       cell.alignment = { vertical: "middle", horizontal: "center" };
     });
 
+    const allDetailSheet = workbook.addWorksheet("Détails")
+    const allDetailHeader = [
+      "ID Livraison",
+      "Point Marchand",
+      "Caisse",
+      "S/N",
+      "Banque",
+      "OM",
+      "MTN",
+      "MOOV",
+      "Commentaire TPE",
+      "Model",
+      "Type livraison",
+      "Date Livraison",
+      "Livraison",
+      "Réception",
+    ]
+
+    const allDetailRow = allDetailSheet.addRow(allDetailHeader)
+
+    allDetailRow.eachCell((cell) => {
+      cell.font = { bold: true };
+      cell.border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
+      cell.alignment = { vertical: "middle", horizontal: "center" };
+    });
+
     for(const id of listId){
       const livraison_data = await prisma.livraison.findUnique({
         where: {
@@ -2048,14 +2079,25 @@ const generateDeliveriesXLSX = async (req, res) => {
         livraison.validations[index]?.commentaire,
       ])
 
-      // resumeSheet.columns.forEach((col) => {
-      //   let maxLength = 0;
-      //   col.eachCell({ includeEmpty: true }, (cell) => {
-      //     const cellLength = cell.value ? cell.value.toString().length : 10;
-      //     if (cellLength > maxLength) maxLength = cellLength;
-      //   });
-      //   col.width = maxLength < 15 ? 15 : maxLength;
-      // });
+      livraison.produitsLivre.forEach((p) => {
+        const has = (m) => (p.mobile_money?.includes(m) ? "OUI" : "");
+        allDetailSheet.addRow([
+          livraison.id_livraison,
+          p.pointMarchand,
+          p.caisse,
+          p.serialNumber,
+          p.banque || "",
+          has("OM"),
+          has("MTN"),
+          has("MOOV"),
+          p.commentaireTPE,
+          typeModel? typeModel.nom_model.toUpperCase() : 'N/A' ,
+          typeLivraison.nom_type_livraison.toUpperCase(),
+          livraison.validations[index]?.date_validation,
+          livraison.nom_livreur,
+          livraison.validations[index]?.nom_recepteur,
+        ])
+      })
 
       const detailSheet = workbook.addWorksheet(`Livraison_${livraison.id_livraison}`)
 
@@ -2102,35 +2144,6 @@ const generateDeliveriesXLSX = async (req, res) => {
           p.commentaireTPE,
         ])
       })
-
-      // const totalRow = detailSheet.addRow([
-      //   "TOTAL",
-      //   { formula: `SUM(B${detailHeaderRow.number + 1}:B${detailSheet.lastRow.number})` },
-      //   { formula: `SUM(C${detailHeaderRow.number + 1}:C${detailSheet.lastRow.number})` },
-      // ]);
-
-      // totalRow.eachCell((cell, colNumber) => {
-      //   cell.font = { bold: true };
-      //   cell.border = {
-      //     top: { style: "double" },
-      //     left: { style: "thin" },
-      //     bottom: { style: "thin" },
-      //     right: { style: "thin" },
-      //   };
-      //   if (colNumber > 1) {
-      //     cell.alignment = { horizontal: "center" };
-      //   }
-      // });
-
-      // detailSheet.columns.forEach((col) => {
-      //   let maxLength = 0;
-      //   col.eachCell({ includeEmpty: true }, (cell) => {
-      //     const cellLength = cell.value ? cell.value.toString().length : 10;
-      //     if (cellLength > maxLength) maxLength = cellLength;
-      //   });
-      //   col.width = maxLength < 15 ? 15 : maxLength;
-      // });
-
     }
 
     const buffer = await workbook.xlsx.writeBuffer();
@@ -2182,6 +2195,38 @@ const generateRemplacementsXLSX = async (req, res) => {
     const headerRow = resumeSheet.addRow(finalHeaders);
 
     headerRow.eachCell((cell) => {
+      cell.font = { bold: true };
+      cell.border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
+      cell.alignment = { vertical: "middle", horizontal: "center" };
+    });
+
+    const allDetailSheet = workbook.addWorksheet("Détails")
+    const allDetailHeader = [
+      "ID remplacement",
+      "Point Marchand",
+      "Caisse",
+      "Ancien S/N",
+      "Model remplacé",
+      "Nouvel S/N",
+      "Model remplaçant",
+      "Banque",
+      "OM",
+      "MTN",
+      "MOOV",
+      "Commentaire TPE",
+      "Date Livraison",
+      "Livraison",
+      "Réception",
+    ]
+
+    const allDetailRow = allDetailSheet.addRow(allDetailHeader)
+
+    allDetailRow.eachCell((cell) => {
       cell.font = { bold: true };
       cell.border = {
         top: { style: "thin" },
@@ -2251,6 +2296,27 @@ const generateRemplacementsXLSX = async (req, res) => {
         livraison.validation_remplacement[index]?.commentaire,
         ...livraison.details_parametrage.map((param) => param.quantite),
       ])
+
+      livraison.details_remplacement.forEach((p) => {
+        const has = (m) => (p.mobile_money?.includes(m) ? "OUI" : "");
+        allDetailSheet.addRow([
+          livraison.id,
+          p.pointMarchand,
+          p.caisse,
+          p.ancienSN,
+          oldModel? oldModel.nom_model.toUpperCase() : 'N/A',
+          p.nouvelSN,
+          newModel? newModel.nom_model.toUpperCase() : 'N/A',
+          p.banque || "",
+          has("OM"),
+          has("MTN"),
+          has("MOOV"),
+          p.commentaireTPE,
+          livraison.validation_remplacement[index]?.date_validation,
+          livraison.nom_livreur,
+          livraison.validation_remplacement[index]?.nom_recepteur,
+        ])
+      })
 
       const detailSheet = workbook.addWorksheet(`Remplacement_${livraison.id}`)
 
@@ -2638,6 +2704,117 @@ const returnRemplacement = async (req, res) => {
   }
 }
 
+const generateRemplacementPDF = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const data = await prisma.remplacements.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        validation_remplacement: true,
+      }
+    });
+
+    console.log(data)
+
+    if (!data) return res.status(404).json({ message: "Remplacement introuvable" });
+    if (data.validation_remplacement.length < 1) return res.status(400).json({ message: "Aucune validation trouvée" });
+
+    const livraison = {
+      ...data,
+      details_remplacement: typeof data.details_remplacement === "string"
+        ? JSON.parse(data.details_remplacement)
+        : data.details_remplacement
+    };
+
+    // 🔎 Récupération de l'agent qui a fait la livraison (si user_id défini)
+    let expediteurNom = "N/A";
+    // console.log(livraison)
+    if (livraison.nom_livreur) {
+      expediteurNom = livraison.nom_livreur;
+    } else if (livraison.user_id) {
+      const user = await prisma.users.findUnique({
+        where: { id_user: livraison.user_id }
+      });
+      if (user) {
+        expediteurNom = user.fullname;
+      }
+    }
+
+    const templateFile = "remplacement_TPE.html";
+    // if (!templateFile) return res.status(400).json({ message: "Type de livraison inconnu" });
+
+    const filePath = path.join(__dirname, "../../statics/templates/", templateFile);
+    let html = fs.readFileSync(filePath, "utf8");
+
+    // 🧱 Construction du tableau
+    const produitsRows = livraison.details_remplacement.map((p, index) => {
+      let row = "";
+      const has = (m) => p.mobile_money?.includes(m) ? "✔" : "";
+      row = `<tr><td>${p.pointMarchand}</td><td>${p.ancienSN}</td><td>${p.nouvelSN}</td><td>${p.caisse}</td><td>${p.banque}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
+    
+      // ➕ Ajout du saut de page toutes les 20 lignes
+      if ((index + 1) % 20 === 0) {
+        row += `<tr class="page-break"></tr>`;
+      }
+    
+      return row;
+    }).join("\n");
+
+    const ancien_model = await prisma.model_piece.findUnique({
+      where: {
+        id_model: livraison.old_model_id
+      }
+    })
+
+    const nouveau_model = await prisma.model_piece.findUnique({
+      where: {
+        id_model: livraison.new_model_id
+      }
+    })
+    
+    // console.log(livraison.validations[0].signature)
+    // 🧩 Remplacement des balises HTML
+    let index = livraison.validation_remplacement.length-1
+    html = html
+      .replace("{{ancien_tpe}}", ancien_model.nom_model.toUpperCase())
+      .replace("{{nouveau_tpe}}", nouveau_model.nom_model.toUpperCase())
+      .replace("{{commentaire}}", livraison.commentaire || "")
+      .replace("{{commentaire_reception}}", livraison.validation_remplacement[index].commentaire)
+      .replace("{{date_livraison}}", formatDate(livraison.date_remplacement))
+      .replace("{{qte_totale_livraison}}", livraison.quantite)
+      .replace("{{nom_expediteur}}", expediteurNom)
+      .replace("{{nom_recepteur}}", livraison.validation_remplacement[index].nom_recepteur || "Receveur")
+      .replace("{{produitsRows}}", produitsRows)
+      .replace("{{signature}}", livraison.validation_remplacement[index].signature || "Validé")
+      .replace("{{date_validation}}", livraison.validation_remplacement[index].date_validation ? formatDate(livraison.validation_remplacement[index].date_validation) : "N/A")
+      .replace("{{signature_expediteur}}", livraison.signature_expediteur || "Signé")
+
+    // 🖨️ Génération PDF
+    const browser = await puppeteer.launch({ headless: "new", args : ["--no-sandbox", "--disable-setuid-sandbox"] });
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: "networkidle0" });
+
+    const pdfBuffer = await page.pdf({
+      format: "A4",
+      printBackground: true,
+    });
+
+    await browser.close();
+
+    res.set({
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename=remplacement_${livraison.id}.pdf`
+    });
+
+    return res.send(pdfBuffer);
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Erreur lors de la génération du PDF" });
+  }
+};
+
 
 
 
@@ -2669,4 +2846,5 @@ module.exports = {
   generateRemplacementsXLSX,
   updateRemplacement,
   returnRemplacement,
+  generateRemplacementPDF,
 }

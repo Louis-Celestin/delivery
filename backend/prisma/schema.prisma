@@ -31,18 +31,6 @@ model Livraisons {
   @@index([user_id], map: "user_id")
 }
 
-model agents {
-  id         Int      @id @default(autoincrement())
-  nom        String   @db.VarChar(100)
-  fonction   String   @db.VarChar(50)
-  entite_id  Int?
-  section_id Int?
-  entites    entites? @relation(fields: [entite_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "agents_ibfk_1")
-
-  @@index([entite_id], map: "entite_id")
-  @@index([section_id], map: "section_id")
-}
-
 model demandes {
   id_demande                         Int                     @id @default(autoincrement())
   nom_demandeur                      String?                 @db.VarChar(255)
@@ -76,12 +64,6 @@ model demandes {
   @@index([service_demandeur], map: "service_demandeur")
   @@index([type_demande_id], map: "type_demande_id")
   @@index([user_id], map: "user_id")
-}
-
-model entites {
-  id     Int      @id @default(autoincrement())
-  nom    String   @db.VarChar(100)
-  agents agents[]
 }
 
 model livraison {
@@ -209,7 +191,7 @@ model stock_dt {
   quantite        Int?              @default(0)
   stock_carton    Int?
   model_id        Int
-  type            String?           @db.VarChar(255)
+  type            stock_dt_type?
   code_piece      String?           @db.VarChar(255)
   service         Int?
   created_by      String?           @db.VarChar(255)
@@ -333,6 +315,18 @@ model validations {
   @@index([user_id], map: "user_id")
 }
 
+model mouvement_stock {
+  id                  Int                  @id @default(autoincrement())
+  type                mouvement_stock_type
+  formulaire_id       Int?
+  demande_id          Int?
+  date                DateTime             @default(now()) @db.DateTime(0)
+  piece_id            Int
+  service_origine     Int?
+  service_destination Int?
+  quantite            Int?
+}
+
 enum livraison_statut_livraison {
   en_cours
   livre
@@ -387,4 +381,14 @@ enum remplacements_statut {
   en_attente
   refuse
   annule
+}
+
+enum mouvement_stock_type {
+  entree
+  sortie
+}
+
+enum stock_dt_type {
+  TERMINAL
+  PIECE
 }

@@ -133,7 +133,7 @@ export default function AllRemplacementsList() {
     const handleGeneratePdf = async (id) =>{
         setPrintingId(id);
         try{
-            const blob = await generatePdf(id);
+            const blob = await remplacements.generateRemplacementPDF(id);
             const fileURL = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
             window.open(fileURL, '_blank');
         }catch(error){
@@ -225,13 +225,13 @@ export default function AllRemplacementsList() {
                 {deliveryForms.statut == 'livre' ? 
                 (
                     <>
-                        {/* {printingId === deliveryForms.id ? (
+                        {printingId === deliveryForms.id ? (
                             <span className='mx-1'>
                                 <ProgressSpinner style={{width: '15px', height: '15px'}} strokeWidth="8" animationDuration=".5s" />
                             </span>
                         ) : (
                             <button onClick={() => handleGeneratePdf(deliveryForms.id)}><span className="mx-1 text-gray-500 text-theme-sm dark:text-gray-400"><i className="pi pi-print"></i></span></button>
-                        )} */}
+                        )}
                     </>
                 ) : (
                     <>

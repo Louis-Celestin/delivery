@@ -89,4 +89,16 @@ export class Remplacements{
             throw error.response.data;
         }
     };
+
+    async generateRemplacementPDF(id){
+        try{
+            const response = await axios.get(`${urlBase}/api/delivery/generateRemplacementPDF/${id}`, {
+                responseType: 'blob', // important!
+            });
+            console.log(response)
+            return response.data;
+        }catch(error){
+            throw error.response.data;
+        }
+    }
 }

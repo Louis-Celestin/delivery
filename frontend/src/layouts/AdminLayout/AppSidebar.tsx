@@ -43,18 +43,19 @@ const navItems: NavItem[] = [
     subItems: [
       { name: "Nouvelle Livraison", path: "/form-livraison", roles:[1], pro: false },
       { name: "Toutes les livraisons", path:"/toutes-les-livraisons", pro: false},
+      { name: "Nouveau Remplacement", path: "/nouveau-remplacement", roles:[1], pro: false},
+      { name: "Tous les remplacements", path: "/tous-les-remplacements", pro: false},
       // { name: "Ancienne Livraison", path: "/form-ancienne-livraison", roles:[1], pro: false },
     ],
     
   },
-  {
-    name: "Remplacement TPE",
-    icon: <ListIcon />,
-    subItems: [
-      { name: "Nouveau Remplacement", path: "/nouveau-remplacement", roles:[1], pro: false},
-      { name: "Tous les remplacements", path: "/tous-les-remplacements", pro: false},
-    ]
-  },
+  // {
+  //   name: "Remplacement TPE",
+  //   icon: <ListIcon />,
+  //   subItems: [
+      
+  //   ]
+  // },
   {
     name: "Mouvement Stock",
     icon: <ClipboardCheck />,
