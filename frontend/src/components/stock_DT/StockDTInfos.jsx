@@ -36,9 +36,7 @@ export default function StockDTInfos() {
                 let data;
                 data = await stock.getAllStock()
                 console.log(data)
-                const stock_dt = data.filter(item =>{
-                    return item.service == 5;
-                });
+                const stock_dt = data
                 setStockDT(stock_dt)
 
                 const model_data = await stock.getAllModels()
@@ -86,6 +84,15 @@ export default function StockDTInfos() {
             </>
         )
     }
+    const stockCartonTemplate = (piece) => {
+        const quantite = piece.stock_carton ? piece.stock_carton : 'N/A'
+
+        return(
+            <>
+                <span>{quantite}</span>
+            </>
+        )
+    }
     const modelTemplate = (piece) => {
         const model = models.find((item) => {
             return item.id_model == piece.model_id
@@ -93,7 +100,7 @@ export default function StockDTInfos() {
         const nom = model ? model.nom_model.toUpperCase() : 'N/A'
         return(
             <>
-                <span>{nom}</span>
+                <span className="p-1 rounded-2xl text-white bg-gray-dark text-xs font-bold">{nom}</span>
             </>
         )
     }
@@ -104,19 +111,27 @@ export default function StockDTInfos() {
         const nom = service ? service.nom_service.toUpperCase() : 'N/A'
         return(
             <>
-                <span>{nom}</span>
+                <span className="text-theme-sm font-medium">{nom}</span>
             </>
         )
     }
-    const stockCartonTemplate = (piece) => {
-        const quantite = piece.stock_carton ? piece.stock_carton : 'N/A'
-
+    const actionTemplate = (piece) => {
+        const modifLink = `/modifier-piece/${piece.id_piece}`
+        const quantityLink = `/modifier-quantite-piece/${piece.id_piece}`
         return(
             <>
-                <span>{quantite}</span>
+                <div className="flex justify-between">
+                    <Link to={modifLink}>
+                        <span><i className="pi pi-cog"></i></span>
+                    </Link>
+                    <Link to={quantityLink}>
+                        <span><i className="pi pi-box"></i></span>
+                    </Link>
+                </div>
             </>
         )
     }
+
     return (
         <>
             <div>
@@ -141,7 +156,7 @@ export default function StockDTInfos() {
                         <Column field="stock_carton" header="Stock Carton" body={stockCartonTemplate} sortable></Column>
                         <Column field="model_id" header="Model" body={modelTemplate} sortable></Column>
                         <Column field="service" header="Service" body={serviceTemplate} sortable></Column>
-                        <Column header="Actions"></Column>
+                        <Column header="Actions" body={actionTemplate}></Column>
 
                     </DataTable>
                 </div>

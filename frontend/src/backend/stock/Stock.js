@@ -12,9 +12,9 @@ export class Stock{
         }
     };
 
-    async setStock(payload){
+    async setStock(piece_id, payload){
         try{
-            const response = await axios.put(`${urlBase}/api/stock/setStock`,payload)
+            const response = await axios.put(`${urlBase}/api/stock/setStock/${piece_id}`, payload)
             return response.data;
         } catch(error){
             throw error.response.data
@@ -40,4 +40,30 @@ export class Stock{
         }
     }
 
+    async getAllMouvementStock(){
+        try{
+            const response = await axios.get(`${urlBase}/api/stock/getAllMouvementStock`)
+            return response.data;
+        } catch(error){
+            throw error.response.data
+        }
+    };
+
+    async getPiece(id){
+        try{
+            const response = await axios.get(`${urlBase}/api/stock/getPiece/${id}`)
+            return response.data;
+        } catch(error){
+            throw error.response.data
+        }
+    }
+
+    async modifyPiece(id, payload){
+        try{
+            const response = await axios.put(`${urlBase}/api/stock/modifyPiece/${id}`, payload)
+            return response.data;
+        } catch(error){
+            throw error.response.data
+        }
+    };
 }

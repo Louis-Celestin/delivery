@@ -43,6 +43,8 @@ export default function AjouterPieceInputs() {
 
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
 
+    const [pieceType, setPieceType] = useState('')
+
     useEffect( () =>{
         const fetchData = async () =>{
             try{
@@ -75,6 +77,11 @@ export default function AjouterPieceInputs() {
         fetchData()
     },[])
 
+    const options_types = [
+        { value: "PIECE", label: "PIECE"},
+        { value: "TERMINAL", label: "TERMINAL"},
+    ]
+
     const changeModel = (value) =>{
         console.log("Selected value : ",value)
         setSelectedModel(value);
@@ -87,6 +94,11 @@ export default function AjouterPieceInputs() {
         }else{
             setNomModel('Inconnu')
         }
+    }
+
+    const changeType = (value) => {
+        console.log("Selected value : ",value)
+        setPieceType(value)
     }
 
     const changeService = (value) =>{
@@ -109,12 +121,13 @@ export default function AjouterPieceInputs() {
             setErrorInput("Vous devez choisir le model !")
             return
         }
+        if(!pieceType){
+            setErrorInput("Vous devez choisir le type de pièce !")
+            return
+        }
         if(!selectedService){
             setErrorInput("Vous devez choisir le service !")
             return
-        }
-        if(!quantitePiece){
-            setQuantitePiece(0)
         }
 
         const existingPiece = stock.find((item) =>{
@@ -138,10 +151,10 @@ export default function AjouterPieceInputs() {
         const payload = {
             nomPiece: nomPiece,
             modelId: selectedModel,
+            type: pieceType,
             serviceId: selectedService,
-            quantite: quantitePiece,
-            user_id: userId,
             code_piece: codePiece,
+            user_id: userId,
         }
 
         try{
@@ -183,11 +196,41 @@ export default function AjouterPieceInputs() {
                                     <div className="space-y-6">
                                         <div>
                                             <Label htmlFor="input">Nom pièce <span className="text-red-700">*</span></Label>
-                                            <Input type="text" placeholder="TPE" value={nomPiece}
+                                            <Input 
+                                                type="text" 
+                                                value={nomPiece}
+                                                placeholder="TPE"
                                                 onChange={(e) =>{
                                                     const value = e.target.value
                                                     setNomPiece(value)
                                                 }}    
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="input">Model de la pièce <span className="text-red-700">*</span></Label>
+                                            <Select 
+                                                options={optionsModel}
+                                                placeholder="Choisir une option"
+                                                onChange={changeModel}
+                                                className="dark:bg-dark-900"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label>Type <span className="text-red-700">*</span></Label>
+                                            <Select 
+                                                options={options_types}
+                                                placeholder="Choisir une option"
+                                                onChange={changeType}
+                                                className="dark:bg-dark-900"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="input">Service propriétaire <span className="text-red-700">*</span></Label>
+                                            <Select 
+                                                options={optionsService}
+                                                placeholder="Choisir une option"
+                                                onChange={changeService}
+                                                className="dark:bg-dark-900"
                                             />
                                         </div>
                                         <div>
@@ -199,25 +242,7 @@ export default function AjouterPieceInputs() {
                                                 }}    
                                             />
                                         </div>
-                                        <div>
-                                            <Label htmlFor="input">Model de la pièce <span className="text-red-700">*</span></Label>
-                                            <Select 
-                                                options={optionsModel}
-                                                placeholder="A920"
-                                                onChange={changeModel}
-                                                className="dark:bg-dark-900"
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label htmlFor="input">Service propriétaire <span className="text-red-700">*</span></Label>
-                                            <Select 
-                                                options={optionsService}
-                                                placeholder="DIRECTION TECHNIQUE"
-                                                onChange={changeService}
-                                                className="dark:bg-dark-900"
-                                            />
-                                        </div>
-                                        <div>
+                                        {/* <div>
                                             <Label htmlFor="input">Quantitée initiale</Label>
                                             <Input type="number" value={quantitePiece} 
                                                 onChange={(e) =>{
@@ -227,7 +252,7 @@ export default function AjouterPieceInputs() {
                                                     }
                                                 }}
                                             />
-                                        </div>
+                                        </div> */}
                                         <div className="text-center">
                                             <span className="text-sm text-error-600">{errorInput}</span>
                                         </div>
@@ -273,10 +298,10 @@ export default function AjouterPieceInputs() {
                         <span>Modèle : <span className="text-red-500 font-medium">{nomModel}</span></span>
                     </div>
                     <div>
-                        <span>Service : <span className="text-red-500 font-medium">{nomService}</span></span>
+                        <span>Type : <span className="text-red-500 font-medium">{pieceType}</span></span>
                     </div>
                     <div>
-                        <span>Quantité : <span className="text-red-500 font-medium">{quantitePiece}</span></span>
+                        <span>Service : <span className="text-red-500 font-medium">{nomService}</span></span>
                     </div>
                     <div className='w-full flex justify-center items-center'>
                         <button className='w-1/3 mx-3 bg-gray-400 rounded-2xl h-10 flex justify-center items-center'

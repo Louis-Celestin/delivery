@@ -13,9 +13,9 @@ export default function GestionStock() {
                     {/* <div className="mb-6">
                         <StockLivraisonInfos />
                     </div> */}
-                    {/* <div className="">
+                    <div className="">
                         <StockDTInfos />
-                    </div> */}
+                    </div>
                 </div>
             </div>
         </>

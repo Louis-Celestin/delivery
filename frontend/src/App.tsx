@@ -110,6 +110,8 @@ import ReceptionSupportDetails from "./pages/SupportPages/ReceptionSupportDetail
 import ModifyStockForm from "./pages/Forms/StockForms/ModifyStockForm"
 // @ts-ignore
 import AjouterPieceForm from "./pages/Forms/StockForms/AjouterPieceForm"
+// @ts-ignore
+import ModifyPieceForm from "./pages/Forms/StockForms/ModifyPieceForm"
 
 
 // @ts-ignore
@@ -145,6 +147,12 @@ import AllRemplacements from "./pages/RemplacementPages/AllRemplacements"
 import RemplacementDetails from "./pages/RemplacementPages/RemplacementDetails"
 // @ts-ignore
 import ModifyRemplacementForm from "./pages/Forms/RemplacementForms/ModifyRemplacementForm"
+
+// @ts-ignore
+import EntreeSortie from "./pages/GestionStock/EntreeSortie"
+
+// @ts-ignore
+import SetStockQuantityForm from "./pages/Forms/StockForms/SetStockQuantityForm"
 
 
 export default function App() {
@@ -200,6 +208,9 @@ export default function App() {
               <Route path="/gestion-stock" element={<GestionStockChargeur />} />
               <Route path="/modifier-stock" element={<ModifyStockForm />} />
               <Route path="/ajouter-piece" element={<AjouterPieceForm />} />
+              <Route path="/modifier-piece/:id" element={<ModifyPieceForm />} />
+              <Route path="/entree-sortie-stock" element={<EntreeSortie />} />
+              <Route path="/modifier-quantite-piece/:id" element={<SetStockQuantityForm />} />
 
               {/* Maintenance */}
               <Route path="/toutes-les-livraisons-maintenance" element={<AllMaintenanceDeliveries />} />

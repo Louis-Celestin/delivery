@@ -57,6 +57,7 @@ model demandes {
   users_demandes_id_demandeurTousers users?                  @relation("demandes_id_demandeurTousers", fields: [id_demandeur], references: [id_user], onDelete: Restrict, onUpdate: Restrict, map: "demandes_ibfk_7")
   services                           services?               @relation(fields: [service_demandeur], references: [id], onDelete: NoAction, map: "demandes_ibfk_8")
   livraison_piece                    livraison_piece?
+  mouvement_stock                    mouvement_stock[]
   validation_demande                 validation_demande[]
 
   @@index([id_demandeur], map: "id_demandeur")
@@ -87,6 +88,7 @@ model livraison {
   services                   services?                   @relation(fields: [service_id], references: [id], onDelete: NoAction, map: "livraison_ibfk_3")
   roles                      roles?                      @relation(fields: [role_id], references: [id_role], onDelete: NoAction, map: "livraison_ibfk_4")
   model_piece                model_piece?                @relation(fields: [model_id], references: [id_model], onDelete: Restrict, map: "livraison_ibfk_5")
+  mouvement_stock            mouvement_stock[]
   validations                validations[]
 
   @@index([model_id], map: "model_id")
@@ -174,15 +176,17 @@ model roles {
 }
 
 model services {
-  id            Int             @id @default(autoincrement())
-  nom_service   String?         @db.VarChar(255)
-  code_service  String?         @db.VarChar(255)
-  Livraisons    Livraisons[]
-  demandes      demandes[]
-  livraison     livraison[]
-  remplacements remplacements[]
-  stock_dt      stock_dt[]
-  user_services user_services[]
+  id                                                            Int               @id @default(autoincrement())
+  nom_service                                                   String?           @db.VarChar(255)
+  code_service                                                  String?           @db.VarChar(255)
+  Livraisons                                                    Livraisons[]
+  demandes                                                      demandes[]
+  livraison                                                     livraison[]
+  mouvement_stock_mouvement_stock_service_origineToservices     mouvement_stock[] @relation("mouvement_stock_service_origineToservices")
+  mouvement_stock_mouvement_stock_service_destinationToservices mouvement_stock[] @relation("mouvement_stock_service_destinationToservices")
+  remplacements                                                 remplacements[]
+  stock_dt                                                      stock_dt[]
+  user_services                                                 user_services[]
 }
 
 model stock_dt {
@@ -199,6 +203,7 @@ model stock_dt {
   is_deleted      Boolean           @default(false)
   demandes        demandes[]
   livraison_piece livraison_piece[]
+  mouvement_stock mouvement_stock[]
   model_piece     model_piece       @relation(fields: [model_id], references: [id_model], onUpdate: Restrict, map: "stock_dt_ibfk_1")
   services        services?         @relation(fields: [service], references: [id], onDelete: NoAction, map: "stock_dt_ibfk_2")
 
@@ -316,15 +321,29 @@ model validations {
 }
 
 model mouvement_stock {
-  id                  Int                  @id @default(autoincrement())
-  type                mouvement_stock_type
-  formulaire_id       Int?
-  demande_id          Int?
-  date                DateTime             @default(now()) @db.DateTime(0)
-  piece_id            Int
-  service_origine     Int?
-  service_destination Int?
-  quantite            Int?
+  id                                                     Int                  @id @default(autoincrement())
+  type                                                   mouvement_stock_type
+  formulaire_id                                          Int?
+  demande_id                                             Int?
+  date                                                   DateTime             @default(now()) @db.DateTime(0)
+  piece_id                                               Int
+  service_origine                                        Int?
+  service_destination                                    Int?
+  quantite                                               Int?
+  stock_final                                            Int?
+  motif                                                  String?              @db.Text
+  commentaire                                            String?              @db.LongText
+  services_mouvement_stock_service_origineToservices     services?            @relation("mouvement_stock_service_origineToservices", fields: [service_origine], references: [id], onDelete: NoAction, map: "mouvement_stock_ibfk_1")
+  services_mouvement_stock_service_destinationToservices services?            @relation("mouvement_stock_service_destinationToservices", fields: [service_destination], references: [id], onDelete: NoAction, map: "mouvement_stock_ibfk_2")
+  demandes                                               demandes?            @relation(fields: [demande_id], references: [id_demande], onDelete: Restrict, map: "mouvement_stock_ibfk_3")
+  livraison                                              livraison?           @relation(fields: [formulaire_id], references: [id_livraison], onDelete: Restrict, map: "mouvement_stock_ibfk_4")
+  stock_dt                                               stock_dt             @relation(fields: [piece_id], references: [id_piece], onDelete: NoAction, map: "mouvement_stock_ibfk_5")
+
+  @@index([demande_id], map: "demande_id")
+  @@index([formulaire_id], map: "formulaire_id")
+  @@index([piece_id], map: "piece_id")
+  @@index([service_destination], map: "service_destination")
+  @@index([service_origine], map: "service_origine")
 }
 
 enum livraison_statut_livraison {

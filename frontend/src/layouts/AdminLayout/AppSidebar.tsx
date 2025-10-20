@@ -57,7 +57,7 @@ const navItems: NavItem[] = [
   //   ]
   // },
   {
-    name: "Mouvement Stock",
+    name: "Demande Stock",
     icon: <ClipboardCheck />,
     roles:[3, 11],
     subItems: [
@@ -73,6 +73,7 @@ const navItems: NavItem[] = [
     subItems: [
       { name: "Ajouter pièce", path: "/ajouter-piece", pro: false },
       { name: "Voir Stock", path: "/gestion-stock", pro: false },
+      { name: "Entrées Sorties", path: "/entree-sortie-stock", pro: false },
     ],
   },
   {
