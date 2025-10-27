@@ -4,6 +4,7 @@ import ComponentCard from "../../common/ComponentCard"
 import Label from "../Label"
 import Input from "../input/InputField"
 import Select from "../Select"
+import Checkbox from "../input/Checkbox"
 import Swal from "sweetalert2"
 import { Modal } from "../../ui/modal"
 import { ProgressSpinner } from "primereact/progressspinner"
@@ -24,20 +25,14 @@ export default function AjouterPieceInputs() {
     const [errorInput, setErrorInput] = useState('')
 
     const [stock, setStock] = useState([])
-    const [listeServices, setListeServices] = useState([])
-
+    
     const [nomPiece, setNomPiece] = useState('')
-
-    const [optionsModel, setOptionsModel] = useState([])
-    const [selectedModel, setSelectedModel] = useState()
-    const [nomModel, setNomModel] = useState('')
+    
+    const [listeServices, setListeServices] = useState([])
     const [listeModels, setListeModels] = useState([])
-
-    const [optionsService, setOptionsService] = useState([])
-    const [selectedService, setSelectedService] = useState()
-    const [nomService, setNomService] = useState('')
-
-    const [quantitePiece, setQuantitePiece] = useState(0)
+    
+    const [selectedModels, setSelectedModels] = useState([])
+    const [selectedServices, setSelectedServices] = useState([])
 
     const [codePiece, setCodePiece] = useState('')
 
@@ -50,23 +45,17 @@ export default function AjouterPieceInputs() {
             try{
                 setLoadingInfos(true)
                 const stock_data = await stockData.getAllStock()
-                setStock(stock_data)
+                const filtered_stock = stock_data.filter((item) =>{
+                    return item.is_deleted == 0
+                })
+                setStock(filtered_stock)
 
                 const service_data = await usersData.getAllServices()
-                const options_services = service_data.map((item) =>({
-                    value: item.id,
-                    label: item.nom_service.toUpperCase(),
-                }))
-                setOptionsService(options_services)
                 setListeServices(service_data)
 
                 const models_data = await stockData.getAllModels()
                 setListeModels(models_data)
-                const options_models = models_data.map((item) =>({
-                    value: item.id_model,
-                    label: item.nom_model,
-                }))
-                setOptionsModel(options_models)
+
             } catch(error){
                 setErrorForm("Une erreur s'est produite lors de la génération du formulaire.")
                 console.log(error)
@@ -82,58 +71,48 @@ export default function AjouterPieceInputs() {
         { value: "TERMINAL", label: "TERMINAL"},
     ]
 
-    const changeModel = (value) =>{
-        console.log("Selected value : ",value)
-        setSelectedModel(value);
-
-        const model = listeModels.find((item) =>{
-            return item.id_model == value
-        })
-        if(model){
-            setNomModel(model.nom_model)
-        }else{
-            setNomModel('Inconnu')
-        }
-    }
-
     const changeType = (value) => {
         console.log("Selected value : ",value)
         setPieceType(value)
     }
 
-    const changeService = (value) =>{
-        console.log("Selected value : ",value)
-        setSelectedService(value);
+    const handleSelectModel = (modelId) => {
+        setSelectedModels((prevSelected) =>
+        prevSelected.includes(modelId)
+            ? prevSelected.filter((id) => id !== modelId)
+            : [...prevSelected, modelId]
+        );
+    };
 
-        const service = listeServices.find((item) =>{
-            return item.id == value
-        })
-
-        setNomService(service.nom_service.toUpperCase())
-    }
-
+    const handleSelectService = (serviceId) => {
+        setSelectedServices((prevSelected) =>
+        prevSelected.includes(serviceId)
+            ? prevSelected.filter((id) => id !== serviceId)
+            : [...prevSelected, serviceId]
+        );
+    };
+    
     const handleConfirm = () => {
         if(!nomPiece.trim()){
             setErrorInput("Vous devez saisir un nom !")
-            return
-        }
-        if(!selectedModel){
-            setErrorInput("Vous devez choisir le model !")
             return
         }
         if(!pieceType){
             setErrorInput("Vous devez choisir le type de pièce !")
             return
         }
-        if(!selectedService){
-            setErrorInput("Vous devez choisir le service !")
+        if(selectedModels.length == 0){
+            setErrorInput("Vous devez choisir un model !")
+            return
+        }
+        if(selectedServices.length == 0){
+            setErrorInput("Vous devez choisir un service !")
             return
         }
 
         const existingPiece = stock.find((item) =>{
             const sameName = item.nom_piece.toLowerCase().trim() == nomPiece.toLowerCase().trim()
-            const sameModel = item.model_id == selectedModel
-            return sameName && sameModel
+            return sameName
         })
 
         if(existingPiece){
@@ -150,9 +129,9 @@ export default function AjouterPieceInputs() {
 
         const payload = {
             nomPiece: nomPiece,
-            modelId: selectedModel,
             type: pieceType,
-            serviceId: selectedService,
+            itemModels: selectedModels,
+            itemServices: selectedServices,
             code_piece: codePiece,
             user_id: userId,
         }
@@ -199,20 +178,11 @@ export default function AjouterPieceInputs() {
                                             <Input 
                                                 type="text" 
                                                 value={nomPiece}
-                                                placeholder="TPE"
+                                                placeholder="Choisir un nom"
                                                 onChange={(e) =>{
                                                     const value = e.target.value
                                                     setNomPiece(value)
                                                 }}    
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label htmlFor="input">Model de la pièce <span className="text-red-700">*</span></Label>
-                                            <Select 
-                                                options={optionsModel}
-                                                placeholder="Choisir une option"
-                                                onChange={changeModel}
-                                                className="dark:bg-dark-900"
                                             />
                                         </div>
                                         <div>
@@ -225,13 +195,42 @@ export default function AjouterPieceInputs() {
                                             />
                                         </div>
                                         <div>
-                                            <Label htmlFor="input">Service propriétaire <span className="text-red-700">*</span></Label>
-                                            <Select 
-                                                options={optionsService}
-                                                placeholder="Choisir une option"
-                                                onChange={changeService}
-                                                className="dark:bg-dark-900"
-                                            />
+                                            <span className="text-md text-gray-700 font-medium px-0.5 border border-gray-500 rounded">Models pièce</span>
+                                            <div className="">
+                                                {listeModels.map((model =>{
+                                                    const nomModel = model.nom_model
+                                                    return(
+                                                        <>
+                                                            <div key={model.id_model} className="flex items-center gap-3 my-2">
+                                                                <Checkbox
+                                                                    checked={selectedModels.includes(model.id_model)}
+                                                                    onChange={() => handleSelectModel(model.id_model)}
+                                                                    label={nomModel} 
+                                                                />
+                                                            </div>
+                                                        </>
+                                                    )
+                                                }))}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <span className="text-md text-gray-700 font-medium px-0.5 border border-gray-500 rounded">Service gestionnaire</span>
+                                            <div className="">
+                                                {listeServices.map((service =>{
+                                                    const nomService = service.nom_service
+                                                    return(
+                                                        <>
+                                                            <div key={service.id} className="flex items-center gap-3 my-2">
+                                                                <Checkbox
+                                                                    checked={selectedServices.includes(service.id)}
+                                                                    onChange={() => handleSelectService(service.id)}
+                                                                    label={nomService} 
+                                                                />
+                                                            </div>
+                                                        </>
+                                                    )
+                                                }))}
+                                            </div>
                                         </div>
                                         <div>
                                             <Label htmlFor="input">Code pièce</Label>
@@ -242,19 +241,8 @@ export default function AjouterPieceInputs() {
                                                 }}    
                                             />
                                         </div>
-                                        {/* <div>
-                                            <Label htmlFor="input">Quantitée initiale</Label>
-                                            <Input type="number" value={quantitePiece} 
-                                                onChange={(e) =>{
-                                                    let value = e.target.value
-                                                    if(value >=0){
-                                                        setQuantitePiece(value)
-                                                    }
-                                                }}
-                                            />
-                                        </div> */}
                                         <div className="text-center">
-                                            <span className="text-sm text-error-600">{errorInput}</span>
+                                            <span className="text-sm text-error-600 font-bold">{errorInput}</span>
                                         </div>
                                         <div className='w-full mt-6 flex justify-center items-center'>
                                             {loadingCreate ? 
@@ -292,16 +280,48 @@ export default function AjouterPieceInputs() {
                         <span>Vous allez ajouter une nouvelle pièce : <span className="text-red-500 font-medium">{nomPiece}</span></span>
                     </div>
                     <div>
-                        <span>Code pièce : <span className="text-red-500 font-medium">{codePiece}</span></span>
-                    </div>
-                    <div>
-                        <span>Modèle : <span className="text-red-500 font-medium">{nomModel}</span></span>
-                    </div>
-                    <div>
                         <span>Type : <span className="text-red-500 font-medium">{pieceType}</span></span>
                     </div>
                     <div>
-                        <span>Service : <span className="text-red-500 font-medium">{nomService}</span></span>
+                        <span>Code pièce : <span className="text-red-500 font-medium">{codePiece}</span></span>
+                    </div>
+                    <div className="grid grid-cols-2 border px-1">
+                        <span className="text-sm flex items-center">Modèles : </span>
+                        <div className="grid grid-cols-2">
+                            {selectedModels.map((id) =>{
+                                const selectedModel = listeModels.find((s) => s.id_model === id);
+                                return(
+                                    <>
+                                        <span className="font-bold text-blue-900">
+                                            {selectedModel ? 
+                                                (
+                                                    selectedModel.nom_model
+                                                ) : (id)
+                                            } ;
+                                        </span>
+                                    </>
+                                )
+                            })}
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 border px-1">
+                        <span className="text-sm flex items-center">Services : </span>
+                        <div className="grid grid-cols-2">
+                            {selectedServices.map((id) =>{
+                                const selectedService = listeServices.find((s) => s.id === id);
+                                return(
+                                    <>
+                                        <span className="font-bold text-blue-900">
+                                            {selectedService ? 
+                                                (
+                                                    selectedService.nom_service
+                                                ) : (id)
+                                            } ;
+                                        </span>
+                                    </>
+                                )
+                            })}
+                        </div>
                     </div>
                     <div className='w-full flex justify-center items-center'>
                         <button className='w-1/3 mx-3 bg-gray-400 rounded-2xl h-10 flex justify-center items-center'

@@ -12,9 +12,9 @@ export class Stock{
         }
     };
 
-    async setStock(piece_id, payload){
+    async setStockPiece(piece_id, model_id, service_id, payload){
         try{
-            const response = await axios.put(`${urlBase}/api/stock/setStock/${piece_id}`, payload)
+            const response = await axios.put(`${urlBase}/api/stock/setStockPiece/${piece_id}/${model_id}/${service_id}`, payload)
             return response.data;
         } catch(error){
             throw error.response.data
@@ -61,6 +61,72 @@ export class Stock{
     async modifyPiece(id, payload){
         try{
             const response = await axios.put(`${urlBase}/api/stock/modifyPiece/${id}`, payload)
+            return response.data;
+        } catch(error){
+            throw error.response.data
+        }
+    };
+
+    async getLotPiece(item_id, model_id, service_id){
+        try{
+            const response = await axios.get(`${urlBase}/api/stock/getLotPiece/${item_id}/${model_id}/${service_id}`)
+            return response.data;
+        } catch(error){
+            throw error.response.data
+        }
+    }
+
+    async getCartonLot(id){
+        try{
+            const response = await axios.get(`${urlBase}/api/stock/getCartonLot/${id}`)
+            return response.data;
+        } catch(error){
+            throw error.response.data
+        }
+    }
+
+    async getCartonPiece(item_id, model_id, service_id){
+        try{
+            const response = await axios.get(`${urlBase}/api/stock/getCartonPiece/${item_id}/${model_id}/${service_id}`)
+            return response.data;
+        } catch(error){
+            throw error.response.data
+        }
+    }
+
+    async getItemModels(id){
+        try{
+            const response = await axios.get(`${urlBase}/api/stock/getItemModels/${id}`)
+            console.log(response)
+            return response.data;
+        } catch(error){
+            throw error.response.data
+        }
+    };
+
+    async getItemServices(id){
+        try{
+            const response = await axios.get(`${urlBase}/api/stock/getItemServices/${id}`)
+            console.log(response)
+            return response.data;
+        } catch(error){
+            throw error.response.data
+        }
+    };
+
+    async getStockPiece(item_id, model_id, service_id){
+        try{
+            const response = await axios.get(`${urlBase}/api/stock/getStockPiece/${item_id}/${model_id}/${service_id}`)
+            console.log(response)
+            return response.data;
+        } catch(error){
+            throw error.response.data
+        }
+    }
+
+    async getAllTypeMouvementStock(){
+        try{
+            const response = await axios.get(`${urlBase}/api/stock/getAllTypeMouvementStock`)
             return response.data;
         } catch(error){
             throw error.response.data

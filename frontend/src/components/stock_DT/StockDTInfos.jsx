@@ -152,10 +152,6 @@ export default function StockDTInfos() {
                         <Column field="id_piece" header="ID" body={idTemplate} sortable></Column>
                         <Column field="nom_piece" header="Nom pièce" body={nomTemplate} sortable></Column>
                         <Column field="type" header="Type" body={typeTemplate} sortable></Column>
-                        <Column field="quantite" header="Quantité" sortable></Column>
-                        <Column field="stock_carton" header="Stock Carton" body={stockCartonTemplate} sortable></Column>
-                        <Column field="model_id" header="Model" body={modelTemplate} sortable></Column>
-                        <Column field="service" header="Service" body={serviceTemplate} sortable></Column>
                         <Column header="Actions" body={actionTemplate}></Column>
 
                     </DataTable>

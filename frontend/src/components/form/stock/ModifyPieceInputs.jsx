@@ -5,6 +5,7 @@ import ComponentCard from "../../common/ComponentCard";
 import Input from "../input/InputField";
 import Label from "../Label";
 import Select from "../Select";
+import Checkbox from "../input/Checkbox";
 import { Modal } from "../../ui/modal";
 import { useNavigate, useParams } from "react-router";
 import Swal from 'sweetalert2'
@@ -19,31 +20,24 @@ export default function ModifyPieceInputs() {
     const role = localStorage.getItem("role_id")
     const navigate = useNavigate();
 
-
-    const [stockDT, setStockDT] = useState([])
     const [loadingStock, setLoadingStock] = useState(false)
-    const [optionsPieces, setOptionsPieces] = useState([])
     const [nomPiece, setNomPiece] = useState('')
     const [titrePiece, setTitrePiece] = useState('')
-    const [stockInitial, setStockInitial] = useState('')
-    const [nouveauStock, setNouveauStock] = useState('')
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
     const [errorInput, setErrorInput] = useState('')
     const [loadingModif, setLoadingModif] = useState(false);
-    const [pieceId, setPieceId] = useState(null)
     const [piece, setPiece] = useState()
 
-    const [optionsModels, setOptionsModels] = useState([])
-    const [selectedModel, setSelectedModel] = useState()
     const [listeModels, setListeModels] = useState([])
 
-    const [optionsService, setOptionsService] = useState([])
-    const [selectedService, setSelectedService] = useState(null)
     const [nomService, setNomService] = useState('')
     const [listeServices, setListeServices] = useState([])
     const [pieceType, setPieceType] = useState(null)
     const [nomModel, setNomModel] = useState('')
     const [codePiece, setCodePiece] = useState('')
+
+    const [selectedModels, setSelectedModels] = useState([])
+    const [selectedServices, setSelectedServices] = useState([])
 
     useEffect( ()=>{
         const fetchStock = async () => {
@@ -53,37 +47,26 @@ export default function ModifyPieceInputs() {
                 setPiece(piece_data)
                 setNomPiece(piece_data.nom_piece)
                 setTitrePiece(piece_data.nom_piece)
-                setSelectedService(piece_data.service)
                 setPieceType(piece_data.type)
                 setCodePiece(piece_data.code_piece)
 
                 const models_data = await stock.getAllModels()
-                const options_model = models_data.map((item) =>({
-                    value: item.id_model,
-                    label: item.nom_model.toUpperCase(),
-                }))
-                setOptionsModels(options_model)
                 setListeModels(models_data)
-                const pieceModel = models_data.find((item) => {
-                    return item.id_model == piece_data.model_id
+
+                const itemModels_data = await stock.getItemModels(id)
+                const models_id = itemModels_data.model_piece.map((model) =>{
+                    return model.id_model
                 })
-                if(pieceModel){
-                    setNomModel(pieceModel.nom_model.toUpperCase())
-                }
+                setSelectedModels(models_id)
 
                 const service_data = await usersData.getAllServices()
-                const options_services = service_data.map((item) =>({
-                    value: item.id,
-                    label: item.nom_service.toUpperCase(),
-                }))
-                setOptionsService(options_services)
                 setListeServices(service_data)
-                const pieceService = service_data.find((item) => {
-                    return item.id == piece_data.service
+
+                const itemServices_data = await stock.getItemServices(id)
+                const services_id = itemServices_data.services.map((services) =>{
+                    return services.id
                 })
-                if(pieceService){
-                    setNomService(pieceService.nom_service.toUpperCase())
-                }
+                setSelectedServices(services_id)
 
             }catch (error){
                 console.log('Error fetching data ',error)
@@ -99,68 +82,47 @@ export default function ModifyPieceInputs() {
         { value: "TERMINAL", label: "TERMINAL"},
     ]
 
-    const changeModel = (value) =>{
-        console.log("Selected value : ",value)
-        setSelectedModel(value);
-
-        const model = listeModels.find((item) =>{
-            return item.id_model == parseInt(value)
-        })
-        if(model){
-            setNomModel(model.nom_model)
-        }else{
-            setNomModel('Inconnu')
-        }
-    }
-
     const changeType = (value) => {
         console.log("Selected value : ",value)
         setPieceType(value)
     }
 
-    const changeService = (value) =>{
-        console.log("Selected value : ",value)
-        setSelectedService(value);
+    const handleSelectModel = (modelId) => {
+        setSelectedModels((prevSelected) =>
+        prevSelected.includes(modelId)
+            ? prevSelected.filter((id) => id !== modelId)
+            : [...prevSelected, modelId]
+        );
+    };
 
-        const service = listeServices.find((item) =>{
-            return item.id == value
-        })
-
-        setNomService(service.nom_service.toUpperCase())
-    }
+    const handleSelectService = (serviceId) => {
+        setSelectedServices((prevSelected) =>
+        prevSelected.includes(serviceId)
+            ? prevSelected.filter((id) => id !== serviceId)
+            : [...prevSelected, serviceId]
+        );
+    };
 
     const handleConfirm = () => {
-        if((role != 1) && (role != 3)){
-            Swal.fire({
-                title: "Error",
-                text: "Vous n'êtes pas authorisé à faire cette action !",
-                icon: "error"
-            });
-            localStorage.removeItem('token');
-            localStorage.removeItem('username');
-            navigate('/signin');
-            return
-        }
-    
         if(!nomPiece.trim()){
             setErrorInput("Vous devez saisir un nom !")
-            return
-        }
-        if(!selectedModel){
-            setErrorInput("Vous devez choisir le model !")
             return
         }
         if(!pieceType){
             setErrorInput("Vous devez choisir le type de pièce !")
             return
         }
-        if(!selectedService){
-            setErrorInput("Vous devez choisir le service !")
+        if(selectedModels.length == 0){
+            setErrorInput("Vous devez choisir un model !")
             return
         }
-    
-        setErrorInput('')
+        if(selectedServices.length == 0){
+            setErrorInput("Vous devez choisir un service !")
+            return
+        }
+
         setIsConfirmModalOpen(true)
+        setErrorInput('')
     }
 
     const handleModify = async (e) => {
@@ -179,16 +141,13 @@ export default function ModifyPieceInputs() {
         setIsConfirmModalOpen(false)
         setLoadingModif(true)
 
-        const user_id = userId
-
-
         const payload = {
-            nomPiece,
-            modelId: selectedModel,
+            nomPiece: nomPiece,
             type: pieceType,
-            serviceId: selectedService,
-            user_id,
-            codePiece,
+            itemModels: selectedModels,
+            itemServices: selectedServices,
+            code_piece: codePiece,
+            user_id: userId,
         }
 
         try{
@@ -198,7 +157,7 @@ export default function ModifyPieceInputs() {
 
             Swal.fire({
                 title: "Succès",
-                text: "Pièce modifié avec succès",
+                text: "Pièce modifiée avec succès",
                 icon: "success"
             });
             navigate('/gestion-stock')
@@ -234,26 +193,49 @@ export default function ModifyPieceInputs() {
                             <Label>Type <span className="text-red-700">*</span></Label>
                             <Select 
                                 options={options_types} 
-                                placeholder="Choisir une option"
+                                // defaultValue={pieceType}
+                                placeholder={pieceType}
                                 onChange={changeType}
-                            />
-                        </div>
-                        <div>
-                            <Label>Model <span className="text-red-700">*</span></Label>
-                            <Select 
-                                options={optionsModels}
-                                placeholder="Choisir une option"
-                                onChange={changeModel}
-                            />
-                        </div>
-                        <div>
-                            <Label htmlFor="input">Service propriétaire <span className="text-red-700">*</span></Label>
-                            <Select 
-                                options={optionsService}
-                                defaultValue={selectedService}
                                 className="dark:bg-dark-900"
-                                onChange={changeService}
                             />
+                        </div>
+                        <div>
+                            <span className="text-md text-gray-700 font-medium px-0.5 border border-gray-500 rounded">Modèles pièce</span>
+                            <div className="">
+                                {listeModels.map((model =>{
+                                    const nomModel = model.nom_model
+                                    return(
+                                        <>
+                                            <div key={model.id_model} className="flex items-center gap-3 my-2">
+                                                <Checkbox
+                                                    checked={selectedModels.includes(model.id_model)}
+                                                    onChange={() => handleSelectModel(model.id_model)}
+                                                    label={nomModel} 
+                                                />
+                                            </div>
+                                        </>
+                                    )
+                                }))}
+                            </div>
+                        </div>
+                        <div>
+                            <span className="text-md text-gray-700 font-medium px-0.5 border border-gray-500 rounded">Attribution services</span>
+                            <div className="">
+                                {listeServices.map((service =>{
+                                    const nomService = service.nom_service
+                                    return(
+                                        <>
+                                            <div key={service.id} className="flex items-center gap-3 my-2">
+                                                <Checkbox
+                                                    checked={selectedServices.includes(service.id)}
+                                                    onChange={() => handleSelectService(service.id)}
+                                                    label={nomService} 
+                                                />
+                                            </div>
+                                        </>
+                                    )
+                                }))}
+                            </div>
                         </div>
                         <div>
                             <Label htmlFor="input">Code pièce</Label>
@@ -268,7 +250,7 @@ export default function ModifyPieceInputs() {
                             />
                         </div>
                         <div className="text-center">
-                            <span className="text-sm text-error-600">{errorInput}</span>
+                            <span className="text-sm text-error-600 font-bold">{errorInput}</span>
                         </div>
                     </div>
                     <div className='w-full flex justify-center items-center'>
@@ -289,37 +271,74 @@ export default function ModifyPieceInputs() {
                     </div>               
                 </ComponentCard>
             </div>
-            <Modal isOpen={isConfirmModalOpen} onClose={() => setIsConfirmModalOpen(false)} className="p-4 max-w-xl">
-                <div className="space-y-4">
+            <Modal isOpen={isConfirmModalOpen} onClose={() => setIsConfirmModalOpen(false)} className="p-6 max-w-xl">
+                <div className="space-y-6">
                     <div className="w-full text-center">
                         <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium">Modification pièce</span>
                     </div>
-                    <div className="space-y-3">
-                        <div>
-                            <span>Nom pièce : <span className="font-bold text-red-700">{nomPiece}</span></span>
-                        </div>
-                        <div>
-                            <span>Type : <span className="font-bold text-red-700">{pieceType}</span></span>
-                        </div>
-                        <div>
-                            <span>Model : <span className="font-bold text-red-700">{nomModel}</span></span>
-                        </div>
-                        <div>
-                            <span>Service : <span className="font-bold text-red-700">{nomService}</span></span>
-                        </div>
-                        <div>
-                            <span>Code pièce : <span className="font-bold text-red-700">{codePiece}</span></span>
+                    <div>
+                        <span>Nom pièce : <span className="font-bold text-red-700">{nomPiece}</span></span>
+                    </div>
+                    <div>
+                        <span>Type : <span className="text-red-500 font-medium">{pieceType}</span></span>
+                    </div>
+                    <div>
+                        <span>Code pièce : <span className="text-red-500 font-medium">{codePiece}</span></span>
+                    </div>
+                    <div className="grid grid-cols-2 border px-1">
+                        <span className="text-sm flex items-center">Modèles : </span>
+                        <div className="grid grid-cols-2">
+                            {selectedModels.map((id) =>{
+                                const selectedModel = listeModels.find((s) => s.id_model === id);
+                                return(
+                                    <>
+                                        <span className="font-bold text-blue-900">
+                                            {selectedModel ? 
+                                                (
+                                                    selectedModel.nom_model
+                                                ) : (id)
+                                            } ;
+                                        </span>
+                                    </>
+                                )
+                            })}
                         </div>
                     </div>
+                    <div className="grid grid-cols-2 border px-1">
+                        <span className="text-sm flex items-center">Services : </span>
+                        <div className="grid grid-cols-2">
+                            {selectedServices.map((id) =>{
+                                const selectedService = listeServices.find((s) => s.id === id);
+                                return(
+                                    <>
+                                        <span className="font-bold text-blue-900">
+                                            {selectedService ? 
+                                                (
+                                                    selectedService.nom_service
+                                                ) : (id)
+                                            } ;
+                                        </span>
+                                    </>
+                                )
+                            })}
+                        </div>
                     </div>
-                    <div className='w-full mt-6 flex justify-center items-center'>
-                    <button
-                        onClick={handleModify}
-                        className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
-                        Valider
-                    </button>
+                    <div className='w-full flex justify-center items-center'>
+                        <button className='w-1/3 mx-3 bg-gray-400 rounded-2xl h-10 flex justify-center items-center'
+                            onClick={() =>{
+                                setIsConfirmModalOpen(false);
+                            }}
+                        >
+                            Annuler
+                        </button>
+                        <button className='w-1/3 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'
+                            onClick={handleModify}
+                        >
+                            Valider
+                        </button>
+                    </div>
                 </div>
-            </Modal>
+            </Modal> 
         </>
     )
 }
