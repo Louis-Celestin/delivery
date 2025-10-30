@@ -486,6 +486,10 @@ const setStockCarton = async (req, res) =>{
   }
 }
 
+const setStockPieceCarton = async (req, res) =>{
+  
+}
+
 const setLotStock = async (req, res) =>{
   const {
     piece_id
