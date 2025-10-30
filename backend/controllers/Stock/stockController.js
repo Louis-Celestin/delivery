@@ -296,6 +296,7 @@ const setStockPiece = async (req, res) =>{
         stock_initial: inital,
         quantite: stock,
         stock_final: final,
+        quantite_totale_piece: final,
         motif,
         commentaire,
       }
@@ -336,6 +337,149 @@ const setStockPiece = async (req, res) =>{
     })
 
     return res.status(200).json(updated_quantite, mouvement);
+  }catch(error){
+    console.error(error);
+    return res.status(500).json({ message: "Erreur lors de la mise à jour", error });
+  }
+}
+
+// Attribuer une quantité à un stock de cartons choisi en fonction de l'ID du stock.
+const setStockCarton = async (req, res) =>{
+
+  const {
+    item_id,
+    model_id,
+    service_id,
+  } = req.params
+
+  const {
+    stockInitalCarton,
+    quantiteMouvementCarton,
+    stockFinalCarton,
+    details,
+    motif,
+    commentaire,
+    isEntree,
+    userId
+  } = req.body;
+
+  try{
+    
+    const detailsCartons = typeof details === "string" ? JSON.parse(details) : details;
+
+    let utilisateur = null;
+    if(userId != null){
+      utilisateur = await prisma.users.findUnique({
+      where: {
+        id_user: parseInt(userId)
+      }})
+      if (!utilisateur) {
+        return res.status(404).json({ message: "Utilisateur non trouvé" });
+      }
+    }
+
+    const piece = await prisma.items.findUnique({
+      where: {
+        id_piece: parseInt(item_id)
+      }
+    })
+    if(!piece){
+      return res.status(404).json({ message: "Pièce non trouvée" });
+    }
+
+    const type = isEntree? 'entree' : 'sortie'
+
+    const initalCarton = Number(stockInitalCarton)
+    const stockCarton = Number(quantiteMouvementCarton)
+    const finalCarton = Number(stockFinalCarton)
+    const finalPiece = Number(detailsCartons.stockFinalPiece)
+
+    const mouvement = await prisma.mouvement_stock.create({
+      data:{
+        type,
+        mouvement: 4,
+        date: new Date(),
+        piece_id: parseInt(item_id),
+        service_origine: isEntree ? null : parseInt(service_id),
+        service_destination: isEntree ? parseInt(service_id) : null,
+        model_id: parseInt(model_id),
+        stock_initial: initalCarton,
+        quantite: stockCarton,
+        stock_final: finalCarton,
+        quantite_totale_piece: finalPiece,
+        motif,
+        commentaire,
+        details_mouvement: JSON.stringify(detailsCartons),
+      }
+    })
+
+    const quantite = await prisma.stock_piece.findFirst({
+      where:{
+        piece_id: parseInt(item_id),
+        model_id: parseInt(model_id),
+        service_id: parseInt(service_id),
+      }
+    })
+    
+    const dataToUpdate = {
+      quantite : parseInt(detailsCartons.stockFinalPiece)
+    }
+    
+    let updatedQuantite = await prisma.stock_piece.update({
+      where: {
+        id: quantite.id,
+        piece_id: parseInt(item_id),
+        model_id: parseInt(model_id),
+        service_id: parseInt(service_id),
+      },
+      data: dataToUpdate
+    })
+    
+    if(!quantite){
+      updatedQuantite = await prisma.stock_piece.create({
+        data:{
+          piece_id: parseInt(item_id),
+          model_id: parseInt(model_id),
+          service_id: parseInt(service_id),
+          quantite: parseInt(detailsCartons.stockFinalPiece),
+        }
+      })
+    }
+
+    if (isEntree) {
+      const listCarton = await prisma.stock_carton.findMany({
+        where: { piece_id: parseInt(item_id) },
+        orderBy: { numero_carton: "asc" },
+      });
+  
+      const lastCarton = listCarton[listCarton.length - 1];
+      const lastId = lastCarton ? lastCarton.numero_carton : 0;
+      const piecesPerCarton = Number(detailsCartons.quantitePieceCarton);
+
+      for (let i = 0; i < stockCarton; i++) {
+        await prisma.stock_carton.create({
+          data: {
+            numero_carton: lastId + i + 1,
+            piece_id: parseInt(item_id),
+            model_id: parseInt(model_id),
+            service_id: parseInt(service_id),
+            quantite_piece_carton: piecesPerCarton,
+            quantite_totale_piece: piecesPerCarton,
+          },
+        });
+      }
+    }else {
+      const listCarton = detailsCartons.listeCartons
+      for (let id of listCarton){
+        await prisma.stock_carton.delete({
+          where: {
+            id: parseInt(id)
+          },
+        })
+      }
+    }
+
+    return res.status(200).json(updatedQuantite, mouvement);
   }catch(error){
     console.error(error);
     return res.status(500).json({ message: "Erreur lors de la mise à jour", error });
@@ -562,4 +706,5 @@ module.exports = {
   getItemServices,
   getStockPiece,
   getAllTypeMouvementStock,
+  setStockCarton,
 }

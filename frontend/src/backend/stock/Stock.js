@@ -12,15 +12,6 @@ export class Stock{
         }
     };
 
-    async setStockPiece(piece_id, model_id, service_id, payload){
-        try{
-            const response = await axios.put(`${urlBase}/api/stock/setStockPiece/${piece_id}/${model_id}/${service_id}`, payload)
-            return response.data;
-        } catch(error){
-            throw error.response.data
-        }
-    };
-
     async getAllModels(){
         try{
             const response = await axios.get(`${urlBase}/api/stock/getAllModels`)
@@ -127,6 +118,24 @@ export class Stock{
     async getAllTypeMouvementStock(){
         try{
             const response = await axios.get(`${urlBase}/api/stock/getAllTypeMouvementStock`)
+            return response.data;
+        } catch(error){
+            throw error.response.data
+        }
+    };
+
+    async setStockPiece(piece_id, model_id, service_id, payload){
+        try{
+            const response = await axios.put(`${urlBase}/api/stock/setStockPiece/${piece_id}/${model_id}/${service_id}`, payload)
+            return response.data;
+        } catch(error){
+            throw error.response.data
+        }
+    };
+
+    async setStockCarton(piece_id, model_id, service_id, payload){
+        try{
+            const response = await axios.put(`${urlBase}/api/stock/setStockCarton/${piece_id}/${model_id}/${service_id}`, payload)
             return response.data;
         } catch(error){
             throw error.response.data

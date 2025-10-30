@@ -148,6 +148,13 @@ export default function AllMouvementStockList() {
             </>
         )
     }
+    const totalTemplate = (mouvement) =>{
+        return(
+            <>
+                <span className="text-sm font-bold">{mouvement.quantite_totale_piece}</span>
+            </>
+        )
+    }
     const origineTemplate = (mouvement) =>{
         const service = services.find((item) =>{
             return mouvement.service_origine == item.id
@@ -213,7 +220,7 @@ export default function AllMouvementStockList() {
                         first={first}
                         onPage={handlePageChange}
                         rowsPerPageOptions={[5, 10, 25, 50, 100, 200, 300, 500, 1000]}
-                        tableStyle={{ minWidth: '50rem', fontSize: '13px' }}
+                        tableStyle={{ minWidth: '50rem', fontSize: '11px' }}
                         emptyMessage="Aucun mouvement trouvé"
                         className="p-datatable-sm flex-wrap">
                             
@@ -225,6 +232,7 @@ export default function AllMouvementStockList() {
                         <Column field="stock_initial" header="Stock Initial" body={initialTemplate} sortable></Column>
                         <Column field="quantite" header="Quantité" body={quantiteTemplate} sortable></Column>
                         <Column field="stock_final" header="Stock Final" body={finalTemplate} sortable></Column>
+                        <Column field="quantite_totale_piece" header="Quantité totale" body={totalTemplate} sortable></Column>
                         <Column field="service_origine" header="Origine" body={origineTemplate}></Column>
                         <Column field="service_destination" header="Destination" body={destinationTemplate}></Column>
                         <Column field="date" header="Date" body={dateTemplate} sortable></Column>

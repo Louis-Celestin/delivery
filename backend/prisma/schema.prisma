@@ -137,8 +137,10 @@ model mouvement_stock {
   stock_initial                                          Int?
   quantite                                               Int?
   stock_final                                            Int?
+  quantite_totale_piece                                  Int?
   motif                                                  String?               @db.Text
   commentaire                                            String?               @db.LongText
+  details_mouvement                                      String?               @db.LongText
   mouvement_lot                                          mouvement_lot?
   services_mouvement_stock_service_origineToservices     services?             @relation("mouvement_stock_service_origineToservices", fields: [service_origine], references: [id], onDelete: NoAction, map: "mouvement_stock_ibfk_1")
   services_mouvement_stock_service_destinationToservices services?             @relation("mouvement_stock_service_destinationToservices", fields: [service_destination], references: [id], onDelete: NoAction, map: "mouvement_stock_ibfk_2")
