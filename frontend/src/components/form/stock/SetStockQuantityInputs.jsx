@@ -161,7 +161,10 @@ export default function SetStockQuantityInputs() {
                 setQuantitePiece(quantite_piece)
                 console.log(quantite_piece)
 
-                const stock_carton = await stockData.getCartonPiece(id, selectedModel, selectedService)
+                const stock_carton_all = await stockData.getCartonPiece(id, selectedModel, selectedService)
+                const stock_carton = stock_carton_all.filter((item) =>{
+                    return item.is_deleted == false
+                })
                 setQuantiteCarton(stock_carton.length)
                 const carton_simple = stock_carton.filter((item) =>{
                     return item.lot_id == null
@@ -173,7 +176,10 @@ export default function SetStockQuantityInputs() {
                 setOptionsCartons(options_carton)
                 setListeCartons(stock_carton)
 
-                const stock_lot = await stockData.getLotPiece(id, selectedModel, selectedService)
+                const stock_lot_all = await stockData.getLotPiece(id, selectedModel, selectedService)
+                const stock_lot = stock_lot_all.filter((item) =>{
+                    return item.is_deleted == false
+                })
                 setQuantiteLot(stock_lot.length)
                 setListLot(stock_lot)
                 const options_lot = stock_lot.map((item) =>({
@@ -295,9 +301,9 @@ export default function SetStockQuantityInputs() {
 
         } catch(error){
             Swal.fire({
-                title: "Error",
+                title: "Attention",
                 text: "Une erreur est survenue lors de la modification !",
-                icon: "error"
+                icon: "warning"
             })
             navigate('/entree-sortie-stock')
         } finally{
@@ -335,9 +341,9 @@ export default function SetStockQuantityInputs() {
 
         } catch(error){
             Swal.fire({
-                title: "Error",
+                title: "Attention",
                 text: "Une erreur est survenue lors de la modification !",
-                icon: "error"
+                icon: "warning"
             })
             navigate('/entree-sortie-stock')
         } finally{
@@ -464,7 +470,7 @@ export default function SetStockQuantityInputs() {
             setLoadingValidation(true)
             console.log('Sendind payload...')
 
-            const response = await stockData.setStockCarton(item_id, model_id, service_id, payload)
+            const response = await stockData.setStockPieceCarton(item_id, model_id, service_id, payload)
 
             console.log(response)
             Swal.fire({
@@ -476,9 +482,9 @@ export default function SetStockQuantityInputs() {
 
         } catch(error){
             Swal.fire({
-                title: "Error",
+                title: "Attention",
                 text: "Une erreur est survenue lors de la modification !",
-                icon: "error"
+                icon: "warning"
             })
             navigate('/entree-sortie-stock')
         } finally{
@@ -576,9 +582,9 @@ export default function SetStockQuantityInputs() {
 
         } catch(error){
             Swal.fire({
-                title: "Error",
+                title: "Attention",
                 text: "Une erreur est survenue lors de la modification !",
-                icon: "error"
+                icon: "warning"
             })
             navigate('/entree-sortie-stock')
         } finally{
@@ -650,9 +656,9 @@ export default function SetStockQuantityInputs() {
 
         } catch(error){
             Swal.fire({
-                title: "Error",
+                title: "Attention",
                 text: "Une erreur est survenue lors de la modification !",
-                icon: "error"
+                icon: "warning"
             })
             navigate('/entree-sortie-stock')
         } finally{

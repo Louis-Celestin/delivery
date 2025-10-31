@@ -141,4 +141,13 @@ export class Stock{
             throw error.response.data
         }
     };
+
+    async setStockPieceCarton(piece_id, model_id, service_id, payload){
+        try{
+            const response = await axios.put(`${urlBase}/api/stock/setStockPieceCarton/${piece_id}/${model_id}/${service_id}`, payload)
+            return response.data;
+        } catch(error){
+            throw error.response.data
+        }
+    };
 }
