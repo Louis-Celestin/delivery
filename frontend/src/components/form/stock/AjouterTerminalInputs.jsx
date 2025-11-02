@@ -12,7 +12,7 @@ import { ProgressSpinner } from "primereact/progressspinner"
 import { Stock } from "../../../backend/stock/Stock"
 import { Users } from "../../../backend/users/Users"
 
-export default function AjouterPieceInputs() {
+export default function AjouterTerminalInputs() {
 
     const stockData = new Stock()
     const usersData = new Users()
@@ -26,7 +26,7 @@ export default function AjouterPieceInputs() {
 
     const [stock, setStock] = useState([])
     
-    const [nomPiece, setNomPiece] = useState('')
+    const [nomPiece, setNomPiece] = useState('Terminal')
     
     const [listeServices, setListeServices] = useState([])
     const [listeModels, setListeModels] = useState([])
@@ -38,7 +38,7 @@ export default function AjouterPieceInputs() {
 
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
 
-    const [pieceType, setPieceType] = useState('PIECE')
+    const [pieceType, setPieceType] = useState('TERMINAL')
 
     const [cartonLot, setCartonLot] = useState(0)
     const [pieceCarton, setPieceCarton] = useState(0)
@@ -96,10 +96,10 @@ export default function AjouterPieceInputs() {
     };
     
     const handleConfirm = () => {
-        if(!nomPiece.trim()){
-            setErrorInput("Vous devez saisir un nom !")
-            return
-        }
+        // if(!nomPiece.trim()){
+        //     setErrorInput("Vous devez saisir un nom !")
+        //     return
+        // }
         // if(!pieceType){
         //     setErrorInput("Vous devez choisir le type de pièce !")
         //     return
@@ -176,9 +176,9 @@ export default function AjouterPieceInputs() {
                             </div>
                         ) : (
                             <>
-                                <ComponentCard className="md:w-1/2 w-full" title="Ajouter une nouvelle pièce">
+                                <ComponentCard className="md:w-1/2 w-full" title="Ajouter un terminal">
                                     <div className="space-y-6">
-                                        <div>
+                                        {/* <div>
                                             <Label htmlFor="input">Nom pièce <span className="text-red-700">*</span></Label>
                                             <Input 
                                                 type="text" 
@@ -189,7 +189,7 @@ export default function AjouterPieceInputs() {
                                                     setNomPiece(value)
                                                 }}    
                                             />
-                                        </div>
+                                        </div> */}
                                         {/* <div>
                                             <Label>Type <span className="text-red-700">*</span></Label>
                                             <Select 
@@ -307,7 +307,7 @@ export default function AjouterPieceInputs() {
                         <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium">Nouvelle pièce</span>
                     </div>
                     <div>
-                        <span>Vous allez ajouter une nouvelle pièce : <span className="text-red-500 font-medium">{nomPiece}</span></span>
+                        <span>Vous allez ajouter un terminal</span>
                     </div>
                     <div>
                         <span>Type : <span className="text-red-500 font-medium">{pieceType}</span></span>

@@ -388,22 +388,24 @@ model validations {
 }
 
 model items {
-  id_piece        Int               @id @default(autoincrement())
-  nom_piece       String            @db.VarChar(255)
-  type            items_type?
-  code_piece      String?           @db.VarChar(255)
-  created_by      String?           @db.VarChar(255)
-  user_id         Int?
-  is_deleted      Boolean           @default(false)
-  demandes        demandes[]
-  users           users?            @relation(fields: [user_id], references: [id_user], onUpdate: NoAction, map: "items_ibfk_3")
-  items_models    items_models[]
-  items_services  items_services[]
-  livraison_piece livraison_piece[]
-  mouvement_stock mouvement_stock[]
-  stock_carton    stock_carton[]
-  stock_lot       stock_lot[]
-  stock_piece     stock_piece[]
+  id_piece              Int               @id @default(autoincrement())
+  nom_piece             String            @db.VarChar(255)
+  type                  items_type?
+  code_piece            String?           @db.VarChar(255)
+  created_by            String?           @db.VarChar(255)
+  user_id               Int?
+  quantite_carton_lot   Int?
+  quantite_piece_carton Int?
+  is_deleted            Boolean           @default(false)
+  demandes              demandes[]
+  users                 users?            @relation(fields: [user_id], references: [id_user], onUpdate: NoAction, map: "items_ibfk_3")
+  items_models          items_models[]
+  items_services        items_services[]
+  livraison_piece       livraison_piece[]
+  mouvement_stock       mouvement_stock[]
+  stock_carton          stock_carton[]
+  stock_lot             stock_lot[]
+  stock_piece           stock_piece[]
 
   @@index([user_id], map: "user_id")
 }

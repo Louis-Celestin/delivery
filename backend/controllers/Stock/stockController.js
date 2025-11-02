@@ -28,6 +28,8 @@ const addPiece = async (req, res) =>{
       itemServices,
       code_piece,
       user_id,
+      quantite_carton_lot,
+      quantite_piece_carton,
     } = req.body
 
     let utilisateur = null;
@@ -45,11 +47,12 @@ const addPiece = async (req, res) =>{
     const nouvellePiece = await prisma.items.create({
       data:{
         nom_piece: nomPiece,
-        quantite: 0,
         type: type,
         code_piece,
         created_by: nomUser,
         user_id: parseInt(user_id),
+        quantite_carton_lot: parseInt(quantite_carton_lot),
+        quantite_piece_carton: parseInt(quantite_piece_carton),
       }
     })
 
@@ -451,6 +454,7 @@ const setStockCarton = async (req, res) =>{
       const listCarton = await prisma.stock_carton.findMany({
         where: { 
           piece_id: parseInt(item_id),
+          lot_id: null,
         },
         orderBy: { numero_carton: "asc" },
       });

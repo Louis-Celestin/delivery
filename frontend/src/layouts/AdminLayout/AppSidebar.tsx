@@ -45,6 +45,8 @@ const navItems: NavItem[] = [
       { name: "Toutes les livraisons", path:"/toutes-les-livraisons", pro: false},
       { name: "Nouveau Remplacement", path: "/nouveau-remplacement", roles:[1], pro: false},
       { name: "Tous les remplacements", path: "/tous-les-remplacements", pro: false},
+      { name: "Nouvelle Demande Stock", path:"/nouvelle-demande", roles:[3], pro: false},
+      { name: "Toutes les demandes Stock", path: "/toutes-les-demandes",roles:[3,11], pro: false },
       // { name: "Ancienne Livraison", path: "/form-ancienne-livraison", roles:[1], pro: false },
     ],
     
@@ -56,22 +58,22 @@ const navItems: NavItem[] = [
       
   //   ]
   // },
-  {
-    name: "Demande Stock",
-    icon: <ClipboardCheck />,
-    roles:[3, 11],
-    subItems: [
-      { name: "Nouvelle Demande", path:"/nouvelle-demande", roles:[3], pro: false},
-      // { name: "Nouvelle Demande TPE", path:"/nouvelle-demande-terminal", roles:[3], pro: false},
-      { name: "Toutes les demandes", path: "/toutes-les-demandes", pro: false },
-    ], 
-  },
+  // {
+  //   name: "Demande Stock",
+  //   icon: <ClipboardCheck />,
+  //   roles:[3, 11],
+  //   subItems: [
+  //     { name: "Nouvelle Demande", path:"/nouvelle-demande", roles:[3], pro: false},
+  //     // { name: "Nouvelle Demande TPE", path:"/nouvelle-demande-terminal", roles:[3], pro: false},
+  //     { name: "Toutes les demandes", path: "/toutes-les-demandes", pro: false },
+  //   ], 
+  // },
   {
     icon: <StockBox />,
-    name: "Gestion stock",
+    name: "Gestion Stock",
     roles:[7],
     subItems: [
-      { name: "Ajouter pièce", path: "/ajouter-piece", pro: false },
+      { name: "Ajouter Stock", path: "/ajouter-stock", pro: false },
       { name: "Voir Stock", path: "/gestion-stock", pro: false },
       { name: "Entrées Sorties", path: "/entree-sortie-stock", pro: false },
     ],

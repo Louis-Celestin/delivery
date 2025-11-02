@@ -112,6 +112,8 @@ import ModifyStockForm from "./pages/Forms/StockForms/ModifyStockForm"
 import AjouterPieceForm from "./pages/Forms/StockForms/AjouterPieceForm"
 // @ts-ignore
 import ModifyPieceForm from "./pages/Forms/StockForms/ModifyPieceForm"
+// @ts-ignore
+import AjouterTerminalForm from "./pages/Forms/StockForms/AjouterTerminalForm"
 
 
 // @ts-ignore
@@ -153,6 +155,9 @@ import EntreeSortie from "./pages/GestionStock/EntreeSortie"
 
 // @ts-ignore
 import SetStockQuantityForm from "./pages/Forms/StockForms/SetStockQuantityForm"
+
+// @ts-ignore
+import AjouterStockForm from "./pages/Forms/StockForms/AjouterStockForm"
 
 
 export default function App() {
@@ -207,7 +212,9 @@ export default function App() {
               {/* Stock DT */}
               <Route path="/gestion-stock" element={<GestionStockChargeur />} />
               <Route path="/modifier-stock" element={<ModifyStockForm />} />
+              <Route path="/ajouter-stock" element={<AjouterStockForm />} />
               <Route path="/ajouter-piece" element={<AjouterPieceForm />} />
+              <Route path="/ajouter-terminal" element={<AjouterTerminalForm />} />
               <Route path="/modifier-piece/:id" element={<ModifyPieceForm />} />
               <Route path="/entree-sortie-stock" element={<EntreeSortie />} />
               <Route path="/modifier-quantite-piece/:id" element={<SetStockQuantityForm />} />
