@@ -237,6 +237,7 @@ model stock_carton {
   numero_carton         Int?
   code_carton           String?     @unique(map: "code_carton") @db.VarChar(50)
   lot_id                Int?
+  numero_lot            Int?
   piece_id              Int
   service_id            Int
   model_id              Int
@@ -256,19 +257,20 @@ model stock_carton {
 }
 
 model stock_lot {
-  id              Int            @id @default(autoincrement())
-  numero_lot      Int?
-  code_lot        String?        @unique(map: "code_lot") @db.VarChar(50)
-  quantite_carton Int            @default(0)
-  quantite_piece  Int            @default(0)
-  piece_id        Int
-  service_id      Int
-  model_id        Int
-  is_deleted      Boolean        @default(false)
-  stock_carton    stock_carton[]
-  stock_dt        items          @relation(fields: [piece_id], references: [id_piece], onDelete: Cascade, map: "stock_lot_ibfk_1")
-  services        services       @relation(fields: [service_id], references: [id], onDelete: Cascade, map: "stock_lot_ibfk_2")
-  model_piece     model_piece    @relation(fields: [model_id], references: [id_model], onDelete: Cascade, map: "stock_lot_ibfk_3")
+  id                  Int            @id @default(autoincrement())
+  numero_lot          Int?
+  code_lot            String?        @unique(map: "code_lot") @db.VarChar(50)
+  quantite_carton_lot Int?
+  quantite_carton     Int            @default(0)
+  quantite_piece      Int            @default(0)
+  piece_id            Int
+  service_id          Int
+  model_id            Int
+  is_deleted          Boolean        @default(false)
+  stock_carton        stock_carton[]
+  stock_dt            items          @relation(fields: [piece_id], references: [id_piece], onDelete: Cascade, map: "stock_lot_ibfk_1")
+  services            services       @relation(fields: [service_id], references: [id], onDelete: Cascade, map: "stock_lot_ibfk_2")
+  model_piece         model_piece    @relation(fields: [model_id], references: [id_model], onDelete: Cascade, map: "stock_lot_ibfk_3")
 
   @@index([piece_id], map: "piece_id")
   @@index([model_id], map: "model_id")
