@@ -54,6 +54,8 @@ export default function SetStockQuantityInputs() {
     const [nomLot, setNomLot] = useState('')
     const [entreeParCartonLotModalOpen, setEntreeParCartonLotModalOpen] = useState(false)
     const [sortieParCartonLotModalOpen, setSortieParCartonLotModalOpen] = useState(false)
+    const [stockPieceLot, setStockPieceLot] = useState(0)
+    const [finalStockPieceLot, setFinalStockPieceLot] = useState(0)
 
 
     const [quantiteLot, setQuantiteLot] = useState(null)
@@ -224,7 +226,10 @@ export default function SetStockQuantityInputs() {
 
     const handleSelectLotCarton = async (id) => {
         setSelectedLot(id)
-        const cartons_data = await stockData.getCartonLot(id)
+        const cartons_data_all = await stockData.getCartonLot(id)
+        const cartons_data = cartons_data_all.filter((item) =>{
+            return item.is_deleted == false
+        })
         const options_cartons = cartons_data.map((item) =>({
             value: item.id,
             label: `Carton ${item.numero_carton} - ${item.quantite_totale_piece} pièces`
@@ -240,6 +245,8 @@ export default function SetStockQuantityInputs() {
         setQuantiteCartonLot(totalCarton)
         const stockCarton = lot ? lot.quantite_carton : 0
         setStockCartonLot(stockCarton)
+        const stockPiece = lot ? lot.quantite_piece :0
+        setStockPieceLot(stockPiece)
     }
 
     const handleSelectCarton = (value) => {
@@ -407,6 +414,7 @@ export default function SetStockQuantityInputs() {
         setFinalStockCartonLot(newStockCarton + stockCartonLot)
         setFinalStockCarton(quantiteCarton + newStockCarton)
         setFinaleStockPiece(quantitePiece + (newStockCarton * quantitePieceCarton))
+        setFinalStockPieceLot(stockPieceLot + (newStockCarton * quantitePieceCarton))
         setEntreeParCartonLotModalOpen(true)
         setError('')
         setIsEntree(true)
@@ -438,12 +446,69 @@ export default function SetStockQuantityInputs() {
         setFinalStockCarton(quantiteCarton - selectedCartons.length)
         setFinaleStockPiece(quantitePiece - destockPiece)
         setFinalStockCartonLot(stockCartonLot - selectedCartons.length)
+        setFinalStockPieceLot(stockPieceLot - destockPiece)
         setSortieParCartonLotModalOpen(true)
         setIsEntree(false)
         setError('')
     }
     const handleValidateParCartonLot = async () => {
+        setEntreeParCartonLotModalOpen(false)
+        setSortieParCartonLotModalOpen(false)
 
+        const item_id = id
+        const model_id = selectedModel
+        const service_id = selectedService
+        const listeCartons = selectedCartons ? selectedCartons : []
+
+        const details = {
+            stockInitialPiece: quantitePiece? quantitePiece : 0,
+            quantiteMouvementPiece: newStockPiece,
+            stockFinalPiece: finalStockPiece,
+            stockInitialCarton: quantiteCarton? quantiteCarton : 0,
+            quantiteMouvementCarton: newStockCarton,
+            stockFinalCarton: finalStockCarton,
+            quantitePieceCarton: quantitePieceCarton ? quantitePieceCarton : 0,
+            stockInitialPieceLot: stockPieceLot,
+            stockFinalPieceLot: finalStockPieceLot,
+            listeCartons,
+            selectedLot,
+        }
+
+        const payload = {
+            stockInitalCartonLot: stockCartonLot? stockCartonLot : 0,
+            quantiteMouvementCartonLot: newStockCarton,
+            stockFinalCartonLot: finalStockCartonLot,
+            details,
+            motif,
+            commentaire,
+            isEntree,
+            userId
+        }
+
+        try{
+            setLoadingValidation(true)
+            console.log('Sendind payload...')
+
+            const response = await stockData.setStockCartonLot(item_id, model_id, service_id, payload)
+
+            console.log(response)
+            Swal.fire({
+                title: "Succès",
+                text: "Modification effectuée avec succès !",
+                icon: "success"
+            })
+            navigate('/entree-sortie-stock')
+
+        } catch(error){
+            Swal.fire({
+                title: "Attention",
+                text: "Une erreur est survenue lors de la modification !",
+                icon: "warning"
+            })
+            navigate('/entree-sortie-stock')
+        } finally{
+            setLoadingValidation(false)
+        }
     }
 
     // FONCTIONS POUR MOUVEMENT PAR PIECES CARTON
@@ -466,6 +531,7 @@ export default function SetStockQuantityInputs() {
 
         setFinalStockPieceCarton(newStockPiece + stockPieceCarton)
         setFinaleStockPiece(quantitePiece + newStockPiece)
+        if(selectedLot){ setFinalStockPieceLot(newStockPiece + stockPieceLot) }
         setEntreeParPieceCartonModalOpen(true)
         setError('')
         setIsEntree(true)
@@ -489,6 +555,7 @@ export default function SetStockQuantityInputs() {
 
         setFinalStockPieceCarton(stockPieceCarton - newStockPiece)
         setFinaleStockPiece(quantitePiece - newStockPiece)
+        if(selectedLot){ setFinalStockPieceLot(stockPieceLot - newStockPiece) }
         setSortieParPieceCartonModalOpen(true)
         setError('')
         setIsEntree(false)
@@ -507,6 +574,9 @@ export default function SetStockQuantityInputs() {
             stockFinalPiece: finalStockPiece,
             quantitePieceCarton,
             selectedCarton,
+            stockInitialPieceLot: stockPieceLot ? stockPieceLot : null,
+            stockFinalPieceLot: finalStockPieceLot ? finalStockPieceLot : null,
+            selectedLot : selectedLot ? selectedLot : null,
         }
 
         const payload = {
@@ -1693,7 +1763,7 @@ export default function SetStockQuantityInputs() {
                     </div>
                     <div className='w-full mt-6 flex justify-center items-center'>
                         <button
-                            onClick={handleValidateParPieceCarton}
+                            onClick={handleValidateParCartonLot}
                             className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
                             Valider
                         </button>
@@ -1750,7 +1820,7 @@ export default function SetStockQuantityInputs() {
                     </div>
                     <div className='w-full mt-6 flex justify-center items-center'>
                         <button
-                            onClick={handleValidateParPieceCarton}
+                            onClick={handleValidateParCartonLot}
                             className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
                             Valider
                         </button>

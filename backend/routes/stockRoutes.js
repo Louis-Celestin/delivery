@@ -5,7 +5,7 @@ const upload = require("../middlewares/uploads");
 
 const {getAllStock, setStockPiece, getAllModels, addPiece, getAllMouvementStock, getPiece, modifyPiece,
     getLotPiece, getCartonLot, getCartonPiece, getItemModels, getItemServices, getStockPiece, getAllTypeMouvementStock,
-    setStockCarton, setStockPieceCarton, setStockLot,
+    setStockCarton, setStockPieceCarton, setStockLot, setStockCartonLot,
 } = require("../controllers/Stock/stockController")
 
 router.get('/getAllStock', getAllStock);
@@ -24,6 +24,7 @@ router.get('/getAllTypeMouvementStock', getAllTypeMouvementStock)
 router.put('/setStockPiece/:item_id/:model_id/:service_id', setStockPiece);
 router.put('/setStockCarton/:item_id/:model_id/:service_id', setStockCarton);
 router.put('/setStockPieceCarton/:item_id/:model_id/:service_id', setStockPieceCarton);
+router.put('/setStockCartonLot/:item_id/:model_id/:service_id', setStockCartonLot);
 router.put('/setStockLot/:item_id/:model_id/:service_id', setStockLot);
 
 module.exports = router

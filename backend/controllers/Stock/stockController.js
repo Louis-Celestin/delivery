@@ -613,6 +613,41 @@ const setStockPieceCarton = async (req, res) =>{
       })
     }
 
+    if(detailsPieceCarton.selectedLot){
+      const finalPieceLot = Number(detailsPieceCarton.stockFinalPieceLot)
+      let updatedLot = await prisma.stock_lot.update({
+        where: {
+          id: parseInt(detailsPieceCarton.selectedLot)
+        },
+        data: {
+          quantite_piece: finalPieceLot,
+        }
+      })
+      if(finalPieceCarton == 0){
+        updatedLot = await prisma.stock_lot.update({
+           where: {
+            id: parseInt(detailsPieceCarton.selectedLot)
+          },
+          data: {
+            quantite_piece: finalPieceLot,
+            quantite_carton: updatedLot.quantite_carton - 1,
+          },
+        })
+      }
+      if(updatedLot.quantite_carton == 0){
+        updatedLot = await prisma.stock_lot.update({
+           where: {
+            id: parseInt(detailsPieceCarton.selectedLot)
+          },
+          data: {
+            quantite_piece: finalPieceLot,
+            quantite_carton: 0,
+            is_deleted: true
+          }
+        })
+      }
+    }
+
     return res.status(200).json(updatedQuantite, mouvement, updatedCarton);
   }catch(error){
     console.error(error);
@@ -620,6 +655,184 @@ const setStockPieceCarton = async (req, res) =>{
   }
 }
 
+// Attribuer une quantité de carton à un lot choisi en fonction de l'ID du lot.
+const setStockCartonLot = async (req, res) =>{
+
+  const {
+    item_id,
+    model_id,
+    service_id,
+  } = req.params
+
+  const {
+    stockInitalCartonLot,
+    quantiteMouvementCartonLot,
+    stockFinalCartonLot,
+    details,
+    motif,
+    commentaire,
+    isEntree,
+    userId
+  } = req.body;
+
+  try{
+    
+    const detailsCartonsLot = typeof details === "string" ? JSON.parse(details) : details;
+
+    let utilisateur = null;
+    if(userId != null){
+      utilisateur = await prisma.users.findUnique({
+      where: {
+        id_user: parseInt(userId)
+      }})
+      if (!utilisateur) {
+        return res.status(404).json({ message: "Utilisateur non trouvé" });
+      }
+    }
+
+    const piece = await prisma.items.findUnique({
+      where: {
+        id_piece: parseInt(item_id)
+      }
+    })
+    if(!piece){
+      return res.status(404).json({ message: "Pièce non trouvée" });
+    }
+
+    const type = isEntree? 'entree' : 'sortie'
+
+    const initalCartonLot = Number(stockInitalCartonLot)
+    const stockCartonLot = Number(quantiteMouvementCartonLot)
+    const finalCartonLot = Number(stockFinalCartonLot)
+    const finalPiece = Number(detailsCartonsLot.stockFinalPiece)
+    const finalPieceLot = Number(detailsCartonsLot.stockFinalPieceLot)
+
+    const mouvement = await prisma.mouvement_stock.create({
+      data:{
+        type,
+        mouvement: 2,
+        date: new Date(),
+        piece_id: parseInt(item_id),
+        service_origine: isEntree ? null : parseInt(service_id),
+        service_destination: isEntree ? parseInt(service_id) : null,
+        model_id: parseInt(model_id),
+        stock_initial: initalCartonLot,
+        quantite: stockCartonLot,
+        stock_final: finalCartonLot,
+        quantite_totale_piece: finalPiece,
+        motif,
+        commentaire,
+        details_mouvement: JSON.stringify(detailsCartonsLot),
+      }
+    })
+
+    const quantite = await prisma.stock_piece.findFirst({
+      where:{
+        piece_id: parseInt(item_id),
+        model_id: parseInt(model_id),
+        service_id: parseInt(service_id),
+      }
+    })
+
+    let updatedQuantite = null
+
+    if(quantite){
+      const dataToUpdate = {
+        quantite : parseInt(detailsCartonsLot.stockFinalPiece)
+      }
+      updatedQuantite = await prisma.stock_piece.update({
+        where: {
+          id: quantite.id,
+          piece_id: parseInt(item_id),
+          model_id: parseInt(model_id),
+          service_id: parseInt(service_id),
+        },
+        data: dataToUpdate
+      })
+    } else{
+      updatedQuantite = await prisma.stock_piece.create({
+        data:{
+          piece_id: parseInt(item_id),
+          model_id: parseInt(model_id),
+          service_id: parseInt(service_id),
+          quantite: parseInt(detailsCartonsLot.stockFinalPiece),
+        }
+      })
+    }
+
+    let updatedLot = await prisma.stock_lot.update({
+      where: {
+        id: parseInt(detailsCartonsLot.selectedLot),
+      },
+      data: {
+        quantite_carton: finalCartonLot,
+        quantite_piece: finalPieceLot,
+      },
+    })
+
+    if(finalCartonLot == 0){
+      updatedLot = await prisma.stock_lot.update({
+        where: {
+          id: parseInt(detailsCartonsLot.selectedLot),
+        },
+        data: {
+          quantite_carton: finalCartonLot,
+          quantite_piece: finalPieceLot,
+          is_deleted: true,
+        },
+      })
+    }
+
+    if (isEntree) {
+      const listCartonLot = await prisma.stock_carton.findMany({
+        where: { 
+          piece_id: parseInt(item_id),
+          lot_id: parseInt(detailsCartonsLot.selectedLot),
+        },
+        orderBy: { numero_carton: "asc" },
+      });
+  
+      const lastCarton = listCartonLot[listCartonLot.length - 1];
+      const lastId = lastCarton ? lastCarton.numero_carton : 0;
+      const piecesPerCarton = Number(detailsCartonsLot.quantitePieceCarton);
+
+      for (let i = 0; i < stockCartonLot; i++) {
+        await prisma.stock_carton.create({
+          data: {
+            numero_carton: lastId + i + 1,
+            lot_id: updatedLot.id,
+            numero_lot: updatedLot.numero_lot,
+            piece_id: parseInt(item_id),
+            model_id: parseInt(model_id),
+            service_id: parseInt(service_id),
+            quantite_piece_carton: piecesPerCarton,
+            quantite_totale_piece: piecesPerCarton,
+          },
+        });
+      }
+    }else {
+      const listCartonLot = detailsCartonsLot.listeCartons
+      for (let id of listCartonLot){
+        await prisma.stock_carton.update({
+          where: {
+            id: parseInt(id),
+            lot_id: updatedLot.id,
+          },
+          data: {
+            is_deleted: true,
+          }
+        })
+      }
+    }
+
+    return res.status(200).json(updatedQuantite, mouvement);
+  }catch(error){
+    console.error(error);
+    return res.status(500).json({ message: "Erreur lors de la mise à jour", error });
+  }
+}
+
+// Attribuer une quantité de lots à un stock en fonction de l'ID du stock.
 const setStockLot = async (req, res) =>{
 
   const {
@@ -928,4 +1141,5 @@ module.exports = {
   setStockCarton,
   setStockPieceCarton,
   setStockLot,
+  setStockCartonLot,
 }
