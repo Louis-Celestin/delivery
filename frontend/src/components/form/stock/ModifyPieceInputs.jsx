@@ -108,10 +108,6 @@ export default function ModifyPieceInputs() {
             setErrorInput("Vous devez saisir un nom !")
             return
         }
-        if(!pieceType){
-            setErrorInput("Vous devez choisir le type de pièce !")
-            return
-        }
         if(selectedModels.length == 0){
             setErrorInput("Vous devez choisir un model !")
             return
@@ -187,16 +183,6 @@ export default function ModifyPieceInputs() {
                                     const value = e.target.value 
                                     setNomPiece(value)
                                 }}
-                            />
-                        </div>
-                        <div>
-                            <Label>Type <span className="text-red-700">*</span></Label>
-                            <Select 
-                                options={options_types} 
-                                // defaultValue={pieceType}
-                                placeholder={pieceType}
-                                onChange={changeType}
-                                className="dark:bg-dark-900"
                             />
                         </div>
                         <div>

@@ -1,95 +1,89 @@
 import axios from "axios";
 import urlBase from '../const';
 
-export class Demandes{
-  async faireDemande(formData){
-    try{
-        const response = await axios.post(`${urlBase}/api/demandes/faireDemande`, formData,
-            {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
-            }
-        );
-        return response.data
-    } catch (error){
-        throw error.response.data;
+export class Demandes {
+  async faireDemande(payload) {
+    try {
+      const response = await axios.post(`${urlBase}/api/demandes/faireDemande`, payload);
+      return response.data
+    } catch (error) {
+      throw error.response.data;
     }
   }
 
-  async getAllDemandes(){
-    try{
-    const response = await axios.get(`${urlBase}/api/demandes/getAllDemandes`)
-    // console.log(response)
-    return response.data;
-  } catch(error){
-    throw error.response.data
-  }
+  async getAllDemandes() {
+    try {
+      const response = await axios.get(`${urlBase}/api/demandes/getAllDemandes`)
+      return response.data;
+    } catch (error) {
+      throw error.response.data
+    }
   };
 
-  async getOneDemande(id){
-    try{
+  async getOneDemande(id) {
+    try {
       const response = await axios.get(`${urlBase}/api/demandes/getOneDemande/${id}`)
       // console.log(response)
       return response.data;
-    } catch(error){
+    } catch (error) {
       throw error.response.data
     }
   };
 
-  async validateDemande(formData){
+  async validateDemande(formData) {
     try {
-    const response = await axios.post(`${urlBase}/api/demandes/validateDemande`, formData, {
+      const response = await axios.post(`${urlBase}/api/demandes/validateDemande`, formData, {
         headers: {
-            'Content-Type': 'multipart/form-data'
-        }})
-    console.log(response)
-    return response.data;
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+      console.log(response)
+      return response.data;
     } catch (error) {
-    throw error.response.data;
+      throw error.response.data;
     }
   }
 
-  async returnDemande(payload){
-    try{
+  async returnDemande(payload) {
+    try {
       const response = await axios.post(`${urlBase}/api/demandes/returnDemande`, payload)
       console.log(response)
-        return response.data;
+      return response.data;
     } catch (error) {
       throw error.response.data;
     }
   };
 
-  async cancelDemande(payload){
-    try{
-      const response = await axios.post(`${urlBase}/api/demandes/cancelDemande`,payload)
+  async cancelDemande(payload) {
+    try {
+      const response = await axios.post(`${urlBase}/api/demandes/cancelDemande`, payload)
       console.log(response)
-        return response.data;
+      return response.data;
     } catch (error) {
       throw error.response.data;
     }
   };
 
-  async updateDemande(id, payload){
-    try{
+  async updateDemande(id, payload) {
+    try {
       const response = await axios.put(`${urlBase}/api/demandes/updateDemande/${id}`, payload)
       // console.log(response)
       return response.data;
-    } catch(error){
+    } catch (error) {
       throw error.response.data
     }
   };
 
-  async getPdf(idDemande){
-    try{
-        const response = await axios.get(`${urlBase}/api/demandes/getPdf/${idDemande}`, {
-            responseType: 'blob', // important!
-        });
-        console.log(response)
+  async getPdf(idDemande) {
+    try {
+      const response = await axios.get(`${urlBase}/api/demandes/getPdf/${idDemande}`, {
+        responseType: 'blob', // important!
+      });
+      console.log(response)
 
-        return response.data;
-    }catch(error){
-        throw error.response.data;
+      return response.data;
+    } catch (error) {
+      throw error.response.data;
     }
   }
 }

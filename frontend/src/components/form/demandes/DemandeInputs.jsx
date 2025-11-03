@@ -13,11 +13,16 @@ import { useNavigate } from "react-router";
 
 import { Stock } from "../../../backend/stock/Stock.js";
 import { Users } from "../../../backend/users/Users.js";
+import { Demandes } from "../../../backend/demandes/Demandes.js";
 
 export default function DemandeInputs() {
 
   const stockData = new Stock()
   const userData = new Users()
+  const demandeData = new Demandes()
+  const userId = localStorage.getItem('id');
+  const role = localStorage.getItem("role_id")
+  const navigate = useNavigate()
 
   const [loading, setLoading] = useState(false)
   const [errorForm, setErrorForm] = useState('')
@@ -101,7 +106,7 @@ export default function DemandeInputs() {
 
   const [commentaire, setCommentaire] = useState('')
 
-  const [nomenclaure, setNomenclature] = useState('')
+  const [nomenclature, setNomenclature] = useState('')
 
   const [fields, setFields] = useState([])
   const [otherFields, setOtherFields] = useState([])
@@ -109,6 +114,10 @@ export default function DemandeInputs() {
   const [error, setError] = useState('')
 
   const [loadingValidation, setLoadingValidation] = useState(false)
+
+  const [detailsDemande, setDetailsDemande] = useState([])
+
+  const [quantite, setQuantite] = useState(0)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -705,40 +714,52 @@ export default function DemandeInputs() {
       setError("Stock insuffisant !")
       return
     }
-    setIsEntree(false)
-    setFinaleStockPiece(quantitePiece - newStockPiece)
+    const final = quantitePiece - newStockPiece
     setSortieParPieceModalOpen(true)
+    setFinaleStockPiece(final)
+    setQuantite(newStockPiece)
     setError('')
-  }
-  const handleValidateParPiece = async () => {
-    setEntreeParPieceModalOpen(false)
-    setSortieParPieceModalOpen(false)
-
-    const item_id = id
-    const model_id = selectedModel
-    const service_id = selectedService
-    const payload = {
+    const details = {
+      model: selectedModel,
+      service: selectedServicePiece,
+      typeMouvement: 5,
       stockInitial: quantitePiece ? quantitePiece : 0,
       quantiteMouvement: newStockPiece,
-      stockFinal: finalStockPiece,
-      motif,
-      commentaire,
-      isEntree,
-      userId
+      stockFinal: final,
     }
+    setDetailsDemande(details)
+  }
+
+  const handleValidate = async () => {
+    setSortieParPieceModalOpen(false)
+
+    const payload = {
+      nomDemandeur: nomUser,
+      commentaire,
+      quantite_demande: quantite,
+      nomenclature,
+      detailsDemande,
+      userId,
+      itemId: selectedPiece,
+      idDemandeur: selectedUser,
+      motif,
+      serviceDemandeur: serviceUser,
+      champsAutre: otherFields,
+    }
+    
     try {
       setLoadingValidation(true)
       console.log('Sendind payload...')
 
-      const response = await stockData.setStockPiece(item_id, model_id, service_id, payload)
+      const response = await demandeData.faireDemande(payload)
 
       console.log(response)
       Swal.fire({
         title: "Succès",
-        text: "Modification effectuée avec succès !",
+        text: "Demande effectuée avec succès !",
         icon: "success"
       })
-      navigate('/entree-sortie-stock')
+      navigate('/toutes-les-demandes')
 
     } catch (error) {
       Swal.fire({
@@ -746,7 +767,7 @@ export default function DemandeInputs() {
         text: "Une erreur est survenue lors de la modification !",
         icon: "warning"
       })
-      navigate('/entree-sortie-stock')
+      navigate('/toutes-les-demandes')
     } finally {
       setLoadingValidation(false)
     }
@@ -757,7 +778,7 @@ export default function DemandeInputs() {
       <div className="flex justify-center">
         {loading ? (
           <>
-            <span className="text-sm">Loading...</span>
+            <span className="">Loading...</span>
           </>
         ) : (
           <>
@@ -1112,7 +1133,7 @@ export default function DemandeInputs() {
                         <Label>Nomenclature</Label>
                         <Input
                           type="text"
-                          value={nomenclaure}
+                          value={nomenclature}
                           onChange={(e) => {
                             const value = e.target.value
                             setNomenclature(value)
@@ -1319,6 +1340,7 @@ export default function DemandeInputs() {
           </>
         )}
       </div>
+      {/* DEMANDE PAR LOT */}
       <Modal isOpen={sortieParLotModalOpen} onClose={() => setSortieParLotModalOpen(false)} className="p-4 max-w-md">
         <div className="space-y-5">
           <div className="w-full text-center">
@@ -1379,6 +1401,7 @@ export default function DemandeInputs() {
           </div>
         </div>
       </Modal>
+      {/* DEMANDE PAR CARTON LOT */}
       <Modal isOpen={sortieParCartonLotModalOpen} onClose={() => setSortieParCartonLotModalOpen(false)} className="p-4 max-w-md">
         <div className="space-y-5">
           <div className="w-full text-center">
@@ -1436,6 +1459,7 @@ export default function DemandeInputs() {
           </div>
         </div>
       </Modal>
+      {/* DEMANDE PAR PIECE CARTON */}
       <Modal isOpen={sortieParPieceCartonModalOpen} onClose={() => setSortieParPieceCartonModalOpen(false)} className="p-4 max-w-md">
         <div className="space-y-5">
           <div className="w-full text-center">
@@ -1485,6 +1509,7 @@ export default function DemandeInputs() {
           </div>
         </div>
       </Modal>
+      {/* DEMANDE PAR CARTON */}
       <Modal isOpen={sortieParCartonModalOpen} onClose={() => setSortieParCartonModalOpen(false)} className="p-4 max-w-md">
         <div className="space-y-5">
           <div className="w-full text-center">
@@ -1534,10 +1559,11 @@ export default function DemandeInputs() {
           </div>
         </div>
       </Modal>
+      {/* DEMANDE PAR PIECE */}
       <Modal isOpen={sortieParPieceModalOpen} onClose={() => setSortieParPieceModalOpen(false)} className="p-4 max-w-md">
         <div className="space-y-5">
           <div className="w-full text-center">
-            <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium">Sortie stock</span>
+            <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium">Demande</span>
           </div>
           <div className="text-center">
             <span>
@@ -1555,7 +1581,7 @@ export default function DemandeInputs() {
               <span>Quantité initiale : {quantitePiece ? quantitePiece : '0'}</span>
             </div>
             <div>
-              <span>Mouvement : <span className="text-red-600 font-bold">-{newStockPiece}</span></span>
+              <span>Demande : <span className="text-red-600 font-bold">-{newStockPiece}</span></span>
             </div>
             <div>
               <span>Stock final : {finalStockPiece}</span>
@@ -1563,7 +1589,7 @@ export default function DemandeInputs() {
           </div>
           <div className='w-full mt-6 flex justify-center items-center'>
             <button
-              onClick={handleValidateParPiece}
+              onClick={handleValidate}
               className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
               Valider
             </button>

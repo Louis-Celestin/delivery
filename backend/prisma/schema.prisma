@@ -32,18 +32,17 @@ model Livraisons {
 }
 
 model demandes {
-  id_demande                         Int                     @id @default(autoincrement())
+  id                                 Int                     @id @default(autoincrement())
   nom_demandeur                      String?                 @db.VarChar(255)
   date_demande                       DateTime                @db.DateTime(0)
   commentaire                        String?                 @db.VarChar(255)
-  signature_demandeur                String                  @db.VarChar(255)
   qte_total_demande                  Int?
-  stock_carton                       Int?
   nomenclature                       String?                 @db.VarChar(255)
-  produit_demande                    String                  @db.LongText
+  details_demande                    String                  @db.LongText
   statut_demande                     demandes_statut_demande
   user_id                            Int?
-  type_demande_id                    Int?
+  item_id                            Int?
+  type_demande                       Int?
   role_id_recepteur                  Int?
   demande_livree                     Boolean?                @default(false)
   id_demandeur                       Int?
@@ -51,9 +50,10 @@ model demandes {
   service_demandeur                  Int?
   champs_autre                       String?                 @db.LongText
   files                              String?                 @db.LongText
+  is_deleted                         Int                     @default(0) @db.TinyInt
   users_demandes_user_idTousers      users?                  @relation("demandes_user_idTousers", fields: [user_id], references: [id_user], onDelete: Restrict, onUpdate: Restrict, map: "demandes_ibfk_2")
   roles                              roles?                  @relation(fields: [role_id_recepteur], references: [id_role], onDelete: Restrict, onUpdate: Restrict, map: "demandes_ibfk_3")
-  stock_dt                           items?                  @relation(fields: [type_demande_id], references: [id_piece], onDelete: Restrict, onUpdate: Restrict, map: "demandes_ibfk_6")
+  items                              items?                  @relation(fields: [item_id], references: [id_piece], onDelete: Restrict, onUpdate: Restrict, map: "demandes_ibfk_6")
   users_demandes_id_demandeurTousers users?                  @relation("demandes_id_demandeurTousers", fields: [id_demandeur], references: [id_user], onDelete: Restrict, onUpdate: Restrict, map: "demandes_ibfk_7")
   services                           services?               @relation(fields: [service_demandeur], references: [id], onDelete: NoAction, map: "demandes_ibfk_8")
   livraison_piece                    livraison_piece?
@@ -63,7 +63,7 @@ model demandes {
   @@index([id_demandeur], map: "id_demandeur")
   @@index([role_id_recepteur], map: "role_id_recepteur")
   @@index([service_demandeur], map: "service_demandeur")
-  @@index([type_demande_id], map: "type_demande_id")
+  @@index([item_id], map: "type_demande_id")
   @@index([user_id], map: "user_id")
 }
 
@@ -105,7 +105,7 @@ model livraison_piece {
   demande_id      Int?       @unique(map: "demande_id")
   Livraisons      Livraisons @relation(fields: [id], references: [id], onDelete: Cascade, map: "livraison_piece_ibfk_1")
   stock_dt        items      @relation(fields: [piece_id], references: [id_piece], onDelete: NoAction, map: "livraison_piece_ibfk_2")
-  demandes        demandes?  @relation(fields: [demande_id], references: [id_demande], onDelete: Cascade, map: "livraison_piece_ibfk_3")
+  demandes        demandes?  @relation(fields: [demande_id], references: [id], onDelete: Cascade, map: "livraison_piece_ibfk_3")
 
   @@index([piece_id], map: "piece_id")
 }
@@ -144,7 +144,7 @@ model mouvement_stock {
   mouvement_lot                                          mouvement_lot?
   services_mouvement_stock_service_origineToservices     services?             @relation("mouvement_stock_service_origineToservices", fields: [service_origine], references: [id], onDelete: NoAction, map: "mouvement_stock_ibfk_1")
   services_mouvement_stock_service_destinationToservices services?             @relation("mouvement_stock_service_destinationToservices", fields: [service_destination], references: [id], onDelete: NoAction, map: "mouvement_stock_ibfk_2")
-  demandes                                               demandes?             @relation(fields: [demande_id], references: [id_demande], onDelete: Restrict, map: "mouvement_stock_ibfk_3")
+  demandes                                               demandes?             @relation(fields: [demande_id], references: [id], onDelete: Restrict, map: "mouvement_stock_ibfk_3")
   livraison                                              livraison?            @relation(fields: [formulaire_id], references: [id_livraison], onDelete: Restrict, map: "mouvement_stock_ibfk_4")
   stock_dt                                               items                 @relation(fields: [piece_id], references: [id_piece], onDelete: NoAction, map: "mouvement_stock_ibfk_5")
   model_piece                                            model_piece           @relation(fields: [model_id], references: [id_model], onDelete: Cascade, map: "mouvement_stock_ibfk_6")
@@ -349,7 +349,7 @@ model validation_demande {
   statut_validation_demande validation_demande_statut_validation_demande
   id_user                   Int?
   id_demande                Int
-  demandes                  demandes                                     @relation(fields: [id_demande], references: [id_demande], onUpdate: Restrict, map: "validation_demande_ibfk_1")
+  demandes                  demandes                                     @relation(fields: [id_demande], references: [id], onUpdate: Restrict, map: "validation_demande_ibfk_1")
   users                     users?                                       @relation(fields: [id_user], references: [id_user], onDelete: Restrict, onUpdate: Restrict, map: "validation_demande_ibfk_2")
 
   @@index([id_demande], map: "id_demande")

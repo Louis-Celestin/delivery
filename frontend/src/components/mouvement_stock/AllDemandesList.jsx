@@ -27,7 +27,7 @@ export default function AllDemandesList() {
     const usersData = new Users()
     const livraisonsData = new ProductDeliveries()
 
-    const savedPagination = JSON.parse(sessionStorage.getItem("demandesPaginationState"));
+    const savedPagination = JSON.parse(sessionStorage.getItem("demandesP    aginationState"));
     
     const [first, setFirst] = useState(savedPagination?.first || 0);
     const [rows, setRows] = useState(savedPagination?.rows || 5);
@@ -67,7 +67,7 @@ export default function AllDemandesList() {
     const [endDate, setEndDate] = useState(savedFilters?.endDate ? new Date(savedFilters.endDate) : null);
     
     const [optionsPieces, setOptionsPieces] = useState([])
-    const [stockDT, setStockDT] = useState([])
+    const [items, setItems] = useState([])
     const [serviceDemandeurs, setServiceDemandeurs] = useState(savedFilters?.serviceDemandeurs || []);
 
     const [optionsServices, setOptionsServices] = useState([])
@@ -78,6 +78,8 @@ export default function AllDemandesList() {
 
     const [optionsModels, setOptionsModels] = useState([])
     const [selectedModels, setSelectedModels] = useState(savedFilters?.selectedModels || []);
+
+    const [typesMouvement, setTypesMouvement] = useState([])
 
     useEffect(() => {
         saveFilters({
@@ -95,8 +97,10 @@ export default function AllDemandesList() {
         const fetchDemandeData = async () =>{
             setLoading(true);
             try{
-                let demande_data = await demandes.getAllDemandes();
-                console.log(demande_data)
+                let demande_data_all = await demandes.getAllDemandes();
+                const demande_data = demande_data_all.filter((item) =>{
+                    return item.is_deleted == false
+                })
                 setDemandeForms(demande_data)
 
                 const models_data = await stock.getAllModels()
@@ -106,24 +110,11 @@ export default function AllDemandesList() {
                 }))
                 setOptionsModels(options_model)
                 
-                let stock_data = await stock.getAllStock()
-                setStockDT(stock_data)
-                const piecesA920 = stock_data.filter(item =>{
-                return item.model_id == 1;
-                });
-                const options_pieces = stock_data.map((piece) =>{
-                    let model = models_data.find((item) =>{
-                        return item.id_model == piece.model_id
-                    })
-                    if(model){
-                        return({
-                            value: piece.id_piece,
-                            label: piece.nom_piece.toUpperCase() + ' - ' + model.nom_model,
-                            selected: false,
-                        })
-                    } 
-                });
-                setOptionsPieces(options_pieces);
+                let stock_data_all = await stock.getAllStock()
+                const stock_data = stock_data_all.filter((item) =>{
+                    return item.is_deleted == false
+                })
+                setItems(stock_data)
 
                 let services_data = await usersData.getAllServices()
                 const options_services = services_data.map((item) => ({
@@ -134,6 +125,9 @@ export default function AllDemandesList() {
                 
                 let livraisons_pieces_data = await livraisonsData.getAllStockDeliveries()
                 setLivraisonsPieces(livraisons_pieces_data)
+
+                const typesMouvement_data = await stock.getAllTypeMouvementStock()
+                setTypesMouvement(typesMouvement_data)
 
             } catch(error){
                 console.log('Error fetching data ',error)
@@ -147,7 +141,7 @@ export default function AllDemandesList() {
     const handlePageChange = (e) => {
         setFirst(e.first);
         setRows(e.rows);
-        sessionStorage.setItem("demandesPaginationState", JSON.stringify({ first: e.first, rows: e.rows }));
+        sessionStorage.setItem("demandesP   aginationState", JSON.stringify({ first: e.first, rows: e.rows }));
     };
     
     const formatDate = (date) => {
@@ -185,36 +179,50 @@ export default function AllDemandesList() {
         }
     }
     
+    const idTemplate = (demandeForms) =>{
+        return(
+            <>
+                <span className="text-theme-xs font-medium">{demandeForms.id}</span>
+            </>
+        )
+    }
     const titleTemplate = (demandeForms) =>{
-        let title = '';
-        let linkSee = `/demande-details/${demandeForms.id_demande}`;
+        let linkSee = `/demande-details/${demandeForms.id}`;
         let titleClass = 'font-bold text-sm'
         let motif = `${demandeForms.motif_demande}`
-        const selectedStockItem = stockDT.find(
-            (item) => {
-                return item.id_piece == parseInt(demandeForms.type_demande_id)
-            } 
-            );
-        if (selectedStockItem) {
-            const nomPiece = selectedStockItem.nom_piece
-            title = nomPiece.toUpperCase();
+        const piece = items.find((item) => {
+            return item.id_piece == demandeForms.item_id
+        })
+        const nomPiece = piece ? piece.nom_piece : ''
 
-        } else {
-            title = '';
-        }
         return (
-            <span className="flex flex-col">
-                <Link key={demandeForms.id_demande}
+            <span className="">
+                <Link key={demandeForms.id_demande} className="flex flex-col"
                     to={linkSee} >
-                    <span className={titleClass}>{title}</span>
+                    <span className={titleClass}>{nomPiece}</span>
+                    <span className="text-xs font-light">{motif}</span>
                 </Link>
-                <span className="text-xs font-light">{motif}</span>
-                <span className="text-xs font-extralight">#{demandeForms.id_demande}</span>
             </span>
           );
     };
+    const mouvementTemplate = (demandeForms) =>{
+        const detailsDemande = JSON.parse(demandeForms.details_demande)
+        const type = typesMouvement.find((item) =>{
+            return detailsDemande.typeMouvement == item.id
+        })
+
+        const nomType = type ? type.titre : 'NaN'
+
+        return(
+            <>
+                <span className="text-theme-xs font-medium text-gray-800">{nomType}</span>
+            </>
+        )
+    }
     const demandeDateTemplate = (demandeForms) =>{
-        return (<span className="text-gray-500 text-theme-sm dark:text-gray-400">{formatDate(demandeForms.date_demande)}</span>)
+        return (
+            <span className="text-theme-xs text-gray-700 font-medium dark:text-gray-400">{formatDate(demandeForms.date_demande)}</span>
+        )
     }
     const dateValidationTemplate = (demandeForms) =>{
         if(demandeForms.validation_demande.length>0 && demandeForms.statut_demande != 'en_cours'){
@@ -378,7 +386,7 @@ export default function AllDemandesList() {
     return(
         <>  
             <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
-                <div className="px-6 pt-6 flex items-center">
+                {/* <div className="px-6 pt-6 flex items-center">
                     <div className="relative w-full">
                         <Input
                             className="pl-10"
@@ -478,7 +486,7 @@ export default function AllDemandesList() {
                     <span className="text-md text-gray-600 dark:text-gray-300">
                         {filteredDemandeForms.length} demande(s) trouvée(s)
                     </span>
-                </div>
+                </div> */}
                 <div className="card">
                     <DataTable
                         value={filteredDemandeForms}
@@ -489,12 +497,14 @@ export default function AllDemandesList() {
                         first={first}
                         onPage={handlePageChange}
                         rowsPerPageOptions={[5, 10, 25, 50, 100, 200, 300, 500, 1000]}
-                        tableStyle={{ minWidth: '50rem' }}
+                        tableStyle={{ minWidth: '50rem', fontSize: '11px' }}
                         emptyMessage="Aucune demande trouvée"
                         className="p-datatable-sm">
 
-                        <Column field="type_demande_id" header="Demande" body={titleTemplate} sortable></Column>
-                        <Column field="qte_total_demande" header="Nbre produit" sortable></Column>
+                        <Column field="id" header="ID" body={idTemplate} sortable></Column>
+                        <Column field="item_id" header="Demande" body={titleTemplate} sortable></Column>
+                        <Column header="Mouvement" body={mouvementTemplate}></Column>
+                        <Column field="qte_total_demande" header="Quantité" sortable></Column>
                         <Column field="date_demande" header="Date d'émission" body={demandeDateTemplate} sortable></Column>
                         <Column field="statut_demande" header="Statut Validation" body={statutTemplate}></Column>
                         <Column header="Date Validation" body={dateValidationTemplate}></Column>
