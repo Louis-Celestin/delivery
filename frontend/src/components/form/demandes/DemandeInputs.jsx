@@ -250,7 +250,7 @@ export default function DemandeInputs() {
         setOptionsCartons(options_carton)
         setListeCartons(stock_carton)
 
-        const stock_lot_all = await stockData.getLotPiece(id, selectedModel, selectedServicePiece)
+        const stock_lot_all = await stockData.getLotPiece(selectedPiece, selectedModel, selectedServicePiece)
         const stock_lot = stock_lot_all.filter((item) => {
           return item.is_deleted == false
         })
@@ -385,8 +385,28 @@ export default function DemandeInputs() {
     setNewStockLot(selectedLots.length)
     setFinalStockLot(quantiteLot - selectedLots.length)
     setSortieParLotModalOpen(true)
-    setIsEntree(false)
     setError('')
+
+    const listeLots = selectedLots ? selectedLots : []
+    setQuantite(selectedLots.length)
+    const details = {
+      model: selectedModel,
+      service: selectedServicePiece,
+      typeMouvement: 1,
+      stockInitialLot: quantiteLot ? quantiteLot : 0,
+      quantiteMouvementLot: selectedLots.length,
+      stockFinalLot: quantiteLot - selectedLots.length,
+      stockInitialPiece: quantitePiece ? quantitePiece : 0,
+      quantiteMouvementPiece: destockPiece,
+      stockFinalPiece: quantitePiece - destockPiece,
+      quantitePieceCarton: quantitePieceCarton ? quantitePieceCarton : 0,
+      stockInitalCarton: quantiteCarton ? quantiteCarton : 0,
+      quantiteMouvementCarton: destockCarton,
+      stockFinalCarton: quantiteCarton - destockCarton,
+      quantiteCartonLot: quantiteCartonLot ? quantiteCartonLot : 0,
+      listeLots,
+    }
+    setDetailsDemande(details)
   }
   const handleValidateParLot = async () => {
     setEntreeParLotModalOpen(false)
@@ -476,67 +496,30 @@ export default function DemandeInputs() {
     setFinalStockCartonLot(stockCartonLot - selectedCartons.length)
     setFinalStockPieceLot(stockPieceLot - destockPiece)
     setSortieParCartonLotModalOpen(true)
-    setIsEntree(false)
     setError('')
-  }
-  const handleValidateParCartonLot = async () => {
-    setEntreeParCartonLotModalOpen(false)
-    setSortieParCartonLotModalOpen(false)
 
-    const item_id = id
-    const model_id = selectedModel
-    const service_id = selectedService
-    const listeCartons = selectedCartons ? selectedCartons : []
-
+    const cartons = selectedCartons ? selectedCartons : []
+    setQuantite(selectedCartons.length)
     const details = {
+      model: selectedModel,
+      service: selectedServicePiece,
+      typeMouvement: 2,
+      stockInitalCartonLot: stockCartonLot ? stockCartonLot : 0,
+      quantiteMouvementCartonLot: selectedCartons.length,
+      stockFinalCartonLot: stockCartonLot - selectedCartons.length,
       stockInitialPiece: quantitePiece ? quantitePiece : 0,
-      quantiteMouvementPiece: newStockPiece,
-      stockFinalPiece: finalStockPiece,
+      quantiteMouvementPiece: destockPiece,
+      stockFinalPiece: quantitePiece - destockPiece,
       stockInitialCarton: quantiteCarton ? quantiteCarton : 0,
-      quantiteMouvementCarton: newStockCarton,
-      stockFinalCarton: finalStockCarton,
+      quantiteMouvementCarton: selectedCartons.length,
+      stockFinalCarton: quantiteCarton - selectedCartons.length,
       quantitePieceCarton: quantitePieceCarton ? quantitePieceCarton : 0,
       stockInitialPieceLot: stockPieceLot,
-      stockFinalPieceLot: finalStockPieceLot,
-      listeCartons,
+      stockFinalPieceLot: stockPieceLot - destockPiece,
+      cartons,
       selectedLot,
     }
-
-    const payload = {
-      stockInitalCartonLot: stockCartonLot ? stockCartonLot : 0,
-      quantiteMouvementCartonLot: newStockCarton,
-      stockFinalCartonLot: finalStockCartonLot,
-      details,
-      motif,
-      commentaire,
-      isEntree,
-      userId
-    }
-
-    try {
-      setLoadingValidation(true)
-      console.log('Sendind payload...')
-
-      const response = await stockData.setStockCartonLot(item_id, model_id, service_id, payload)
-
-      console.log(response)
-      Swal.fire({
-        title: "Succès",
-        text: "Modification effectuée avec succès !",
-        icon: "success"
-      })
-      navigate('/entree-sortie-stock')
-
-    } catch (error) {
-      Swal.fire({
-        title: "Attention",
-        text: "Une erreur est survenue lors de la modification !",
-        icon: "warning"
-      })
-      navigate('/entree-sortie-stock')
-    } finally {
-      setLoadingValidation(false)
-    }
+    setDetailsDemande(details)
   }
 
   // FONCTIONS POUR MOUVEMENT PAR PIECES CARTON
@@ -562,62 +545,27 @@ export default function DemandeInputs() {
     if (selectedLot) { setFinalStockPieceLot(stockPieceLot - newStockPiece) }
     setSortieParPieceCartonModalOpen(true)
     setError('')
-    setIsEntree(false)
-  }
-  const handleValidateParPieceCarton = async () => {
-    setEntreeParPieceCartonModalOpen(false)
-    setSortieParPieceCartonModalOpen(false)
+    
+    const finalPieceLot = stockPieceLot - newStockPiece
 
-    const item_id = id
-    const model_id = selectedModel
-    const service_id = selectedService
-
+    setQuantite(newStockPiece)
     const details = {
+      model: selectedModel,
+      service: selectedServicePiece,
+      typeMouvement: 3,
+      stockInitialPieceCarton: stockPieceCarton,
+      quantiteMouvementPieceCarton: newStockPiece,
+      stockFinalPieceCarton: stockPieceCarton - newStockPiece,
       stockInitialPiece: quantitePiece ? quantitePiece : 0,
       quantiteMouvementPiece: newStockPiece,
-      stockFinalPiece: finalStockPiece,
+      stockFinalPiece: quantitePiece - newStockPiece,
       quantitePieceCarton,
       selectedCarton,
       stockInitialPieceLot: stockPieceLot ? stockPieceLot : null,
-      stockFinalPieceLot: finalStockPieceLot ? finalStockPieceLot : null,
+      stockFinalPieceLot: finalPieceLot ? finalPieceLot : null,
       selectedLot: selectedLot ? selectedLot : null,
     }
-
-    const payload = {
-      stockInitialPieceCarton: stockPieceCarton,
-      quantiteMouvementPieceCarton: newStockPiece,
-      stockFinalPieceCarton: finalStockPieceCarton,
-      details,
-      motif,
-      commentaire,
-      isEntree,
-      userId
-    }
-
-    try {
-      setLoadingValidation(true)
-      console.log('Sendind payload...')
-
-      const response = await stockData.setStockPieceCarton(item_id, model_id, service_id, payload)
-
-      console.log(response)
-      Swal.fire({
-        title: "Succès",
-        text: "Modification effectuée avec succès !",
-        icon: "success"
-      })
-      navigate('/entree-sortie-stock')
-
-    } catch (error) {
-      Swal.fire({
-        title: "Attention",
-        text: "Une erreur est survenue lors de la modification !",
-        icon: "warning"
-      })
-      navigate('/entree-sortie-stock')
-    } finally {
-      setLoadingValidation(false)
-    }
+    setDetailsDemande(details)
   }
 
   // FONCTIONS POUR MOUVEMENT PAR CARTON
@@ -644,61 +592,24 @@ export default function DemandeInputs() {
     setFinalStockCarton(quantiteCarton - selectedCartons.length)
     setFinaleStockPiece(quantitePiece - destockPiece)
     setSortieParCartonModalOpen(true)
-    setIsEntree(false)
     setError('')
-  }
-  const handleValidateParCarton = async () => {
-    setEntreeParCartonModalOpen(false)
-    setSortieParCartonModalOpen(false)
 
-    const item_id = id
-    const model_id = selectedModel
-    const service_id = selectedService
-    const listeCartons = selectedCartons ? selectedCartons : []
-
+    const cartons = selectedCartons ? selectedCartons : []
+    setQuantite(selectedCartons.length)
     const details = {
-      stockInitialPiece: quantitePiece ? quantitePiece : 0,
-      quantiteMouvementPiece: newStockPiece,
-      stockFinalPiece: finalStockPiece,
-      quantitePieceCarton: quantitePieceCarton ? quantitePieceCarton : 0,
-      listeCartons,
-    }
-
-    const payload = {
+      model: selectedModel,
+      service: selectedServicePiece,
+      typeMouvement: 4,
       stockInitalCarton: quantiteCarton ? quantiteCarton : 0,
-      quantiteMouvementCarton: newStockCarton,
-      stockFinalCarton: finalStockCarton,
-      details,
-      motif,
-      commentaire,
-      isEntree,
-      userId
+      quantiteMouvementCarton: selectedCartons.length,
+      stockFinalCarton: quantiteCarton - selectedCartons.length,
+      stockInitialPiece: quantitePiece ? quantitePiece : 0,
+      quantiteMouvementPiece: destockPiece,
+      stockFinalPiece: quantitePiece - destockPiece,
+      quantitePieceCarton: quantitePieceCarton ? quantitePieceCarton : 0,
+      cartons,
     }
-
-    try {
-      setLoadingValidation(true)
-      console.log('Sendind payload...')
-
-      const response = await stockData.setStockCarton(item_id, model_id, service_id, payload)
-
-      console.log(response)
-      Swal.fire({
-        title: "Succès",
-        text: "Modification effectuée avec succès !",
-        icon: "success"
-      })
-      navigate('/entree-sortie-stock')
-
-    } catch (error) {
-      Swal.fire({
-        title: "Attention",
-        text: "Une erreur est survenue lors de la modification !",
-        icon: "warning"
-      })
-      navigate('/entree-sortie-stock')
-    } finally {
-      setLoadingValidation(false)
-    }
+    setDetailsDemande(details)
   }
 
   // FONCTIONS POUR MOUVEMENT STOCK PAR PIECE
@@ -714,11 +625,12 @@ export default function DemandeInputs() {
       setError("Stock insuffisant !")
       return
     }
-    const final = quantitePiece - newStockPiece
     setSortieParPieceModalOpen(true)
     setFinaleStockPiece(final)
-    setQuantite(newStockPiece)
     setError('')
+
+    const final = quantitePiece - newStockPiece
+    setQuantite(newStockPiece)
     const details = {
       model: selectedModel,
       service: selectedServicePiece,
@@ -732,6 +644,10 @@ export default function DemandeInputs() {
 
   const handleValidate = async () => {
     setSortieParPieceModalOpen(false)
+    setSortieParCartonModalOpen(false)
+    setSortieParPieceCartonModalOpen(false)
+    setSortieParCartonLotModalOpen(false)
+    setSortieParLotModalOpen(false)
 
     const payload = {
       nomDemandeur: nomUser,
@@ -1394,7 +1310,7 @@ export default function DemandeInputs() {
           </div>
           <div className='w-full mt-6 flex justify-center items-center'>
             <button
-              onClick={handleValidateParLot}
+              onClick={handleValidate}
               className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
               Valider
             </button>
@@ -1452,7 +1368,7 @@ export default function DemandeInputs() {
           </div>
           <div className='w-full mt-6 flex justify-center items-center'>
             <button
-              onClick={handleValidateParCartonLot}
+              onClick={handleValidate}
               className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
               Valider
             </button>
@@ -1502,7 +1418,7 @@ export default function DemandeInputs() {
           </div>
           <div className='w-full mt-6 flex justify-center items-center'>
             <button
-              onClick={handleValidateParPieceCarton}
+              onClick={handleValidate}
               className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
               Valider
             </button>
@@ -1552,7 +1468,7 @@ export default function DemandeInputs() {
           </div>
           <div className='w-full mt-6 flex justify-center items-center'>
             <button
-              onClick={handleValidateParCarton}
+              onClick={handleValidate}
               className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
               Valider
             </button>
