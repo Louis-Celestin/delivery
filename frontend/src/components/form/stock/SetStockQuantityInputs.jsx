@@ -331,7 +331,7 @@ export default function SetStockQuantityInputs() {
             quantiteMouvementPiece: newStockPiece,
             stockFinalPiece: finalStockPiece,
             quantitePieceCarton: quantitePieceCarton ? quantitePieceCarton : 0,
-            stockInitalCarton: quantiteCarton ? quantiteCarton : 0,
+            stockInitialCarton: quantiteCarton ? quantiteCarton : 0,
             quantiteMouvementCarton: newStockCarton,
             stockFinalCarton: finalStockCarton,
             quantiteCartonLot: quantiteCartonLot ? quantiteCartonLot : 0,
@@ -457,7 +457,7 @@ export default function SetStockQuantityInputs() {
         }
 
         const payload = {
-            stockInitalCartonLot: stockCartonLot ? stockCartonLot : 0,
+            stockInitialCartonLot: stockCartonLot ? stockCartonLot : 0,
             quantiteMouvementCartonLot: newStockCarton,
             stockFinalCartonLot: finalStockCartonLot,
             details,
@@ -663,7 +663,7 @@ export default function SetStockQuantityInputs() {
         }
 
         const payload = {
-            stockInitalCarton: quantiteCarton ? quantiteCarton : 0,
+            stockInitialCarton: quantiteCarton ? quantiteCarton : 0,
             quantiteMouvementCarton: newStockCarton,
             stockFinalCarton: finalStockCarton,
             details,

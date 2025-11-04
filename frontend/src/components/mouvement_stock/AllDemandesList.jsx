@@ -253,7 +253,7 @@ export default function AllDemandesList() {
         )
     }
     const actionTemplate = (demandeForms) =>{
-        let linkSee = `/demande-details/${demandeForms.id_demande}`;
+        let linkSee = `/demande-details/${demandeForms.id}`;
         let linkModify = `/modifier-demande/${demandeForms.id_demande}`
 
         return(

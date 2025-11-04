@@ -400,70 +400,13 @@ export default function DemandeInputs() {
       quantiteMouvementPiece: destockPiece,
       stockFinalPiece: quantitePiece - destockPiece,
       quantitePieceCarton: quantitePieceCarton ? quantitePieceCarton : 0,
-      stockInitalCarton: quantiteCarton ? quantiteCarton : 0,
+      stockInitialCarton: quantiteCarton ? quantiteCarton : 0,
       quantiteMouvementCarton: destockCarton,
       stockFinalCarton: quantiteCarton - destockCarton,
       quantiteCartonLot: quantiteCartonLot ? quantiteCartonLot : 0,
       listeLots,
     }
     setDetailsDemande(details)
-  }
-  const handleValidateParLot = async () => {
-    setEntreeParLotModalOpen(false)
-    setSortieParLotModalOpen(false)
-
-    const item_id = id
-    const model_id = selectedModel
-    const service_id = selectedService
-    const listeLots = selectedLots ? selectedLots : []
-
-    const details = {
-      stockInitialPiece: quantitePiece ? quantitePiece : 0,
-      quantiteMouvementPiece: newStockPiece,
-      stockFinalPiece: finalStockPiece,
-      quantitePieceCarton: quantitePieceCarton ? quantitePieceCarton : 0,
-      stockInitalCarton: quantiteCarton ? quantiteCarton : 0,
-      quantiteMouvementCarton: newStockCarton,
-      stockFinalCarton: finalStockCarton,
-      quantiteCartonLot: quantiteCartonLot ? quantiteCartonLot : 0,
-      listeLots,
-    }
-
-    const payload = {
-      stockInitialLot: quantiteLot ? quantiteLot : 0,
-      quantiteMouvementLot: newStockLot,
-      stockFinalLot: finalStockLot,
-      details,
-      motif,
-      commentaire,
-      isEntree,
-      userId
-    }
-
-    try {
-      setLoadingValidation(true)
-      console.log('Sendind payload...')
-
-      const response = await stockData.setStockLot(item_id, model_id, service_id, payload)
-
-      console.log(response)
-      Swal.fire({
-        title: "Succès",
-        text: "Modification effectuée avec succès !",
-        icon: "success"
-      })
-      navigate('/entree-sortie-stock')
-
-    } catch (error) {
-      Swal.fire({
-        title: "Attention",
-        text: "Une erreur est survenue lors de la modification !",
-        icon: "warning"
-      })
-      navigate('/entree-sortie-stock')
-    } finally {
-      setLoadingValidation(false)
-    }
   }
 
   // FONCTIONS POUR MOUVEMENT PAR CARTONS LOT
@@ -504,7 +447,7 @@ export default function DemandeInputs() {
       model: selectedModel,
       service: selectedServicePiece,
       typeMouvement: 2,
-      stockInitalCartonLot: stockCartonLot ? stockCartonLot : 0,
+      stockInitialCartonLot: stockCartonLot ? stockCartonLot : 0,
       quantiteMouvementCartonLot: selectedCartons.length,
       stockFinalCartonLot: stockCartonLot - selectedCartons.length,
       stockInitialPiece: quantitePiece ? quantitePiece : 0,
@@ -600,7 +543,7 @@ export default function DemandeInputs() {
       model: selectedModel,
       service: selectedServicePiece,
       typeMouvement: 4,
-      stockInitalCarton: quantiteCarton ? quantiteCarton : 0,
+      stockInitialCarton: quantiteCarton ? quantiteCarton : 0,
       quantiteMouvementCarton: selectedCartons.length,
       stockFinalCarton: quantiteCarton - selectedCartons.length,
       stockInitialPiece: quantitePiece ? quantitePiece : 0,
@@ -626,10 +569,10 @@ export default function DemandeInputs() {
       return
     }
     setSortieParPieceModalOpen(true)
+    const final = quantitePiece - newStockPiece
     setFinaleStockPiece(final)
     setError('')
 
-    const final = quantitePiece - newStockPiece
     setQuantite(newStockPiece)
     const details = {
       model: selectedModel,

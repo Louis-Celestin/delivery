@@ -175,20 +175,20 @@ const faireDemande = async (req, res) => {
         <br><br>
         <p>Green - Pay vous remercie.</p>
         `;
-      for (const service_user of service_users) {
-        await sendMail({
-          to: service_user.email,
-          subject,
-          html,
-        });
-      }
-      for (const validateur of validateurs) {
-        await sendMail({
-          to: validateur.email,
-          subject,
-          html,
-        });
-      }
+      // for (const service_user of service_users) {
+      //   await sendMail({
+      //     to: service_user.email,
+      //     subject,
+      //     html,
+      //   });
+      // }
+      // for (const validateur of validateurs) {
+      //   await sendMail({
+      //     to: validateur.email,
+      //     subject,
+      //     html,
+      //   });
+      // }
     }
 
     res.status(201).json({
@@ -222,7 +222,7 @@ const getOneDemande = async (req, res) => {
 
   try {
     const demandes = await prisma.demandes.findUnique({
-      where: { id_demande: parseInt(id) },
+      where: { id: parseInt(id) },
       include: {
         validation_demande: true,
       }

@@ -283,7 +283,7 @@ const setStockPiece = async (req, res) =>{
 
     const type = isEntree? 'entree' : 'sortie'
 
-    const inital = Number(stockInitial)
+    const initial = Number(stockInitial)
     const stock = Number(quantiteMouvement)
     const final = Number(stockFinal)
 
@@ -296,7 +296,7 @@ const setStockPiece = async (req, res) =>{
         service_origine: isEntree ? null : parseInt(service_id),
         service_destination: isEntree ? parseInt(service_id) : null,
         model_id: parseInt(model_id),
-        stock_initial: inital,
+        stock_initial: initial,
         quantite: stock,
         stock_final: final,
         quantite_totale_piece: final,
@@ -356,7 +356,7 @@ const setStockCarton = async (req, res) =>{
   } = req.params
 
   const {
-    stockInitalCarton,
+    stockInitialCarton,
     quantiteMouvementCarton,
     stockFinalCarton,
     details,
@@ -392,7 +392,7 @@ const setStockCarton = async (req, res) =>{
 
     const type = isEntree? 'entree' : 'sortie'
 
-    const initalCarton = Number(stockInitalCarton)
+    const initialCarton = Number(stockInitialCarton)
     const stockCarton = Number(quantiteMouvementCarton)
     const finalCarton = Number(stockFinalCarton)
     const finalPiece = Number(detailsCartons.stockFinalPiece)
@@ -406,7 +406,7 @@ const setStockCarton = async (req, res) =>{
         service_origine: isEntree ? null : parseInt(service_id),
         service_destination: isEntree ? parseInt(service_id) : null,
         model_id: parseInt(model_id),
-        stock_initial: initalCarton,
+        stock_initial: initialCarton,
         quantite: stockCarton,
         stock_final: finalCarton,
         quantite_totale_piece: finalPiece,
@@ -541,7 +541,7 @@ const setStockPieceCarton = async (req, res) =>{
 
     const type = isEntree? 'entree' : 'sortie'
 
-    const initalPieceCarton = Number(stockInitialPieceCarton)
+    const initialPieceCarton = Number(stockInitialPieceCarton)
     const stockPieceCarton = Number(quantiteMouvementPieceCarton)
     const finalPieceCarton = Number(stockFinalPieceCarton)
     const finalPiece = Number(detailsPieceCarton.stockFinalPiece)
@@ -555,7 +555,7 @@ const setStockPieceCarton = async (req, res) =>{
         service_origine: isEntree ? null : parseInt(service_id),
         service_destination: isEntree ? parseInt(service_id) : null,
         model_id: parseInt(model_id),
-        stock_initial: initalPieceCarton,
+        stock_initial: initialPieceCarton,
         quantite: stockPieceCarton,
         stock_final: finalPieceCarton,
         quantite_totale_piece: finalPiece,
@@ -669,7 +669,7 @@ const setStockCartonLot = async (req, res) =>{
   } = req.params
 
   const {
-    stockInitalCartonLot,
+    stockInitialCartonLot,
     quantiteMouvementCartonLot,
     stockFinalCartonLot,
     details,
@@ -705,7 +705,7 @@ const setStockCartonLot = async (req, res) =>{
 
     const type = isEntree? 'entree' : 'sortie'
 
-    const initalCartonLot = Number(stockInitalCartonLot)
+    const initialCartonLot = Number(stockInitialCartonLot)
     const stockCartonLot = Number(quantiteMouvementCartonLot)
     const finalCartonLot = Number(stockFinalCartonLot)
     const finalPiece = Number(detailsCartonsLot.stockFinalPiece)
@@ -720,7 +720,7 @@ const setStockCartonLot = async (req, res) =>{
         service_origine: isEntree ? null : parseInt(service_id),
         service_destination: isEntree ? parseInt(service_id) : null,
         model_id: parseInt(model_id),
-        stock_initial: initalCartonLot,
+        stock_initial: initialCartonLot,
         quantite: stockCartonLot,
         stock_final: finalCartonLot,
         quantite_totale_piece: finalPiece,
@@ -882,7 +882,7 @@ const setStockLot = async (req, res) =>{
 
     const type = isEntree? 'entree' : 'sortie'
 
-    const initalLot = Number(stockInitialLot)
+    const initialLot = Number(stockInitialLot)
     const stockLot = Number(quantiteMouvementLot)
     const finalLot = Number(stockFinalLot)
     const finalPiece = Number(detailsLots.stockFinalPiece)
@@ -896,7 +896,7 @@ const setStockLot = async (req, res) =>{
         service_origine: isEntree ? null : parseInt(service_id),
         service_destination: isEntree ? parseInt(service_id) : null,
         model_id: parseInt(model_id),
-        stock_initial: initalLot,
+        stock_initial: initialLot,
         quantite: stockLot,
         stock_final: finalLot,
         quantite_totale_piece: finalPiece,

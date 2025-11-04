@@ -1,4 +1,4 @@
-import { useState, useEffect} from 'react';
+import { useState, useEffect, useSyncExternalStore} from 'react';
 import { useParams, Link, useNavigate } from 'react-router';
 import PageBreadcrumb from '../../components/common/PageBreadCrumb';
 import 'primeicons/primeicons.css';
@@ -29,7 +29,17 @@ export default function DemandeDetails() {
     const [loading, setLoading] = useState(false);
     const [loadingPrint, setLoadingPrint] = useState(false);
     const [demandeDetails, setDemandeDetails] = useState('')
+
+    const [items, setItems] = useState([])
+    const [item, setItem] = useState(null)
+    const [nomPiece, setNomPiece] = useState('')
     const [typeDemande, setTypeDemande] = useState('')
+
+    const [quantiteDemande, setQuantiteDemande] = useState(0)
+    const [stockDepart, setStockDepart] = useState(0)
+    const [stockFinal, setStockFinal] = useState(0)
+    const [stockFinalPiece, setStockFinalPiece] = useState(0)
+
     const [dateDemande, setDateDemande] = useState('')
     const [actionButtons, setActionButtons] = useState(false);
     const [commentaire, setCommentaire] = useState('');
@@ -37,14 +47,10 @@ export default function DemandeDetails() {
     const [statutDemande, setStatutDemande] = useState('en attente');
     const [statutClass, setStatutClass] = useState('text-sm rounded-xl p-1 bg-orange-100 text-orange-500 font-bold')
     const [recu, setRecu] = useState(false);
-    const [qteDemande , setQteDemande] = useState(0);
     const [isDelivered, setIsDelivered] = useState(false);
     const [attente, setAttente] = useState(true)
     const [serviceDemandeur, setServiceDemandeur] = useState('');
     const [nomDemandeur, setNomDemandeur] = useState('')
-    const [stockDepart, setStockDepart] = useState('');
-    const [quantiteDemandee, setQuantiteDemandee] = useState('')
-    const [stockFinal, setStockFinal] = useState('')
 
     const [stockDT, setStockDT] = useState([])
     const [motifDemande, setMotifDemande] = useState('');
@@ -125,34 +131,17 @@ export default function DemandeDetails() {
 
                     let demandeData = await demandes.getOneDemande(id);
                     let index;
-                    console.log(demandeData)
-                    setDemandeDetails({
-                        ...demandeData,
-                        produit_demande: JSON.parse(demandeData.produit_demande)
-                    });
-
-                    let produits = JSON.parse(demandeData.produit_demande)
-                    setStockDepart(produits.stockDepart)
-                    setQuantiteDemandee(produits.quantite)
-                    setStockFinal(produits.stockDepart - produits.quantite)
+                    setDemandeDetails(demandeData);
                     setMotifDemande(demandeData.motif_demande)
-                    setNomDemandeur(demandeData.nom_demandeur)
-                    setDateDemande(formatDate(demandeData.date_demande))
-                    setCommentaire(demandeData.commentaire)
-                    setStockCartonDepart(produits.cartonDepart)
-                    setStockCartonDemande(produits.stockCarton)
-                    setNomenclature(demandeData.nomenclature)
-                    const autres = JSON.parse(demandeData.champs_autre)
-                    setOtherFields(autres)
 
-                    let idService = demandeData.service_demandeur
-
-                    let servicesData = await usersData.getAllServices()
-                    const service = servicesData.find((item) => {
-                        return item.id == idService
+                    const services_data = await usersData.getAllServices()
+                    const service = services_data.find((item) =>{
+                        return item.id == demandeData.service_demandeur
                     })
-                    console.log(idService)
-                    setServiceDemandeur(service.nom_service.toUpperCase())
+                    const nomService = service ? service.nom_service : ''
+                    setServiceDemandeur(nomService)
+
+                    setDateDemande(formatDate(demandeData.date_demande))
 
                     if(demandeData.statut_demande == 'en_cours'){
                         if(roles_id.includes(4)){
@@ -203,24 +192,51 @@ export default function DemandeDetails() {
                     // setCommentaireValidation(demandeData.validations[0].commentaire)
                     }
 
-                    let stockData;
-                    stockData = await stock.getAllStock()
-                    // console.log(stockData)
-                    setStockDT(stockData)
-                    const piecesA920 = stockData.filter(item =>{
-                        return item.model_id == 1;
-                    });
-                    const pieceDemande = stockData.find(
-                        (item) =>{
-                            return item.id_piece == demandeData.type_demande_id
-                        }
-                    )
-                    if(pieceDemande){
-                        setTypeDemande(pieceDemande.nom_piece.toUpperCase())
-                    }
+                    const items_data_all = await stock.getAllStock()
+                    const items_data = items_data_all.filter((item) =>{
+                        return item.is_deleted == false
+                    })
+                    setItems(items_data)
+                    const piece = items_data.find((item) =>{
+                        return item.id_piece == demandeData.item_id
+                    })
+                    const nom_piece = piece ? piece.nom_piece : ''
+                    setNomPiece(nom_piece)
+                    setNomDemandeur(demandeData.nom_demandeur)
+                    setNomenclature(demandeData.nomenclature)
+                    const autres = JSON.parse(demandeData.champs_autre)
+                    const details = JSON.parse(demandeData.details_demande)
+                    setOtherFields(autres)
+                    setQuantiteDemande(demandeData.qte_total_demande)
+                    const type_demande = details.typeMouvement
+                    const stock_depart = type_demande == 1 ? details.stockInitialLot : type_demande == 2 ?
+                    details.stockInitialCartonLot : type_demande == 3 ?
+                    details.stockInitialPieceCarton : type_demande == 4 ?
+                    details.stockInitialCarton : type_demande == 5 ?
+                    details.stockInitial : 0
+
+                    setStockDepart(stock_depart)
+
+                    const stock_final = type_demande == 1 ? details.stockFinalLot : type_demande == 2 ?
+                    details.stockFinalCartonLot : type_demande == 3 ?
+                    details.stockFinalPieceCarton: type_demande == 4 ?
+                    details.stockFinalCarton : type_demande == 5 ?
+                    details.stockFinal : 0
+
+                    setStockFinal(stock_final)
+
+                    const final_piece = type_demande == 5 ? details.stockFinal : details.stockFinalPiece
+                    setStockFinalPiece(final_piece)
+
+                    const typesMouvement_data = await stock.getAllTypeMouvementStock()
+                    const typeMouvement = typesMouvement_data.find((item) =>{
+                        return item.id == type_demande
+                    })
+
+                    const nomType = typeMouvement ? typeMouvement.titre : ''
+                    setTypeDemande(nomType)
 
                     let livraison_data = await livraisonData.getOneLivraisonDemande(id)
-
                     let index_reception
                     console.log(livraison_data)
                     setLivraisonID(livraison_data.id)
@@ -532,7 +548,7 @@ export default function DemandeDetails() {
             {loading ?
                 (<>Loading...</>) :
             (<>
-                <PageBreadcrumb pageTitle="Mouvement de stock"/>
+                <PageBreadcrumb pageTitle="Demande de stock"/>
                 <div>
                     <div className='grid grid-cols-2 justify-between items-center mb-6'>
                         <div>
@@ -779,7 +795,7 @@ export default function DemandeDetails() {
                         <div className='w-9/12 px-20 py-6 bg-white rounded-2xl border'>
                             <div className='w-full text-center mb-4'>
                                 <span className='text-md underline'>
-                                    Mouvement de stock DT
+                                    Mouvement de stock
                                 </span>
                             </div>
                             <div className='w-full text-center mb-4'>
@@ -791,7 +807,7 @@ export default function DemandeDetails() {
                                 <tbody>
                                     <tr className='border h-15'>
                                         <th className='border w-1/2'>Pièce demandée</th>
-                                        <th className='border w-1/2'>{typeDemande}</th>
+                                        <th className='border w-1/2'>{nomPiece}</th>
                                     </tr>
                                     <tr className='border h-15'>
                                         <th className='border w-1/2'>Service demandeur</th>
@@ -801,40 +817,25 @@ export default function DemandeDetails() {
                                         <th className='border w-1/2'>Demandeur</th>
                                         <th className='border w-1/2'>{nomDemandeur}</th>
                                     </tr>
-                                    {stockCartonDepart ? (
-                                        <tr className='border h-15'>
-                                            <th className='border w-1/2'>Stock de carton départ</th>
-                                            <th className='border w-1/2'>{stockCartonDepart}</th>
-                                        </tr>
-                                    ) : (
-                                        <></>
-                                    )}
-                                    {stockCartonDemande ? (
-                                        <>
-                                            <tr className='border h-15'>
-                                                <th className='border w-1/2'>Stock de carton demandé</th>
-                                                <th className='border w-1/2'>{stockCartonDemande}</th>
-                                            </tr>
-                                            <tr className='border h-15'>
-                                                <th className='border w-1/2'>Stock de carton restant</th>
-                                                <th className='border w-1/2'>{stockCartonDepart - stockCartonDemande}</th>
-                                            </tr>   
-                                        </>
-                                        
-                                    ) : (
-                                        <></>
-                                    )}
                                     <tr className='border h-15'>
-                                        <th className='border w-1/2'>Stock de départ</th>
+                                        <th className='border w-1/2'>Type demande</th>
+                                        <th className='border w-1/2'>{typeDemande}</th>
+                                    </tr>
+                                    <tr className='border h-15'>
+                                        <th className='border w-1/2'>Quantité initiale</th>
                                         <th className='border w-1/2'>{stockDepart}</th>
                                     </tr>
                                     <tr className='border h-15'>
                                         <th className='border w-1/2'>Quantité demandée</th>
-                                        <th className='border w-1/2'>{quantiteDemandee}</th>
+                                        <th className='border w-1/2'>{quantiteDemande}</th>
+                                    </tr>
+                                    <tr className='border h-15'>
+                                        <th className='border w-1/2'>Quantité finale</th>
+                                        <th className='border w-1/2'>{stockFinal}</th>
                                     </tr>
                                     <tr className='border h-15'>
                                         <th className='border w-1/2'>Stock final</th>
-                                        <th className='border w-1/2'>{stockFinal}</th>
+                                        <th className='border w-1/2'>{stockFinalPiece}</th>
                                     </tr>
                                     {nomenclature ? (
                                         <tr className='border h-15'>
