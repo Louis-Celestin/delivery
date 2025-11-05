@@ -119,6 +119,10 @@ export default function DemandeInputs() {
 
   const [quantite, setQuantite] = useState(0)
 
+  const [quantitePieceDemandeur, setQuantitePieceDemandeur] = useState(0)
+  const [quantiteCartonDemandeur, setQuantiteCartonDemandeur] = useState(0)
+  const [quantiteLotDemandeur, setQuantiteLotDemandeur] = useState(0)
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
@@ -233,7 +237,6 @@ export default function DemandeInputs() {
       try {
         const quantite_piece = await stockData.getStockPiece(selectedPiece, selectedModel, selectedServicePiece)
         setQuantitePiece(quantite_piece)
-        console.log(quantite_piece)
 
         const stock_carton_all = await stockData.getCartonPiece(selectedPiece, selectedModel, selectedServicePiece)
         const stock_carton = stock_carton_all.filter((item) => {
@@ -261,7 +264,6 @@ export default function DemandeInputs() {
           label: `Lot ${item.numero_lot} - ${item.quantite_carton} cartons - ${item.quantite_piece} pièces`
         }))
         setOptionsLot(options_lot)
-
       } catch (error) {
         console.log("Error fetching quantity", error)
       }
@@ -269,6 +271,33 @@ export default function DemandeInputs() {
 
     fetchQuantite()
   }, [selectedPiece, selectedModel, selectedServicePiece])
+
+  useEffect(() => {
+    const fetchQuantite = async () => {
+      if (!selectedModel || !serviceUser) return // wait until both are chosen
+      try {
+        const quantite_piece_demandeur = await stockData.getStockPiece(selectedPiece, selectedModel, serviceUser)
+        setQuantitePieceDemandeur(quantite_piece_demandeur)
+
+        const stock_carton_all_demandeur = await stockData.getCartonPiece(selectedPiece, selectedModel, serviceUser)
+        const stock_carton_demandeur = stock_carton_all_demandeur.filter((item) => {
+          return item.is_deleted == false
+        })
+        setQuantiteCartonDemandeur(stock_carton_demandeur.length)
+
+        const stock_lot_demandeur_all = await stockData.getLotPiece(selectedPiece, selectedModel, serviceUser)
+        const stock_lot_demandeur = stock_lot_demandeur_all.filter((item) => {
+          return item.is_deleted == false
+        })
+        setQuantiteLotDemandeur(stock_lot_demandeur.length)
+
+      } catch (error) {
+        console.log("Error fetching quantity", error)
+      }
+    }
+
+    fetchQuantite()
+  }, [selectedPiece, selectedModel, serviceUser])
 
   const handleSelectLotCarton = async (id) => {
     setSelectedLot(id)
@@ -387,6 +416,9 @@ export default function DemandeInputs() {
     setSortieParLotModalOpen(true)
     setError('')
 
+    const finalStockLotDemandeur = quantiteLotDemandeur + selectedLots.length
+    const finalStockPieceDemandeur = quantitePieceDemandeur + destockPiece
+
     const listeLots = selectedLots ? selectedLots : []
     setQuantite(selectedLots.length)
     const details = {
@@ -405,6 +437,9 @@ export default function DemandeInputs() {
       stockFinalCarton: quantiteCarton - destockCarton,
       quantiteCartonLot: quantiteCartonLot ? quantiteCartonLot : 0,
       listeLots,
+      stockFinalPieceDemandeur: finalStockPieceDemandeur,
+      stockInitialLotDemandeur: quantiteLotDemandeur ? quantiteLotDemandeur : 0,
+      stockFinalLotDemandeur: finalStockLotDemandeur,
     }
     setDetailsDemande(details)
   }
@@ -441,6 +476,9 @@ export default function DemandeInputs() {
     setSortieParCartonLotModalOpen(true)
     setError('')
 
+    const finalStockPieceDemandeur = quantitePieceDemandeur + destockPiece
+    const finalStockCartonDemandeur = quantiteCartonDemandeur + selectedCartons.length
+
     const cartons = selectedCartons ? selectedCartons : []
     setQuantite(selectedCartons.length)
     const details = {
@@ -461,6 +499,9 @@ export default function DemandeInputs() {
       stockFinalPieceLot: stockPieceLot - destockPiece,
       cartons,
       selectedLot,
+      stockFinalPieceDemandeur: finalStockPieceDemandeur,
+      stockInitialCartonDemandeur: quantiteCartonDemandeur ? quantiteCartonDemandeur : 0,
+      stockFinalCartonDemandeur: finalStockCartonDemandeur,
     }
     setDetailsDemande(details)
   }
@@ -491,6 +532,8 @@ export default function DemandeInputs() {
     
     const finalPieceLot = stockPieceLot - newStockPiece
 
+    const finalStockPieceDemandeur = quantitePieceDemandeur + newStockPiece
+
     setQuantite(newStockPiece)
     const details = {
       model: selectedModel,
@@ -507,6 +550,8 @@ export default function DemandeInputs() {
       stockInitialPieceLot: stockPieceLot ? stockPieceLot : null,
       stockFinalPieceLot: finalPieceLot ? finalPieceLot : null,
       selectedLot: selectedLot ? selectedLot : null,
+      stockInitialPieceDemandeur: quantitePieceDemandeur ? quantitePieceDemandeur : 0,
+      stockFinalPieceDemandeur: finalStockPieceDemandeur,
     }
     setDetailsDemande(details)
   }
@@ -537,6 +582,9 @@ export default function DemandeInputs() {
     setSortieParCartonModalOpen(true)
     setError('')
 
+    const finalStockPieceDemandeur = quantitePieceDemandeur + destockPiece
+    const finalStockCartonDemandeur = quantiteCartonDemandeur + selectedCartons.length
+
     const cartons = selectedCartons ? selectedCartons : []
     setQuantite(selectedCartons.length)
     const details = {
@@ -551,6 +599,9 @@ export default function DemandeInputs() {
       stockFinalPiece: quantitePiece - destockPiece,
       quantitePieceCarton: quantitePieceCarton ? quantitePieceCarton : 0,
       cartons,
+      stockFinalPieceDemandeur: finalStockPieceDemandeur,
+      stockInitialCartonDemandeur: quantiteCartonDemandeur ? quantiteCartonDemandeur : 0,
+      stockFinalCartonDemandeur: finalStockCartonDemandeur,
     }
     setDetailsDemande(details)
   }
@@ -573,6 +624,8 @@ export default function DemandeInputs() {
     setFinaleStockPiece(final)
     setError('')
 
+    const finalStockPieceDemandeur = quantitePieceDemandeur + newStockPiece
+
     setQuantite(newStockPiece)
     const details = {
       model: selectedModel,
@@ -581,6 +634,8 @@ export default function DemandeInputs() {
       stockInitial: quantitePiece ? quantitePiece : 0,
       quantiteMouvement: newStockPiece,
       stockFinal: final,
+      stockInitialPieceDemandeur: quantitePieceDemandeur ? quantitePieceDemandeur : 0,
+      stockFinalPieceDemandeur: finalStockPieceDemandeur,
     }
     setDetailsDemande(details)
   }

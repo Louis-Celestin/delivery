@@ -141,7 +141,6 @@ model mouvement_stock {
   motif                                                  String?               @db.Text
   commentaire                                            String?               @db.LongText
   details_mouvement                                      String?               @db.LongText
-  mouvement_lot                                          mouvement_lot?
   services_mouvement_stock_service_origineToservices     services?             @relation("mouvement_stock_service_origineToservices", fields: [service_origine], references: [id], onDelete: NoAction, map: "mouvement_stock_ibfk_1")
   services_mouvement_stock_service_destinationToservices services?             @relation("mouvement_stock_service_destinationToservices", fields: [service_destination], references: [id], onDelete: NoAction, map: "mouvement_stock_ibfk_2")
   demandes                                               demandes?             @relation(fields: [demande_id], references: [id], onDelete: Restrict, map: "mouvement_stock_ibfk_3")
@@ -434,20 +433,13 @@ model stock_piece {
   service_id  Int
   model_id    Int
   quantite    Int         @default(0)
+  items       items       @relation(fields: [piece_id], references: [id_piece], onDelete: Cascade, map: "stock_piece_ibfk_3")
   services    services    @relation(fields: [service_id], references: [id], onDelete: Cascade, map: "stock_piece_ibfk_1")
   model_piece model_piece @relation(fields: [model_id], references: [id_model], onDelete: Cascade, map: "stock_piece_ibfk_2")
-  items       items       @relation(fields: [piece_id], references: [id_piece], onDelete: Cascade, map: "stock_piece_ibfk_3")
 
   @@index([model_id], map: "model_id")
   @@index([piece_id], map: "piece_id")
   @@index([service_id], map: "service_id")
-}
-
-model mouvement_lot {
-  id                    Int             @id @default(autoincrement())
-  quantite_carton       Int
-  quantite_piece_carton Int
-  mouvement_stock       mouvement_stock @relation(fields: [id], references: [id], onDelete: Cascade, map: "mouvement_lot_ibfk_1")
 }
 
 model type_mouvement_stock {

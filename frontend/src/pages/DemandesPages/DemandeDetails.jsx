@@ -38,6 +38,7 @@ export default function DemandeDetails() {
     const [quantiteDemande, setQuantiteDemande] = useState(0)
     const [stockDepart, setStockDepart] = useState(0)
     const [stockFinal, setStockFinal] = useState(0)
+    const [stockDepartPiece, setStockDepartPiece] = useState(0)
     const [stockFinalPiece, setStockFinalPiece] = useState(0)
 
     const [dateDemande, setDateDemande] = useState('')
@@ -224,6 +225,9 @@ export default function DemandeDetails() {
                                     details.stockFinal : 0
 
                     setStockFinal(stock_final)
+
+                    const intial_piece = type_demande == 5 ? details.stockInitial : details.stockInitialPiece
+                    setStockDepartPiece(intial_piece)
 
                     const final_piece = type_demande == 5 ? details.stockFinal : details.stockFinalPiece
                     setStockFinalPiece(final_piece)
@@ -823,7 +827,11 @@ export default function DemandeDetails() {
                                             <th className='border w-1/2'>{stockFinal}</th>
                                         </tr>
                                         <tr className='border h-15'>
-                                            <th className='border w-1/2'>Stock final</th>
+                                            <th className='border w-1/2'>Stock initial pièce</th>
+                                            <th className='border w-1/2'>{stockDepartPiece}</th>
+                                        </tr>
+                                        <tr className='border h-15'>
+                                            <th className='border w-1/2'>Stock final pièce</th>
                                             <th className='border w-1/2'>{stockFinalPiece}</th>
                                         </tr>
                                         {nomenclature ? (

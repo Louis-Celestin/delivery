@@ -454,6 +454,8 @@ const setStockCarton = async (req, res) =>{
       const listCarton = await prisma.stock_carton.findMany({
         where: { 
           piece_id: parseInt(item_id),
+          model_id: parseInt(model_id),
+          service_id: parseInt(service_id),
           lot_id: null,
         },
         orderBy: { numero_carton: "asc" },
@@ -792,6 +794,8 @@ const setStockCartonLot = async (req, res) =>{
         where: { 
           piece_id: parseInt(item_id),
           lot_id: parseInt(detailsCartonsLot.selectedLot),
+          model_id: parseInt(model_id),
+          service_id: parseInt(service_id),
         },
         orderBy: { numero_carton: "asc" },
       });
@@ -821,6 +825,8 @@ const setStockCartonLot = async (req, res) =>{
           where: {
             id: parseInt(id),
             lot_id: updatedLot.id,
+            model_id: parseInt(model_id),
+            service_id: parseInt(service_id),
           },
           data: {
             is_deleted: true,
@@ -943,6 +949,8 @@ const setStockLot = async (req, res) =>{
       const listLot = await prisma.stock_lot.findMany({
         where: { 
           piece_id: parseInt(item_id),
+          model_id: parseInt(model_id),
+          service_id: parseInt(service_id),
         },
         orderBy: { numero_lot: "asc" },
       });
