@@ -175,20 +175,20 @@ const faireDemande = async (req, res) => {
         <br><br>
         <p>Green - Pay vous remercie.</p>
         `;
-      // for (const service_user of service_users) {
-      //   await sendMail({
-      //     to: service_user.email,
-      //     subject,
-      //     html,
-      //   });
-      // }
-      // for (const validateur of validateurs) {
-      //   await sendMail({
-      //     to: validateur.email,
-      //     subject,
-      //     html,
-      //   });
-      // }
+      for (const service_user of service_users) {
+        await sendMail({
+          to: service_user.email,
+          subject,
+          html,
+        });
+      }
+      for (const validateur of validateurs) {
+        await sendMail({
+          to: validateur.email,
+          subject,
+          html,
+        });
+      }
     }
 
     res.status(201).json({
@@ -247,7 +247,7 @@ const validateDemande = async (req, res) => {
 
   try {
     const demande = await prisma.demandes.findUnique({
-      where: { id_demande: parseInt(demande_id) },
+      where: { id: parseInt(demande_id) },
     });
 
     if (!demande) return res.status(404).json({ message: "Demande introuvable." });
@@ -265,9 +265,6 @@ const validateDemande = async (req, res) => {
     });
     const signature = uploadResult.secure_url;
 
-    let final_nom_validateur;
-    let final_date_validation;
-
     if (!user_id) return res.status(403).json({ message: "Utilisateur non authentifié." });
 
     const user = await prisma.users.findUnique({
@@ -278,31 +275,381 @@ const validateDemande = async (req, res) => {
       return res.status(404).json({ message: "Utilisateur non trouvé." });
     }
 
-    final_nom_validateur = user.fullname;
-    final_date_validation = new Date();
-
     const newValidation = await prisma.validation_demande.create({
       data: {
         id_demande: parseInt(demande_id),
         commentaire,
         id_user: user_id ? parseInt(user_id) : null,
-        nom_validateur: final_nom_validateur,
-        date_validation_demande: final_date_validation,
+        nom_validateur: user.fullname,
+        date_validation_demande: new Date(),
         signature,
         statut_validation_demande: "valide",
       },
     });
 
     await prisma.demandes.update({
-      where: { id_demande: parseInt(demande_id) },
+      where: { id: parseInt(demande_id) },
       data: { statut_demande: "valide" },
     });
 
+    /************************************     GESTION MOUVEMENT DE STOCK     *****************************/
+
+    const detailsMouvement = typeof demande.details_demande === "string" ? JSON.parse(demande.details_demande) : demande.details_demande;
+
+    const typeMouvement = detailsMouvement.typeMouvement
+    let dataMouvement = null
+    let initial = 0
+    let stock = 0
+    let final = 0
+    let finalPiece = 0
+    let finalPieceLot = 0
+    let mouvement_stock = null
+    const modelPiece = parseInt(detailsMouvement.model)
+    const servicePiece = parseInt(detailsMouvement.service)
+    const pieceId = demande.item_id
+
+    if (typeMouvement == 5) {
+      initial = Number(detailsMouvement.stockInitial)
+      stock = Number(detailsMouvement.quantiteMouvement)
+      final = Number(detailsMouvement.stockFinal)
+      dataMouvement = {
+        type: 'sortie',
+        mouvement: 5,
+        demande_id: demande.id,
+        date: new Date(),
+        piece_id: pieceId,
+        service_origine: servicePiece,
+        service_destination: parseInt(demande.service_demandeur),
+        model_id: modelPiece,
+        stock_initial: initial,
+        quantite: stock,
+        stock_final: final,
+        quantite_totale_piece: final,
+        motif: demande.motif_demande,
+        commentaire,
+      }
+      mouvement_stock = await prisma.mouvement_stock.create({
+        data: dataMouvement,
+      })
+
+      const quantite = await prisma.stock_piece.findFirst({
+        where: {
+          piece_id: pieceId,
+          model_id: modelPiece,
+          service_id: servicePiece,
+        }
+      })
+      await prisma.stock_piece.update({
+        where: {
+          id: quantite.id,
+          piece_id: pieceId,
+          model_id: modelPiece,
+          service_id: servicePiece,
+        },
+        data: {
+          quantite: final
+        }
+      })
+    } else if (typeMouvement == 4) {
+      initial = Number(detailsMouvement.stockInitialCarton)
+      stock = Number(detailsMouvement.quantiteMouvementCarton)
+      final = Number(detailsMouvement.stockFinalCarton)
+      finalPiece = Number(detailsMouvement.stockFinalPiece)
+      dataMouvement = {
+        type: 'sortie',
+        mouvement: 4,
+        demande_id: demande.id,
+        date: new Date(),
+        piece_id: pieceId,
+        service_origine: servicePiece,
+        service_destination: parseInt(demande.service_demandeur),
+        model_id: modelPiece,
+        stock_initial: initial,
+        quantite: stock,
+        stock_final: final,
+        quantite_totale_piece: finalPiece,
+        motif: demande.motif_demande,
+        commentaire,
+      }
+      mouvement_stock = await prisma.mouvement_stock.create({
+        data: dataMouvement,
+      })
+
+      const quantite = await prisma.stock_piece.findFirst({
+        where: {
+          piece_id: pieceId,
+          model_id: modelPiece,
+          service_id: servicePiece,
+        }
+      })
+      await prisma.stock_piece.update({
+        where: {
+          id: quantite.id,
+          piece_id: pieceId,
+          model_id: modelPiece,
+          service_id: servicePiece,
+        },
+        data: {
+          quantite: finalPiece
+        }
+      })
+
+      const listCarton = detailsMouvement.cartons
+      for (let id of listCarton) {
+        await prisma.stock_carton.update({
+          where: {
+            id: parseInt(id)
+          },
+          data: {
+            is_deleted: true,
+          }
+        })
+      }
+    } else if (typeMouvement == 3) {
+      initial = Number(detailsMouvement.stockInitialPieceCarton)
+      stock = Number(detailsMouvement.quantiteMouvementPieceCarton)
+      final = Number(detailsMouvement.stockFinalPieceCarton)
+      finalPiece = Number(detailsMouvement.stockFinalPiece)
+      dataMouvement = {
+        type: 'sortie',
+        mouvement: 3,
+        demande_id: demande.id,
+        date: new Date(),
+        piece_id: pieceId,
+        service_origine: servicePiece,
+        service_destination: parseInt(demande.service_demandeur),
+        model_id: modelPiece,
+        stock_initial: initial,
+        quantite: stock,
+        stock_final: final,
+        quantite_totale_piece: finalPiece,
+        motif: demande.motif_demande,
+        commentaire,
+      }
+      mouvement_stock = await prisma.mouvement_stock.create({
+        data: dataMouvement,
+      })
+
+      const quantite = await prisma.stock_piece.findFirst({
+        where: {
+          piece_id: pieceId,
+          model_id: modelPiece,
+          service_id: servicePiece,
+        }
+      })
+      await prisma.stock_piece.update({
+        where: {
+          id: quantite.id,
+          piece_id: pieceId,
+          model_id: modelPiece,
+          service_id: servicePiece,
+        },
+        data: {
+          quantite: finalPiece
+        }
+      })
+
+      await prisma.stock_carton.update({
+        where: { id: parseInt(detailsMouvement.selectedCarton) },
+        data: {
+          quantite_totale_piece: final
+        },
+      })
+
+      if (final == 0) {
+        await prisma.stock_carton.update({
+          where: { id: parseInt(detailsMouvement.selectedCarton) },
+          data: {
+            quantite_totale_piece: final,
+            is_deleted: true,
+          },
+        })
+      }
+
+      if (detailsMouvement.selectedLot) {
+        const finalPieceLot = Number(detailsMouvement.stockFinalPieceLot)
+        let updatedLot = await prisma.stock_lot.update({
+          where: {
+            id: parseInt(detailsMouvement.selectedLot)
+          },
+          data: {
+            quantite_piece: finalPieceLot,
+          }
+        })
+        if (final == 0) {
+          updatedLot = await prisma.stock_lot.update({
+            where: {
+              id: parseInt(detailsMouvement.selectedLot)
+            },
+            data: {
+              quantite_piece: finalPieceLot,
+              quantite_carton: updatedLot.quantite_carton - 1,
+            },
+          })
+        }
+        if (updatedLot.quantite_carton == 0) {
+          updatedLot = await prisma.stock_lot.update({
+            where: {
+              id: parseInt(detailsMouvement.selectedLot)
+            },
+            data: {
+              quantite_piece: finalPieceLot,
+              quantite_carton: 0,
+              is_deleted: true
+            }
+          })
+        }
+      }
+    } else if (typeMouvement == 2) {
+      initial = Number(detailsMouvement.stockInitialCartonLot)
+      stock = Number(detailsMouvement.quantiteMouvementCartonLot)
+      final = Number(detailsMouvement.stockFinalCartonLot)
+      finalPiece = Number(detailsMouvement.stockFinalPiece)
+      finalPieceLot = Number(detailsMouvement.stockFinalPieceLot)
+      dataMouvement = {
+        type: 'sortie',
+        mouvement: 2,
+        demande_id: demande.id,
+        date: new Date(),
+        piece_id: pieceId,
+        service_origine: servicePiece,
+        service_destination: parseInt(demande.service_demandeur),
+        model_id: modelPiece,
+        stock_initial: initial,
+        quantite: stock,
+        stock_final: final,
+        quantite_totale_piece: finalPiece,
+        motif: demande.motif_demande,
+        commentaire,
+      }
+      mouvement_stock = await prisma.mouvement_stock.create({
+        data: dataMouvement,
+      })
+
+      const quantite = await prisma.stock_piece.findFirst({
+        where: {
+          piece_id: pieceId,
+          model_id: modelPiece,
+          service_id: servicePiece,
+        }
+      })
+      await prisma.stock_piece.update({
+        where: {
+          id: quantite.id,
+          piece_id: pieceId,
+          model_id: modelPiece,
+          service_id: servicePiece,
+        },
+        data: {
+          quantite: finalPiece
+        }
+      })
+
+      let updatedLot = await prisma.stock_lot.update({
+        where: {
+          id: parseInt(detailsMouvement.selectedLot),
+        },
+        data: {
+          quantite_carton: final,
+          quantite_piece: finalPieceLot,
+        },
+      })
+
+      if (final == 0) {
+        updatedLot = await prisma.stock_lot.update({
+          where: {
+            id: parseInt(detailsMouvement.selectedLot),
+          },
+          data: {
+            quantite_carton: final,
+            quantite_piece: finalPieceLot,
+            is_deleted: true,
+          },
+        })
+      }
+
+      const listCartonLot = detailsMouvement.cartons
+      for (let id of listCartonLot) {
+        await prisma.stock_carton.update({
+          where: {
+            id: parseInt(id),
+            lot_id: updatedLot.id,
+          },
+          data: {
+            is_deleted: true,
+          }
+        })
+      }
+    } else if (typeMouvement == 1) {
+      initial = Number(detailsMouvement.stockInitialLot)
+      stock = Number(detailsMouvement.quantiteMouvementLot)
+      final = Number(detailsMouvement.stockFinalLot)
+      finalPiece = Number(detailsMouvement.stockFinalPiece)
+      dataMouvement = {
+        type: 'sortie',
+        mouvement: 1,
+        demande_id: demande.id,
+        date: new Date(),
+        piece_id: pieceId,
+        service_origine: servicePiece,
+        service_destination: parseInt(demande.service_demandeur),
+        model_id: modelPiece,
+        stock_initial: initial,
+        quantite: stock,
+        stock_final: final,
+        quantite_totale_piece: finalPiece,
+        motif: demande.motif_demande,
+        commentaire,
+      }
+      mouvement_stock = await prisma.mouvement_stock.create({
+        data: dataMouvement,
+      })
+
+      const quantite = await prisma.stock_piece.findFirst({
+        where: {
+          piece_id: pieceId,
+          model_id: modelPiece,
+          service_id: servicePiece,
+        }
+      })
+      await prisma.stock_piece.update({
+        where: {
+          id: quantite.id,
+          piece_id: pieceId,
+          model_id: modelPiece,
+          service_id: servicePiece,
+        },
+        data: {
+          quantite: finalPiece
+        }
+      })
+
+      const listLot = detailsMouvement.listeLots
+      for (let id of listLot) {
+        await prisma.stock_lot.update({
+          where: {
+            id: parseInt(id)
+          },
+          data: {
+            is_deleted: true,
+          }
+        })
+        await prisma.stock_carton.updateMany({
+          where: {
+            lot_id: parseInt(id)
+          },
+          data: {
+            is_deleted: true,
+          }
+        })
+      }
+    }
+
     /************************************     GESTION MAILS     **************************************/
 
-    const piece = await prisma.stock_dt.findUnique({
+    const piece = await prisma.items.findUnique({
       where: {
-        id_piece: parseInt(demande.type_demande_id)
+        id_piece: parseInt(demande.item_id)
       }
     });
 
@@ -329,23 +676,22 @@ const validateDemande = async (req, res) => {
     })
 
     let motif = demande.motif_demande
-    let demandeTypeName = piece.nom_piece.toUpperCase()
+    let nomPiece = piece.nom_piece.toUpperCase()
 
     let serviceDemandeur = service.nom_service.toUpperCase();
 
     let quantite = demande.qte_total_demande;
     let commentaire_mail = commentaire ? commentaire : '(sans commentaire)';
     const url = GENERAL_URL
-    let demandeLink = `${url}/demande-details/${demande.id_demande}`;
-    // const demandeLink = `https://livraisons.greenpayci.com/formulaire-recu/${nouvelleLivraison.id_demande}`
+    let demandeLink = `${url}/demande-details/${demande.id}`;
     const sendMail = require("../../utils/emailSender");
     if ((service_users && service_users.length > 0) || demandeur) {
-      const subject = `NOUVELLE DEMANDE ${motif}`;
+      const subject = `NOUVELLE DEMANDE POUR ${motif}`;
       const html = `
         <p>Bonjour,</p>
-        <p>La demande ${demande.id_demande} a été validée.</p>
+        <p>La demande ${demande.id} a été validée.</p>
         <ul>
-          <li><strong>Type de demande:</strong> ${demandeTypeName}</li>
+          <li><strong>Demande de :</strong> ${nomPiece}</li>
           <li><strong>Nombre de produits:</strong> ${quantite}</li>
         </ul>
         <ul>
@@ -378,8 +724,7 @@ const validateDemande = async (req, res) => {
         });
       }
     }
-
-    return res.status(201).json(newValidation);
+    return res.status(201).json(newValidation, mouvement_stock);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Erreur serveur." });

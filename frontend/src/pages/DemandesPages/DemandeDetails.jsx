@@ -1,4 +1,4 @@
-import { useState, useEffect, useSyncExternalStore} from 'react';
+import { useState, useEffect, useSyncExternalStore } from 'react';
 import { useParams, Link, useNavigate } from 'react-router';
 import PageBreadcrumb from '../../components/common/PageBreadCrumb';
 import 'primeicons/primeicons.css';
@@ -7,7 +7,7 @@ import { Stock } from '../../backend/stock/Stock';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { Users } from '../../backend/users/Users';
 import { ProductDeliveries } from '../../backend/livraisons/ProductDeliveries';
-import {Modal} from "../../components/ui/modal/index"
+import { Modal } from "../../components/ui/modal/index"
 import Swal from 'sweetalert2'
 import SignatureCanvas from 'react-signature-canvas'
 import Label from "../../components/form/Label";
@@ -16,12 +16,12 @@ import TextArea from "../../components/form/input/TextArea";
 
 
 export default function DemandeDetails() {
-    
+
     const demandes = new Demandes()
     const stock = new Stock()
     const { id } = useParams();
     const user_id = localStorage.getItem('id')
-    const usersData = new Users() 
+    const usersData = new Users()
     const livraisonData = new ProductDeliveries()
     const navigate = useNavigate();
 
@@ -70,7 +70,7 @@ export default function DemandeDetails() {
     const [errorSign, setErrorSign] = useState('');
     const [isModalCancelOpen, setIsModalCancelOpen] = useState(false);
     const [errorCancel, setErrorCancel] = useState('');
-    const [loadingDemande , setLoadingDemande] = useState(false);
+    const [loadingDemande, setLoadingDemande] = useState(false);
     const [message, setMessage] = useState("");
     const [messageReturn, setMessageReturn] = useState("");
     const [messageCancel, setMessageCancel] = useState("");
@@ -86,7 +86,7 @@ export default function DemandeDetails() {
     const [quantiteLivraison, setQuantiteLivraison] = useState('')
     const [nomLivreur, setNomLivreur] = useState('')
     const [modifyLivraison, setModifyLivraison] = useState(false)
-    
+
 
     const [loadingReception, setLoadingReception] = useState(false);
     const [isModalReceptionOpen, setIsModalReceptionOpen] = useState(false);
@@ -114,18 +114,18 @@ export default function DemandeDetails() {
         return d.toLocaleDateString('fr-FR'); // or use any locale you want
     };
 
-    useEffect( ()=>{
-        if(id){
-            const fetchDemandeDetails = async () =>{
-                try{
+    useEffect(() => {
+        if (id) {
+            const fetchDemandeDetails = async () => {
+                try {
                     setLoading(true);
 
                     let userRoles_data = await usersData.getUserRoles(parseInt(user_id))
-                    const roles_id = userRoles_data.roles.map((role) =>{
+                    const roles_id = userRoles_data.roles.map((role) => {
                         return role.id_role
                     })
                     setUserRoles(roles_id)
-                    if(roles_id.includes(6)){
+                    if (roles_id.includes(6)) {
                         setIsModificateur(true)
                     }
 
@@ -135,7 +135,7 @@ export default function DemandeDetails() {
                     setMotifDemande(demandeData.motif_demande)
 
                     const services_data = await usersData.getAllServices()
-                    const service = services_data.find((item) =>{
+                    const service = services_data.find((item) => {
                         return item.id == demandeData.service_demandeur
                     })
                     const nomService = service ? service.nom_service : ''
@@ -143,61 +143,61 @@ export default function DemandeDetails() {
 
                     setDateDemande(formatDate(demandeData.date_demande))
 
-                    if(demandeData.statut_demande == 'en_cours'){
-                        if(roles_id.includes(4)){
+                    if (demandeData.statut_demande == 'en_cours') {
+                        if (roles_id.includes(4)) {
                             setIsValidateur(true)
                         }
-                        if(roles_id.includes(3)){
+                        if (roles_id.includes(3)) {
                             setIsDemandeur(true)
                         }
                     }
-                    if(demandeData.statut_demande == 'valide'){
+                    if (demandeData.statut_demande == 'valide') {
                         setActionButtons(true)
                         setStatutDemande('Validée')
                         setAttente(false)
                         setStatutClass('text-sm rounded-xl p-1 bg-green-100 text-green-500 font-bold')
                         setRecu(true)
-                        index = demandeData.validation_demande.length-1
+                        index = demandeData.validation_demande.length - 1
                         setCommentaireValidation(demandeData.validation_demande[index].commentaire)
                         setIsCompleted(true)
-                        if(demandeData.demande_livree){
+                        if (demandeData.demande_livree) {
                             setIsDelivered(true);
-                        }else{
-                            if(roles_id.includes(1)){
+                        } else {
+                            if (roles_id.includes(1)) {
                                 setIsLivreur(true)
                             }
                         }
                     }
-                    else if(demandeData.statut_demande == 'retourne'){
-                        if(roles_id.includes(3)){
+                    else if (demandeData.statut_demande == 'retourne') {
+                        if (roles_id.includes(3)) {
                             setIsDemandeur(true)
-                        }            
+                        }
                         setActionButtons(false)
                         setRecu(true)
                         setAttente(true)
                         setStatutDemande('Retournée')
                         setStatutClass('text-sm rounded-xl p-1 bg-red-100 text-red-500 font-bold')
-                        index = demandeData.validation_demande.length-1
+                        index = demandeData.validation_demande.length - 1
                         setCommentaireValidation(demandeData.validation_demande[index].commentaire)
                     }
-                    else if(demandeData.statut_demande == 'refuse'){
+                    else if (demandeData.statut_demande == 'refuse') {
                         setActionButtons(false)
                         setRecu(true)
                         setAttente(false)
                         setStatutDemande('Refusée')
                         setStatutClass('text-sm rounded-xl p-1 bg-gray-dark text-white font-bold')
-                        index = demandeData.validation_demande.length-1
+                        index = demandeData.validation_demande.length - 1
                         setCommentaireValidation(demandeData.validation_demande[index].commentaire)
 
-                    // setCommentaireValidation(demandeData.validations[0].commentaire)
+                        // setCommentaireValidation(demandeData.validations[0].commentaire)
                     }
 
                     const items_data_all = await stock.getAllStock()
-                    const items_data = items_data_all.filter((item) =>{
+                    const items_data = items_data_all.filter((item) => {
                         return item.is_deleted == false
                     })
                     setItems(items_data)
-                    const piece = items_data.find((item) =>{
+                    const piece = items_data.find((item) => {
                         return item.id_piece == demandeData.item_id
                     })
                     const nom_piece = piece ? piece.nom_piece : ''
@@ -210,18 +210,18 @@ export default function DemandeDetails() {
                     setQuantiteDemande(demandeData.qte_total_demande)
                     const type_demande = details.typeMouvement
                     const stock_depart = type_demande == 1 ? details.stockInitialLot : type_demande == 2 ?
-                    details.stockInitialCartonLot : type_demande == 3 ?
-                    details.stockInitialPieceCarton : type_demande == 4 ?
-                    details.stockInitialCarton : type_demande == 5 ?
-                    details.stockInitial : 0
+                        details.stockInitialCartonLot : type_demande == 3 ?
+                            details.stockInitialPieceCarton : type_demande == 4 ?
+                                details.stockInitialCarton : type_demande == 5 ?
+                                    details.stockInitial : 0
 
                     setStockDepart(stock_depart)
 
                     const stock_final = type_demande == 1 ? details.stockFinalLot : type_demande == 2 ?
-                    details.stockFinalCartonLot : type_demande == 3 ?
-                    details.stockFinalPieceCarton: type_demande == 4 ?
-                    details.stockFinalCarton : type_demande == 5 ?
-                    details.stockFinal : 0
+                        details.stockFinalCartonLot : type_demande == 3 ?
+                            details.stockFinalPieceCarton : type_demande == 4 ?
+                                details.stockFinalCarton : type_demande == 5 ?
+                                    details.stockFinal : 0
 
                     setStockFinal(stock_final)
 
@@ -229,7 +229,7 @@ export default function DemandeDetails() {
                     setStockFinalPiece(final_piece)
 
                     const typesMouvement_data = await stock.getAllTypeMouvementStock()
-                    const typeMouvement = typesMouvement_data.find((item) =>{
+                    const typeMouvement = typesMouvement_data.find((item) => {
                         return item.id == type_demande
                     })
 
@@ -248,55 +248,55 @@ export default function DemandeDetails() {
                     setOtherFieldsLivraison(autresLivraison)
 
                     let statut_livraison = livraison_data.Livraisons.statut_livraison
-                    if(statut_livraison == 'livre' || statut_livraison == 'retourne'){
+                    if (statut_livraison == 'livre' || statut_livraison == 'retourne') {
                         setIsReceived(true)
                         index_reception = livraison_data.Livraisons.reception_livraison.length - 1
                         setCommentaireReception(livraison_data.Livraisons.reception_livraison[index_reception].commentaire_reception)
                         setNomRecepteur(livraison_data.Livraisons.reception_livraison[index_reception].nom_recepteur)
 
-                        if(statut_livraison == 'livre'){
+                        if (statut_livraison == 'livre') {
                             setStatutLivraison('Livrée')
                             setStatutClassLivraison('text-sm rounded-xl p-1 bg-green-100 text-green-500 font-bold')
-                        } 
-                        
-                        else if(statut_livraison == 'retourne'){
-                            if(roles_id.includes(12)){
+                        }
+
+                        else if (statut_livraison == 'retourne') {
+                            if (roles_id.includes(12)) {
                                 setIsReception(true)
                             }
                             setIsLivreur(true)
                             setModifyLivraison(true)
                             setStatutLivraison('Retournée')
-                            setStatutClassLivraison('text-sm rounded-xl p-1 bg-red-100 text-red-500 font-bold')       
+                            setStatutClassLivraison('text-sm rounded-xl p-1 bg-red-100 text-red-500 font-bold')
                         }
                     }
-                    
-                    else if(statut_livraison == 'en_cours'){
-                        if(roles_id.includes(12)){
+
+                    else if (statut_livraison == 'en_cours') {
+                        if (roles_id.includes(12)) {
                             setIsReception(true)
                         }
                         setStatutLivraison('En attente')
                         setModifyLivraison(true)
                         setIsLivreur(true)
-                    } 
+                    }
 
-                    
-                } catch(error){
+
+                } catch (error) {
                     console.log("Error fetchind data ", error)
-                } finally{
+                } finally {
                     setLoading(false)
                 }
             };
             fetchDemandeDetails();
         }
-    },[id]);
+    }, [id]);
 
-    const handleGeneratePdf = async () =>{
+    const handleGeneratePdf = async () => {
         setLoadingPrint(true);
-        try{
+        try {
             const blob = await demandes.getPdf(id);
             const fileURL = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
             window.open(fileURL, '_blank');
-        }catch(error){
+        } catch (error) {
             console.log(error)
             setLoadingPrint(false)
             Swal.fire({
@@ -305,32 +305,29 @@ export default function DemandeDetails() {
                 icon: "warning"
             });
 
-        }finally{
+        } finally {
             setLoadingPrint(false);
         }
     }
 
-    const handleClear = () =>{
-        
+    const handleClear = () => {
+
         signature.clear()
     }
 
-    const handleClearReception = () =>{
+    const handleClearReception = () => {
         signatureReception.clear()
     }
 
-    const handleValidate = async (e) =>{
+    const handleValidate = async (e) => {
         e.preventDefault();
-        if(signature.isEmpty()){
+        if (signature.isEmpty()) {
             setErrorSign('Vous devez signer pour valider !')
             return;
         }
-        const sign = signature.toDataURL('image/png')           
+        const sign = signature.toDataURL('image/png')
         let commentaire = message
-        const stock_initial = stockDepart
-        const nouveau_stock = stockFinal
-        const piece_id = pieceId
-        try{
+        try {
             setLoadingDemande(true);
             setIsModalOpen(false)
             const fd = new FormData();
@@ -339,30 +336,22 @@ export default function DemandeDetails() {
             fd.append('commentaire', commentaire);
 
             if (sign) {
-            const blob = await fetch(sign).then(res => res.blob());
-            fd.append('signature', blob, 'signature.png');
+                const blob = await fetch(sign).then(res => res.blob());
+                fd.append('signature', blob, 'signature.png');
             }
 
             for (let [key, value] of fd.entries()) {
                 console.log(`${key}:`, value);
             }
             const response = await demandes.validateDemande(fd);
-            let modifStock = null
-            let ajoutStock = null
-            let utilisateur_id = null
-            // if(pieceId != 1){
-            //     modifStock = await stock.setStock(piece_id, stock_initial, nouveau_stock, utilisateur_id)
-            // }
-            // console.log(modifStock)
-            // console.log('Stock modifié')
             Swal.fire({
                 title: "Succès",
                 text: "Demande validée avec succès",
                 icon: "success"
-                });
+            });
             console.log(response)
             navigate('/toutes-les-demandes');
-        } catch(error){
+        } catch (error) {
             console.log(error)
             Swal.fire({
                 title: "Attention",
@@ -370,14 +359,14 @@ export default function DemandeDetails() {
                 icon: "warning"
             });
             navigate('/toutes-les-demandes');
-        } finally{
+        } finally {
             setLoadingDemande(false)
         }
     }
 
-    const handleReturn = async (e) =>{
+    const handleReturn = async (e) => {
         e.preventDefault();
-        if(!messageReturn){
+        if (!messageReturn) {
             setErrorReturn("Ajoutez un commentaire avant de retourner une demande!")
             return;
         }
@@ -387,7 +376,7 @@ export default function DemandeDetails() {
             commentaire_return: messageReturn,
             user_id: user_id,
         }
-        try{
+        try {
             setLoadingDemande(true);
             setIsModalReturnOpen(false);
             const response = await demandes.returnDemande(payload);
@@ -400,7 +389,7 @@ export default function DemandeDetails() {
             console.log(response)
             setIsModalReturnOpen(false)
             navigate('/toutes-les-demandes');
-        } catch(error){
+        } catch (error) {
             console.log(error)
             Swal.fire({
                 title: "Attention",
@@ -408,15 +397,15 @@ export default function DemandeDetails() {
                 icon: "warning"
             });
             navigate('/toutes-les-demandes');
-        } finally{
+        } finally {
             setLoadingDemande(false)
         }
     }
 
-    const handleCancel = async (e) =>{
+    const handleCancel = async (e) => {
         e.preventDefault();
-        
-        if(!messageCancel){
+
+        if (!messageCancel) {
             setErrorCancel("Ajoutez un commentaire avant de refuser la demande!")
             return;
         }
@@ -426,7 +415,7 @@ export default function DemandeDetails() {
             commentaire_refus: messageCancel,
             user_id: user_id,
         }
-        try{
+        try {
             setLoadingDemande(true);
             setIsModalCancelOpen(false);
             const response = await demandes.cancelDemande(payload);
@@ -438,7 +427,7 @@ export default function DemandeDetails() {
             console.log(response)
             setIsModalReturnOpen(false)
             navigate('/toutes-les-demandes');
-        } catch(error){
+        } catch (error) {
             console.log(error)
             Swal.fire({
                 title: "Attention",
@@ -446,18 +435,18 @@ export default function DemandeDetails() {
                 icon: "warning"
             });
             navigate('/toutes-les-demandes');
-        } finally{
+        } finally {
             setLoadingDemande(false)
         }
     }
 
-    const handleReception = async (e) =>{
+    const handleReception = async (e) => {
         e.preventDefault();
-        if(signatureReception.isEmpty()){
+        if (signatureReception.isEmpty()) {
             setErrorSignReception('Vous devez signer pour valider !')
             return;
         }
-        try{
+        try {
             setLoadingReception(true);
             setIsModalReceptionOpen(false)
             const sign = signatureReception.toDataURL('image/png')
@@ -466,19 +455,19 @@ export default function DemandeDetails() {
             fd.append('user_id', user_id);
             fd.append('commentaire', messageReception);
             if (sign) {
-            const blob = await fetch(sign).then(res => res.blob());
-            fd.append('signature', blob, 'signature.png');
+                const blob = await fetch(sign).then(res => res.blob());
+                fd.append('signature', blob, 'signature.png');
             }
             for (let [key, value] of fd.entries()) {
                 console.log(`${key}:`, value);
             }
             const response = await livraisonData.receiveStock(fd);
-            
+
             // let piece_id = 1
             // let stock_initial = piece.quantite
             // let nouveau_stock = stock_initial - quantiteProduit
             // let utilisateur_id = null
-            
+
             // let modifStock = null
             // if(livraisonID == 7 || livraisonID == 8 || livraisonID == 5){
             //     modifStock = await stock.setStock(piece_id, stock_initial, nouveau_stock, utilisateur_id)
@@ -492,7 +481,7 @@ export default function DemandeDetails() {
             });
             console.log(response)
             navigate('/toutes-les-demandes');
-        } catch(error){
+        } catch (error) {
             setLoadingReception(false)
             console.log(error)
             Swal.fire({
@@ -501,14 +490,14 @@ export default function DemandeDetails() {
                 icon: "warning"
             });
             navigate('/toutes-les-demandes');
-        } finally{
+        } finally {
             setLoadingReception(false)
         }
     }
 
-    const handleReturnLivraison = async (e) =>{
+    const handleReturnLivraison = async (e) => {
         e.preventDefault();
-        if(!commentaire_return){
+        if (!commentaire_return) {
             setErrorReturnLivraison("Ajoutez un commentaire avant de retourner une livraison!")
             return;
         }
@@ -517,7 +506,7 @@ export default function DemandeDetails() {
             livraison_id: livraisonID,
             commentaire_return: messageReturn,
         }
-        try{
+        try {
             setLoadingReception(true);
             setIsModalReturnLivraisonOpen(false);
             console.log("Sending payload: ", payload);
@@ -529,7 +518,7 @@ export default function DemandeDetails() {
             });
             // console.log(response)
             navigate('/toutes-les-demandes');
-        } catch(error){
+        } catch (error) {
             console.log(error)
             Swal.fire({
                 title: "Attention",
@@ -538,7 +527,7 @@ export default function DemandeDetails() {
             });
             console.log(response)
             navigate('/toutes-les-demandes');
-        } finally{
+        } finally {
             setLoadingReception(false)
         }
     }
@@ -547,355 +536,355 @@ export default function DemandeDetails() {
         <>
             {loading ?
                 (<>Loading...</>) :
-            (<>
-                <PageBreadcrumb pageTitle="Demande de stock"/>
-                <div>
-                    <div className='grid grid-cols-2 justify-between items-center mb-6'>
-                        <div>
+                (<>
+                    <PageBreadcrumb pageTitle="Demande de stock" />
+                    <div>
+                        <div className='grid grid-cols-2 justify-between items-center mb-6'>
                             <div>
-                                <span>{`Demande du ${dateDemande}`}</span>
-                            </div>
-                            <div className='mt-3'>
-                                <span className={statutClass}>
-                                    {statutDemande}
-                                </span>
-                            </div>
-                            {isDelivered ? (
+                                <div>
+                                    <span>{`Demande du ${dateDemande}`}</span>
+                                </div>
                                 <div className='mt-3'>
-                                    <span className='rounded-2xl bg-cyan-400 p-1 text-sm text-white font-semibold'>
-                                        Cette demande a été livrée.
+                                    <span className={statutClass}>
+                                        {statutDemande}
                                     </span>
                                 </div>
-                            ) : (
-                                <></>
-                            )}
-                        </div>
-                        <div className='text-right'>
-                            <div className='grid grid-cols-2'>
-                                <div className='col-start-2 space-y-0.5'>
-                                    {isCompleted ? (
-                                        <>
-                                            {loadingPrint ? (
-                                                <>
-                                                    <div className='text-center'>
-                                                        <span className=''>
-                                                            <ProgressSpinner style={{width: '20px', height: '20px'}} strokeWidth="8" animationDuration=".5s" />
-                                                        </span>
-                                                    </div>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <button className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'
-                                                        onClick={handleGeneratePdf}>
-                                                        <span className='mr-4'><i className="pi pi-print"></i></span>
-                                                        <span className='text-sm text-gray-700 font-medium'>Voir formulaire PDF</span> 
-                                                    </button>
-                                                </>
-                                            )}
-                                        </>
-                                    ) : (
-                                        <></>
-                                    )}
-                                    {isModificateur ? (
-                                        <>
-                                            <Link to={`/modification-admin-demande/${demandeDetails.id_demande}`} className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'>
-                                               <span className='mr-4'><i className="pi pi-cog"></i></span>
-                                               <span className='text-sm text-gray-700 font-medium'>Modification Admin</span> 
-                                            </Link>
-                                        </>
-                                    ) : (
-                                        <></>
-                                    )}
-                                    {isDemandeur ? (
-                                        <>
-                                            <Link to={`/modifier-demande/${demandeDetails.id_demande}`} className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'>
-                                               <span className='mr-4'><i className="pi pi-pencil"></i></span>
-                                               <span className='text-sm text-gray-700 font-medium'>Modifier demande</span> 
-                                            </Link>
-                                        </>
-                                    ) : (
-                                        <></>
-                                    )}
-                                    {isValidateur ? (
-                                        <>
-                                            {loadingDemande ? (
-                                                <>
-                                                    <div className='text-center'>
-                                                        <span className=''>
-                                                            <ProgressSpinner style={{width: '20px', height: '20px'}} strokeWidth="8" animationDuration=".5s" />
-                                                        </span>
-                                                    </div>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <button className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'
-                                                        onClick={() =>{
-                                                            setIsModalOpen(true)
-                                                        }}>
-                                                        <span className='mr-4'><i className="pi pi-check"></i></span>
-                                                        <span className='text-sm text-gray-700 font-medium'>Valider demande</span> 
-                                                    </button>
-                                                    <button className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'
-                                                        onClick={() =>{
-                                                            setIsModalReturnOpen(true)
-                                                        }}>
-                                                        <span className='mr-4'><i className="pi pi-arrow-left"></i></span>
-                                                        <span className='text-sm text-gray-700 font-medium'>Retourner demande</span> 
-                                                    </button>
-                                                    <button className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'
-                                                        onClick={() =>{
-                                                            setIsModalCancelOpen(true)
-                                                        }}>
-                                                        <span className='mr-4'><i className="pi pi-times"></i></span>
-                                                        <span className='text-sm text-gray-700 font-medium'>Refuser demande</span> 
-                                                    </button>
-                                                </>
-                                            )}
-                                        </>
-                                    ) : (
-                                        <></>
-                                    )}
-                                    {isLivreur ? (
-                                        <>
-                                            {modifyLivraison ? (
-                                                <>
-                                                    <Link to={`/modifier-livraison-pieces/${demandeDetails.id_demande}`} className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'>
-                                                        <span className='mr-4'><i className="pi pi-pencil"></i></span>
-                                                        <span className='text-sm text-gray-700 font-medium'>Modifier livraison</span> 
-                                                    </Link>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Link to={`/livraison-pieces/${demandeDetails.id_demande}`} className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'>
-                                                        <span className='mr-4'><i className="pi pi-send"></i></span>
-                                                        <span className='text-sm text-gray-700 font-medium'>Faire livraison</span> 
-                                                    </Link>
-                                                </>
-                                            )}
-                                        </>
-                                    ) : (
-                                        <></>
-                                    )}
-                                    {isReception ? (
-                                        <>
-                                            {loadingReception ? (
-                                                <>
-                                                    <div className='text-center'>
-                                                        <span className=''>
-                                                            <ProgressSpinner style={{width: '20px', height: '20px'}} strokeWidth="8" animationDuration=".5s" />
-                                                        </span>
-                                                    </div>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <button className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'
-                                                        onClick={() =>{
-                                                            setIsModalReceptionOpen(true)
-                                                        }}>
-                                                        <span className='mr-4'><i className="pi pi-inbox"></i></span>
-                                                        <span className='text-sm text-gray-700 font-medium'>Réceptionner livraison</span> 
-                                                    </button>
-                                                    <button className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'
-                                                        onClick={() =>{
-                                                            setIsModalReturnLivraisonOpen(true)
-                                                        }}>
-                                                        <span className='mr-4'><i className="pi pi-arrow-left"></i></span>
-                                                        <span className='text-sm text-gray-700 font-medium'>Retourner livraison</span> 
-                                                    </button>
-                                                </>
-                                            )}
-                                        </>
-                                    ) : (
-                                        <></>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className='overflow-hidden mb-6 pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
-                        <div className='mb-6 pb-2 w-full border-b'>
-                            <span className='text-sm mr-2'>Commentaire demandeur</span>
-                            <span className='text-sm'><i className="pi pi-comment"></i></span>
-                        </div>
-                        {commentaire ? (
-                            <p className='text-sm text-cyan-700'>{commentaire}</p>
-                        ) : (
-                            <p className='text-xs opacity-20'>Sans commentaire</p>
-                        ) }
-                    </div>
-                    {recu ? (
-                        <>
-                            <div className='overflow-hidden mb-6 pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
-                                <div className='mb-6 pb-2 w-full border-b text-right'>
-                                    <span className='text-sm mr-2'>Commentaire validateur</span>
-                                    <span className='text-sm'><i className="pi pi-comment"></i></span>
-                                </div>
-                            {commentaireValidation ? (
-                                <p className='text-sm text-orange-500 text-right'>{commentaireValidation}</p>
-                            ) : (
-                                <p className='text-xs opacity-20 text-right'>Sans commentaire</p>
-                            ) }
-                            </div>
-                        </>
-                    ) : (
-                        <></>
-                    )}
-                    {
-                        isDelivered ? (
-                            <>
-                                <div className='grid grid-cols-2 justify-between items-center mb-6'>
-                                    <div>
-                                        <div>
-                                            <span>{`Livraison du ${dateLivraison}`}</span>
-                                        </div>
-                                        <div className='mt-3'>
-                                            <span className={statutClassLivraison}>
-                                                {statutLivraison}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div className='overflow-hidden mb-6 pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
-                                        <div className='mb-6 pb-2 w-full border-b'>
-                                            <span className='text-sm mr-2'>Commentaire livraison</span>
-                                            <span className='text-sm'><i className="pi pi-comment"></i></span>
-                                        </div>
-                                        {commentaireLivraison ? (
-                                            <p className='text-sm text-cyan-700'>{commentaireLivraison}</p>
-                                        ) : (
-                                            <p className='text-xs opacity-20'>Sans commentaire</p>
-                                        ) }
-                                    </div>
-                                </div>
-                                {isReceived ? (
-                                    <div>
-                                        <div className='overflow-hidden mb-6 pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
-                                            <div className='mb-6 pb-2 w-full border-b text-right'>
-                                                <span className='text-sm mr-2'>Commentaire réception</span>
-                                                <span className='text-sm'><i className="pi pi-comment"></i></span>
-                                            </div>
-                                            {commentaireReception ? (
-                                                <p className='text-sm text-orange-500 text-right'>{commentaireReception}</p>
-                                            ) : (
-                                                <p className='text-xs opacity-20 text-right'>Sans commentaire</p>
-                                            ) }
-                                        </div>
+                                {isDelivered ? (
+                                    <div className='mt-3'>
+                                        <span className='rounded-2xl bg-cyan-400 p-1 text-sm text-white font-semibold'>
+                                            Cette demande a été livrée.
+                                        </span>
                                     </div>
                                 ) : (
                                     <></>
                                 )}
+                            </div>
+                            <div className='text-right'>
+                                <div className='grid grid-cols-2'>
+                                    <div className='col-start-2 space-y-0.5'>
+                                        {isCompleted ? (
+                                            <>
+                                                {loadingPrint ? (
+                                                    <>
+                                                        <div className='text-center'>
+                                                            <span className=''>
+                                                                <ProgressSpinner style={{ width: '20px', height: '20px' }} strokeWidth="8" animationDuration=".5s" />
+                                                            </span>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <button className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'
+                                                            onClick={handleGeneratePdf}>
+                                                            <span className='mr-4'><i className="pi pi-print"></i></span>
+                                                            <span className='text-sm text-gray-700 font-medium'>Voir formulaire PDF</span>
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <></>
+                                        )}
+                                        {isModificateur ? (
+                                            <>
+                                                <Link to={`/modification-admin-demande/${demandeDetails.id}`} className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'>
+                                                    <span className='mr-4'><i className="pi pi-cog"></i></span>
+                                                    <span className='text-sm text-gray-700 font-medium'>Modification Admin</span>
+                                                </Link>
+                                            </>
+                                        ) : (
+                                            <></>
+                                        )}
+                                        {isDemandeur ? (
+                                            <>
+                                                <Link to={`/modifier-demande/${demandeDetails.id}`} className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'>
+                                                    <span className='mr-4'><i className="pi pi-pencil"></i></span>
+                                                    <span className='text-sm text-gray-700 font-medium'>Modifier demande</span>
+                                                </Link>
+                                            </>
+                                        ) : (
+                                            <></>
+                                        )}
+                                        {isValidateur ? (
+                                            <>
+                                                {loadingDemande ? (
+                                                    <>
+                                                        <div className='text-center'>
+                                                            <span className=''>
+                                                                <ProgressSpinner style={{ width: '20px', height: '20px' }} strokeWidth="8" animationDuration=".5s" />
+                                                            </span>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <button className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'
+                                                            onClick={() => {
+                                                                setIsModalOpen(true)
+                                                            }}>
+                                                            <span className='mr-4'><i className="pi pi-check"></i></span>
+                                                            <span className='text-sm text-gray-700 font-medium'>Valider demande</span>
+                                                        </button>
+                                                        <button className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'
+                                                            onClick={() => {
+                                                                setIsModalReturnOpen(true)
+                                                            }}>
+                                                            <span className='mr-4'><i className="pi pi-arrow-left"></i></span>
+                                                            <span className='text-sm text-gray-700 font-medium'>Retourner demande</span>
+                                                        </button>
+                                                        <button className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'
+                                                            onClick={() => {
+                                                                setIsModalCancelOpen(true)
+                                                            }}>
+                                                            <span className='mr-4'><i className="pi pi-times"></i></span>
+                                                            <span className='text-sm text-gray-700 font-medium'>Refuser demande</span>
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <></>
+                                        )}
+                                        {isLivreur ? (
+                                            <>
+                                                {modifyLivraison ? (
+                                                    <>
+                                                        <Link to={`/modifier-livraison-pieces/${demandeDetails.id}`} className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'>
+                                                            <span className='mr-4'><i className="pi pi-pencil"></i></span>
+                                                            <span className='text-sm text-gray-700 font-medium'>Modifier livraison</span>
+                                                        </Link>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Link to={`/livraison-pieces/${demandeDetails.id}`} className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'>
+                                                            <span className='mr-4'><i className="pi pi-send"></i></span>
+                                                            <span className='text-sm text-gray-700 font-medium'>Faire livraison</span>
+                                                        </Link>
+                                                    </>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <></>
+                                        )}
+                                        {isReception ? (
+                                            <>
+                                                {loadingReception ? (
+                                                    <>
+                                                        <div className='text-center'>
+                                                            <span className=''>
+                                                                <ProgressSpinner style={{ width: '20px', height: '20px' }} strokeWidth="8" animationDuration=".5s" />
+                                                            </span>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <button className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'
+                                                            onClick={() => {
+                                                                setIsModalReceptionOpen(true)
+                                                            }}>
+                                                            <span className='mr-4'><i className="pi pi-inbox"></i></span>
+                                                            <span className='text-sm text-gray-700 font-medium'>Réceptionner livraison</span>
+                                                        </button>
+                                                        <button className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'
+                                                            onClick={() => {
+                                                                setIsModalReturnLivraisonOpen(true)
+                                                            }}>
+                                                            <span className='mr-4'><i className="pi pi-arrow-left"></i></span>
+                                                            <span className='text-sm text-gray-700 font-medium'>Retourner livraison</span>
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <></>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className='overflow-hidden mb-6 pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
+                            <div className='mb-6 pb-2 w-full border-b'>
+                                <span className='text-sm mr-2'>Commentaire demandeur</span>
+                                <span className='text-sm'><i className="pi pi-comment"></i></span>
+                            </div>
+                            {commentaire ? (
+                                <p className='text-sm text-cyan-700'>{commentaire}</p>
+                            ) : (
+                                <p className='text-xs opacity-20'>Sans commentaire</p>
+                            )}
+                        </div>
+                        {recu ? (
+                            <>
+                                <div className='overflow-hidden mb-6 pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
+                                    <div className='mb-6 pb-2 w-full border-b text-right'>
+                                        <span className='text-sm mr-2'>Commentaire validateur</span>
+                                        <span className='text-sm'><i className="pi pi-comment"></i></span>
+                                    </div>
+                                    {commentaireValidation ? (
+                                        <p className='text-sm text-orange-500 text-right'>{commentaireValidation}</p>
+                                    ) : (
+                                        <p className='text-xs opacity-20 text-right'>Sans commentaire</p>
+                                    )}
+                                </div>
                             </>
                         ) : (
                             <></>
-                        )
-                    }
-
-                    <div className='flex justify-center items-center'>
-                        <div className='w-9/12 px-20 py-6 bg-white rounded-2xl border'>
-                            <div className='w-full text-center mb-4'>
-                                <span className='text-md underline'>
-                                    Mouvement de stock
-                                </span>
-                            </div>
-                            <div className='w-full text-center mb-4'>
-                                <span className='font-bold'>
-                                    {motifDemande}
-                                </span>
-                            </div>
-                            <table className='border w-full'>
-                                <tbody>
-                                    <tr className='border h-15'>
-                                        <th className='border w-1/2'>Pièce demandée</th>
-                                        <th className='border w-1/2'>{nomPiece}</th>
-                                    </tr>
-                                    <tr className='border h-15'>
-                                        <th className='border w-1/2'>Service demandeur</th>
-                                        <th className='border w-1/2'>{serviceDemandeur}</th>
-                                    </tr>
-                                    <tr className='border h-15'>
-                                        <th className='border w-1/2'>Demandeur</th>
-                                        <th className='border w-1/2'>{nomDemandeur}</th>
-                                    </tr>
-                                    <tr className='border h-15'>
-                                        <th className='border w-1/2'>Type demande</th>
-                                        <th className='border w-1/2'>{typeDemande}</th>
-                                    </tr>
-                                    <tr className='border h-15'>
-                                        <th className='border w-1/2'>Quantité initiale</th>
-                                        <th className='border w-1/2'>{stockDepart}</th>
-                                    </tr>
-                                    <tr className='border h-15'>
-                                        <th className='border w-1/2'>Quantité demandée</th>
-                                        <th className='border w-1/2'>{quantiteDemande}</th>
-                                    </tr>
-                                    <tr className='border h-15'>
-                                        <th className='border w-1/2'>Quantité finale</th>
-                                        <th className='border w-1/2'>{stockFinal}</th>
-                                    </tr>
-                                    <tr className='border h-15'>
-                                        <th className='border w-1/2'>Stock final</th>
-                                        <th className='border w-1/2'>{stockFinalPiece}</th>
-                                    </tr>
-                                    {nomenclature ? (
-                                        <tr className='border h-15'>
-                                            <th className='border w-1/2'>Nomenclature</th>
-                                            <th className='border w-1/2'>{nomenclature}</th>
-                                        </tr>
-                                    ) : (
-                                        <></>
-                                    )}
-                                    {otherFields.map((field) => {
-                                        return(
-                                            <>
-                                                <tr className='border h-15'>
-                                                    <th className='border w-1/2'>{field.titre}</th>
-                                                    <th className='border w-1/2'>{field.information}</th>
-                                                </tr>
-                                            </>
-                                        )
-                                    })}
-                                    {isDelivered ? (
-                                        <>  
-                                            <tr className='border h-15'>
-                                                <th className='border w-1/2'>Livreur</th>
-                                                <th className='border w-1/2'>{nomLivreur}</th>
-                                            </tr>
-                                            <tr className='border h-15'>
-                                                <th className='border w-1/2'>Quantité livrée</th>
-                                                <th className='border w-1/2'>{quantiteLivraison}</th>
-                                            </tr>
-                                        </>
-                                    ) : (
-                                        <></>
-                                    )}
-                                    {otherFieldsLivraison.map((field) => {
-                                        return(
-                                            <>
-                                                <tr className='border h-15'>
-                                                    <th className='border w-1/2'>{field.titre}</th>
-                                                    <th className='border w-1/2'>{field.information}</th>
-                                                </tr>
-                                            </>
-                                        )
-                                    })}
+                        )}
+                        {
+                            isDelivered ? (
+                                <>
+                                    <div className='grid grid-cols-2 justify-between items-center mb-6'>
+                                        <div>
+                                            <div>
+                                                <span>{`Livraison du ${dateLivraison}`}</span>
+                                            </div>
+                                            <div className='mt-3'>
+                                                <span className={statutClassLivraison}>
+                                                    {statutLivraison}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div className='overflow-hidden mb-6 pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
+                                            <div className='mb-6 pb-2 w-full border-b'>
+                                                <span className='text-sm mr-2'>Commentaire livraison</span>
+                                                <span className='text-sm'><i className="pi pi-comment"></i></span>
+                                            </div>
+                                            {commentaireLivraison ? (
+                                                <p className='text-sm text-cyan-700'>{commentaireLivraison}</p>
+                                            ) : (
+                                                <p className='text-xs opacity-20'>Sans commentaire</p>
+                                            )}
+                                        </div>
+                                    </div>
                                     {isReceived ? (
-                                        <>
-                                            <tr className='border h-15'>
-                                                <th className='border w-1/2'>Recepteur</th>
-                                                <th className='border w-1/2'>{nomRecepteur}</th>
-                                            </tr>
-                                        </>
+                                        <div>
+                                            <div className='overflow-hidden mb-6 pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
+                                                <div className='mb-6 pb-2 w-full border-b text-right'>
+                                                    <span className='text-sm mr-2'>Commentaire réception</span>
+                                                    <span className='text-sm'><i className="pi pi-comment"></i></span>
+                                                </div>
+                                                {commentaireReception ? (
+                                                    <p className='text-sm text-orange-500 text-right'>{commentaireReception}</p>
+                                                ) : (
+                                                    <p className='text-xs opacity-20 text-right'>Sans commentaire</p>
+                                                )}
+                                            </div>
+                                        </div>
                                     ) : (
                                         <></>
                                     )}
-                                </tbody>
-                            </table>
+                                </>
+                            ) : (
+                                <></>
+                            )
+                        }
 
+                        <div className='flex justify-center items-center'>
+                            <div className='w-9/12 px-20 py-6 bg-white rounded-2xl border'>
+                                <div className='w-full text-center mb-4'>
+                                    <span className='text-md underline'>
+                                        Mouvement de stock
+                                    </span>
+                                </div>
+                                <div className='w-full text-center mb-4'>
+                                    <span className='font-bold'>
+                                        {motifDemande}
+                                    </span>
+                                </div>
+                                <table className='border w-full text-xs'>
+                                    <tbody>
+                                        <tr className='border h-15'>
+                                            <th className='border w-1/2'>Pièce demandée</th>
+                                            <th className='border w-1/2'>{nomPiece}</th>
+                                        </tr>
+                                        <tr className='border h-15'>
+                                            <th className='border w-1/2'>Service demandeur</th>
+                                            <th className='border w-1/2'>{serviceDemandeur}</th>
+                                        </tr>
+                                        <tr className='border h-15'>
+                                            <th className='border w-1/2'>Demandeur</th>
+                                            <th className='border w-1/2'>{nomDemandeur}</th>
+                                        </tr>
+                                        <tr className='border h-15'>
+                                            <th className='border w-1/2'>Type demande</th>
+                                            <th className='border w-1/2'>{typeDemande}</th>
+                                        </tr>
+                                        <tr className='border h-15'>
+                                            <th className='border w-1/2'>Quantité initiale</th>
+                                            <th className='border w-1/2'>{stockDepart}</th>
+                                        </tr>
+                                        <tr className='border h-15'>
+                                            <th className='border w-1/2'>Quantité demandée</th>
+                                            <th className='border w-1/2'>{quantiteDemande}</th>
+                                        </tr>
+                                        <tr className='border h-15'>
+                                            <th className='border w-1/2'>Quantité finale</th>
+                                            <th className='border w-1/2'>{stockFinal}</th>
+                                        </tr>
+                                        <tr className='border h-15'>
+                                            <th className='border w-1/2'>Stock final</th>
+                                            <th className='border w-1/2'>{stockFinalPiece}</th>
+                                        </tr>
+                                        {nomenclature ? (
+                                            <tr className='border h-15'>
+                                                <th className='border w-1/2'>Nomenclature</th>
+                                                <th className='border w-1/2'>{nomenclature}</th>
+                                            </tr>
+                                        ) : (
+                                            <></>
+                                        )}
+                                        {otherFields.map((field) => {
+                                            return (
+                                                <>
+                                                    <tr className='border h-15'>
+                                                        <th className='border w-1/2'>{field.titre}</th>
+                                                        <th className='border w-1/2'>{field.information}</th>
+                                                    </tr>
+                                                </>
+                                            )
+                                        })}
+                                        {isDelivered ? (
+                                            <>
+                                                <tr className='border h-15'>
+                                                    <th className='border w-1/2'>Livreur</th>
+                                                    <th className='border w-1/2'>{nomLivreur}</th>
+                                                </tr>
+                                                <tr className='border h-15'>
+                                                    <th className='border w-1/2'>Quantité livrée</th>
+                                                    <th className='border w-1/2'>{quantiteLivraison}</th>
+                                                </tr>
+                                            </>
+                                        ) : (
+                                            <></>
+                                        )}
+                                        {otherFieldsLivraison.map((field) => {
+                                            return (
+                                                <>
+                                                    <tr className='border h-15'>
+                                                        <th className='border w-1/2'>{field.titre}</th>
+                                                        <th className='border w-1/2'>{field.information}</th>
+                                                    </tr>
+                                                </>
+                                            )
+                                        })}
+                                        {isReceived ? (
+                                            <>
+                                                <tr className='border h-15'>
+                                                    <th className='border w-1/2'>Recepteur</th>
+                                                    <th className='border w-1/2'>{nomRecepteur}</th>
+                                                </tr>
+                                            </>
+                                        ) : (
+                                            <></>
+                                        )}
+                                    </tbody>
+                                </table>
+
+                            </div>
                         </div>
                     </div>
-                </div>
-            </>)
+                </>)
             }
 
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} className="p-4 max-w-md">
@@ -905,7 +894,7 @@ export default function DemandeDetails() {
                     </div>
                     <div className='flex flex-col justify-center items-center'>
                         <SignatureCanvas
-                            ref={data=>setSignature(data)}
+                            ref={data => setSignature(data)}
                             canvasProps={{ width: 300, height: 250, className: 'sigCanvas border border-gray-300 rounded' }}
                         />
                         <div className='w-full mt-3'>
@@ -922,13 +911,13 @@ export default function DemandeDetails() {
                                 onClick={handleClear}
                                 className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
                                 Clear
-                                </button>
-                                <button
+                            </button>
+                            <button
                                 onClick={handleValidate}
                                 className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
                                 Valider
                             </button>
-                        </div>  
+                        </div>
                     </div>
                     <div className="text-center">
                         <span className="text-error-500 text-xs">
@@ -961,14 +950,14 @@ export default function DemandeDetails() {
                                 Retourner
                             </button>
                             <button
-                                onClick={() =>{
+                                onClick={() => {
                                     setIsModalReturnOpen(false);
                                     setErrorReturn('')
                                 }}
                                 className='w-48 mx-3 bg-gray-400 rounded-2xl h-10 flex justify-center items-center'>
                                 Annuler
                             </button>
-                        </div>  
+                        </div>
                     </div>
                 </div>
             </Modal>
@@ -996,14 +985,14 @@ export default function DemandeDetails() {
                                 Refuser
                             </button>
                             <button
-                                onClick={() =>{
+                                onClick={() => {
                                     setIsModalCancelOpen(false);
                                     setErrorCancel('')
                                 }}
                                 className='w-48 mx-3 bg-gray-400 rounded-2xl h-10 flex justify-center items-center'>
                                 Annuler
                             </button>
-                        </div>  
+                        </div>
                     </div>
                 </div>
             </Modal>
@@ -1014,7 +1003,7 @@ export default function DemandeDetails() {
                     </div>
                     <div className='flex flex-col justify-center items-center'>
                         <SignatureCanvas
-                            ref={data=>setSignatureReception(data)}
+                            ref={data => setSignatureReception(data)}
                             canvasProps={{ width: 300, height: 250, className: 'sigCanvas border border-gray-300 rounded' }}
                         />
                         <div className='w-full mt-3'>
@@ -1031,13 +1020,13 @@ export default function DemandeDetails() {
                                 onClick={handleClearReception}
                                 className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
                                 Clear
-                                </button>
-                                <button
+                            </button>
+                            <button
                                 onClick={handleReception}
                                 className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
                                 Valider
                             </button>
-                        </div>  
+                        </div>
                     </div>
                     <div className="text-center">
                         <span className="text-error-500 text-xs">
@@ -1070,18 +1059,18 @@ export default function DemandeDetails() {
                                 Retourner
                             </button>
                             <button
-                                onClick={() =>{
+                                onClick={() => {
                                     setIsModalReturnLivraisonOpen(false);
                                     setErrorReturn('')
                                 }}
                                 className='w-48 mx-3 bg-gray-400 rounded-2xl h-10 flex justify-center items-center'>
                                 Annuler
                             </button>
-                        </div>  
+                        </div>
                     </div>
                 </div>
             </Modal>
-            
+
         </>
     )
 }

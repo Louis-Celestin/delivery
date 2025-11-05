@@ -37,7 +37,6 @@ export class Demandes {
           'Content-Type': 'multipart/form-data'
         }
       })
-      console.log(response)
       return response.data;
     } catch (error) {
       throw error.response.data;
