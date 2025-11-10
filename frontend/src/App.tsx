@@ -173,8 +173,6 @@ export default function App() {
 
               {/* Dashboard */}
               <Route index element={<Dashboard />} />
-              <Route path="/statistiques-livraisons" element={<StatistiquesLivraisons />} />
-              <Route path="/donnees-generales" element={<DonneeGenerales />} />
               {/* Others Page */}
               <Route path="/profile" element={<UserProfiles />} />
               <Route path="/calendar" element={<Calendar />} />
@@ -183,33 +181,15 @@ export default function App() {
               {/* Forms */}
               <Route path="/form-elements" element={<FormElements />} />
               <Route path="/form-livraison" element={<LivraisonForm />} />
-              <Route path="/form-ancienne-livraison" element={<AncienneLivraisonForm />} />
               <Route path="/modifier-livraison/:id" element={<ModifyLivraisonForm />} />
-              <Route path="/form-livraison-chargeur" element={<LivraisonChargeurForm />} />
-              <Route path="/form-modify-livraison-chargeur/:id" element={<ModifyLivraisonChargeurForm />} />
 
               {/* Livraisons */}
               <Route path="/toutes-les-livraisons" element={<AllDeliveries/>} />
               <Route path="/formulaire/:id" element={<DeliveryDetails/>} />
-              <Route path="/formulaire-chargeur/:id" element={<DeliveryChargeurDetails />} />
               <Route path="/toutes-les-demandes-livraison" element={<AllDemandesDeliveries />} />
               <Route path="/demande-livraison/:id" element={<DemandeDeliveryDetails />} />
               <Route path="/livraison-pieces/:id" element={<LivraisonPiecesForm />} />
-              <Route path="/formulaire-chargeur-decom/:id" element={<DeliveryChargeurDecomDetails />} />
               <Route path="/modifier-livraison-pieces/:id" element={<ModifyLivraisonPiecesForm />} />
-      
-
-              {/* Receptions */}
-              <Route path="/toutes-les-receptions" element={<AllReceptions />} />
-              <Route path="/formulaire-recu/:id" element={<ReceptionDetails />} />
-              <Route path="/formulaire-chargeur-recu/:id" element={<ReceptionChargeurDetails />} />
-
-              {/* Supervision */}
-              <Route path="/toutes-les-livraisons-vue" element={<AllDeliveriesVue />} />
-              <Route path="/formulaire-vue/:id" element={<DeliveryDetailsVue/>} />
-              <Route path="/formulaire-chargeur-vue/:id" element={<DeliveryChargeurDetailsVue />} />
-              <Route path="/toutes-les-demandes-supervision" element={<AllDemandesSupervision />} />
-              <Route path="/demande-supervision-details/:id" element={<DemandeSupervisionDetails />} />
 
               {/* Stock DT */}
               <Route path="/gestion-stock" element={<GestionStockChargeur />} />
@@ -222,15 +202,6 @@ export default function App() {
               <Route path="/modifier-quantite-piece/:id" element={<SetStockQuantityForm />} />
               <Route path="/details-mouvement/:id" element={<DetailsMouvement />} />
 
-              {/* Maintenance */}
-              <Route path="/toutes-les-livraisons-maintenance" element={<AllMaintenanceDeliveries />} />
-              <Route path="/formulaire-maintenance-chargeur-recu/:id" element={<ReceptionMaintenanceDetails />} />
-              <Route path="/toutes-les-demandes-maintenance" element={<AllDemandesMaintenance />} />
-
-              {/* Support */}
-              <Route path="/toutes-les-livraisons-support" element={<AllSupportDeliveries />} />
-              <Route path="/formulaire-support-chargeur-recu/:id" element={<ReceptionSupportDetails />} />
-              <Route path="/toutes-les-demandes-support" element={<AllDemandesSupport />} />
 
               {/* Demandes */}
               <Route path="/nouvelle-demande" element={<DemandeForm />} />
