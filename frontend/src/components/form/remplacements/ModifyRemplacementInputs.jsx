@@ -576,7 +576,7 @@ export default function ModifyRemplacementInputs() {
                               if (value.length <= 10) {
                                 setTerminalSN(value);
                               }} 
-                              }}/>
+                            }}/>
                         </div>
                         <div>
                           <Label>Commentaire</Label>

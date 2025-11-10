@@ -359,9 +359,7 @@ export default function AllDeliveriesList({ filterType }) {
 
     const totalProduit = filteredDeliveryForms.reduce((sum, item) => sum + Number(item.qte_totale_livraison || 0), 0);
 
-
-
-
+    
     return(
         <>  
             <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
