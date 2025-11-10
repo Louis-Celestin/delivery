@@ -27,7 +27,6 @@ export class Users{
     async getAllUserRoles(){
         try{
             const response = await axios.get(`${urlBase}/api/auth/getAllUserRoles`)
-            console.log("USER ROLES : ",response)
             return response.data;
         } catch(error){
             throw error.response.data
@@ -37,7 +36,6 @@ export class Users{
     async getAllRoles(){
         try{
             const response = await axios.get(`${urlBase}/api/auth/getAllRoles`)
-            console.log("ROLES : ",response)
             return response.data;
         } catch(error){
             throw error.response.data

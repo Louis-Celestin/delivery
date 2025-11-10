@@ -79,7 +79,6 @@ export default function RemplacementDetails() {
         return d.toLocaleDateString('fr-FR'); // or use any locale you want
     };
 
-
     useEffect( ()=>{
         if(id){
             const fetchDeliveryDetails = async () =>{
@@ -170,7 +169,7 @@ export default function RemplacementDetails() {
     const handleGeneratePdf = async () =>{
         setLoadingPrint(true);
         try{
-            const blob = await generatePdf(id);
+            const blob = await remplacements.generateRemplacementPDF(id);
             const fileURL = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
             window.open(fileURL, '_blank');
         }catch(error){
@@ -290,7 +289,7 @@ export default function RemplacementDetails() {
                         <div className='text-right'>
                             <div className='grid grid-cols-2'>
                                 <div className='col-start-2 space-y-0.5'>
-                                    {/* {isCompleted ? (
+                                    {isCompleted ? (
                                         <>
                                             {loadingPrint ? (
                                                 <>
@@ -312,7 +311,7 @@ export default function RemplacementDetails() {
                                         </>
                                     ) : (
                                         <></>
-                                    )} */}
+                                    )}
                                     {isModificateur ? (
                                         <>
                                             <button className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'>

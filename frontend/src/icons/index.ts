@@ -68,6 +68,7 @@ import { ReactComponent as ClipboardCheck } from "./clipboard-check-form.svg?rea
 import { ReactComponent as MiniTools } from "./mini-tools.svg?react"
 import { ReactComponent as StockBox } from "./stock-box.svg?react"
 import { ReactComponent as DeliveryAdd} from "./delivery-add.svg?react"
+import { ReactComponent as PiecesSolid } from "./pieces-solid.svg?react"
 export {
   ErrorHexaIcon,
   AlertHexaIcon,
@@ -138,4 +139,5 @@ export {
   MiniTools,
   StockBox,
   DeliveryAdd,
+  PiecesSolid,
 };

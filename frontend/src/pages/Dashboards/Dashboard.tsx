@@ -131,11 +131,11 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-      <div>
+      {/* <div>
         <div className="grid grid-cols-1">
           <LivraisonsBarChart startDate={startDate} endDate={endDate} />
         </div>
-      </div>
+      </div> */}
     </div>
     </>
   );

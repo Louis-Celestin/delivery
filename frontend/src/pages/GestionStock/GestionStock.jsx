@@ -10,9 +10,9 @@ export default function GestionStock() {
             <div>
                 <PageBreadcrumb pageTitle="Gestion de Stock"/>
                 <div className="">
-                    <div className="mb-6">
+                    {/* <div className="mb-6">
                         <StockLivraisonInfos />
-                    </div>
+                    </div> */}
                     <div className="">
                         <StockDTInfos />
                     </div>
