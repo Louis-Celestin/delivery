@@ -383,6 +383,7 @@ const validateDemande = async (req, res) => {
         quantite_totale_piece: final,
         motif: demande.motif_demande,
         commentaire,
+        details_mouvement: JSON.stringify(detailsMouvement),
       }
       mouvement_stock = await prisma.mouvement_stock.create({
         data: dataMouvement,
@@ -424,6 +425,7 @@ const validateDemande = async (req, res) => {
         quantite_totale_piece: finalPieceDemandeur,
         motif: demande.motif_demande,
         commentaire,
+        details_mouvement: JSON.stringify(detailsMouvement),
       }
 
       mouvement_stock_demandeur = await prisma.mouvement_stock.create({
@@ -448,6 +450,7 @@ const validateDemande = async (req, res) => {
         quantite_totale_piece: finalPiece,
         motif: demande.motif_demande,
         commentaire,
+        details_mouvement: JSON.stringify(detailsMouvement),
       }
       mouvement_stock = await prisma.mouvement_stock.create({
         data: dataMouvement,
@@ -501,6 +504,7 @@ const validateDemande = async (req, res) => {
         quantite_totale_piece: finalPieceDemandeur,
         motif: demande.motif_demande,
         commentaire,
+        details_mouvement: JSON.stringify(detailsMouvement),
       }
 
       mouvement_stock_demandeur = await prisma.mouvement_stock.create({
@@ -525,6 +529,7 @@ const validateDemande = async (req, res) => {
         quantite_totale_piece: finalPiece,
         motif: demande.motif_demande,
         commentaire,
+        details_mouvement: JSON.stringify(detailsMouvement),
       }
       mouvement_stock = await prisma.mouvement_stock.create({
         data: dataMouvement,
@@ -618,6 +623,7 @@ const validateDemande = async (req, res) => {
         quantite_totale_piece: finalPieceDemandeur,
         motif: demande.motif_demande,
         commentaire,
+        details_mouvement: JSON.stringify(detailsMouvement),
       }
 
       mouvement_stock_demandeur = await prisma.mouvement_stock.create({
@@ -643,6 +649,7 @@ const validateDemande = async (req, res) => {
         quantite_totale_piece: finalPiece,
         motif: demande.motif_demande,
         commentaire,
+        details_mouvement: JSON.stringify(detailsMouvement),
       }
       mouvement_stock = await prisma.mouvement_stock.create({
         data: dataMouvement,
@@ -721,6 +728,7 @@ const validateDemande = async (req, res) => {
         quantite_totale_piece: finalPieceDemandeur,
         motif: demande.motif_demande,
         commentaire,
+        details_mouvement: JSON.stringify(detailsMouvement),
       }
 
       mouvement_stock_demandeur = await prisma.mouvement_stock.create({
@@ -746,6 +754,7 @@ const validateDemande = async (req, res) => {
         quantite_totale_piece: finalPiece,
         motif: demande.motif_demande,
         commentaire,
+        details_mouvement: JSON.stringify(detailsMouvement),
       }
       mouvement_stock = await prisma.mouvement_stock.create({
         data: dataMouvement,
@@ -807,6 +816,7 @@ const validateDemande = async (req, res) => {
         quantite_totale_piece: finalPieceDemandeur,
         motif: demande.motif_demande,
         commentaire,
+        details_mouvement: JSON.stringify(detailsMouvement),
       }
 
       mouvement_stock_demandeur = await prisma.mouvement_stock.create({

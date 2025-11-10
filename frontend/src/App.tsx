@@ -159,6 +159,8 @@ import SetStockQuantityForm from "./pages/Forms/StockForms/SetStockQuantityForm"
 // @ts-ignore
 import AjouterStockForm from "./pages/Forms/StockForms/AjouterStockForm"
 
+// @ts-ignore
+import DetailsMouvement from "./pages/GestionStock/DetailsMouvement"
 
 export default function App() {
   return (
@@ -218,6 +220,7 @@ export default function App() {
               <Route path="/modifier-piece/:id" element={<ModifyPieceForm />} />
               <Route path="/entree-sortie-stock" element={<EntreeSortie />} />
               <Route path="/modifier-quantite-piece/:id" element={<SetStockQuantityForm />} />
+              <Route path="/details-mouvement/:id" element={<DetailsMouvement />} />
 
               {/* Maintenance */}
               <Route path="/toutes-les-livraisons-maintenance" element={<AllMaintenanceDeliveries />} />

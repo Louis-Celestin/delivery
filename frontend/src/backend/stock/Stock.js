@@ -168,4 +168,13 @@ export class Stock{
             throw error.response.data
         }
     };
+
+    async getOneMouvement(id){
+        try{
+            const response = await axios.get(`${urlBase}/api/stock/getOneMouvement/${id}`)
+            return response.data;
+        } catch(error){
+            throw error.response.data
+        }
+    }
 }

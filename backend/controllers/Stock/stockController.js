@@ -1029,6 +1029,26 @@ const getAllMouvementStock = async (req, res) =>{
   }
 }
 
+const getOneMouvement = async (req, res) =>{
+  const { id } = req.params;
+  try {
+    const mouvement = await prisma.mouvement_stock.findUnique({
+      where:{
+        id: parseInt(id)
+      }
+    })
+
+    if(!mouvement){
+      return res.status(404).json({message : "Mouvement introuvable !"})
+    }
+
+    return res.status(200).json(mouvement)
+  } catch(error) {
+    res.status(500).json({message: "Erreur serveur", error})
+    console.log(error)
+  }
+}
+
 const getLotPiece = async (req, res) =>{
   const { item_id, model_id, service_id } = req.params
   try{
@@ -1154,4 +1174,5 @@ module.exports = {
   setStockPieceCarton,
   setStockLot,
   setStockCartonLot,
+  getOneMouvement,
 }
