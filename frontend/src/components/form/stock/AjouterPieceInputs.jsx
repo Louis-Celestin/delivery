@@ -135,10 +135,7 @@ export default function AjouterPieceInputs() {
             type: pieceType,
             itemModels: selectedModels,
             itemServices: selectedServices,
-            code_piece: codePiece,
             user_id: userId,
-            quantite_carton_lot: cartonLot,
-            quantite_piece_carton: pieceCarton,
         }
 
         try{
@@ -237,7 +234,7 @@ export default function AjouterPieceInputs() {
                                                 }))}
                                             </div>
                                         </div>
-                                        <div>
+                                        {/* <div>
                                             <Label htmlFor="input">Code pièce</Label>
                                             <Input type="text" placeholder="##" value={codePiece}
                                                 onChange={(e) =>{
@@ -245,11 +242,11 @@ export default function AjouterPieceInputs() {
                                                     setCodePiece(value)
                                                 }}    
                                             />
-                                        </div>
-                                        <div className="text-center">
+                                        </div> */}
+                                        {/* <div className="text-center">
                                             <span className="text-sm font-semibold">Paramètres de stock par défaut</span>
-                                        </div>
-                                        <div>
+                                        </div> */}
+                                        {/* <div>
                                             <Label>Quantité Carton/Lot</Label>
                                             <Input type="number" id="input" value={cartonLot}
                                                 onChange={(e) =>{
@@ -259,8 +256,8 @@ export default function AjouterPieceInputs() {
                                                     }
                                                 }} 
                                             />
-                                        </div>
-                                        <div>
+                                        </div> */}
+                                        {/* <div>
                                             <Label>Quantité Pièce/Carton</Label>
                                             <Input type="number" id="input" value={pieceCarton}
                                                 onChange={(e) =>{
@@ -270,7 +267,7 @@ export default function AjouterPieceInputs() {
                                                     }
                                                 }} 
                                             />
-                                        </div>
+                                        </div> */}
                                         <div className="text-center">
                                             <span className="text-sm text-error-600 font-bold">{errorInput}</span>
                                         </div>

@@ -9,7 +9,6 @@ import {
   ChevronDownIcon,
   HorizontaLDots,
   ListIcon,
-  ClipboardCheck,
   GridIcon,
   UserCircleIcon,
   StockBox,
@@ -47,7 +46,6 @@ const navItems: NavItem[] = [
       { name: "Tous les remplacements", path: "/tous-les-remplacements", pro: false},
       { name: "Nouvelle Demande Stock", path:"/nouvelle-demande", roles:[3], pro: false},
       { name: "Toutes les demandes Stock", path: "/toutes-les-demandes",roles:[3,11], pro: false },
-      // { name: "Ancienne Livraison", path: "/form-ancienne-livraison", roles:[1], pro: false },
     ],
     
   },
@@ -73,8 +71,10 @@ const navItems: NavItem[] = [
     name: "Gestion Stock",
     roles:[7],
     subItems: [
-      { name: "Ajouter Stock", path: "/ajouter-stock", pro: false },
-      { name: "Voir Stock", path: "/gestion-stock", pro: false },
+      { name: "Ajouter Element Stock", path: "/ajouter-stock", pro: false },
+      { name: "Voir Elements Stock", path: "/gestion-stock", pro: false },
+      { name: "Créer Nouveau Stock", path: "/creer-stock", pro: false} ,
+      { name: "Voir tous les Stocks", path: "/voir-stocks", pro: false} ,
       { name: "Entrées Sorties", path: "/entree-sortie-stock", pro: false },
     ],
   },

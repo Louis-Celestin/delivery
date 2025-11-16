@@ -78,9 +78,6 @@ import AllDemandes from "./pages/DemandesPages/AllDemandes"
 import DemandeDetails from "./pages/DemandesPages/DemandeDetails"
 // @ts-ignore
 import ModifyDemandeForm from "./pages/Forms/DemandesForms/ModifyDemandeForm"
-// @ts-ignore
-import DemandeVueDetails from "./pages/DemandesPages/DemandeVueDetails"
-
 
 // @ts-ignore
 import AllDemandesSupervision from "./pages/SuperviseurPages/AllDemandesSupervision"
@@ -154,7 +151,7 @@ import ModifyRemplacementForm from "./pages/Forms/RemplacementForms/ModifyRempla
 import EntreeSortie from "./pages/GestionStock/EntreeSortie"
 
 // @ts-ignore
-import SetStockQuantityForm from "./pages/Forms/StockForms/SetStockQuantityForm"
+import CreateStockForm from "./pages/Forms/StockForms/CreateStockForm"
 
 // @ts-ignore
 import AjouterStockForm from "./pages/Forms/StockForms/AjouterStockForm"
@@ -191,7 +188,7 @@ export default function App() {
               <Route path="/livraison-pieces/:id" element={<LivraisonPiecesForm />} />
               <Route path="/modifier-livraison-pieces/:id" element={<ModifyLivraisonPiecesForm />} />
 
-              {/* Stock DT */}
+              {/* Stock */}
               <Route path="/gestion-stock" element={<GestionStockChargeur />} />
               <Route path="/modifier-stock" element={<ModifyStockForm />} />
               <Route path="/ajouter-stock" element={<AjouterStockForm />} />
@@ -199,7 +196,7 @@ export default function App() {
               <Route path="/ajouter-terminal" element={<AjouterTerminalForm />} />
               <Route path="/modifier-piece/:id" element={<ModifyPieceForm />} />
               <Route path="/entree-sortie-stock" element={<EntreeSortie />} />
-              <Route path="/modifier-quantite-piece/:id" element={<SetStockQuantityForm />} />
+              <Route path="/creer-stock" element={<CreateStockForm />} />
               <Route path="/details-mouvement/:id" element={<DetailsMouvement />} />
 
 
@@ -209,7 +206,6 @@ export default function App() {
               <Route path="/toutes-les-demandes" element={<AllDemandes />} />
               <Route path="/demande-details/:id" element={<DemandeDetails />} />
               <Route path="/modifier-demande/:id" element={<ModifyDemandeForm />} />
-              <Route path="/demande-vue-details/:id" element={<DemandeVueDetails />} />
 
               {/* Remplacement */}
               <Route path="/nouveau-remplacement" element={<RemplacementForm />} />

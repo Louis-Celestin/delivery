@@ -26,10 +26,7 @@ const addPiece = async (req, res) =>{
       type,
       itemModels,
       itemServices,
-      code_piece,
       user_id,
-      quantite_carton_lot,
-      quantite_piece_carton,
     } = req.body
 
     let utilisateur = null;
@@ -48,11 +45,8 @@ const addPiece = async (req, res) =>{
       data:{
         nom_piece: nomPiece,
         type: type,
-        code_piece,
         created_by: nomUser,
         user_id: parseInt(user_id),
-        quantite_carton_lot: parseInt(quantite_carton_lot),
-        quantite_piece_carton: parseInt(quantite_piece_carton),
       }
     })
 

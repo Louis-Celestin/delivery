@@ -1,12 +1,12 @@
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb"
-import SetStockQuantityInputs from "../../../components/form/stock/SetStockQuantityInputs"
+import CreateStockInputs from "../../../components/form/stock/CreateStockInputs"
 
 export default function SetStockQuantityForm() {
     return (
         <>
-            <PageBreadcrumb pageTitle="Modification de stock"/>
+            <PageBreadcrumb pageTitle="Création de stock"/>
             <div>
-                <SetStockQuantityInputs />
+                <CreateStockInputs />
             </div>
         </>
     )

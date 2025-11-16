@@ -13,12 +13,11 @@ import Select from "../Select"
 import Checkbox from "../input/Checkbox"
 import { MultiSelect } from "primereact/multiselect"
 
-export default function SetStockQuantityInputs() {
+export default function CreateStockInputs() {
 
     const stockData = new Stock()
     const userData = new Users()
 
-    const { id } = useParams()
     const navigate = useNavigate();
     const userId = localStorage.getItem('id');
 
@@ -66,7 +65,7 @@ export default function SetStockQuantityInputs() {
 
     const [nomPiece, setNomPiece] = useState('')
 
-    const [motif, setMotif] = useState('')
+    const [motif, setMotif] = useState('INITIALISATION DE STOCK')
     const [commentaire, setCommentaire] = useState('')
 
     const [error, setError] = useState('')
@@ -95,31 +94,28 @@ export default function SetStockQuantityInputs() {
 
     const [selectedEntree, setSelectedEntree] = useState(true)
 
+    const [codeStock, setCodeStock] = useState('')
+
+    const [itemsList, setItemsList] = useState([])
+    const [optionsPieces, setOptionsPieces] = useState([])
+    const [selectedPiece, setSelectedPiece] = useState(null)
+
+    const [pieceLoading, setPieceLoading] = useState(false)
+
     useEffect(() => {
-        const fetchPiece = async () => {
+        const fetchPieces = async () => {
             setLoading(true)
             try {
-                const piece_data = await stockData.getPiece(id)
-                setNomPiece(piece_data.nom_piece)
-
-                const itemModels_data = await stockData.getItemModels(id)
-                const options_models = itemModels_data.model_piece.map((item) => ({
-                    value: item.id_model,
-                    label: item.nom_model.toUpperCase()
+                const pieces_data_all = await stockData.getAllStock()
+                const pieces_data = pieces_data_all.filter((item) => {
+                    return item.is_deleted == false
+                })
+                setItemsList(pieces_data)
+                const options_pieces = pieces_data.map((item) => ({
+                    value: item.id_piece,
+                    label: item.nom_piece
                 }))
-                setOptionsModels(options_models)
-                setModels(itemModels_data.model_piece)
-
-                const itemService_data = await stockData.getItemServices(id)
-                const options_services = itemService_data.services.map((item) => ({
-                    value: item.id,
-                    label: item.nom_service.toUpperCase()
-                }))
-                setOptionsServices(options_services)
-                setServices(itemService_data.services)
-
-                setQuantiteCartonLot(piece_data.quantite_carton_lot)
-                setQuantitePieceCarton(piece_data.quantite_piece_carton)
+                setOptionsPieces(options_pieces)
 
             } catch (error) {
                 console.log('Error fetching the data ', error)
@@ -127,8 +123,56 @@ export default function SetStockQuantityInputs() {
                 setLoading(false)
             }
         };
-        fetchPiece()
+        fetchPieces()
     }, [])
+
+    const handleSelectPiece = async (value) => {
+        setSelectedPiece(value)
+        setPieceLoading(true)
+        try {
+            const itemModels_data = await stockData.getItemModels(value)
+            const options_models = itemModels_data.model_piece.map((item) => ({
+                value: item.id_model,
+                label: item.nom_model.toUpperCase()
+            }))
+            setOptionsModels(options_models)
+            setModels(itemModels_data.model_piece)
+            const listModels = itemModels_data.model_piece.map((item) => {
+                return item.id_model
+            })
+            if (listModels.length == 1) {
+                setSelectedModel(listModels[0])
+                const model = models.find((item) => {
+                    return item.id_model == listModels[0]
+                })
+                const nomModel = model ? model.nom_model : ''
+                setNomModel(nomModel)
+            }
+
+            const itemService_data = await stockData.getItemServices(value)
+            const options_services = itemService_data.services.map((item) => ({
+                value: item.id,
+                label: item.nom_service.toUpperCase()
+            }))
+            setOptionsServices(options_services)
+            setServices(itemService_data.services)
+            const listServices = itemService_data.services.map((item) => {
+                return item.id
+            })
+            if (listServices.length == 1) {
+                setSelectedService(listServices[0])
+                const service = services.find((item) => {
+                    return item.id == listServices[0]
+                })
+                const nomService = service ? service.nom_service : ''
+                setNomService(nomService)
+            }
+        } catch (error) {
+            console.log('Erreur avec la pièce : ', error)
+        } finally {
+            setPieceLoading(false)
+        }
+    }
 
     const handleSelectModel = (value) => {
         console.log('Selected model value: ', value)
@@ -190,8 +234,8 @@ export default function SetStockQuantityInputs() {
             }
         }
 
-        fetchQuantite()
-    }, [id, selectedModel, selectedService])
+        // fetchQuantite()
+    }, [selectedModel, selectedService])
 
     const optionsTypes = [
         { value: "ENTREE", label: "ENTREE" },
@@ -245,12 +289,20 @@ export default function SetStockQuantityInputs() {
     }
 
     const checkValidate = () => {
+        if (!selectedPiece) {
+            setError("Vous devez choisir la pièce !")
+            return false
+        }
         if (!selectedModel) {
             setError("Vous devez choisir le modèle !")
             return false
         }
         if (!selectedService) {
             setError("Vous devez choisir le service !")
+            return false
+        }
+        if (!codeStock) {
+            setError("Vous devez déterminer un code au stock !")
             return false
         }
         if (!motif) {
@@ -782,27 +834,77 @@ export default function SetStockQuantityInputs() {
                         <span className="text-sm">Loading...</span>
                     </>
                 ) : (
-                    <ComponentCard className="md:w-1/2 w-full" title={`Stock ${nomPiece}`}>
+                    <ComponentCard className="md:w-1/2 w-full" title="Nouveau Stock">
                         <div className="space-y-5">
                             <div>
-                                <Label>Choisir le model <span className="text-red-700">*</span></Label>
+                                <Label>Choisir la pièce <span className="text-red-700">*</span></Label>
                                 <Select
-                                    options={optionsModels}
+                                    options={optionsPieces}
                                     placeholder="Choisir une option"
-                                    onChange={handleSelectModel}
+                                    onChange={handleSelectPiece}
                                     className="dark:bg-dark-900"
                                 />
                             </div>
                             <div>
-                                <Label>Choisir le service <span className="text-red-700">*</span></Label>
-                                <Select
-                                    options={optionsServices}
-                                    placeholder="Choisir une option"
-                                    onChange={handleSelectService}
+                                {pieceLoading ? (
+                                    <>
+                                        <div>
+                                            <ProgressSpinner style={{ width: '20px', height: '20px' }} strokeWidth="8" animationDuration=".5s" />
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="space-y-5">
+                                            <div>
+                                                {models.length > 1 ? (
+                                                    <>
+                                                        <div>
+                                                            <Label>Choisir le model <span className="text-red-700">*</span></Label>
+                                                            <Select
+                                                                options={optionsModels}
+                                                                onChange={handleSelectModel}
+                                                                className="dark:bg-dark-900"
+                                                            />
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <></>
+                                                )}
+                                            </div>
+                                            <div>
+                                                {services.length > 1 ? (
+                                                    <>
+                                                        <div>
+                                                            <Label>Choisir le service <span className="text-red-700">*</span></Label>
+                                                            <Select
+                                                                options={optionsServices}
+                                                                placeholder="Choisir une option"
+                                                                onChange={handleSelectService}
+                                                                className="dark:bg-dark-900"
+                                                            />
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <></>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                            <div>
+                                <Label>Code Stock <span className="text-red-700">*</span></Label>
+                                <Input
+                                    type="text"
+                                    value={codeStock}
+                                    onChange={(e) => {
+                                        const value = e.target.value
+                                        setCodeStock(value)
+                                    }}
                                     className="dark:bg-dark-900"
                                 />
                             </div>
-                            <div className="flex justify-between items-center">
+                            {/* <div className="flex justify-between items-center">
                                 <div className="flex flex-col  border-b pb-2 border-black">
                                     <span className="text-xs text-gray-700 font-normal">{nomPiece} {nomModel} - {nomService}</span>
                                     <span className="font-medium">QUANTITE ACTUELLE</span>
@@ -813,6 +915,9 @@ export default function SetStockQuantityInputs() {
                                 <div>
                                     <span><i className="pi pi-box" style={{ fontSize: '3rem' }}></i></span>
                                 </div>
+                            </div> */}
+                            <div className="text-center">
+                                <span className="text-sm font-semibold">Initialisation de Stock</span>
                             </div>
                             <div className="space-y-3">
                                 <div>
@@ -839,7 +944,7 @@ export default function SetStockQuantityInputs() {
                                 </div>
                                 <div>
                                     <div>
-                                        <span>Faire un mouvement : </span>
+                                        <span>Faire une entrée : </span>
                                         <div>
                                             <div>
                                                 <div className="flex items-center gap-3 my-2">
@@ -860,7 +965,7 @@ export default function SetStockQuantityInputs() {
                                                         label="Par Lot"
                                                     />
                                                 </div>
-                                                <div className="flex items-center gap-3 my-2">
+                                                {/* <div className="flex items-center gap-3 my-2">
                                                     <Checkbox
                                                         checked={parCartonLot}
                                                         onChange={() => {
@@ -877,8 +982,8 @@ export default function SetStockQuantityInputs() {
                                                         readOnly
                                                         label="Par Carton-Lot"
                                                     />
-                                                </div>
-                                                <div className="flex items-center gap-3 my-2">
+                                                </div> */}
+                                                {/* <div className="flex items-center gap-3 my-2">
                                                     <Checkbox
                                                         checked={parPieceCarton}
                                                         onChange={() => {
@@ -895,7 +1000,7 @@ export default function SetStockQuantityInputs() {
                                                         readOnly
                                                         label="Par Pièce-Carton"
                                                     />
-                                                </div>
+                                                </div> */}
                                                 <div className="flex items-center gap-3 my-2">
                                                     <Checkbox
                                                         checked={parCarton}
@@ -943,7 +1048,7 @@ export default function SetStockQuantityInputs() {
                                                         <div className="py-3 text-center">
                                                             <span className="text-sm font-semibold">Mouvement par lots</span>
                                                         </div>
-                                                        <div>
+                                                        {/* <div>
                                                             <Label>Choisir le type</Label>
                                                             <Select
                                                                 options={optionsTypes}
@@ -951,7 +1056,7 @@ export default function SetStockQuantityInputs() {
                                                                 onChange={handleSelectType}
                                                                 className="dark:bg-dark-900"
                                                             />
-                                                        </div>
+                                                        </div> */}
                                                         {selectedEntree ? (
                                                             <>
                                                                 <div className="space-y-5">
@@ -1063,7 +1168,7 @@ export default function SetStockQuantityInputs() {
                                                         <div className="py-3 text-center">
                                                             <span className="text-sm font-semibold">Mouvement par cartons-lot</span>
                                                         </div>
-                                                        <div>
+                                                        {/* <div>
                                                             <Label>Choisir le type</Label>
                                                             <Select
                                                                 options={optionsTypes}
@@ -1071,7 +1176,7 @@ export default function SetStockQuantityInputs() {
                                                                 onChange={handleSelectType}
                                                                 className="dark:bg-dark-900"
                                                             />
-                                                        </div>
+                                                        </div> */}
                                                         {selectedEntree ? (
                                                             <>
                                                                 <div className="space-y-5">
@@ -1239,7 +1344,15 @@ export default function SetStockQuantityInputs() {
                                                             </>
                                                         ) : (
                                                             <>
-                                                                <div className="grid grid-cols-2 gap-2">
+                                                                <div className="w-full flex justify-center items-center">
+                                                                    <button className="w-1/2 flex items-center justify-between bg-green-400 p-2 rounded-2xl"
+                                                                        onClick={handleEntreeParPieceCarton}
+                                                                    >
+                                                                        <span>Entrée</span>
+                                                                        <i className="pi pi-arrow-circle-down"></i>
+                                                                    </button>
+                                                                </div>
+                                                                {/* <div className="grid grid-cols-2 gap-2">
                                                                     <div>
                                                                         <button className="w-full text-center flex items-center justify-between bg-green-400 p-2 rounded-2xl"
                                                                             onClick={handleEntreeParPieceCarton}
@@ -1256,7 +1369,7 @@ export default function SetStockQuantityInputs() {
                                                                             <i className="pi pi-arrow-circle-up"></i>
                                                                         </button>
                                                                     </div>
-                                                                </div>
+                                                                </div> */}
                                                             </>
                                                         )}
                                                     </div>
@@ -1272,7 +1385,7 @@ export default function SetStockQuantityInputs() {
                                                         <div className="text-center">
                                                             <span className="text-sm font-semibold">Mouvement par cartons</span>
                                                         </div>
-                                                        <div>
+                                                        {/* <div>
                                                             <Label>Choisir le type</Label>
                                                             <Select
                                                                 options={optionsTypes}
@@ -1280,7 +1393,7 @@ export default function SetStockQuantityInputs() {
                                                                 onChange={handleSelectType}
                                                                 className="dark:bg-dark-900"
                                                             />
-                                                        </div>
+                                                        </div> */}
                                                         {selectedEntree ? (
                                                             <>
                                                                 <div className="space-y-5">
@@ -1402,7 +1515,15 @@ export default function SetStockQuantityInputs() {
                                                             </>
                                                         ) : (
                                                             <>
-                                                                <div className="grid grid-cols-2 gap-2">
+                                                                <div className="w-full flex justify-center items-center">
+                                                                    <button className="w-1/2 flex items-center justify-between bg-green-400 p-2 rounded-2xl"
+                                                                        onClick={handleEntreeParPiece}
+                                                                    >
+                                                                        <span>Entrée</span>
+                                                                        <i className="pi pi-arrow-circle-down"></i>
+                                                                    </button>
+                                                                </div>
+                                                                {/* <div className="grid grid-cols-2 gap-2">
                                                                     <div>
                                                                         <button className="w-full text-center flex items-center justify-between bg-green-400 p-2 rounded-2xl"
                                                                             onClick={handleEntreeParPiece}
@@ -1419,7 +1540,7 @@ export default function SetStockQuantityInputs() {
                                                                             <i className="pi pi-arrow-circle-up"></i>
                                                                         </button>
                                                                     </div>
-                                                                </div>
+                                                                </div> */}
                                                             </>
                                                         )}
                                                     </div>

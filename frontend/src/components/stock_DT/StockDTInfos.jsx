@@ -117,15 +117,11 @@ export default function StockDTInfos() {
     }
     const actionTemplate = (piece) => {
         const modifLink = `/modifier-piece/${piece.id_piece}`
-        const quantityLink = `/modifier-quantite-piece/${piece.id_piece}`
         return(
             <>
                 <div className="flex justify-between">
                     <Link to={modifLink}>
                         <span><i className="pi pi-cog"></i></span>
-                    </Link>
-                    <Link to={quantityLink}>
-                        <span><i className="pi pi-box"></i></span>
                     </Link>
                 </div>
             </>

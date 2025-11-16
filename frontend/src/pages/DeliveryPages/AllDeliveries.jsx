@@ -1,6 +1,5 @@
 import PageBreadcrumb from "../../components/common/PageBreadCrumb"
 import AllDeliveriesList from "../../components/livraisons/AllDeliveriesList"
-import DeliveriesFilter from "../../components/livraisons/DeliveriesFilter"
 
 export default function AllDeliveries() {
     

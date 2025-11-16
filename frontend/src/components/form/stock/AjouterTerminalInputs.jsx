@@ -135,10 +135,7 @@ export default function AjouterTerminalInputs() {
             type: pieceType,
             itemModels: selectedModels,
             itemServices: selectedServices,
-            code_piece: codePiece,
             user_id: userId,
-            quantite_carton_lot: cartonLot,
-            quantite_piece_carton: pieceCarton,
         }
 
         try{
@@ -237,7 +234,7 @@ export default function AjouterTerminalInputs() {
                                                 }))}
                                             </div>
                                         </div>
-                                        <div>
+                                        {/* <div>
                                             <Label htmlFor="input">Code pièce</Label>
                                             <Input type="text" placeholder="##" value={codePiece}
                                                 onChange={(e) =>{
@@ -245,11 +242,11 @@ export default function AjouterTerminalInputs() {
                                                     setCodePiece(value)
                                                 }}    
                                             />
-                                        </div>
-                                        <div className="text-center">
+                                        </div> */}
+                                        {/* <div className="text-center">
                                             <span className="text-sm font-semibold">Paramètres de stock par défaut</span>
-                                        </div>
-                                        <div>
+                                        </div> */}
+                                        {/* <div>
                                             <Label>Quantité Carton/Lot</Label>
                                             <Input type="number" id="input" value={cartonLot}
                                                 onChange={(e) =>{
@@ -259,8 +256,8 @@ export default function AjouterTerminalInputs() {
                                                     }
                                                 }} 
                                             />
-                                        </div>
-                                        <div>
+                                        </div> */}
+                                        {/* <div>
                                             <Label>Quantité Pièce/Carton</Label>
                                             <Input type="number" id="input" value={pieceCarton}
                                                 onChange={(e) =>{
@@ -270,7 +267,7 @@ export default function AjouterTerminalInputs() {
                                                     }
                                                 }} 
                                             />
-                                        </div>
+                                        </div> */}
                                         <div className="text-center">
                                             <span className="text-sm text-error-600 font-bold">{errorInput}</span>
                                         </div>
@@ -309,12 +306,6 @@ export default function AjouterTerminalInputs() {
                     <div>
                         <span>Vous allez ajouter un terminal</span>
                     </div>
-                    <div>
-                        <span>Type : <span className="text-red-500 font-medium">{pieceType}</span></span>
-                    </div>
-                    <div>
-                        <span>Code pièce : <span className="text-red-500 font-medium">{codePiece}</span></span>
-                    </div>
                     <div className="grid grid-cols-2 border px-1">
                         <span className="text-sm flex items-center">Modèles : </span>
                         <div className="grid grid-cols-2">
@@ -352,12 +343,6 @@ export default function AjouterTerminalInputs() {
                                 )
                             })}
                         </div>
-                    </div>
-                    <div>
-                        <span>Quantité carton par lot: <span className="text-red-500 font-medium">{cartonLot}</span></span>
-                    </div>
-                    <div>
-                        <span>Quantité pièce par carton: <span className="text-red-500 font-medium">{pieceCarton}</span></span>
                     </div>
                     <div className='w-full flex justify-center items-center'>
                         <button className='w-1/3 mx-3 bg-gray-400 rounded-2xl h-10 flex justify-center items-center'
