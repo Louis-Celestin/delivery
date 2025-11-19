@@ -107,6 +107,8 @@ export default function CreateStockInputs() {
     const [origine, setOrigine] = useState('')
     const [destination, setDestination] = useState('')
 
+    const [stocks, setStocks] = useState([])
+
     useEffect(() => {
         const fetchPieces = async () => {
             setLoading(true)
@@ -121,6 +123,12 @@ export default function CreateStockInputs() {
                     label: item.nom_piece
                 }))
                 setOptionsPieces(options_pieces)
+
+                const stocks_data_all = await stockData.getAllStocks()
+                const stocks_data = stocks_data_all.filter((item) => {
+                    return item.is_deleted == false
+                })
+                setStocks(stocks_data)
 
             } catch (error) {
                 console.log('Error fetching the data ', error)
@@ -317,6 +325,15 @@ export default function CreateStockInputs() {
             setError("Vous devez déterminer un code au stock !")
             return false
         }
+        const existingStock = stocks.find((item) =>{
+            const sameCode = item.code_stock.toLowerCase().trim() == codeStock.toLowerCase().trim()
+            return sameCode
+        })
+
+        if(existingStock){
+            setError("Un Stock du même code existe déjà !")
+            return
+        }
         if (!motif) {
             setError("Vous devez précisier le motif !")
             return false
@@ -342,7 +359,22 @@ export default function CreateStockInputs() {
             setError("Quantite pièce invalide !")
             return
         }
-
+        const details = {
+            typeMouvement: 1,
+            stockInitialLot: 0,
+            quantiteMouvementLot: newStockLot,
+            stockFinalLot: newStockLot,
+            stockInitialPiece: 0,
+            quantiteMouvementPiece: newStockLot * quantiteCartonLot * quantitePieceCarton,
+            stockFinalPiece: newStockLot * quantiteCartonLot * quantitePieceCarton,
+            quantitePieceCarton: quantitePieceCarton,
+            stockInitialCarton: 0,
+            quantiteMouvementCarton: newStockLot * quantiteCartonLot,
+            stockFinalCarton: newStockLot * quantiteCartonLot,
+            quantiteCartonLot,
+            quantitePieceLot: quantitePieceCarton * quantiteCartonLot,
+        }
+        setDetailsMouvement(details)
         setFinalStockLot(quantiteLot + newStockLot)
         setFinalStockCarton(quantiteCarton + (newStockLot * quantiteCartonLot))
         setFinaleStockPiece(quantitePiece + (newStockLot * quantiteCartonLot * quantitePieceCarton))
@@ -676,7 +708,17 @@ export default function CreateStockInputs() {
             setError("Quantite pièce invalide !")
             return
         }
-
+        const details = {
+            typeMouvement: 4,
+            stockInitialCarton: 0,
+            quantiteMouvementCarton: newStockCarton,
+            stockFinalCarton: newStockCarton,
+            stockInitialPiece: 0,
+            quantiteMouvementPiece: quantitePieceCarton * newStockCarton,
+            stockFinalPiece: quantitePieceCarton * newStockCarton,
+            quantitePieceCarton,
+        }
+        setDetailsMouvement(details)
         setFinalStockCarton(quantiteCarton + newStockCarton)
         setFinaleStockPiece(quantitePiece + (newStockCarton * quantitePieceCarton))
         setEntreeParCartonModalOpen(true)
@@ -847,6 +889,8 @@ export default function CreateStockInputs() {
 
     const handleValidate = async () => {
         setEntreeParPieceModalOpen(false)
+        setEntreeParCartonModalOpen(false)
+        setEntreeParLotModalOpen(false)
 
         const payload = {
             selectedPiece,
@@ -1641,9 +1685,12 @@ export default function CreateStockInputs() {
             <Modal isOpen={entreeParLotModalOpen} onClose={() => setEntreeParLotModalOpen(false)} className="p-4 max-w-md">
                 <div className="space-y-5">
                     <div className="w-full text-center">
-                        <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium">Entrée stock</span>
+                        <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium">Nouveau Stock</span>
                     </div>
-                    <div className="text-center">
+                    <div className="text-center flex flex-col">
+                        <span className="font-bold text-sm">
+                            {codeStock}
+                        </span>
                         <span>
                             <span className="text-sm text-gray-800 font-medium">{nomPiece} </span>
                             -
@@ -1697,7 +1744,7 @@ export default function CreateStockInputs() {
                     </div>
                     <div className='w-full mt-6 flex justify-center items-center'>
                         <button
-                            onClick={handleValidateParLot}
+                            onClick={handleValidate}
                             className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
                             Valider
                         </button>
@@ -1982,9 +2029,12 @@ export default function CreateStockInputs() {
             <Modal isOpen={entreeParCartonModalOpen} onClose={() => setEntreeParCartonModalOpen(false)} className="p-4 max-w-md">
                 <div className="space-y-5">
                     <div className="w-full text-center">
-                        <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium">Entrée stock</span>
+                        <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium">Nouveau Stock</span>
                     </div>
-                    <div className="text-center">
+                    <div className="text-center flex flex-col">
+                        <span className="font-bold text-sm">
+                            {codeStock}
+                        </span>
                         <span>
                             <span className="text-sm text-gray-800 font-medium">{nomPiece} </span>
                             -
@@ -2024,7 +2074,7 @@ export default function CreateStockInputs() {
                     </div>
                     <div className='w-full mt-6 flex justify-center items-center'>
                         <button
-                            onClick={handleValidateParCarton}
+                            onClick={handleValidate}
                             className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
                             Valider
                         </button>

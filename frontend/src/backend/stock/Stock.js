@@ -180,10 +180,19 @@ export class Stock{
 
     async createStock(payload){
         try{
-            const response = await axios.post(`${urlBase}/api/stock/createStock`, payload)
+            const response = await axios.put(`${urlBase}/api/stock/createStock`, payload)
             return response.data
         } catch(error){
             throw error.response.data
         }
     }
+
+    async getAllStocks(){
+        try{
+            const response = await axios.get(`${urlBase}/api/stock/getAllStocks`)
+            return response.data;
+        } catch(error){
+            throw error.response.data
+        }
+    };
 }
