@@ -155,6 +155,7 @@ const createStock = async (req, res) => {
         data: {
           type: 'entree',
           mouvement: 5,
+          stock_id: nouveauStock.id,
           piece_id: item,
           service_origine: null,
           service_destination: itemService,
@@ -177,6 +178,7 @@ const createStock = async (req, res) => {
         data: {
           type: 'entree',
           mouvement: 4,
+          stock_id: nouveauStock.id,
           piece_id: item,
           service_origine: null,
           service_destination: itemService,
@@ -214,6 +216,7 @@ const createStock = async (req, res) => {
         data: {
           type: 'entree',
           mouvement: 1,
+          stock_id: nouveauStock.id,
           piece_id: item,
           service_origine: null,
           service_destination: itemService,

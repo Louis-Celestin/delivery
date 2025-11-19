@@ -28,6 +28,8 @@ export default function AllMouvementStockList() {
 
     const [services, setServices] = useState([])
 
+    const [stocks, setStocks] = useState([])
+
     useEffect( ()=>{
         const fetchData = async () => {
             setLoading(true)
@@ -46,6 +48,12 @@ export default function AllMouvementStockList() {
 
                 const services_data = await userData.getAllServices()
                 setServices(services_data)
+
+                const stocks_data_all = await stockData.getAllStocks()
+                const stocks_data = stocks_data_all.filter((item) => {
+                    return item.is_deleted == false
+                })
+                setStocks(stocks_data)
 
             } catch(error){
                 console.log('Error fetching data ',error)
@@ -84,16 +92,35 @@ export default function AllMouvementStockList() {
             </>
         )
     }
+    const codeStockTemplate = (mouvement) =>{
+        const stock = stocks.find((item) =>{
+            return item.id == mouvement.stock_id
+        })
+        const codeStock = stock ? stock.code_stock : 'N/A'
+
+        return(
+            <>
+                <span className="font-bold text-gray-700">{codeStock}</span>
+            </>
+        )
+    }
     const pieceTemplate = (mouvement) =>{
         const piece = items.find((item) =>{
             return mouvement.piece_id == item.id_piece
         })
+        const nomPiece = piece ? piece.nom_piece : 'N/A'
 
-        const nomPiece = piece ? piece.nom_piece : 'NaN'
+        const model = models.find((item) =>{
+            return mouvement.model_id == item.id_model
+        })
+        const nomModel = model ? model.nom_model : 'N/A'
 
         return(
             <>
-                <span className="text-theme-xs font-medium text-gray-700">{nomPiece}</span>
+                <div className="flex flex-col">
+                    <span className="text-theme-xs font-medium text-gray-700">{nomPiece}</span>
+                    <span className="text-cyan-700 font-bold">{nomModel}</span>
+                </div>
             </>
         )
     }
@@ -102,7 +129,7 @@ export default function AllMouvementStockList() {
             return mouvement.model_id == item.id_model
         })
 
-        const nomModel = model ? model.nom_model : 'NaN'
+        const nomModel = model ? model.nom_model : 'N/A'
 
         return(
             <>
@@ -243,8 +270,9 @@ export default function AllMouvementStockList() {
                             
                         <Column field="id" header="ID" body={idTemplate} sortable></Column>
                         <Column field="type" header="Type" body={typeTemplate}></Column>
+                        <Column field="stock_id" header="Code Stock" body={codeStockTemplate}></Column>
                         <Column field="piece_id" header="Pièce" body={pieceTemplate}></Column>
-                        <Column field="model_id" header="Modèle" body={modelTemplate}></Column>
+                        {/* <Column field="model_id" header="Modèle" body={modelTemplate}></Column> */}
                         <Column field="mouvement" header="Mouvement" body={mouvementTemplate}></Column>
                         <Column field="stock_initial" header="Stock Initial" body={initialTemplate} sortable></Column>
                         <Column field="quantite" header="Quantité" body={quantiteTemplate} sortable></Column>
