@@ -35,7 +35,7 @@ export default function AllMouvementStockList() {
                 const mouvement_data = await stockData.getAllMouvementStock()
                 setAllMouvement(mouvement_data)
 
-                const piece_data = await stockData.getAllStock()
+                const piece_data = await stockData.getAllItems()
                 setItems(piece_data)
 
                 const models_data = await stockData.getAllModels()
@@ -159,8 +159,9 @@ export default function AllMouvementStockList() {
         const service = services.find((item) =>{
             return mouvement.service_origine == item.id
         })
+        const origine = mouvement.origine
 
-        const nomService = service ? service.nom_service : 'N/A'
+        const nomService = service ? service.nom_service : origine ? origine : 'N/A'
 
         return(
             <>
@@ -173,7 +174,9 @@ export default function AllMouvementStockList() {
             return mouvement.service_destination == item.id
         })
 
-        const nomService = service ? service.nom_service : 'N/A'
+        const destination = mouvement.destination
+
+        const nomService = service ? service.nom_service : destination ? destination : 'N/A'
 
         return(
             <>

@@ -3,9 +3,9 @@ import urlBase from '../const';
 
 export class Stock{
 
-    async getAllStock(){
+    async getAllItems(){
         try{
-            const response = await axios.get(`${urlBase}/api/stock/getAllStock`)
+            const response = await axios.get(`${urlBase}/api/stock/getAllItems`)
             return response.data;
         } catch(error){
             throw error.response.data
@@ -173,6 +173,15 @@ export class Stock{
         try{
             const response = await axios.get(`${urlBase}/api/stock/getOneMouvement/${id}`)
             return response.data;
+        } catch(error){
+            throw error.response.data
+        }
+    }
+
+    async createStock(payload){
+        try{
+            const response = await axios.post(`${urlBase}/api/stock/createStock`, payload)
+            return response.data
         } catch(error){
             throw error.response.data
         }

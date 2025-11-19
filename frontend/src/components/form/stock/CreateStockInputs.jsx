@@ -102,11 +102,16 @@ export default function CreateStockInputs() {
 
     const [pieceLoading, setPieceLoading] = useState(false)
 
+    const [detailsMouvement, setDetailsMouvement] = useState([])
+
+    const [origine, setOrigine] = useState('')
+    const [destination, setDestination] = useState('')
+
     useEffect(() => {
         const fetchPieces = async () => {
             setLoading(true)
             try {
-                const pieces_data_all = await stockData.getAllStock()
+                const pieces_data_all = await stockData.getAllItems()
                 const pieces_data = pieces_data_all.filter((item) => {
                     return item.is_deleted == false
                 })
@@ -127,8 +132,15 @@ export default function CreateStockInputs() {
     }, [])
 
     const handleSelectPiece = async (value) => {
-        setSelectedPiece(value)
         setPieceLoading(true)
+        setSelectedModel(null)
+        setSelectedService(null)
+        setSelectedPiece(value)
+        const piece = itemsList.find((item) => {
+            return item.id_piece == value
+        })
+        const nom = piece ? piece.nom_piece : ''
+        setNomPiece(nom)
         try {
             const itemModels_data = await stockData.getItemModels(value)
             const options_models = itemModels_data.model_piece.map((item) => ({
@@ -142,7 +154,7 @@ export default function CreateStockInputs() {
             })
             if (listModels.length == 1) {
                 setSelectedModel(listModels[0])
-                const model = models.find((item) => {
+                const model = itemModels_data.model_piece.find((item) => {
                     return item.id_model == listModels[0]
                 })
                 const nomModel = model ? model.nom_model : ''
@@ -161,7 +173,7 @@ export default function CreateStockInputs() {
             })
             if (listServices.length == 1) {
                 setSelectedService(listServices[0])
-                const service = services.find((item) => {
+                const service = itemService_data.services.find((item) => {
                     return item.id == listServices[0]
                 })
                 const nomService = service ? service.nom_service : ''
@@ -762,6 +774,13 @@ export default function CreateStockInputs() {
             setError("Quantité invalide !")
             return
         }
+        const details = {
+            typeMouvement: 5,
+            stockInitial: 0,
+            quantiteMouvement: newStockPiece,
+            stockFinal: newStockPiece,
+        }
+        setDetailsMouvement(details)
         setFinaleStockPiece(quantitePiece + newStockPiece)
         setEntreeParPieceModalOpen(true)
         setError('')
@@ -818,6 +837,46 @@ export default function CreateStockInputs() {
             Swal.fire({
                 title: "Attention",
                 text: "Une erreur est survenue lors de la modification !",
+                icon: "warning"
+            })
+            navigate('/entree-sortie-stock')
+        } finally {
+            setLoadingValidation(false)
+        }
+    }
+
+    const handleValidate = async () => {
+        setEntreeParPieceModalOpen(false)
+
+        const payload = {
+            selectedPiece,
+            selectedModel,
+            selectedService,
+            origine,
+            codeStock,
+            motif,
+            detailsMouvement,
+            userId,
+            commentaire
+        }
+
+        try {
+            setLoadingValidation(true)
+            console.log('Sending payload...')
+
+            const response = await stockData.createStock(payload)
+            console.log(response)
+
+            Swal.fire({
+                title: "Succès",
+                text: "Stock créé avec succès !",
+                icon: "success"
+            })
+            navigate('/entree-sortie-stock')
+        } catch (error) {
+            Swal.fire({
+                title: "Attention",
+                text: "Une erreur est survenue lors de la création !",
                 icon: "warning"
             })
             navigate('/entree-sortie-stock')
@@ -942,7 +1001,7 @@ export default function CreateStockInputs() {
                                         }}
                                     />
                                 </div>
-                                <div>
+                                <div className="space-y-5">
                                     <div>
                                         <span>Faire une entrée : </span>
                                         <div>
@@ -1041,11 +1100,24 @@ export default function CreateStockInputs() {
                                         </div>
                                     </div>
                                     <div>
+                                        <div>
+                                            <Label>Origine</Label>
+                                            <Input
+                                                type="text"
+                                                value={origine}
+                                                onChange={(e) => {
+                                                    const value = e.target.value
+                                                    setOrigine(value)
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
                                         {parLot ? (
                                             <>
                                                 <div className="">
                                                     <div className="space-y-5">
-                                                        <div className="py-3 text-center">
+                                                        <div className="text-center">
                                                             <span className="text-sm font-semibold">Mouvement par lots</span>
                                                         </div>
                                                         {/* <div>
@@ -2011,9 +2083,12 @@ export default function CreateStockInputs() {
             <Modal isOpen={entreeParPieceModalOpen} onClose={() => setEntreeParPieceModalOpen(false)} className="p-4 max-w-md">
                 <div className="space-y-5">
                     <div className="w-full text-center">
-                        <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium">Entrée stock</span>
+                        <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium">Nouveau Stock</span>
                     </div>
-                    <div className="text-center">
+                    <div className="text-center flex flex-col">
+                        <span className="font-bold text-sm">
+                            {codeStock}
+                        </span>
                         <span>
                             <span className="text-sm text-gray-800 font-medium">{nomPiece} </span>
                             -
@@ -2037,7 +2112,7 @@ export default function CreateStockInputs() {
                     </div>
                     <div className='w-full mt-6 flex justify-center items-center'>
                         <button
-                            onClick={handleValidateParPiece}
+                            onClick={handleValidate}
                             className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
                             Valider
                         </button>
