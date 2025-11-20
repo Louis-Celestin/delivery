@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import {CableDataIcon, AlertIcon, InfoIcon, MiniTools, SimpleInfo} from "../../icons/index"
+import { CableDataIcon, AlertIcon, InfoIcon, MiniTools, SimpleInfo } from "../../icons/index"
 import { ProgressSpinner } from "primereact/progressspinner"
 import { Stock } from "../../backend/stock/Stock"
 import { Users } from "../../backend/users/Users"
@@ -10,7 +10,7 @@ import { Column } from 'primereact/column';
 import { Dropdown } from 'primereact/dropdown';
 import { MultiSelect } from "primereact/multiselect";
 
-export default function StockDTInfos() {
+export default function AllItemsList() {
 
     const stock = new Stock()
     const userData = new Users()
@@ -21,20 +21,22 @@ export default function StockDTInfos() {
     const savedPagination = JSON.parse(sessionStorage.getItem("paginationState"));
 
     const [first, setFirst] = useState(savedPagination?.first || 0);
-    const [rows, setRows] = useState(savedPagination?.rows || 10); 
+    const [rows, setRows] = useState(savedPagination?.rows || 10);
 
     const [models, setModels] = useState([])
+    const [itemModels, setItemModels] = useState([])
 
     const [services, setServices] = useState([])
+    const [itemServices, setItemServices] = useState([])
 
     const [errorForm, setErrorForm] = useState('')
 
-    useEffect( ()=>{
+    useEffect(() => {
         const fetchStock = async () => {
             setLoadingStock(true)
-            try{
+            try {
                 let data;
-                data = await stock.getAllStock()
+                data = await stock.getAllItems()
                 console.log(data)
                 const stock_dt = data
                 setStockDT(stock_dt)
@@ -42,18 +44,24 @@ export default function StockDTInfos() {
                 const model_data = await stock.getAllModels()
                 setModels(model_data)
 
+                const itemModels_data = await stock.getAllItemModels()
+                setItemModels(itemModels_data)
+
                 const services_data = await userData.getAllServices()
                 setServices(services_data)
-                
-            }catch(error){
-                console.log('Error fetching data ',error)
-                setErrorForm('Erreur lors de la génération du formulaire')        
-            }finally{
+
+                const itemServices_data = await stock.getAllItemServices()
+                setItemServices(itemServices_data)
+
+            } catch (error) {
+                console.log('Error fetching data ', error)
+                setErrorForm('Erreur lors de la génération du formulaire')
+            } finally {
                 setLoadingStock(false)
             }
         };
         fetchStock();
-    },[])
+    }, [])
 
     const handlePageChange = (e) => {
         setFirst(e.first);
@@ -62,23 +70,75 @@ export default function StockDTInfos() {
     };
 
     const idTemplate = (piece) => {
-        return(
+        return (
             <>
                 <span className="text-theme-xs font-medium">{piece.id_piece}</span>
             </>
         )
     }
     const nomTemplate = (piece) => {
-        return(
+        return (
             <>
                 <span className="text-sm text-gray-700 text- font-medium">{piece.nom_piece}</span>
+            </>
+        )
+    }
+    const modelsTemplate = (piece) => {
+        const models_list = itemModels.map((item) => {
+            if(item.item_id == piece.id_piece){
+                return item.model_id
+            }
+            return []
+        })
+
+        const item_models = models.filter((item) => {
+            return models_list.includes(item.id_model)
+        })
+
+        return(
+            <>
+                <div className="grid grid-cols-2">
+                    {item_models.map((model) => {
+                        return(
+                            <>
+                                <span>{model.nom_model}</span>
+                            </>
+                        )
+                    })}
+                </div>
+            </>
+        )
+    }
+    const servicesTemplate = (piece) => {
+        const services_list = itemServices.map((item) => {
+            if(item.item_id == piece.id_piece){
+                return item.service_id
+            }
+            return []
+        })
+
+        const item_services = services.filter((item) => {
+            return services_list.includes(item.id)
+        })
+
+        return(
+            <>
+                <div className="grid grid-cols-2">
+                    {item_services.map((service) => {
+                        return(
+                            <>
+                                <span>{service.nom_service}</span>
+                            </>
+                        )
+                    })}
+                </div>
             </>
         )
     }
     const typeTemplate = (piece) => {
         const classType = piece.type == 'TERMINAL' ? 'font-bold text-cyan-700 text-sm' : piece.type == 'PIECE' ? 'font-bold text-emerald-600 text-sm' : 'font-bold'
 
-        return(
+        return (
             <>
                 <span className={classType}>{piece.type}</span>
             </>
@@ -87,37 +147,15 @@ export default function StockDTInfos() {
     const stockCartonTemplate = (piece) => {
         const quantite = piece.stock_carton ? piece.stock_carton : 'N/A'
 
-        return(
+        return (
             <>
                 <span>{quantite}</span>
             </>
         )
     }
-    const modelTemplate = (piece) => {
-        const model = models.find((item) => {
-            return item.id_model == piece.model_id
-        })
-        const nom = model ? model.nom_model.toUpperCase() : 'N/A'
-        return(
-            <>
-                <span className="p-1 rounded-2xl text-white bg-gray-dark text-xs font-bold">{nom}</span>
-            </>
-        )
-    }
-    const serviceTemplate = (piece) => {
-        const service = services.find((item) => {
-            return item.id == piece.service
-        })
-        const nom = service ? service.nom_service.toUpperCase() : 'N/A'
-        return(
-            <>
-                <span className="text-theme-sm font-medium">{nom}</span>
-            </>
-        )
-    }
     const actionTemplate = (piece) => {
         const modifLink = `/modifier-piece/${piece.id_piece}`
-        return(
+        return (
             <>
                 <div className="flex justify-between">
                     <Link to={modifLink}>
@@ -136,18 +174,20 @@ export default function StockDTInfos() {
                         value={stockDT}
                         loading={loadingStock}
                         removableSort
-                        paginator 
-                        rows={rows} 
+                        paginator
+                        rows={rows}
                         first={first}
                         onPage={handlePageChange}
                         rowsPerPageOptions={[5, 10, 25, 50, 100, 200, 300, 500, 1000]}
-                        tableStyle={{ minWidth: '50rem' }}
+                        tableStyle={{ minWidth: '50rem', fontSize: '11px' }}
                         emptyMessage="Aucune pièce trouvée"
                         className="p-datatable-sm">
 
                         <Column field="id_piece" header="ID" body={idTemplate} sortable></Column>
                         <Column field="nom_piece" header="Nom pièce" body={nomTemplate} sortable></Column>
-                        <Column field="type" header="Type" body={typeTemplate} sortable></Column>
+                        <Column header="Modèles" body={modelsTemplate}></Column>
+                        <Column header="Services" body={servicesTemplate}></Column>
+                        {/* <Column field="type" header="Type" body={typeTemplate} sortable></Column> */}
                         <Column header="Actions" body={actionTemplate}></Column>
 
                     </DataTable>

@@ -50,7 +50,7 @@ import ReceptionChargeurDetails from "./pages/ReceivePages/ReceptionChargeurDeta
 // @ts-ignore
 import StatistiquesLivraisons from "./components/livraisons/StatistiquesLivraisons"
 // @ts-ignore
-import GestionStockChargeur from "./pages/GestionStock/GestionStock";
+import AllItems from "./pages/GestionStock/AllItems";
 // @ts-ignore
 import AllDeliveriesVue from "./pages/VueOnlyPages/AllDeliveriesVue";
 // @ts-ignore
@@ -192,7 +192,7 @@ export default function App() {
               <Route path="/modifier-livraison-pieces/:id" element={<ModifyLivraisonPiecesForm />} />
 
               {/* Stock */}
-              <Route path="/gestion-stock" element={<GestionStockChargeur />} />
+              <Route path="/voir-items" element={<AllItems />} />
               <Route path="/modifier-stock" element={<ModifyStockForm />} />
               <Route path="/ajouter-stock" element={<AjouterStockForm />} />
               <Route path="/ajouter-piece" element={<AjouterPieceForm />} />

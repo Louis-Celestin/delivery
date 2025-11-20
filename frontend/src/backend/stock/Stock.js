@@ -195,4 +195,22 @@ export class Stock{
             throw error.response.data
         }
     };
+
+    async getAllItemModels(){
+        try{
+            const response = await axios.get(`${urlBase}/api/stock/getAllItemModels`)
+            return response.data;
+        } catch(error){
+            throw error.response.data
+        }
+    }
+
+    async getAllItemServices(){
+        try{
+            const response = await axios.get(`${urlBase}/api/stock/getAllItemServices`)
+            return response.data;
+        } catch(error){
+            throw error.response.data
+        }
+    }
 }

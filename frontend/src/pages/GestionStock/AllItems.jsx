@@ -1,7 +1,7 @@
 import PageBreadcrumb from "../../components/common/PageBreadCrumb"
-import StockDTInfos from "../../components/stock_DT/StockDTInfos"
+import AllItemsList from "../../components/stock_DT/AllItemsList"
 
-export default function GestionStock() {
+export default function AllItems() {
 
     return(
         <>
@@ -9,7 +9,7 @@ export default function GestionStock() {
                 <PageBreadcrumb pageTitle="Gestion de Stock"/>
                 <div className="">
                     <div className="">
-                        <StockDTInfos />
+                        <AllItemsList />
                     </div>
                 </div>
             </div>

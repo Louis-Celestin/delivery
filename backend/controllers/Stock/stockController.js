@@ -83,7 +83,7 @@ const addPiece = async (req, res) => {
 const getAllItems = async (req, res) => {
   try {
     const items = await prisma.items.findMany({
-      orderBy: { nom_piece: 'asc' },
+      orderBy: { id_piece: 'desc' },
     });
 
     res.status(200).json(items);
@@ -1358,6 +1358,30 @@ const getAllTypeMouvementStock = async (req, res) => {
   }
 }
 
+const getAllItemModels = async (req, res) => {
+  try {
+    const models = await prisma.items_models.findMany({
+      orderBy: { item_id: 'asc' }
+    })
+
+    res.status(200).json(models);
+  } catch (error) {
+    res.status(500).json({ message: "Erreur lors de la récupération des modèles pièces ", error });
+  }
+}
+
+const getAllItemServices = async (req, res) => {
+  try {
+    const services = await prisma.items_services.findMany({
+      orderBy: { item_id: 'asc' }
+    })
+
+    res.status(200).json(services);
+  } catch (error) {
+    res.status(500).json({ message: "Erreur lors de la récupération des services pièces ", error });
+  }
+}
+
 module.exports = {
   setStockPiece,
   getAllItems,
@@ -1380,4 +1404,6 @@ module.exports = {
   getOneMouvement,
   createStock,
   getAllStocks,
+  getAllItemModels,
+  getAllItemServices,
 }

@@ -71,8 +71,8 @@ const navItems: NavItem[] = [
     name: "Gestion Stock",
     roles:[7],
     subItems: [
-      { name: "Ajouter Element Stock", path: "/ajouter-stock", pro: false },
-      { name: "Voir Elements Stock", path: "/gestion-stock", pro: false },
+      // { name: "Ajouter Element Stock", path: "/ajouter-stock", pro: false },
+      { name: "Voir Elements Stock", path: "/voir-items", pro: false },
       { name: "Créer Nouveau Stock", path: "/creer-stock", pro: false} ,
       { name: "Voir tous les Stocks", path: "/voir-stocks", pro: false} ,
       { name: "Entrées Sorties", path: "/entree-sortie-stock", pro: false },
