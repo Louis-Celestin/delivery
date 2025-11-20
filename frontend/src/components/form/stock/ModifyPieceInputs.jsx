@@ -160,7 +160,7 @@ export default function ModifyPieceInputs() {
                 text: "Pièce modifiée avec succès",
                 icon: "success"
             });
-            navigate('/gestion-stock')
+            navigate('/voir-items')
         } catch (error) {
             console.log('error : ', error)
             Swal.fire({
@@ -168,7 +168,7 @@ export default function ModifyPieceInputs() {
                 text: "Une erreur s'est produite lors de la modification",
                 icon: "warning"
             });
-            navigate('/gestion-stock')
+            navigate('/voir-items')
         } finally {
             setLoadingModif(false)
         }

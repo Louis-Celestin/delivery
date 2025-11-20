@@ -149,14 +149,14 @@ export default function AjouterTerminalInputs() {
                 text: "Nouvelle pièce ajouté au stock",
                 icon: "success"
             })
-            navigate('/gestion-stock')
+            navigate('/voir-items')
         } catch(error){
             Swal.fire({
                 title: "Attention",
                 text: "Une erreur est survenue lors de la création",
                 icon: "warning"
             })
-            navigate('/gestion-stock')
+            navigate('/voir-items')
         } finally{
             setLoadindCreate(false)
         }
