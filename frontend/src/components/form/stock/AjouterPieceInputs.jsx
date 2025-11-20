@@ -309,9 +309,6 @@ export default function AjouterPieceInputs() {
                     <div>
                         <span>Type : <span className="text-red-500 font-medium">{pieceType}</span></span>
                     </div>
-                    <div>
-                        <span>Code pièce : <span className="text-red-500 font-medium">{codePiece}</span></span>
-                    </div>
                     <div className="grid grid-cols-2 border px-1">
                         <span className="text-sm flex items-center">Modèles : </span>
                         <div className="grid grid-cols-2">
@@ -350,12 +347,7 @@ export default function AjouterPieceInputs() {
                             })}
                         </div>
                     </div>
-                    <div>
-                        <span>Quantité carton par lot: <span className="text-red-500 font-medium">{cartonLot}</span></span>
-                    </div>
-                    <div>
-                        <span>Quantité pièce par carton: <span className="text-red-500 font-medium">{pieceCarton}</span></span>
-                    </div>
+
                     <div className='w-full flex justify-center items-center'>
                         <button className='w-1/3 mx-3 bg-gray-400 rounded-2xl h-10 flex justify-center items-center'
                             onClick={() =>{
