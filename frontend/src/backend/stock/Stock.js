@@ -213,4 +213,31 @@ export class Stock{
             throw error.response.data
         }
     }
+
+    async getOneStock(id){
+        try{
+            const response = await axios.get(`${urlBase}/api/stock/getOneStock/${id}`)
+            return response.data;
+        } catch(error){
+            throw error.response.data
+        }
+    }
+
+    async getCartonStock(id){
+        try{
+            const response = await axios.get(`${urlBase}/api/stock/getCartonStock/${id}`)
+            return response.data;
+        } catch(error){
+            throw error.response.data
+        }
+    }
+
+    async getLotStock(id){
+        try{
+            const response = await axios.get(`${urlBase}/api/stock/getLotStock/${id}`)
+            return response.data;
+        } catch(error){
+            throw error.response.data
+        }
+    }
 }

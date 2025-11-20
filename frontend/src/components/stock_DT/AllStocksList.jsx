@@ -7,6 +7,8 @@ import { Link } from "react-router"
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 
+import { PackagePlus } from 'lucide-react'
+
 export default function AllStocksList() {
 
     const stockData = new Stock()
@@ -175,13 +177,18 @@ export default function AllStocksList() {
         const linkSee = `/details-stock/${stock.id}`
         return(
             <>
-                <span className="flex items-center justify-center">
+                <div className="flex items-center justify-between">
                     <Link to={''}>
                         <button>
                             <i className="pi pi-eye"></i>
                         </button>
                     </Link>
-                </span>
+                    <Link to={`/modifier-stock/${stock.id}`}>
+                        <button>
+                            <i className="pi pi-pencil"></i>
+                        </button>
+                    </Link>
+                </div>
             </>
         )
     }

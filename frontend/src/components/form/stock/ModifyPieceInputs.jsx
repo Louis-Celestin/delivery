@@ -39,11 +39,16 @@ export default function ModifyPieceInputs() {
     const [selectedModels, setSelectedModels] = useState([])
     const [selectedServices, setSelectedServices] = useState([])
 
-    useEffect( ()=>{
+    const [isTerminal, setIsTerminal] = useState(false)
+
+    useEffect(() => {
         const fetchStock = async () => {
             setLoadingStock(true)
-            try{
+            try {
                 const piece_data = await stock.getPiece(id)
+                if (piece_data.type == 'TERMINAL') {
+                    setIsTerminal(true)
+                }
                 setPiece(piece_data)
                 setNomPiece(piece_data.nom_piece)
                 setTitrePiece(piece_data.nom_piece)
@@ -54,7 +59,7 @@ export default function ModifyPieceInputs() {
                 setListeModels(models_data)
 
                 const itemModels_data = await stock.getItemModels(id)
-                const models_id = itemModels_data.model_piece.map((model) =>{
+                const models_id = itemModels_data.model_piece.map((model) => {
                     return model.id_model
                 })
                 setSelectedModels(models_id)
@@ -63,56 +68,56 @@ export default function ModifyPieceInputs() {
                 setListeServices(service_data)
 
                 const itemServices_data = await stock.getItemServices(id)
-                const services_id = itemServices_data.services.map((services) =>{
+                const services_id = itemServices_data.services.map((services) => {
                     return services.id
                 })
                 setSelectedServices(services_id)
 
-            }catch (error){
-                console.log('Error fetching data ',error)
-            }finally{
+            } catch (error) {
+                console.log('Error fetching data ', error)
+            } finally {
                 setLoadingStock(false)
             }
         };
         fetchStock();
-    },[])
+    }, [])
 
     const options_types = [
-        { value: "PIECE", label: "PIECE"},
-        { value: "TERMINAL", label: "TERMINAL"},
+        { value: "PIECE", label: "PIECE" },
+        { value: "TERMINAL", label: "TERMINAL" },
     ]
 
     const changeType = (value) => {
-        console.log("Selected value : ",value)
+        console.log("Selected value : ", value)
         setPieceType(value)
     }
 
     const handleSelectModel = (modelId) => {
         setSelectedModels((prevSelected) =>
-        prevSelected.includes(modelId)
-            ? prevSelected.filter((id) => id !== modelId)
-            : [...prevSelected, modelId]
+            prevSelected.includes(modelId)
+                ? prevSelected.filter((id) => id !== modelId)
+                : [...prevSelected, modelId]
         );
     };
 
     const handleSelectService = (serviceId) => {
         setSelectedServices((prevSelected) =>
-        prevSelected.includes(serviceId)
-            ? prevSelected.filter((id) => id !== serviceId)
-            : [...prevSelected, serviceId]
+            prevSelected.includes(serviceId)
+                ? prevSelected.filter((id) => id !== serviceId)
+                : [...prevSelected, serviceId]
         );
     };
 
     const handleConfirm = () => {
-        if(!nomPiece.trim()){
+        if (!nomPiece.trim()) {
             setErrorInput("Vous devez saisir un nom !")
             return
         }
-        if(selectedModels.length == 0){
+        if (selectedModels.length == 0) {
             setErrorInput("Vous devez choisir un model !")
             return
         }
-        if(selectedServices.length == 0){
+        if (selectedServices.length == 0) {
             setErrorInput("Vous devez choisir un service !")
             return
         }
@@ -123,16 +128,16 @@ export default function ModifyPieceInputs() {
 
     const handleModify = async (e) => {
         e.preventDefault();
-        if(role != 1 && role != 3){
-          Swal.fire({
-              title: "Error",
-              text: "Vous n'êtes pas authorisé à faire cette action !",
-              icon: "error"
-          });
-          localStorage.removeItem('token');
-          localStorage.removeItem('username');
-          navigate('/signin');
-          return
+        if (role != 1 && role != 3) {
+            Swal.fire({
+                title: "Error",
+                text: "Vous n'êtes pas authorisé à faire cette action !",
+                icon: "error"
+            });
+            localStorage.removeItem('token');
+            localStorage.removeItem('username');
+            navigate('/signin');
+            return
         }
         setIsConfirmModalOpen(false)
         setLoadingModif(true)
@@ -142,11 +147,10 @@ export default function ModifyPieceInputs() {
             type: pieceType,
             itemModels: selectedModels,
             itemServices: selectedServices,
-            code_piece: codePiece,
             user_id: userId,
         }
 
-        try{
+        try {
             const response = await stock.modifyPiece(id, payload)
             console.log(response)
             console.log('pièce modifié')
@@ -157,46 +161,52 @@ export default function ModifyPieceInputs() {
                 icon: "success"
             });
             navigate('/gestion-stock')
-        }catch(error){
-            console.log('error : ',error)
+        } catch (error) {
+            console.log('error : ', error)
             Swal.fire({
                 title: "Attention",
                 text: "Une erreur s'est produite lors de la modification",
                 icon: "warning"
             });
             navigate('/gestion-stock')
-        }finally{
+        } finally {
             setLoadingModif(false)
         }
 
     }
-    return(
+    return (
         <>
             <div className="flex justify-center">
-                <ComponentCard className="md:w-1/2 w-full" title={`Modifier pièce ${titrePiece}`}> 
+                <ComponentCard className="md:w-1/2 w-full" title={`Modifier pièce ${titrePiece}`}>
                     <div className="space-y-6">
-                        <div>
-                            <Label>Nom pièce <span className="text-red-700">*</span></Label>
-                            <Input
-                                value={nomPiece}
-                                onChange={(e) => {
-                                    const value = e.target.value 
-                                    setNomPiece(value)
-                                }}
-                            />
-                        </div>
+                        {isTerminal ? (
+                            <></>
+                        ) : (
+                            <>
+                                <div>
+                                    <Label>Nom pièce <span className="text-red-700">*</span></Label>
+                                    <Input
+                                        value={nomPiece}
+                                        onChange={(e) => {
+                                            const value = e.target.value
+                                            setNomPiece(value)
+                                        }}
+                                    />
+                                </div>
+                            </>
+                        )}
                         <div>
                             <span className="text-md text-gray-700 font-medium px-0.5 border border-gray-500 rounded">Modèles pièce</span>
                             <div className="">
-                                {listeModels.map((model =>{
+                                {listeModels.map((model => {
                                     const nomModel = model.nom_model
-                                    return(
+                                    return (
                                         <>
                                             <div key={model.id_model} className="flex items-center gap-3 my-2">
                                                 <Checkbox
                                                     checked={selectedModels.includes(model.id_model)}
                                                     onChange={() => handleSelectModel(model.id_model)}
-                                                    label={nomModel} 
+                                                    label={nomModel}
                                                 />
                                             </div>
                                         </>
@@ -207,15 +217,15 @@ export default function ModifyPieceInputs() {
                         <div>
                             <span className="text-md text-gray-700 font-medium px-0.5 border border-gray-500 rounded">Attribution services</span>
                             <div className="">
-                                {listeServices.map((service =>{
+                                {listeServices.map((service => {
                                     const nomService = service.nom_service
-                                    return(
+                                    return (
                                         <>
                                             <div key={service.id} className="flex items-center gap-3 my-2">
                                                 <Checkbox
                                                     checked={selectedServices.includes(service.id)}
                                                     onChange={() => handleSelectService(service.id)}
-                                                    label={nomService} 
+                                                    label={nomService}
                                                 />
                                             </div>
                                         </>
@@ -223,7 +233,7 @@ export default function ModifyPieceInputs() {
                                 }))}
                             </div>
                         </div>
-                        <div>
+                        {/* <div>
                             <Label htmlFor="input">Code pièce</Label>
                             <Input 
                                 type="text" 
@@ -234,27 +244,27 @@ export default function ModifyPieceInputs() {
                                     setCodePiece(value)
                                 }}    
                             />
-                        </div>
+                        </div> */}
                         <div className="text-center">
                             <span className="text-sm text-error-600 font-bold">{errorInput}</span>
                         </div>
                     </div>
                     <div className='w-full flex justify-center items-center'>
-                    {loadingModif ? 
-                    (
-                        <span className="">
-                            <ProgressSpinner style={{width: '50px', height: '50px'}} strokeWidth="8" animationDuration=".5s" />
-                        </span>
-                    ) : (
-                        <>
-                            <button
-                                onClick={handleConfirm}
-                                className='w-1/2 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
-                                Valider
-                            </button>
-                        </>
-                    )}
-                    </div>               
+                        {loadingModif ?
+                            (
+                                <span className="">
+                                    <ProgressSpinner style={{ width: '50px', height: '50px' }} strokeWidth="8" animationDuration=".5s" />
+                                </span>
+                            ) : (
+                                <>
+                                    <button
+                                        onClick={handleConfirm}
+                                        className='w-1/2 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
+                                        Valider
+                                    </button>
+                                </>
+                            )}
+                    </div>
                 </ComponentCard>
             </div>
             <Modal isOpen={isConfirmModalOpen} onClose={() => setIsConfirmModalOpen(false)} className="p-6 max-w-xl">
@@ -268,18 +278,15 @@ export default function ModifyPieceInputs() {
                     <div>
                         <span>Type : <span className="text-red-500 font-medium">{pieceType}</span></span>
                     </div>
-                    <div>
-                        <span>Code pièce : <span className="text-red-500 font-medium">{codePiece}</span></span>
-                    </div>
                     <div className="grid grid-cols-2 border px-1">
                         <span className="text-sm flex items-center">Modèles : </span>
                         <div className="grid grid-cols-2">
-                            {selectedModels.map((id) =>{
+                            {selectedModels.map((id) => {
                                 const selectedModel = listeModels.find((s) => s.id_model === id);
-                                return(
+                                return (
                                     <>
                                         <span className="font-bold text-blue-900">
-                                            {selectedModel ? 
+                                            {selectedModel ?
                                                 (
                                                     selectedModel.nom_model
                                                 ) : (id)
@@ -293,12 +300,12 @@ export default function ModifyPieceInputs() {
                     <div className="grid grid-cols-2 border px-1">
                         <span className="text-sm flex items-center">Services : </span>
                         <div className="grid grid-cols-2">
-                            {selectedServices.map((id) =>{
+                            {selectedServices.map((id) => {
                                 const selectedService = listeServices.find((s) => s.id === id);
-                                return(
+                                return (
                                     <>
                                         <span className="font-bold text-blue-900">
-                                            {selectedService ? 
+                                            {selectedService ?
                                                 (
                                                     selectedService.nom_service
                                                 ) : (id)
@@ -311,7 +318,7 @@ export default function ModifyPieceInputs() {
                     </div>
                     <div className='w-full flex justify-center items-center'>
                         <button className='w-1/3 mx-3 bg-gray-400 rounded-2xl h-10 flex justify-center items-center'
-                            onClick={() =>{
+                            onClick={() => {
                                 setIsConfirmModalOpen(false);
                             }}
                         >
@@ -324,7 +331,7 @@ export default function ModifyPieceInputs() {
                         </button>
                     </div>
                 </div>
-            </Modal> 
+            </Modal>
         </>
     )
 }

@@ -29,6 +29,8 @@ export default function AllItemsList() {
     const [services, setServices] = useState([])
     const [itemServices, setItemServices] = useState([])
 
+    const [isTerminal, setIsTerminal] = useState(false)
+
     const [errorForm, setErrorForm] = useState('')
 
     useEffect(() => {
@@ -37,9 +39,17 @@ export default function AllItemsList() {
             try {
                 let data;
                 data = await stock.getAllItems()
-                console.log(data)
-                const stock_dt = data
+                const stock_dt = data.filter((item) => {
+                    return item.is_deleted == false
+                })
                 setStockDT(stock_dt)
+
+                const terminal = stock_dt.find((item) => {
+                    return item.type == 'TERMINAL'
+                })
+                if(terminal){
+                    setIsTerminal(true)
+                }
 
                 const model_data = await stock.getAllModels()
                 setModels(model_data)
@@ -85,7 +95,7 @@ export default function AllItemsList() {
     }
     const modelsTemplate = (piece) => {
         const models_list = itemModels.map((item) => {
-            if(item.item_id == piece.id_piece){
+            if (item.item_id == piece.id_piece) {
                 return item.model_id
             }
             return []
@@ -95,13 +105,13 @@ export default function AllItemsList() {
             return models_list.includes(item.id_model)
         })
 
-        return(
+        return (
             <>
-                <div className="grid grid-cols-2">
+                <div className="space-y-1 space-x-1">
                     {item_models.map((model) => {
-                        return(
+                        return (
                             <>
-                                <span>{model.nom_model}</span>
+                                <span className="px-1 bg-gray-200 font-bold">{model.nom_model}</span>
                             </>
                         )
                     })}
@@ -111,7 +121,7 @@ export default function AllItemsList() {
     }
     const servicesTemplate = (piece) => {
         const services_list = itemServices.map((item) => {
-            if(item.item_id == piece.id_piece){
+            if (item.item_id == piece.id_piece) {
                 return item.service_id
             }
             return []
@@ -121,13 +131,15 @@ export default function AllItemsList() {
             return services_list.includes(item.id)
         })
 
-        return(
+        return (
             <>
-                <div className="grid grid-cols-2">
+                <div className="space-y-1 space-x-1">
                     {item_services.map((service) => {
-                        return(
+                        return (
                             <>
-                                <span>{service.nom_service}</span>
+                                <div>
+                                    <span className="px-1 bg-gray-200 font-bold">{service.nom_service}</span>
+                                </div>
                             </>
                         )
                     })}
@@ -136,7 +148,7 @@ export default function AllItemsList() {
         )
     }
     const typeTemplate = (piece) => {
-        const classType = piece.type == 'TERMINAL' ? 'font-bold text-cyan-700 text-sm' : piece.type == 'PIECE' ? 'font-bold text-emerald-600 text-sm' : 'font-bold'
+        const classType = piece.type == 'TERMINAL' ? 'font-bold text-cyan-700' : piece.type == 'PIECE' ? 'font-bold text-emerald-600' : 'font-bold'
 
         return (
             <>
@@ -159,7 +171,7 @@ export default function AllItemsList() {
             <>
                 <div className="flex justify-between">
                     <Link to={modifLink}>
-                        <span><i className="pi pi-cog"></i></span>
+                        <span><i className="pi pi-pencil"></i></span>
                     </Link>
                 </div>
             </>
@@ -168,7 +180,25 @@ export default function AllItemsList() {
 
     return (
         <>
-            <div>
+            <div className="border rounded-2xl bg-white p-2">
+                <div className="flex justify-end text-sm space-x-2 mb-1">
+                    {isTerminal ? (
+                        <></>
+                    ) : (
+                        <>
+                            <div>
+                                <Link to={'/ajouter-terminal'} className="rounded p-1 bg-cyan-700 text-white font-semibold">
+                                    Créer Terminal
+                                </Link>
+                            </div>
+                        </>
+                    )}
+                    <div>
+                        <Link to={'/ajouter-piece'} className="rounded p-1 bg-red-700 text-white font-semibold">
+                            Ajouter pièce
+                        </Link>
+                    </div>
+                </div>
                 <div className="card">
                     <DataTable
                         value={stockDT}
@@ -187,7 +217,7 @@ export default function AllItemsList() {
                         <Column field="nom_piece" header="Nom pièce" body={nomTemplate} sortable></Column>
                         <Column header="Modèles" body={modelsTemplate}></Column>
                         <Column header="Services" body={servicesTemplate}></Column>
-                        {/* <Column field="type" header="Type" body={typeTemplate} sortable></Column> */}
+                        <Column field="type" header="Type" body={typeTemplate} sortable></Column>
                         <Column header="Actions" body={actionTemplate}></Column>
 
                     </DataTable>

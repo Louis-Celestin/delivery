@@ -193,7 +193,7 @@ export default function App() {
 
               {/* Stock */}
               <Route path="/voir-items" element={<AllItems />} />
-              <Route path="/modifier-stock" element={<ModifyStockForm />} />
+              <Route path="/modifier-stock/:id" element={<ModifyStockForm />} />
               <Route path="/ajouter-stock" element={<AjouterStockForm />} />
               <Route path="/ajouter-piece" element={<AjouterPieceForm />} />
               <Route path="/ajouter-terminal" element={<AjouterTerminalForm />} />

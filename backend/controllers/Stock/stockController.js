@@ -296,6 +296,26 @@ const getAllStocks = async (req, res) => {
   }
 }
 
+const getOneStock = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const stock = await prisma.stocks.findUnique({
+      where: {
+        id: parseInt(id)
+      }
+    })
+
+    if (!stock) {
+      return res.status(404).json({ message: "Stock introuvable !" })
+    }
+
+    return res.status(200).json(stock)
+  } catch (error) {
+    res.status(500).json({ message: "Erreur serveur", error })
+    console.log(error)
+  }
+}
+
 const getPiece = async (req, res) => {
   const { id } = req.params;
   try {
@@ -1382,6 +1402,53 @@ const getAllItemServices = async (req, res) => {
   }
 }
 
+const getCartonStock = async (req, res) => {
+  const { id } = req.params
+  try {
+    const cartons = await prisma.stock_carton.findMany({
+      where: {
+        stock_id: parseInt(id),
+      },
+      orderBy: {
+        numero_carton: 'asc'
+      },
+
+    })
+    if (!cartons) {
+      console.log("Zero carton trouvé")
+      return res.status(404).json({ message: "Aucun carton trouvé pour ce stock !" })
+    }
+
+    return res.status(200).json(cartons)
+  } catch (error) {
+    res.status(500).json({ message: "Erreur serveur", error })
+    console.log(error)
+  }
+}
+
+const getLotStock = async (req, res) => {
+  const { id } = req.params
+  try {
+    const lot = await prisma.stock_lot.findMany({
+      where: {
+        stock_id: parseInt(id)
+      },
+      orderBy: {
+        numero_lot: 'asc'
+      },
+    })
+    if (!lot) {
+      console.log("Zero lot trouvé")
+      return res.status(404).json({ message: "Aucun lot trouvé pour ce stock !" })
+    }
+
+    return res.status(200).json(lot)
+  } catch (error) {
+    res.status(500).json({ message: "Erreur serveur", error })
+    console.log(error)
+  }
+}
+
 module.exports = {
   setStockPiece,
   getAllItems,
@@ -1406,4 +1473,7 @@ module.exports = {
   getAllStocks,
   getAllItemModels,
   getAllItemServices,
+  getOneStock,
+  getCartonStock,
+  getLotStock,
 }

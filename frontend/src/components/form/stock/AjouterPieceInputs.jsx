@@ -47,7 +47,7 @@ export default function AjouterPieceInputs() {
         const fetchData = async () =>{
             try{
                 setLoadingInfos(true)
-                const stock_data = await stockData.getAllStock()
+                const stock_data = await stockData.getAllItems()
                 const filtered_stock = stock_data.filter((item) =>{
                     return item.is_deleted == 0
                 })
