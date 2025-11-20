@@ -916,14 +916,14 @@ export default function CreateStockInputs() {
                 text: "Stock créé avec succès !",
                 icon: "success"
             })
-            navigate('/entree-sortie-stock')
+            navigate('/voir-stocks')
         } catch (error) {
             Swal.fire({
                 title: "Attention",
                 text: "Une erreur est survenue lors de la création !",
                 icon: "warning"
             })
-            navigate('/entree-sortie-stock')
+            navigate('/voir-stocks')
         } finally {
             setLoadingValidation(false)
         }
