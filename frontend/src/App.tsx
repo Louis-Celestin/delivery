@@ -162,6 +162,9 @@ import DetailsMouvement from "./pages/GestionStock/DetailsMouvement"
 // @ts-ignore
 import AllStocks from "./pages/GestionStock/AllStocks"
 
+// @ts-ignore
+import StockDetails from "./pages/GestionStock/StockDetails"
+
 export default function App() {
   return (
     <>
@@ -202,6 +205,7 @@ export default function App() {
               <Route path="/creer-stock" element={<CreateStockForm />} />
               <Route path="/details-mouvement/:id" element={<DetailsMouvement />} />
               <Route path="/voir-stocks" element={<AllStocks />} />
+              <Route path="/details-stock/:id" element={<StockDetails />} />
 
 
               {/* Demandes */}

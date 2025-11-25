@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { Stock } from "../../backend/stock/Stock"
 import { Users } from "../../backend/users/Users";
 
-import { Link } from "react-router"
+import { Link, Links } from "react-router"
 
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
@@ -178,16 +178,16 @@ export default function AllStocksList() {
         return(
             <>
                 <div className="flex items-center justify-between">
-                    <Link to={''}>
+                    <Link to={linkSee}>
                         <button>
                             <i className="pi pi-eye"></i>
                         </button>
                     </Link>
-                    <Link to={`/modifier-stock/${stock.id}`}>
+                    {/* <Link to={`/modifier-stock/${stock.id}`}>
                         <button>
                             <i className="pi pi-pencil"></i>
                         </button>
-                    </Link>
+                    </Link> */}
                 </div>
             </>
         )

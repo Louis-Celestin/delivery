@@ -240,4 +240,13 @@ export class Stock{
             throw error.response.data
         }
     }
+
+    async getOneStockMouvements(id){
+        try{
+            const response = await axios.get(`${urlBase}/api/stock/getOneStockMouvements/${id}`)
+            return response.data;
+        } catch(error){
+            throw error.response.data
+        }
+    }
 }
