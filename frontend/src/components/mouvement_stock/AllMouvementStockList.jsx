@@ -285,7 +285,7 @@ export default function AllMouvementStockList() {
                         <Column field="service_origine" header="Origine" body={origineTemplate}></Column>
                         <Column field="service_destination" header="Destination" body={destinationTemplate}></Column>
                         <Column field="date" header="Date" body={dateTemplate} sortable></Column>
-                        <Column header="Actions" body={actionsTemplate}></Column>
+                        {/* <Column header="Actions" body={actionsTemplate}></Column> */}
                         {/* <Column field="formulaire_id" header="ID Livraison" body={livraisonTemplate} sortable></Column> */}
                         {/* <Column field="demande_id" header="ID Demande" body={demandeTemplate} sortable></Column> */}
 

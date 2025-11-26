@@ -192,33 +192,44 @@ export default function DetailsMouvement() {
                                 </div>
                                 <div>
                                     <div className="space-y-5">
-                                        {parCarton ? (
-                                            <>
-                                                <div className="flex justify-between items-center">
-                                                    <div>
-                                                        <span className="text-sm">Stock Initial Carton : <span className="text-xl font-bold text-cyan-900">{stockInitial}</span></span>
+                                        <div>
+                                            {parLot ? (
+                                                <>
+                                                </>
+                                            ) : (
+                                                <>
+                                                </>
+                                            )}
+                                        </div>
+                                        <div>
+                                            {parCarton ? (
+                                                <>
+                                                    <div className="flex justify-between items-center">
+                                                        <div>
+                                                            <span className="text-sm">Stock Initial Carton : <span className="text-xl font-bold text-cyan-900">{stockInitial}</span></span>
+                                                        </div>
+                                                        <div>
+                                                            {isEntree ? (
+                                                                <>
+                                                                    <span className="text-sm">Mouvement : <span className="text-xl font-medium text-green-700"> +{mouvementStock}</span></span>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <span className="text-sm">Mouvement : <span className="text-xl font-medium text-red-700"> -{mouvementStock}</span></span>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-sm">Stock final Carton : <span className="text-xl font-medium text-cyan-900">{stockFinal}</span></span>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        {isEntree ? (
-                                                            <>
-                                                                <span className="text-sm">Mouvement : <span className="text-xl font-medium text-green-700"> +{mouvementStock}</span></span>
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <span className="text-sm">Mouvement : <span className="text-xl font-medium text-red-700"> -{mouvementStock}</span></span>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                    <div>
-                                                        <span className="text-sm">Stock final Carton : <span className="text-xl font-medium text-cyan-900">{stockFinal}</span></span>
-                                                    </div>
-                                                </div>
-                                            </>
-                                        ) : (
-                                            <>
+                                                </>
+                                            ) : (
+                                                <>
 
-                                            </>
-                                        )}
+                                                </>
+                                            )}
+                                        </div>
                                         <div className="flex justify-between items-center">
                                             <div>
                                                 <span className="text-sm">Stock Initial Pièce : <span className="text-xl font-bold text-cyan-900">{stockInitialPiece}</span></span>
