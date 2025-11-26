@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { Stock } from "../../backend/stock/Stock"
 import { Users } from "../../backend/users/Users";
 
-import { Link, Links } from "react-router"
+import { Link } from "react-router"
 
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
@@ -98,9 +98,12 @@ export default function AllStocksList() {
         )
     }
     const codeTemplate = (stock) => {
+        const linkSee = `/details-stock/${stock.id}`
         return (
             <>
-                <span className="text-theme-xs font-bold">{stock.code_stock}</span>
+                <span className="text-theme-xs font-bold">
+                    <Link to={linkSee}>{stock.code_stock}</Link>
+                </span>
             </>
         )
     }

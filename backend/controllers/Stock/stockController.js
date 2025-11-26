@@ -1278,7 +1278,10 @@ const getOneStockMouvements = async (req, res) => {
     const mouvements = await prisma.mouvement_stock.findMany({
       where: {
         stock_id: parseInt(id)
-      }
+      },
+      orderBy:{
+        date: 'desc'
+      },
     })
 
     if (!mouvements) {

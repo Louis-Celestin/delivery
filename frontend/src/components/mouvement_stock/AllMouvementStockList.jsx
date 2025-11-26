@@ -97,10 +97,14 @@ export default function AllMouvementStockList() {
             return item.id == mouvement.stock_id
         })
         const codeStock = stock ? stock.code_stock : 'N/A'
+        const idStock = stock ? stock.id : '#'
+        const linkSee = `/details-stock/${idStock}`
 
         return(
             <>
-                <span className="font-bold text-gray-700">{codeStock}</span>
+                <span className="font-bold text-gray-700">
+                    <Link to={linkSee}>{codeStock}</Link>
+                </span>
             </>
         )
     }
@@ -192,7 +196,7 @@ export default function AllMouvementStockList() {
 
         return(
             <>
-                <span className="text-theme-xs font-bold">{nomService}</span>
+                <span className="font-bold">{nomService}</span>
             </>
         )
     }
@@ -207,7 +211,7 @@ export default function AllMouvementStockList() {
 
         return(
             <>
-                <span className="text-theme-xs font-bold">{nomService}</span>
+                <span className="font-bold">{nomService}</span>
             </>
         )
     }
@@ -264,7 +268,7 @@ export default function AllMouvementStockList() {
                         first={first}
                         onPage={handlePageChange}
                         rowsPerPageOptions={[5, 10, 25, 50, 100, 200, 300, 500, 1000]}
-                        tableStyle={{ minWidth: '50rem', fontSize: '11px' }}
+                        tableStyle={{ minWidth: '50rem', fontSize: '10px' }}
                         emptyMessage="Aucun mouvement trouvé"
                         className="p-datatable-sm flex-wrap">
                             
@@ -277,7 +281,7 @@ export default function AllMouvementStockList() {
                         <Column field="stock_initial" header="Stock Initial" body={initialTemplate} sortable></Column>
                         <Column field="quantite" header="Quantité" body={quantiteTemplate} sortable></Column>
                         <Column field="stock_final" header="Stock Final" body={finalTemplate} sortable></Column>
-                        <Column field="quantite_totale_piece" header="Quantité totale" body={totalTemplate} sortable></Column>
+                        <Column field="quantite_totale_piece" header="Qte Totale" body={totalTemplate} sortable></Column>
                         <Column field="service_origine" header="Origine" body={origineTemplate}></Column>
                         <Column field="service_destination" header="Destination" body={destinationTemplate}></Column>
                         <Column field="date" header="Date" body={dateTemplate} sortable></Column>

@@ -337,8 +337,7 @@ export default function AllRemplacementsList() {
                 setLoadingExtract(false);
             }
     }
-
-
+    
     return(
         <>  
             <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
