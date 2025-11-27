@@ -48,6 +48,7 @@ const faireDemande = async (req, res) => {
     const {
       nomDemandeur,
       commentaire,
+      selectedStock,
       quantite_demande,
       nomenclature,
       detailsDemande,
@@ -77,6 +78,16 @@ const faireDemande = async (req, res) => {
       return res.status(404).json({ message: "Pièce introuvable !" })
     }
 
+    const stock = await prisma.stocks.findUnique({
+      where: {
+        id: parseInt(selectedStock)
+      }
+    })
+    
+    if (!stock) {
+      return res.status(404).json({ message: "Stock introuvable !" })
+    }
+
     let utilisateur = null;
     utilisateur = await prisma.users.findUnique({
       where: {
@@ -98,6 +109,7 @@ const faireDemande = async (req, res) => {
         details_demande: JSON.stringify(detailsDemande),
         statut_demande: 'en_cours',
         user_id: parseInt(userId),
+        stock_id: parseInt(selectedStock),
         item_id: parseInt(itemId),
         type_demande: parseInt(details.typeMouvement),
         id_demandeur: parseInt(idDemandeur),
@@ -175,20 +187,20 @@ const faireDemande = async (req, res) => {
         <br><br>
         <p>Green - Pay vous remercie.</p>
         `;
-      for (const service_user of service_users) {
-        await sendMail({
-          to: service_user.email,
-          subject,
-          html,
-        });
-      }
-      for (const validateur of validateurs) {
-        await sendMail({
-          to: validateur.email,
-          subject,
-          html,
-        });
-      }
+      // for (const service_user of service_users) {
+      //   await sendMail({
+      //     to: service_user.email,
+      //     subject,
+      //     html,
+      //   });
+      // }
+      // for (const validateur of validateurs) {
+      //   await sendMail({
+      //     to: validateur.email,
+      //     subject,
+      //     html,
+      //   });
+      // }
     }
 
     res.status(201).json({

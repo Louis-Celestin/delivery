@@ -130,6 +130,9 @@ export default function DemandeInputs() {
   const [selectedStock, setSelectedStock] = useState([])
   const [nomStock, setNomStock] = useState('')
 
+  const [hasLot, setHasLot] = useState(false)
+  const [hasCarton, setHasCarton] = useState(false)
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
@@ -293,6 +296,11 @@ export default function DemandeInputs() {
         return item.is_deleted == false
       })
       setQuantiteCarton(stock_carton.length)
+      if(stock_carton.length > 0){
+        setHasCarton(true)
+      } else{
+        setHasCarton(false)
+      }
       const carton_simple = stock_carton.filter((item) => {
         return item.lot_id == null
       })
@@ -314,6 +322,11 @@ export default function DemandeInputs() {
         label: `Lot ${item.numero_lot} - ${item.quantite_carton} cartons - ${item.quantite_piece} pièces`
       }))
       setOptionsLot(options_lot)
+      if(stock_lot.length > 0){
+        setHasLot(true)
+      } else{
+        setHasLot(false)
+      }
     }
 
     const pieceId = stock ? stock.piece_id : null
@@ -760,6 +773,7 @@ export default function DemandeInputs() {
     const payload = {
       nomDemandeur: nomUser,
       commentaire,
+      selectedStock,
       quantite_demande: quantite,
       nomenclature,
       detailsDemande,
@@ -922,96 +936,125 @@ export default function DemandeInputs() {
                       <div>
                         <span>Faire une demande  : </span>
                         <div>
-                          <div className="flex items-center gap-3 my-2">
-                            <Checkbox
-                              checked={parLot}
-                              onChange={() => {
-                                if (parLot) {
-                                  setParLot(false)
-                                } else {
-                                  setParLot(true)
-                                  setParCarton(false)
-                                  setParCartonLot(false)
-                                  setParPiece(false)
-                                  setParPieceCarton(false)
-                                }
-                              }}
-                              readOnly
-                              label="Par Lot"
-                            />
-                          </div>
-                          <div className="flex items-center gap-3 my-2">
-                            <Checkbox
-                              checked={parCartonLot}
-                              onChange={() => {
-                                if (parCartonLot) {
-                                  setParCartonLot(false)
-                                } else {
-                                  setParLot(false)
-                                  setParCarton(false)
-                                  setParCartonLot(true)
-                                  setParPiece(false)
-                                  setParPieceCarton(false)
-                                }
-                              }}
-                              readOnly
-                              label="Par Carton-Lot"
-                            />
-                          </div>
-                          <div className="flex items-center gap-3 my-2">
-                            <Checkbox
-                              checked={parPieceCarton}
-                              onChange={() => {
-                                if (parPieceCarton) {
-                                  setParCartonLot(false)
-                                } else {
-                                  setParLot(false)
-                                  setParCarton(false)
-                                  setParCartonLot(false)
-                                  setParPiece(false)
-                                  setParPieceCarton(true)
-                                }
-                              }}
-                              readOnly
-                              label="Par Pièce-Carton"
-                            />
-                          </div>
-                          <div className="flex items-center gap-3 my-2">
-                            <Checkbox
-                              checked={parCarton}
-                              onChange={() => {
-                                if (parCarton) {
-                                  setParCarton(false)
-                                } else {
-                                  setParLot(false)
-                                  setParCarton(true)
-                                  setParCartonLot(false)
-                                  setParPiece(false)
-                                  setParPieceCarton(false)
-                                }
-                              }}
-                              readOnly
-                              label="Par Carton"
-                            />
-                          </div>
-                          <div className="flex items-center gap-3 my-2">
-                            <Checkbox
-                              checked={parPiece}
-                              onChange={() => {
-                                if (parPiece) {
-                                  setParPiece(false)
-                                } else {
-                                  setParLot(false)
-                                  setParCarton(false)
-                                  setParCartonLot(false)
-                                  setParPiece(true)
-                                  setParPieceCarton(false)
-                                }
-                              }}
-                              readOnly
-                              label="Par Pièce"
-                            />
-                          </div>
+                          {hasLot ? (
+                            <>
+                              <div className="flex items-center gap-3 my-2">
+                                {/* Demande par lot */}
+                                <Checkbox
+                                  checked={parLot}
+                                  onChange={() => {
+                                    if (parLot) {
+                                      setParLot(false)
+                                    } else {
+                                      setParLot(true)
+                                      setParCarton(false)
+                                      setParCartonLot(false)
+                                      setParPiece(false)
+                                      setParPieceCarton(false)
+                                    }
+                                  }}
+                                  readOnly
+                                  label="Par Lot"
+                                />
+                              </div>
+                              <div className="flex items-center gap-3 my-2">
+                                {/* Par carton lot */}
+                                <Checkbox
+                                  checked={parCartonLot}
+                                  onChange={() => {
+                                    if (parCartonLot) {
+                                      setParCartonLot(false)
+                                    } else {
+                                      setParLot(false)
+                                      setParCarton(false)
+                                      setParCartonLot(true)
+                                      setParPiece(false)
+                                      setParPieceCarton(false)
+                                    }
+                                  }}
+                                  readOnly
+                                  label="Par Carton"
+                                />
+                              </div>
+                            </>
+                          ) : (
+                            <></>
+                          )}
+                          {hasCarton || hasLot ? (
+                            <>
+                              <div className="flex items-center gap-3 my-2">
+                                {/* Par piece carton */}
+                                <Checkbox
+                                  checked={parPieceCarton}
+                                  onChange={() => {
+                                    if (parPieceCarton) {
+                                      setParCartonLot(false)
+                                    } else {
+                                      setParLot(false)
+                                      setParCarton(false)
+                                      setParCartonLot(false)
+                                      setParPiece(false)
+                                      setParPieceCarton(true)
+                                    }
+                                  }}
+                                  readOnly
+                                  label="Par Pièce"
+                                />
+                              </div>
+                            </>
+                          ) : (
+                            <></>
+                          )}
+                          {hasCarton && !hasLot ? (
+                            <>
+                              <div className="flex items-center gap-3 my-2">
+                                {/* Par carton */}
+                                <Checkbox
+                                  checked={parCarton}
+                                  onChange={() => {
+                                    if (parCarton) {
+                                      setParCarton(false)
+                                    } else {
+                                      setParLot(false)
+                                      setParCarton(true)
+                                      setParCartonLot(false)
+                                      setParPiece(false)
+                                      setParPieceCarton(false)
+                                    }
+                                  }}
+                                  readOnly
+                                  label="Par Carton"
+                                />
+                              </div>
+                            </>
+                          ) : (
+                            <></>
+                          )}
+                          {(!hasCarton && !hasLot)? (
+                            <>
+                              <div className="flex items-center gap-3 my-2">
+                                {/* Par piece */}
+                                <Checkbox
+                                  checked={parPiece}
+                                  onChange={() => {
+                                    if (parPiece) {
+                                      setParPiece(false)
+                                    } else {
+                                      setParLot(false)
+                                      setParCarton(false)
+                                      setParCartonLot(false)
+                                      setParPiece(true)
+                                      setParPieceCarton(false)
+                                    }
+                                  }}
+                                  readOnly
+                                  label="Par Pièce"
+                                />
+                              </div>
+                            </>
+                          ) : (
+                            <></>
+                          )}
                         </div>
                       </div>
                       <div>

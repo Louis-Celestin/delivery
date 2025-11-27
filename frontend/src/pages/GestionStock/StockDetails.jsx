@@ -42,7 +42,7 @@ export default function StockDetails() {
 
     const savedPagination = JSON.parse(sessionStorage.getItem("paginationState"));
     const [first, setFirst] = useState(savedPagination?.first || 0);
-    const [rows, setRows] = useState(savedPagination?.rows || 10);
+    const [rows, setRows] = useState(savedPagination?.rows || 3);
 
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
@@ -329,9 +329,97 @@ export default function StockDetails() {
                                         <span className="text-xs font-medium">{dateCreation}</span>
                                     </div>
                                 </div>
-                                <div className="border-b">
+                                <div className="flex flex-col border-b py-3">
+                                    <div>
+                                        <span className="font-bold text-red-800">Initialisation de stock le {formatDate(initialisation.date)} </span>
+                                    </div>
+                                    <div className="flex flex-col text-sm">
+                                        <span>Quantité initiale lot(s) :
+                                            <span className="text-cyan-800 font-semibold"> {detailsInitialisation.stockFinalLot ? detailsInitialisation.stockFinalLot : 0}</span>
+                                        </span>
+                                        <span>Quantité initiale carton(s) :
+                                            <span className="text-cyan-800 font-semibold"> {detailsInitialisation.stockFinalCarton ? detailsInitialisation.stockFinalCarton : 0}</span>
+                                        </span>
+                                        <span>Quantité initiale pièce(s) :
+                                            <span className="text-cyan-800 font-semibold"> {detailsInitialisation.stockFinalPiece ? detailsInitialisation.stockFinalPiece : 0}</span>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="space-y-4">
+                                    <div className="text-center mt-3">
+                                        <span className="font-semibold text-gray-800">Tous les mouvements du stock</span>
+                                    </div>
+                                    <div>
+                                        <div className="flex justify-normal flex-wrap gap-3">
+                                            <div className="flex gap-2">
+                                                <DatePicker
+                                                    id="date-picker-debut"
+                                                    label="Date de début"
+                                                    placeholder="Date de début"
+                                                    value={startDate}
+                                                    onChange={(dates) => {
+                                                        setStartDate(dates[0])
+                                                    }}
+                                                    dateFormat="dd/mm/yy" />
+                                                <DatePicker
+                                                    id="date-picker-fin"
+                                                    label="Date de fin"
+                                                    placeholder="Date de fin"
+                                                    value={endDate}
+                                                    onChange={(dates) => {
+                                                        if (dates && dates[0]) {
+                                                            let selectedDate = new Date(dates[0]);
+                                                            let nextDay = new Date(selectedDate);
+                                                            nextDay.setDate(selectedDate.getDate() + 1);
+                                                            setEndDate(nextDay);
+                                                        }
+                                                    }}
+                                                    dateFormat="dd/mm/yy" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <span className="text-xs">
+                                            {filteredMouvements.length} mouvement(s) trouvé(s).
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <DataTable
+                                            value={filteredMouvements}
+                                            loading={loading}
+                                            removableSort
+                                            paginator
+                                            rows={rows}
+                                            first={first}
+                                            onPage={handlePageChange}
+                                            rowsPerPageOptions={[1, 2, 3, 4, 5, 10, 20, 50, 100]}
+                                            tableStyle={{ minWidth: '50rem', fontSize: '11px' }}
+                                            emptyMessage="Aucun mouvement trouvé"
+                                            className="p-datatable-sm flex-wrap">
+
+                                            <Column field="id" header="ID" body={idTemplate} sortable></Column>
+                                            <Column field="type" header="Type" body={typeTemplate}></Column>
+                                            <Column field="mouvement" header="Mouvement" body={mouvementTemplate}></Column>
+                                            <Column field="stock_initial" header="Stock Initial" body={initialTemplate} sortable></Column>
+                                            <Column field="quantite" header="Quantité" body={quantiteTemplate} sortable></Column>
+                                            <Column field="stock_final" header="Stock Final" body={finalTemplate} sortable></Column>
+                                            <Column field="quantite_totale_piece" header="Quantité totale" body={totalTemplate} sortable></Column>
+                                            <Column field="service_origine" header="Origine" body={origineTemplate}></Column>
+                                            <Column field="service_destination" header="Destination" body={destinationTemplate}></Column>
+                                            <Column field="date" header="Date" body={dateTemplate} sortable></Column>
+                                            {/* <Column header="Actions" body={actionsTemplate}></Column> */}
+                                            {/* <Column field="formulaire_id" header="ID Livraison" body={livraisonTemplate} sortable></Column> */}
+                                            {/* <Column field="demande_id" header="ID Demande" body={demandeTemplate} sortable></Column> */}
+
+                                        </DataTable>
+                                    </div>
+                                </div>
+                                 <div className="border-b">
                                     <div className="grid grid-cols-3">
                                         <div className="border-r">
+                                            <div>
+                                                <span className="font-bold text-red-800">Etat actuel du stock</span>
+                                            </div>
                                             <div className="flex flex-col ">
                                                 <span className="text-sm">Quantité pièces</span>
                                                 <span className="text-5xl font-medium">{quantitePiece}</span>
@@ -377,91 +465,6 @@ export default function StockDetails() {
                                         ) : (
                                             <></>
                                         )}
-                                    </div>
-                                </div>
-                                <div className="flex flex-col border-b py-3">
-                                    <div>
-                                        <span className="font-bold">Initialisation de stock le {formatDate(initialisation.date)} </span>
-                                    </div>
-                                    <div className="flex flex-col text-sm">
-                                        <span>Quantité initiale lot(s) :
-                                            <span className="text-cyan-800 font-semibold"> {detailsInitialisation.stockFinalLot ? detailsInitialisation.stockFinalLot : 0}</span>
-                                        </span>
-                                        <span>Quantité initiale carton(s) :
-                                            <span className="text-cyan-800 font-semibold"> {detailsInitialisation.stockFinalCarton ? detailsInitialisation.stockFinalCarton : 0}</span>
-                                        </span>
-                                        <span>Quantité initiale pièce(s) :
-                                            <span className="text-cyan-800 font-semibold"> {detailsInitialisation.stockFinalPiece ? detailsInitialisation.stockFinalPiece : 0}</span>
-                                        </span>
-                                    </div>
-                                </div>
-                                <div className="space-y-4">
-                                    <div className="text-center mt-3">
-                                        <span>Tous les mouvements du stock</span>
-                                    </div>
-                                    <div>
-                                        <div className="flex justify-normal flex-wrap gap-3">
-                                            <div className="flex gap-2">
-                                                <DatePicker
-                                                    id="date-picker-debut"
-                                                    label="Date de début"
-                                                    placeholder="Date de début"
-                                                    value={startDate}
-                                                    onChange={(dates) => {
-                                                        setStartDate(dates[0])
-                                                    }}
-                                                    dateFormat="dd/mm/yy" />
-                                                <DatePicker
-                                                    id="date-picker-fin"
-                                                    label="Date de fin"
-                                                    placeholder="Date de fin"
-                                                    value={endDate}
-                                                    onChange={(dates) => {
-                                                        if (dates && dates[0]) {
-                                                            let selectedDate = new Date(dates[0]);
-                                                            let nextDay = new Date(selectedDate);
-                                                            nextDay.setDate(selectedDate.getDate() + 1);
-                                                            setEndDate(nextDay);
-                                                        }
-                                                    }}
-                                                    dateFormat="dd/mm/yy" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <span className="text-xs">
-                                            {filteredMouvements.length} mouvement(s) trouvé(s).
-                                        </span>
-                                    </div>
-                                    <div>
-                                        <DataTable
-                                            value={filteredMouvements}
-                                            loading={loading}
-                                            removableSort
-                                            paginator
-                                            rows={rows}
-                                            first={first}
-                                            onPage={handlePageChange}
-                                            rowsPerPageOptions={[5, 10, 25, 50, 100, 200, 300, 500, 1000]}
-                                            tableStyle={{ minWidth: '50rem', fontSize: '11px' }}
-                                            emptyMessage="Aucun mouvement trouvé"
-                                            className="p-datatable-sm flex-wrap">
-
-                                            <Column field="id" header="ID" body={idTemplate} sortable></Column>
-                                            <Column field="type" header="Type" body={typeTemplate}></Column>
-                                            <Column field="mouvement" header="Mouvement" body={mouvementTemplate}></Column>
-                                            <Column field="stock_initial" header="Stock Initial" body={initialTemplate} sortable></Column>
-                                            <Column field="quantite" header="Quantité" body={quantiteTemplate} sortable></Column>
-                                            <Column field="stock_final" header="Stock Final" body={finalTemplate} sortable></Column>
-                                            <Column field="quantite_totale_piece" header="Quantité totale" body={totalTemplate} sortable></Column>
-                                            <Column field="service_origine" header="Origine" body={origineTemplate}></Column>
-                                            <Column field="service_destination" header="Destination" body={destinationTemplate}></Column>
-                                            <Column field="date" header="Date" body={dateTemplate} sortable></Column>
-                                            <Column header="Actions" body={actionsTemplate}></Column>
-                                            {/* <Column field="formulaire_id" header="ID Livraison" body={livraisonTemplate} sortable></Column> */}
-                                            {/* <Column field="demande_id" header="ID Demande" body={demandeTemplate} sortable></Column> */}
-
-                                        </DataTable>
                                     </div>
                                 </div>
                             </div>

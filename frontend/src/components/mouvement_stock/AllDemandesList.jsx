@@ -211,7 +211,7 @@ export default function AllDemandesList() {
             return detailsDemande.typeMouvement == item.id
         })
 
-        const nomType = type ? type.titre : 'NaN'
+        const nomType = type ? type.titre : 'N/A'
 
         return(
             <>
@@ -503,7 +503,7 @@ export default function AllDemandesList() {
 
                         <Column field="id" header="ID" body={idTemplate} sortable></Column>
                         <Column field="item_id" header="Demande" body={titleTemplate} sortable></Column>
-                        <Column header="Mouvement" body={mouvementTemplate}></Column>
+                        {/* <Column header="Mouvement" body={mouvementTemplate}></Column> */}
                         <Column field="qte_total_demande" header="Quantité" sortable></Column>
                         <Column field="date_demande" header="Date d'émission" body={demandeDateTemplate} sortable></Column>
                         <Column field="statut_demande" header="Statut Validation" body={statutTemplate}></Column>

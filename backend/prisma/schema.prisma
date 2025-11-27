@@ -41,6 +41,7 @@ model demandes {
   details_demande                    String                  @db.LongText
   statut_demande                     demandes_statut_demande
   user_id                            Int?
+  stock_id                           Int
   item_id                            Int?
   type_demande                       Int?
   role_id_recepteur                  Int?
@@ -56,6 +57,7 @@ model demandes {
   items                              items?                  @relation(fields: [item_id], references: [id_piece], onDelete: Restrict, onUpdate: Restrict, map: "demandes_ibfk_6")
   users_demandes_id_demandeurTousers users?                  @relation("demandes_id_demandeurTousers", fields: [id_demandeur], references: [id_user], onDelete: Restrict, onUpdate: Restrict, map: "demandes_ibfk_7")
   services                           services?               @relation(fields: [service_demandeur], references: [id], onDelete: NoAction, map: "demandes_ibfk_8")
+  stocks                             stocks                  @relation(fields: [stock_id], references: [id], onDelete: NoAction, map: "demandes_ibfk_9")
   livraison_piece                    livraison_piece?
   mouvement_stock                    mouvement_stock[]
   validation_demande                 validation_demande[]
@@ -65,6 +67,7 @@ model demandes {
   @@index([service_demandeur], map: "service_demandeur")
   @@index([item_id], map: "type_demande_id")
   @@index([user_id], map: "user_id")
+  @@index([stock_id], map: "stock_id")
 }
 
 model items {
@@ -475,6 +478,7 @@ model stocks {
   last_update                    DateTime          @default(now()) @db.DateTime(0)
   updated_by                     Int?
   is_deleted                     Boolean           @default(false)
+  demandes                       demandes[]
   mouvement_stock                mouvement_stock[]
   stock_carton                   stock_carton[]
   stock_lot                      stock_lot[]
