@@ -150,7 +150,7 @@ export default function AllMouvementStockList() {
 
         return(
             <>
-                <span className="text-theme-xs font-medium text-gray-800">{nomType}</span>
+                <span className="font-medium text-gray-800">{nomType}</span>
             </>
         )
     }

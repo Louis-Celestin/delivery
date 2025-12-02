@@ -193,7 +193,7 @@ export default function DemandeDetails() {
                         // setCommentaireValidation(demandeData.validations[0].commentaire)
                     }
 
-                    const items_data_all = await stock.getAllStock()
+                    const items_data_all = await stock.getAllItems()
                     const items_data = items_data_all.filter((item) => {
                         return item.is_deleted == false
                     })
@@ -921,7 +921,7 @@ export default function DemandeDetails() {
                                 Clear
                             </button>
                             <button
-                                onClick={handleValidate}
+                                onClick={'handleValidate'}
                                 className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
                                 Valider
                             </button>
@@ -953,7 +953,7 @@ export default function DemandeDetails() {
                         </div>
                         <div className='w-full mt-6 flex justify-center items-center'>
                             <button
-                                onClick={handleReturn}
+                                onClick={'handleReturn'}
                                 className='w-48 mx-3 bg-red-400 rounded-2xl h-10 flex justify-center items-center'>
                                 Retourner
                             </button>
@@ -988,7 +988,7 @@ export default function DemandeDetails() {
                         </div>
                         <div className='w-full mt-6 flex justify-center items-center'>
                             <button
-                                onClick={handleCancel}
+                                onClick={'handleCancel'}
                                 className='w-48 mx-3 bg-red-400 rounded-2xl h-10 flex justify-center items-center'>
                                 Refuser
                             </button>
@@ -1030,7 +1030,7 @@ export default function DemandeDetails() {
                                 Clear
                             </button>
                             <button
-                                onClick={handleReception}
+                                onClick={'handleReception'}
                                 className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
                                 Valider
                             </button>
@@ -1062,7 +1062,7 @@ export default function DemandeDetails() {
                         </div>
                         <div className='w-full mt-6 flex justify-center items-center'>
                             <button
-                                onClick={handleReturnLivraison}
+                                onClick={'handleReturnLivraison'}
                                 className='w-48 mx-3 bg-red-400 rounded-2xl h-10 flex justify-center items-center'>
                                 Retourner
                             </button>

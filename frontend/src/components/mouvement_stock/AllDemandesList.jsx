@@ -110,7 +110,7 @@ export default function AllDemandesList() {
                 }))
                 setOptionsModels(options_model)
                 
-                let stock_data_all = await stock.getAllStock()
+                let stock_data_all = await stock.getAllItems()
                 const stock_data = stock_data_all.filter((item) =>{
                     return item.is_deleted == false
                 })

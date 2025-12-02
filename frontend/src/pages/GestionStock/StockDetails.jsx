@@ -404,8 +404,10 @@ export default function StockDetails() {
                                             <Column field="quantite" header="Quantité" body={quantiteTemplate} sortable></Column>
                                             <Column field="stock_final" header="Stock Final" body={finalTemplate} sortable></Column>
                                             <Column field="quantite_totale_piece" header="Quantité totale" body={totalTemplate} sortable></Column>
-                                            <Column field="service_origine" header="Origine" body={origineTemplate}></Column>
-                                            <Column field="service_destination" header="Destination" body={destinationTemplate}></Column>
+                                            <Column header="Demandeur"></Column>
+                                            <Column header="Receveur"></Column>
+                                            {/* <Column field="service_origine" header="Origine" body={origineTemplate}></Column> */}
+                                            {/* <Column field="service_destination" header="Destination" body={destinationTemplate}></Column> */}
                                             <Column field="date" header="Date" body={dateTemplate} sortable></Column>
                                             {/* <Column header="Actions" body={actionsTemplate}></Column> */}
                                             {/* <Column field="formulaire_id" header="ID Livraison" body={livraisonTemplate} sortable></Column> */}
@@ -425,11 +427,11 @@ export default function StockDetails() {
                                                 <span className="text-5xl font-medium">{quantitePiece}</span>
                                             </div>
                                             <div>
-                                                <span className="font-light text-sm">Quantité cartons - </span>
+                                                <span className="font-light text-sm">Quantité cartons: </span>
                                                 <span className="font-semibold">{quantiteCarton}</span>
                                             </div>
                                             <div>
-                                                <span className="font-light text-sm">Quantité lots - </span>
+                                                <span className="font-light text-sm">Quantité lots: </span>
                                                 <span className="font-semibold">{quantiteLot}</span>
                                             </div>
                                         </div>
