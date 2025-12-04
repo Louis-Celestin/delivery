@@ -83,7 +83,7 @@ const faireDemande = async (req, res) => {
         id: parseInt(selectedStock)
       }
     })
-    
+
     if (!stock) {
       return res.status(404).json({ message: "Stock introuvable !" })
     }
@@ -255,6 +255,7 @@ const validateDemande = async (req, res) => {
     demande_id,
     commentaire,
     user_id,
+    stock_id,
   } = req.body;
 
   try {
@@ -376,6 +377,12 @@ const validateDemande = async (req, res) => {
       }
     }
 
+    const selectedStock = await prisma.stocks.findUnique({
+      where: {
+        id: parseInt(stock_id)
+      }
+    })
+
     if (typeMouvement == 5) {
       initial = Number(detailsMouvement.stockInitial)
       stock = Number(detailsMouvement.quantiteMouvement)
@@ -385,6 +392,7 @@ const validateDemande = async (req, res) => {
         mouvement: 5,
         demande_id: demande.id,
         date: new Date(),
+        stock_id : parseInt(stock_id),
         piece_id: pieceId,
         service_origine: servicePiece,
         service_destination: parseInt(demande.service_demandeur),
@@ -401,24 +409,35 @@ const validateDemande = async (req, res) => {
         data: dataMouvement,
       })
 
-      const quantite = await prisma.stock_piece.findFirst({
+      const dataStock = {
+        quantite_piece: final
+      }
+
+      await prisma.stocks.update({
         where: {
-          piece_id: pieceId,
-          model_id: modelPiece,
-          service_id: servicePiece,
-        }
-      })
-      await prisma.stock_piece.update({
-        where: {
-          id: quantite.id,
-          piece_id: pieceId,
-          model_id: modelPiece,
-          service_id: servicePiece,
+          id: parseInt(stock_id),
         },
-        data: {
-          quantite: final
-        }
+        data: dataStock,
       })
+
+      // const quantite = await prisma.stock_piece.findFirst({
+      //   where: {
+      //     piece_id: pieceId,
+      //     model_id: modelPiece,
+      //     service_id: servicePiece,
+      //   }
+      // })
+      // await prisma.stock_piece.update({
+      //   where: {
+      //     id: quantite.id,
+      //     piece_id: pieceId,
+      //     model_id: modelPiece,
+      //     service_id: servicePiece,
+      //   },
+      //   data: {
+      //     quantite: final
+      //   }
+      // })
 
       initialDemandeur = Number(detailsMouvement.stockInitialPieceDemandeur)
       finalDemandeur = Number(detailsMouvement.stockFinalPieceDemandeur)
@@ -427,6 +446,7 @@ const validateDemande = async (req, res) => {
         mouvement: 5,
         demande_id: demande.id,
         date: new Date(),
+        stock_id,
         piece_id: pieceId,
         service_origine: servicePiece,
         service_destination: parseInt(demande.service_demandeur),
@@ -440,9 +460,9 @@ const validateDemande = async (req, res) => {
         details_mouvement: JSON.stringify(detailsMouvement),
       }
 
-      mouvement_stock_demandeur = await prisma.mouvement_stock.create({
-        data: dataEntree,
-      })
+      // mouvement_stock_demandeur = await prisma.mouvement_stock.create({
+      //   data: dataEntree,
+      // })
     } else if (typeMouvement == 4) {
       initial = Number(detailsMouvement.stockInitialCarton)
       stock = Number(detailsMouvement.quantiteMouvementCarton)
@@ -452,6 +472,7 @@ const validateDemande = async (req, res) => {
         mouvement: 4,
         demande_id: demande.id,
         date: new Date(),
+        stock_id : parseInt(stock_id),
         piece_id: pieceId,
         service_origine: servicePiece,
         service_destination: parseInt(demande.service_demandeur),
@@ -468,24 +489,36 @@ const validateDemande = async (req, res) => {
         data: dataMouvement,
       })
 
-      const quantite = await prisma.stock_piece.findFirst({
+      const dataStock = {
+        quantite_carton: final,
+        quantite_piece: finalPiece
+      }
+
+      await prisma.stocks.update({
         where: {
-          piece_id: pieceId,
-          model_id: modelPiece,
-          service_id: servicePiece,
-        }
-      })
-      await prisma.stock_piece.update({
-        where: {
-          id: quantite.id,
-          piece_id: pieceId,
-          model_id: modelPiece,
-          service_id: servicePiece,
+          id: parseInt(stock_id),
         },
-        data: {
-          quantite: finalPiece
-        }
+        data: dataStock,
       })
+
+      // const quantite = await prisma.stock_piece.findFirst({
+      //   where: {
+      //     piece_id: pieceId,
+      //     model_id: modelPiece,
+      //     service_id: servicePiece,
+      //   }
+      // })
+      // await prisma.stock_piece.update({
+      //   where: {
+      //     id: quantite.id,
+      //     piece_id: pieceId,
+      //     model_id: modelPiece,
+      //     service_id: servicePiece,
+      //   },
+      //   data: {
+      //     quantite: finalPiece
+      //   }
+      // })
 
       const listCarton = detailsMouvement.cartons
       for (let id of listCarton) {
@@ -494,7 +527,7 @@ const validateDemande = async (req, res) => {
             id: parseInt(id)
           },
           data: {
-            service_id: serviceDemandeur,
+            is_deleted: true,
           }
         })
       }
@@ -506,6 +539,7 @@ const validateDemande = async (req, res) => {
         mouvement: 4,
         demande_id: demande.id,
         date: new Date(),
+        stock_id,
         piece_id: pieceId,
         service_origine: servicePiece,
         service_destination: parseInt(demande.service_demandeur),
@@ -519,9 +553,9 @@ const validateDemande = async (req, res) => {
         details_mouvement: JSON.stringify(detailsMouvement),
       }
 
-      mouvement_stock_demandeur = await prisma.mouvement_stock.create({
-        data: dataEntree,
-      })
+      // mouvement_stock_demandeur = await prisma.mouvement_stock.create({
+      //   data: dataEntree,
+      // })
     } else if (typeMouvement == 3) {
       initial = Number(detailsMouvement.stockInitialPieceCarton)
       stock = Number(detailsMouvement.quantiteMouvementPieceCarton)
@@ -531,6 +565,7 @@ const validateDemande = async (req, res) => {
         mouvement: 3,
         demande_id: demande.id,
         date: new Date(),
+        stock_id : parseInt(stock_id),
         piece_id: pieceId,
         service_origine: servicePiece,
         service_destination: parseInt(demande.service_demandeur),
@@ -547,24 +582,35 @@ const validateDemande = async (req, res) => {
         data: dataMouvement,
       })
 
-      const quantite = await prisma.stock_piece.findFirst({
+      const dataStock = {
+        quantite_piece: finalPiece
+      }
+
+      await prisma.stocks.update({
         where: {
-          piece_id: pieceId,
-          model_id: modelPiece,
-          service_id: servicePiece,
-        }
-      })
-      await prisma.stock_piece.update({
-        where: {
-          id: quantite.id,
-          piece_id: pieceId,
-          model_id: modelPiece,
-          service_id: servicePiece,
+          id: parseInt(stock_id),
         },
-        data: {
-          quantite: finalPiece
-        }
+        data: dataStock,
       })
+
+      // const quantite = await prisma.stock_piece.findFirst({
+      //   where: {
+      //     piece_id: pieceId,
+      //     model_id: modelPiece,
+      //     service_id: servicePiece,
+      //   }
+      // })
+      // await prisma.stock_piece.update({
+      //   where: {
+      //     id: quantite.id,
+      //     piece_id: pieceId,
+      //     model_id: modelPiece,
+      //     service_id: servicePiece,
+      //   },
+      //   data: {
+      //     quantite: finalPiece
+      //   }
+      // })
 
       await prisma.stock_carton.update({
         where: { id: parseInt(detailsMouvement.selectedCarton) },
@@ -580,6 +626,15 @@ const validateDemande = async (req, res) => {
             quantite_totale_piece: final,
             is_deleted: true,
           },
+        })
+        const quantiteCartonStock = selectedStock.quantite_carton
+        prisma.stocks.update({
+          where: {
+            id: parseInt(stock_id),
+          },
+          data: {
+            quantite_carton: quantiteCartonStock - 1
+          }
         })
       }
 
@@ -615,6 +670,15 @@ const validateDemande = async (req, res) => {
               is_deleted: true
             }
           })
+          const quantiteLotStock = selectedStock.quantite_lot
+          prisma.stocks.update({
+            where: {
+              id: parseInt(stock_id),
+            },
+            data: {
+              quantite_lot: quantiteLotStock - 1
+            }
+          })
         }
       }
 
@@ -625,6 +689,7 @@ const validateDemande = async (req, res) => {
         mouvement: 5,
         demande_id: demande.id,
         date: new Date(),
+        stock_id,
         piece_id: pieceId,
         service_origine: servicePiece,
         service_destination: parseInt(demande.service_demandeur),
@@ -638,9 +703,9 @@ const validateDemande = async (req, res) => {
         details_mouvement: JSON.stringify(detailsMouvement),
       }
 
-      mouvement_stock_demandeur = await prisma.mouvement_stock.create({
-        data: dataEntree,
-      })
+      // mouvement_stock_demandeur = await prisma.mouvement_stock.create({
+      //   data: dataEntree,
+      // })
     } else if (typeMouvement == 2) {
       initial = Number(detailsMouvement.stockInitialCartonLot)
       stock = Number(detailsMouvement.quantiteMouvementCartonLot)
@@ -651,6 +716,7 @@ const validateDemande = async (req, res) => {
         mouvement: 2,
         demande_id: demande.id,
         date: new Date(),
+        stock_id : parseInt(stock_id),
         piece_id: pieceId,
         service_origine: servicePiece,
         service_destination: parseInt(demande.service_demandeur),
@@ -667,24 +733,37 @@ const validateDemande = async (req, res) => {
         data: dataMouvement,
       })
 
-      const quantite = await prisma.stock_piece.findFirst({
+      const quantiteCartonStock = selectedStock.quantite_carton
+      const dataStock = {
+        quantite_carton: quantiteCartonStock - stock,
+        quantite_piece: finalPiece
+      }
+
+      await prisma.stocks.update({
         where: {
-          piece_id: pieceId,
-          model_id: modelPiece,
-          service_id: servicePiece,
-        }
-      })
-      await prisma.stock_piece.update({
-        where: {
-          id: quantite.id,
-          piece_id: pieceId,
-          model_id: modelPiece,
-          service_id: servicePiece,
+          id: parseInt(stock_id),
         },
-        data: {
-          quantite: finalPiece
-        }
+        data: dataStock,
       })
+
+      // const quantite = await prisma.stock_piece.findFirst({
+      //   where: {
+      //     piece_id: pieceId,
+      //     model_id: modelPiece,
+      //     service_id: servicePiece,
+      //   }
+      // })
+      // await prisma.stock_piece.update({
+      //   where: {
+      //     id: quantite.id,
+      //     piece_id: pieceId,
+      //     model_id: modelPiece,
+      //     service_id: servicePiece,
+      //   },
+      //   data: {
+      //     quantite: finalPiece
+      //   }
+      // })
 
       let updatedLot = await prisma.stock_lot.update({
         where: {
@@ -706,6 +785,15 @@ const validateDemande = async (req, res) => {
             quantite_piece: finalPieceLot,
             is_deleted: true,
           },
+        })
+        const quantiteLotStock = selectedStock.quantite_lot
+        prisma.stocks.update({
+          where: {
+            id: parseInt(stock_id),
+          },
+          data: {
+            quantite_lot: quantiteLotStock - 1
+          }
         })
       }
 
@@ -730,6 +818,7 @@ const validateDemande = async (req, res) => {
         mouvement: 4,
         demande_id: demande.id,
         date: new Date(),
+        stock_id,
         piece_id: pieceId,
         service_origine: servicePiece,
         service_destination: parseInt(demande.service_demandeur),
@@ -743,9 +832,9 @@ const validateDemande = async (req, res) => {
         details_mouvement: JSON.stringify(detailsMouvement),
       }
 
-      mouvement_stock_demandeur = await prisma.mouvement_stock.create({
-        data: dataEntree,
-      })
+      // mouvement_stock_demandeur = await prisma.mouvement_stock.create({
+      //   data: dataEntree,
+      // })
 
     } else if (typeMouvement == 1) {
       initial = Number(detailsMouvement.stockInitialLot)
@@ -756,6 +845,7 @@ const validateDemande = async (req, res) => {
         mouvement: 1,
         demande_id: demande.id,
         date: new Date(),
+        stock_id : parseInt(stock_id),
         piece_id: pieceId,
         service_origine: servicePiece,
         service_destination: parseInt(demande.service_demandeur),
@@ -772,24 +862,38 @@ const validateDemande = async (req, res) => {
         data: dataMouvement,
       })
 
-      const quantite = await prisma.stock_piece.findFirst({
+      const quantiteCartonStock = selectedStock.quantite_carton
+      const dataStock = {
+        quantite_lot: final,
+        quantite_carton: quantiteCartonStock - Number(detailsMouvement.quantiteMouvementCarton),
+        quantite_piece: finalPiece
+      }
+
+      await prisma.stocks.update({
         where: {
-          piece_id: pieceId,
-          model_id: modelPiece,
-          service_id: servicePiece,
-        }
-      })
-      await prisma.stock_piece.update({
-        where: {
-          id: quantite.id,
-          piece_id: pieceId,
-          model_id: modelPiece,
-          service_id: servicePiece,
+          id: parseInt(stock_id),
         },
-        data: {
-          quantite: finalPiece
-        }
+        data: dataStock,
       })
+
+      // const quantite = await prisma.stock_piece.findFirst({
+      //   where: {
+      //     piece_id: pieceId,
+      //     model_id: modelPiece,
+      //     service_id: servicePiece,
+      //   }
+      // })
+      // await prisma.stock_piece.update({
+      //   where: {
+      //     id: quantite.id,
+      //     piece_id: pieceId,
+      //     model_id: modelPiece,
+      //     service_id: servicePiece,
+      //   },
+      //   data: {
+      //     quantite: finalPiece
+      //   }
+      // })
 
       const listLot = detailsMouvement.listeLots
       for (let id of listLot) {
@@ -798,7 +902,7 @@ const validateDemande = async (req, res) => {
             id: parseInt(id)
           },
           data: {
-            service_id: serviceDemandeur,
+            is_deleted: true,
           }
         })
         await prisma.stock_carton.updateMany({
@@ -806,7 +910,7 @@ const validateDemande = async (req, res) => {
             lot_id: parseInt(id)
           },
           data: {
-            service_id: serviceDemandeur,
+            is_deleted: true,
           }
         })
       }
@@ -831,9 +935,9 @@ const validateDemande = async (req, res) => {
         details_mouvement: JSON.stringify(detailsMouvement),
       }
 
-      mouvement_stock_demandeur = await prisma.mouvement_stock.create({
-        data: dataEntree,
-      })
+      // mouvement_stock_demandeur = await prisma.mouvement_stock.create({
+      //   data: dataEntree,
+      // })
     }
 
     /************************************     GESTION MAILS     **************************************/
@@ -902,20 +1006,20 @@ const validateDemande = async (req, res) => {
         <br><br>
         <p>Green - Pay vous remercie.</p>
         `;
-      await sendMail({
-        to: demandeur.email,
-        subject,
-        html,
-      });
-      for (const service_user of service_users) {
-        await sendMail({
-          to: service_user.email,
-          subject,
-          html,
-        });
-      }
+      // await sendMail({
+      //   to: demandeur.email,
+      //   subject,
+      //   html,
+      // });
+      // for (const service_user of service_users) {
+      //   await sendMail({
+      //     to: service_user.email,
+      //     subject,
+      //     html,
+      //   });
+      // }
     }
-    return res.status(201).json(newValidation, mouvement_stock, mouvement_stock_demandeur, updatedQuantiteDemandeur);
+    return res.status(201).json(newValidation, mouvement_stock, updatedQuantiteDemandeur);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Erreur serveur." });

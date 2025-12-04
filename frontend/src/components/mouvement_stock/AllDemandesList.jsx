@@ -81,6 +81,8 @@ export default function AllDemandesList() {
 
     const [typesMouvement, setTypesMouvement] = useState([])
 
+    const [stocks, setStocks] = useState([])
+
     useEffect(() => {
         saveFilters({
             globalFilter,
@@ -110,11 +112,11 @@ export default function AllDemandesList() {
                 }))
                 setOptionsModels(options_model)
                 
-                let stock_data_all = await stock.getAllItems()
-                const stock_data = stock_data_all.filter((item) =>{
+                let items_data_all = await stock.getAllItems()
+                const items_data = items_data_all.filter((item) =>{
                     return item.is_deleted == false
                 })
-                setItems(stock_data)
+                setItems(items_data)
 
                 let services_data = await usersData.getAllServices()
                 const options_services = services_data.map((item) => ({
@@ -128,6 +130,12 @@ export default function AllDemandesList() {
 
                 const typesMouvement_data = await stock.getAllTypeMouvementStock()
                 setTypesMouvement(typesMouvement_data)
+
+                const stocks_data_all = await stock.getAllStocks()
+                const stocks_data = stocks_data_all.filter((item) => {
+                    return item.is_deleted == false
+                })
+                setStocks(stocks_data)
 
             } catch(error){
                 console.log('Error fetching data ',error)
@@ -195,12 +203,18 @@ export default function AllDemandesList() {
         })
         const nomPiece = piece ? piece.nom_piece : ''
 
+        const stock = stocks.find((item) => {
+            return item.id == demandeForms.stock_id
+        })
+        const nomStock = stock ? stock.code_stock : 'N/A'
+
         return (
             <span className="">
                 <Link key={demandeForms.id_demande} className="flex flex-col"
                     to={linkSee} >
                     <span className={titleClass}>{nomPiece}</span>
-                    <span className="text-xs font-light">{motif}</span>
+                    <span className="text-xs font-medium">{nomStock}</span>
+                    <span className="font-light">{motif}</span>
                 </Link>
             </span>
           );

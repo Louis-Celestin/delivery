@@ -110,6 +110,9 @@ export default function DemandeDetails() {
 
     const [nomenclature, setNomenclature] = useState('')
 
+    const [nomStock, setNomStock] = useState('')
+    const [stockId, setStockId] = useState(null)
+
     const formatDate = (date) => {
         const d = new Date(date);
         return d.toLocaleDateString('fr-FR'); // or use any locale you want
@@ -192,6 +195,16 @@ export default function DemandeDetails() {
 
                         // setCommentaireValidation(demandeData.validations[0].commentaire)
                     }
+
+                    
+                    const stock_data = await stock.getAllStocks()
+                    const selectedStock = stock_data.find((item) => {
+                        return item.id == demandeData.stock_id
+                    })
+                    const nom_stock = selectedStock ? selectedStock.code_stock : 'N/A'
+                    setNomStock(nom_stock)
+                    const stock_id = selectedStock ? selectedStock.id : null
+                    setStockId(stock_id)
 
                     const items_data_all = await stock.getAllItems()
                     const items_data = items_data_all.filter((item) => {
@@ -315,7 +328,6 @@ export default function DemandeDetails() {
     }
 
     const handleClear = () => {
-
         signature.clear()
     }
 
@@ -338,6 +350,7 @@ export default function DemandeDetails() {
             fd.append('demande_id', id);
             fd.append('user_id', user_id);
             fd.append('commentaire', commentaire);
+            fd.append('stock_id', stockId);
 
             if (sign) {
                 const blob = await fetch(sign).then(res => res.blob());
@@ -803,6 +816,10 @@ export default function DemandeDetails() {
                                             <th className='border w-1/2'>{nomPiece}</th>
                                         </tr>
                                         <tr className='border h-15'>
+                                            <th className='border w-1/2'>Code Stock</th>
+                                            <th className='border w-1/2'>{nomStock}</th>
+                                        </tr>
+                                        <tr className='border h-15'>
                                             <th className='border w-1/2'>Service demandeur</th>
                                             <th className='border w-1/2'>{serviceDemandeur}</th>
                                         </tr>
@@ -921,7 +938,7 @@ export default function DemandeDetails() {
                                 Clear
                             </button>
                             <button
-                                onClick={'handleValidate'}
+                                onClick={handleValidate}
                                 className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
                                 Valider
                             </button>

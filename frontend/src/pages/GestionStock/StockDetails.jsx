@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import { useParams, Link } from "react-router"
 import { Stock } from "../../backend/stock/Stock"
 import { Users } from "../../backend/users/Users"
+import { Demandes } from "../../backend/demandes/Demandes"
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { ProgressSpinner } from "primereact/progressspinner"
@@ -13,6 +14,7 @@ import DatePicker from "../../components/form/date-picker"
 export default function StockDetails() {
     const stockData = new Stock()
     const userData = new Users()
+    const demandeData = new Demandes()
     const { id } = useParams()
 
     const [loading, setLoading] = useState(false)
@@ -39,6 +41,9 @@ export default function StockDetails() {
     const [services, setServices] = useState([])
 
     const [typesMouvement, setTypesMouvement] = useState([])
+
+    const [users, setUsers] = useState([])
+    const [demandes, setDemandes] = useState([])
 
     const savedPagination = JSON.parse(sessionStorage.getItem("paginationState"));
     const [first, setFirst] = useState(savedPagination?.first || 0);
@@ -149,6 +154,12 @@ export default function StockDetails() {
                 const typesMouvement_data = await stockData.getAllTypeMouvementStock()
                 setTypesMouvement(typesMouvement_data)
 
+                const allUser_data = await userData.getAllUsers()
+                setUsers(allUser_data)
+
+                const demandes_data = await demandeData.getAllDemandes()
+                setDemandes(demandes_data)
+
             } catch (error) {
                 console.log('Error fetching the data ', error)
             } finally {
@@ -238,6 +249,22 @@ export default function StockDetails() {
         return (
             <>
                 <span className="text-sm font-bold">{mouvement.quantite_totale_piece}</span>
+            </>
+        )
+    }
+    const demandeurTemplate = (mouvement) => {
+        const demande = demandes.find((item) => {
+            return item.id == mouvement.demande_id
+        })
+        // const idDemandeur = demande ? demande.id_demandeur : null
+        // const demandeur = users.find((item) => {
+        //     return item.id_user == idDemandeur
+        // })
+        const nomDemandeur = demande ? demande.nom_demandeur : 'N/A'
+
+        return(
+            <>
+                <span>{nomDemandeur}</span>
             </>
         )
     }
@@ -404,7 +431,7 @@ export default function StockDetails() {
                                             <Column field="quantite" header="Quantité" body={quantiteTemplate} sortable></Column>
                                             <Column field="stock_final" header="Stock Final" body={finalTemplate} sortable></Column>
                                             <Column field="quantite_totale_piece" header="Quantité totale" body={totalTemplate} sortable></Column>
-                                            <Column header="Demandeur"></Column>
+                                            <Column header="Demandeur" body={demandeurTemplate}></Column>
                                             <Column header="Receveur"></Column>
                                             {/* <Column field="service_origine" header="Origine" body={origineTemplate}></Column> */}
                                             {/* <Column field="service_destination" header="Destination" body={destinationTemplate}></Column> */}
