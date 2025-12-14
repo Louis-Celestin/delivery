@@ -1263,161 +1263,146 @@ const setStockSn = async (req, res) => {
     motif,
     userId,
     commentaire,
-  } = req.body
+  } = req.body;
+
   const file = req.file;
 
-
   try {
-
-    if (!item_id || !model_id || !service_id || !userId) {
-      console.log("Error of parameters")
-      return res.status(400).json({ message: "Missing required parameters" });
-    }
-    let utilisateur = null;
-    utilisateur = await prisma.users.findUnique({
-      where: {
-        id_user: parseInt(userId)
-      }
-    });
-    if (!utilisateur) {
-      console.log("Utilisateur non trouvé")
-      return res.status(404).json({ message: "Utilisateur non trouvé" });
-    }
-
+    /* =========================
+       1️⃣ BASIC VALIDATION
+    ========================== */
     if (!file) {
-      console.log("Error of file")
       return res.status(400).json({ message: "Excel file is required" });
     }
+
+    /* =========================
+       2️⃣ READ EXCEL
+    ========================== */
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(file.buffer);
-
     const worksheet = workbook.worksheets[0];
 
     const headers = {};
-    worksheet.getRow(1).eachCell((cell, colNumber) => {
-      headers[String(cell.value).trim().toUpperCase()] = colNumber;
+    worksheet.getRow(1).eachCell((cell, col) => {
+      headers[String(cell.value).trim().toUpperCase()] = col;
     });
 
     if (!headers["SERIAL NUMBER"]) {
-      console.log("Error of column")
       return res.status(400).json({
         message: "Missing required column: SERIAL NUMBER",
       });
     }
 
-    // 3️⃣ Parse rows
+    /* =========================
+       3️⃣ PARSE ROWS
+    ========================== */
     const rows = [];
     const serialNumbers = new Set();
-    const cartons = new Set();
     const lots = new Set();
 
     worksheet.eachRow((row, rowNumber) => {
       if (rowNumber === 1) return;
 
-      const serialNumber = normalize(
-        row.getCell(headers["SERIAL NUMBER"]).value
-      );
+      const sn = normalize(row.getCell(headers["SERIAL NUMBER"]).value);
+      if (!sn) return;
 
-      if (!serialNumber) return;
-
-      // Detect duplicates in file
-      if (serialNumbers.has(serialNumber)) {
-        throw new Error(
-          `Duplicate SERIAL NUMBER in file: ${serialNumber} (row ${rowNumber})`
-        );
+      if (serialNumbers.has(sn)) {
+        throw new Error(`Duplicate SERIAL NUMBER in file: ${sn} (row ${rowNumber})`);
       }
 
-      serialNumbers.add(serialNumber);
+      serialNumbers.add(sn);
 
-      if (headers["CARTON"]) {
-        const carton = extractNumber(row.getCell(headers["CARTON"]).value)
-        if (carton) cartons.add(carton);
-      }
+      const lot = headers["LOT"]
+        ? extractNumber(row.getCell(headers["LOT"]).value)
+        : null;
 
-      if (headers["LOT"]) {
-        const lot = extractNumber(row.getCell(headers["LOT"]).value)
-        if (lot) lots.add(lot);
-      }
+      const carton = headers["CARTON"]
+        ? extractNumber(row.getCell(headers["CARTON"]).value)
+        : null;
 
-      rows.push({
-        serial_number: serialNumber,
-        carton: headers["CARTON"]
-          ? extractNumber(row.getCell(headers["CARTON"]).value)
-          : null,
-        lot: headers["LOT"]
-          ? extractNumber(row.getCell(headers["LOT"]).value)
-          : null,
-        item_id: parseInt(item_id),
-        model_id: parseInt(model_id),
-        service_id: parseInt(service_id),
-      });
+      if (lot !== null) lots.add(lot);
+
+      rows.push({ sn, lot, carton });
     });
 
     if (rows.length === 0) {
-      console.log("File empty")
       return res.status(400).json({ message: "Excel file is empty" });
     }
 
+    /* =========================
+       4️⃣ BUILD HIERARCHY
+    ========================== */
     const hierarchy = {};
 
-    for (const row of rows) {
-      const lotKey = row.lot !== null ? row.lot : "NO_LOT";
-      const cartonKey = row.carton !== null ? row.carton : "NO_CARTON";
+    for (const r of rows) {
+      const lotKey = r.lot ?? "NO_LOT";
+      const cartonKey = r.carton ?? "NO_CARTON";
 
-      if (!hierarchy[lotKey]) {
-        hierarchy[lotKey] = {};
-      }
+      if (!hierarchy[lotKey]) hierarchy[lotKey] = {};
+      if (!hierarchy[lotKey][cartonKey]) hierarchy[lotKey][cartonKey] = [];
 
-      if (!hierarchy[lotKey][cartonKey]) {
-        hierarchy[lotKey][cartonKey] = [];
-      }
-
-      hierarchy[lotKey][cartonKey].push(row.serial_number);
+      hierarchy[lotKey][cartonKey].push(r.sn);
     }
 
-    const details = {
-      lots: lots.size,
-      cartons: Object.values(hierarchy).reduce((a, l) => a + Object.keys(l).length, 0),
-      serial_numbers: serialNumbers.size,
-      listeSn: [],
-    }
+    /* =========================
+       5️⃣ CHECK EXISTING SNs (DB)
+    ========================== */
+    const existingSNs = await prisma.serial_numbers.findMany({
+      where: {
+        serial_number: { in: [...serialNumbers] },
+        is_deleted: false,
+      },
+      select: { serial_number: true },
+    });
 
-    await prisma.$transaction(async (tx) => {
-
-      const existingSNs = await tx.serial_numbers.findMany({
-        where: {
-          serial_number: { in: rows.map(r => r.serial_number) },
-          is_deleted: false,
-        },
-        select: { serial_number: true },
+    if (existingSNs.length > 0) {
+      return res.status(400).json({
+        message: `Serial numbers already exist: ${existingSNs
+          .map(e => e.serial_number)
+          .join(", ")}`,
       });
+    }
 
-      if (existingSNs.length > 0) {
-        throw new Error(
-          `Serial numbers already exist: ${existingSNs.map(e => e.serial_number).join(", ")}`
-        );
-      }
+    /* =========================
+       6️⃣ PREPARE TRANSACTION QUERIES
+    ========================== */
+    const queries = [];
 
-      const newStock = await tx.stocks.create({
+    // STOCK
+    const stockCreate = prisma.stocks.create({
+      data: {
+        code_stock: codeStock,
+        piece_id: parseInt(item_id),
+        model_id: parseInt(model_id),
+        service_id: parseInt(service_id),
+        quantite_lot: headers["LOT"] ? lots.size : 0,
+        quantite_carton: Object.values(hierarchy)
+          .reduce((acc, l) => acc + Object.keys(l).length, 0),
+        quantite_piece: serialNumbers.size,
+        created_at: new Date(),
+        created_by: parseInt(userId),
+        last_update: new Date(),
+        updated_by: parseInt(userId),
+      },
+    });
+
+    queries.push(stockCreate);
+
+    /* =========================
+       7️⃣ EXECUTE FIRST TRANSACTION
+       (Need stock_id for children)
+    ========================== */
+    const [newStock] = await prisma.$transaction(queries);
+
+    /* =========================
+       8️⃣ SECOND TRANSACTION (STRUCTURE)
+    ========================== */
+    const structureQueries = [];
+
+    structureQueries.push(
+      prisma.mouvement_stock.create({
         data: {
-          code_stock: codeStock,
-          piece_id: parseInt(item_id),
-          model_id: parseInt(model_id),
-          service_id: parseInt(service_id),
-          quantite_lot: headers["LOT"] ? lots.size : 0,
-          quantite_carton: headers["CARTON"] ? Object.values(hierarchy)
-            .reduce((acc, l) => acc + Object.keys(l).length, 0) : 0,
-          quantite_piece: serialNumbers.size,
-          created_at: new Date(),
-          created_by: parseInt(userId),
-          last_update: new Date(),
-          updated_by: parseInt(userId),
-        }
-      })
-
-      await tx.mouvement_stock.create({
-        data: {
-          type: 'entree',
+          type: "entree",
           mouvement: 6,
           date: new Date(),
           stock_id: newStock.id,
@@ -1431,75 +1416,86 @@ const setStockSn = async (req, res) => {
           quantite_totale_piece: serialNumbers.size,
           motif,
           commentaire,
-          details_mouvement: JSON.stringify(details)
-        }
+          details_mouvement: JSON.stringify({
+            lots: lots.size,
+            cartons: Object.values(hierarchy).reduce((a, l) => a + Object.keys(l).length, 0),
+            serial_numbers: serialNumbers.size,
+          }),
+        },
       })
+    );
 
-      for (const [lotNumber, cartonsMap] of Object.entries(hierarchy)) {
-        // 1️⃣ Create LOT
-        const lot = await tx.stock_lot.create({
+    const serialInserts = [];
+
+    for (const [lotKey, cartons] of Object.entries(hierarchy)) {
+      structureQueries.push(
+        prisma.stock_lot.create({
           data: {
-            numero_lot: lotNumber === "NO_LOT" ? null : parseInt(lotNumber),
+            numero_lot: lotKey === "NO_LOT" ? null : parseInt(lotKey),
             stock_id: newStock.id,
             piece_id: parseInt(item_id),
             service_id: parseInt(service_id),
             model_id: parseInt(model_id),
-            quantite_carton: Object.keys(cartonsMap).length,
-            quantite_piece: Object.values(cartonsMap)
+            quantite_carton: Object.keys(cartons).length,
+            quantite_piece: Object.values(cartons)
               .reduce((acc, sns) => acc + sns.length, 0),
-          }
+          },
+        })
+      );
+    }
+
+    const lotsCreated = await prisma.$transaction(structureQueries);
+
+    /* =========================
+       9️⃣ SERIAL NUMBERS (OUTSIDE TX)
+    ========================== */
+    for (const lot of lotsCreated.filter(l => l.numero_lot !== undefined)) {
+      const cartons = hierarchy[lot.numero_lot ?? "NO_LOT"];
+
+      for (const [cartonKey, sns] of Object.entries(cartons)) {
+        const carton = await prisma.stock_carton.create({
+          data: {
+            numero_carton: cartonKey === "NO_CARTON" ? null : parseInt(cartonKey),
+            lot_id: lot.id,
+            stock_id: newStock.id,
+            piece_id: parseInt(item_id),
+            service_id: parseInt(service_id),
+            model_id: parseInt(model_id),
+            quantite_piece_carton: sns.length,
+            quantite_totale_piece: sns.length,
+          },
         });
 
-        // 2️⃣ Create CARTONS
-        for (const [cartonNumber, sns] of Object.entries(cartonsMap)) {
-
-          const carton = await tx.stock_carton.create({
-            data: {
-              numero_carton: cartonNumber === "NO_CARTON" ? null : parseInt(cartonNumber),
-              lot_id: lot.id,
-              numero_lot: lot.numero_lot,
+        const CHUNK = 1000;
+        for (let i = 0; i < sns.length; i += CHUNK) {
+          await prisma.serial_numbers.createMany({
+            data: sns.slice(i, i + CHUNK).map(sn => ({
+              serial_number: sn,
               stock_id: newStock.id,
-              piece_id: parseInt(item_id),
+              lot_id: lot.id,
+              carton_id: carton.id,
+              item_id: parseInt(item_id),
               service_id: parseInt(service_id),
               model_id: parseInt(model_id),
-              quantite_piece_carton: sns.length,
-              quantite_totale_piece: sns.length,
-            }
+              created_at: new Date(),
+            })),
           });
-
-          // 3️⃣ Create SERIAL NUMBERS
-          const CHUNK_SIZE = 1000;
-          for (let i = 0; i < sns.length; i += CHUNK_SIZE) {
-            await tx.serial_numbers.createMany({
-              data: sns.slice(i, i + CHUNK_SIZE).map(sn => ({
-                serial_number: sn,
-                stock_id: newStock.id,
-                lot_id: lot.id,
-                carton_id: carton.id,
-                item_id: parseInt(item_id),
-                service_id: parseInt(service_id),
-                model_id: parseInt(model_id),
-                created_at: new Date(),
-              }))
-            });
-          }
         }
       }
-    });
+    }
 
-    // For now, just return preview
     return res.status(200).json({
       message: "Stock SN created successfully",
-      inserted: rows.length,
+      inserted: serialNumbers.size,
     });
+
   } catch (error) {
     console.error(error);
-    console.log(error);
     return res.status(500).json({
       message: error.message || "Failed to process Excel file",
     });
   }
-}
+};
 
 const getAllMouvementStock = async (req, res) => {
   try {
