@@ -1,13 +1,14 @@
 const express = require("express")
 const router = express.Router();
 const upload = require("../middlewares/uploads");
+const uploadExcel = require("../middlewares/uploadExcel");
 
 
 const {getAllItems, setStockPiece, getAllModels, addPiece, getAllMouvementStock, getPiece, modifyPiece,
     getLotPiece, getCartonLot, getCartonPiece, getItemModels, getItemServices, getQuantitePiece, getAllTypeMouvementStock,
     setStockCarton, setStockPieceCarton, setStockLot, setStockCartonLot, getOneMouvement, createStock,
     getAllStocks, getAllItemModels, getAllItemServices, getOneStock, getCartonStock, getLotStock, getOneStockMouvements,
-    getStockParPiece, getAllOneQuantitePiece
+    getStockParPiece, getAllOneQuantitePiece, setStockSn,
 } = require("../controllers/Stock/stockController")
 
 router.get('/getAllItems', getAllItems);
@@ -39,5 +40,6 @@ router.get('/getLotStock/:id', getLotStock);
 router.get('/getOneStockMouvements/:id', getOneStockMouvements);
 router.get('/getStockParPiece/:id', getStockParPiece);
 router.get('/getAllOneQuantitePiece/:id', getAllOneQuantitePiece);
+router.post('/setStockSn', uploadExcel.single("file"), setStockSn)
 
 module.exports = router

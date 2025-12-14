@@ -26,6 +26,12 @@ const normalize = (value) => {
   return String(value).trim();
 };
 
+const extractNumber = (value) => {
+  if (value === null || value === undefined) return null;
+  const match = String(value).match(/\d+/);
+  return match ? parseInt(match[0], 10) : null;
+};
+
 const addPiece = async (req, res) => {
   try {
     const {
@@ -1262,7 +1268,24 @@ const setStockSn = async (req, res) => {
 
 
   try {
+
+    if (!item_id || !model_id || !service_id || !userId) {
+      console.log("Error of parameters")
+      return res.status(400).json({ message: "Missing required parameters" });
+    }
+    let utilisateur = null;
+    utilisateur = await prisma.users.findUnique({
+      where: {
+        id_user: parseInt(userId)
+      }
+    });
+    if (!utilisateur) {
+      console.log("Utilisateur non trouvé")
+      return res.status(404).json({ message: "Utilisateur non trouvé" });
+    }
+
     if (!file) {
+      console.log("Error of file")
       return res.status(400).json({ message: "Excel file is required" });
     }
     const workbook = new ExcelJS.Workbook();
@@ -1276,6 +1299,7 @@ const setStockSn = async (req, res) => {
     });
 
     if (!headers["SERIAL NUMBER"]) {
+      console.log("Error of column")
       return res.status(400).json({
         message: "Missing required column: SERIAL NUMBER",
       });
@@ -1306,22 +1330,22 @@ const setStockSn = async (req, res) => {
       serialNumbers.add(serialNumber);
 
       if (headers["CARTON"]) {
-        const carton = normalize(row.getCell(headers["CARTON"]).value);
+        const carton = extractNumber(row.getCell(headers["CARTON"]).value)
         if (carton) cartons.add(carton);
       }
 
       if (headers["LOT"]) {
-        const lot = normalize(row.getCell(headers["LOT"]).value);
+        const lot = extractNumber(row.getCell(headers["LOT"]).value)
         if (lot) lots.add(lot);
       }
 
       rows.push({
         serial_number: serialNumber,
         carton: headers["CARTON"]
-          ? normalize(row.getCell(headers["CARTON"]).value)
+          ? extractNumber(row.getCell(headers["CARTON"]).value)
           : null,
         lot: headers["LOT"]
-          ? normalize(row.getCell(headers["LOT"]).value)
+          ? extractNumber(row.getCell(headers["LOT"]).value)
           : null,
         item_id: parseInt(item_id),
         model_id: parseInt(model_id),
@@ -1330,32 +1354,138 @@ const setStockSn = async (req, res) => {
     });
 
     if (rows.length === 0) {
+      console.log("File empty")
       return res.status(400).json({ message: "Excel file is empty" });
     }
 
-    const newStock = await prisma.stocks.create({
-      data: {
-        code_stock: codeStock,
-        piece_id: parseInt(item_id),
-        model_id: parseInt(model_id),
-        service_id: parseInt(service_id),
-        quantite_lot: headers["LOT"] ? lots.size : 0,
-        quantite_carton: headers["CARTON"] ? cartons.size : 0,
-        quantite_piece: serialNumbers.size,
-        created_at: new Date(),
-        created_by: parseInt(userId),
-        last_update: new Date(),
-        updated_by: parseInt(userId), 
-      }
-    })
+    const hierarchy = {};
 
-    // 4️⃣ STORE TO DATABASE (example with Prisma)
-    /*
-    await prisma.stock_sn.createMany({
-      data: rows,
-      skipDuplicates: true,
+    for (const row of rows) {
+      const lotKey = row.lot !== null ? row.lot : "NO_LOT";
+      const cartonKey = row.carton !== null ? row.carton : "NO_CARTON";
+
+      if (!hierarchy[lotKey]) {
+        hierarchy[lotKey] = {};
+      }
+
+      if (!hierarchy[lotKey][cartonKey]) {
+        hierarchy[lotKey][cartonKey] = [];
+      }
+
+      hierarchy[lotKey][cartonKey].push(row.serial_number);
+    }
+
+    const details = {
+      lots: lots.size,
+      cartons: Object.values(hierarchy).reduce((a, l) => a + Object.keys(l).length, 0),
+      serial_numbers: serialNumbers.size,
+      listeSn: [],
+    }
+
+    await prisma.$transaction(async (tx) => {
+
+      const existingSNs = await tx.serial_numbers.findMany({
+        where: {
+          serial_number: { in: rows.map(r => r.serial_number) },
+          is_deleted: false,
+        },
+        select: { serial_number: true },
+      });
+
+      if (existingSNs.length > 0) {
+        throw new Error(
+          `Serial numbers already exist: ${existingSNs.map(e => e.serial_number).join(", ")}`
+        );
+      }
+
+      const newStock = await tx.stocks.create({
+        data: {
+          code_stock: codeStock,
+          piece_id: parseInt(item_id),
+          model_id: parseInt(model_id),
+          service_id: parseInt(service_id),
+          quantite_lot: headers["LOT"] ? lots.size : 0,
+          quantite_carton: headers["CARTON"] ? Object.values(hierarchy)
+            .reduce((acc, l) => acc + Object.keys(l).length, 0) : 0,
+          quantite_piece: serialNumbers.size,
+          created_at: new Date(),
+          created_by: parseInt(userId),
+          last_update: new Date(),
+          updated_by: parseInt(userId),
+        }
+      })
+
+      await tx.mouvement_stock.create({
+        data: {
+          type: 'entree',
+          mouvement: 6,
+          date: new Date(),
+          stock_id: newStock.id,
+          piece_id: parseInt(item_id),
+          origine,
+          service_destination: parseInt(service_id),
+          model_id: parseInt(model_id),
+          stock_initial: 0,
+          quantite: serialNumbers.size,
+          stock_final: serialNumbers.size,
+          quantite_totale_piece: serialNumbers.size,
+          motif,
+          commentaire,
+          details_mouvement: JSON.stringify(details)
+        }
+      })
+
+      for (const [lotNumber, cartonsMap] of Object.entries(hierarchy)) {
+        // 1️⃣ Create LOT
+        const lot = await tx.stock_lot.create({
+          data: {
+            numero_lot: lotNumber === "NO_LOT" ? null : parseInt(lotNumber),
+            stock_id: newStock.id,
+            piece_id: parseInt(item_id),
+            service_id: parseInt(service_id),
+            model_id: parseInt(model_id),
+            quantite_carton: Object.keys(cartonsMap).length,
+            quantite_piece: Object.values(cartonsMap)
+              .reduce((acc, sns) => acc + sns.length, 0),
+          }
+        });
+
+        // 2️⃣ Create CARTONS
+        for (const [cartonNumber, sns] of Object.entries(cartonsMap)) {
+
+          const carton = await tx.stock_carton.create({
+            data: {
+              numero_carton: cartonNumber === "NO_CARTON" ? null : parseInt(cartonNumber),
+              lot_id: lot.id,
+              numero_lot: lot.numero_lot,
+              stock_id: newStock.id,
+              piece_id: parseInt(item_id),
+              service_id: parseInt(service_id),
+              model_id: parseInt(model_id),
+              quantite_piece_carton: sns.length,
+              quantite_totale_piece: sns.length,
+            }
+          });
+
+          // 3️⃣ Create SERIAL NUMBERS
+          const CHUNK_SIZE = 1000;
+          for (let i = 0; i < sns.length; i += CHUNK_SIZE) {
+            await tx.serial_numbers.createMany({
+              data: sns.slice(i, i + CHUNK_SIZE).map(sn => ({
+                serial_number: sn,
+                stock_id: newStock.id,
+                lot_id: lot.id,
+                carton_id: carton.id,
+                item_id: parseInt(item_id),
+                service_id: parseInt(service_id),
+                model_id: parseInt(model_id),
+                created_at: new Date(),
+              }))
+            });
+          }
+        }
+      }
     });
-    */
 
     // For now, just return preview
     return res.status(200).json({
@@ -1364,6 +1494,7 @@ const setStockSn = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
+    console.log(error);
     return res.status(500).json({
       message: error.message || "Failed to process Excel file",
     });
@@ -1679,4 +1810,5 @@ module.exports = {
   getOneStockMouvements,
   getStockParPiece,
   getAllOneQuantitePiece,
+  setStockSn,
 }

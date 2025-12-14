@@ -1029,10 +1029,16 @@ export default function CreateStockInputs() {
     }
 
     const handleValidateParSn = async () => {
+        setEntreeParSnModalOpen(false)
         const fromData = new FormData()
         fromData.append("item_id", selectedPiece)
         fromData.append("model_id", selectedModel)
         fromData.append("service_id", selectedService)
+        fromData.append("userId", userId)
+        fromData.append("origine", origine)
+        fromData.append("codeStock", codeStock)
+        fromData.append("motif", motif)
+        fromData.append("commentaire", commentaire)
         fromData.append("file", excelFile)
 
         try {
