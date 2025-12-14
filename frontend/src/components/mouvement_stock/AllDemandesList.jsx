@@ -125,9 +125,6 @@ export default function AllDemandesList() {
                 }))
                 setOptionsServices(options_services)
                 
-                let livraisons_pieces_data = await livraisonsData.getAllStockDeliveries()
-                setLivraisonsPieces(livraisons_pieces_data)
-
                 const typesMouvement_data = await stock.getAllTypeMouvementStock()
                 setTypesMouvement(typesMouvement_data)
 
@@ -241,7 +238,7 @@ export default function AllDemandesList() {
     const dateValidationTemplate = (demandeForms) =>{
         if(demandeForms.validation_demande.length>0 && demandeForms.statut_demande != 'en_cours'){
             let index = demandeForms.validation_demande.length-1
-            return (<span className="text-gray-500 text-theme-sm dark:text-gray-400">{formatDate(demandeForms.validation_demande[index].date_validation_demande)}</span>) 
+            return (<span className="text-theme-xs text-gray-700 font-medium dark:text-gray-400">{formatDate(demandeForms.validation_demande[index].date_validation_demande)}</span>) 
         }else{
             return (<span className="text-xs">N/A</span>)
         }
@@ -311,7 +308,7 @@ export default function AllDemandesList() {
     const dateLivraisonTemplate = (demandeForms) =>{
         let date = 'N/A'
         let livraison = livraisonsPieces.find((item) => {
-            return item.demande_id == demandeForms.id_demande
+            return item.demande_id == demandeForms.id
         })
         if(livraison){
             date = formatDate(livraison.Livraisons.date_livraison)
@@ -320,25 +317,16 @@ export default function AllDemandesList() {
         
 
     }
-    const statutLivraisonTemplate = (demandeForms) =>{
+    const statutReceptionTemplate = (demandeForms) =>{
         let statutClass = 'text-xs'
         let statut = 'N/A'
-        let livraison = livraisonsPieces.find((item) => {
-            return item.demande_id == demandeForms.id_demande
-        })
-        if(livraison){
-            if(livraison.Livraisons.statut_livraison == 'en_cours'){
+        if(demandeForms.statut_demande == 'valide'){
+            if(demandeForms.demande_livree == false){
                 statut = 'en cours'
                 statutClass = 'grid grid-cols-1 text-center text-xs rounded-xl p-0.5 bg-orange-300' 
-            } else if (livraison.Livraisons.statut_livraison == 'livre'){
-                statut = 'livrée';
+            } else if (demandeForms.demande_livree == true){
+                statut = 'réceptionnée';
                 statutClass = 'grid grid-cols-1 text-center text-xs rounded-xl p-0.5 bg-green-300'
-            } else if (livraison.Livraisons.statut_livraison == 'retourne'){
-                statut = 'retournée';
-                statutClass = 'grid grid-cols-1 text-center text-xs rounded-xl p-0.5 bg-red-300'
-            } else if (livraison.Livraisons.statut_livraison == 'refuse'){
-                statut = 'refusée';
-                statutClass = 'grid grid-cols-1 text-center text-xs text-white rounded-xl p-0.5 bg-black'
             }
         }
         return(
@@ -346,18 +334,12 @@ export default function AllDemandesList() {
         )
     }
     const dateReceptionTemplate = (demandeForms) =>{
-        let date = 'N/A'
-        let livraison = livraisonsPieces.find((item) => {
-            return item.demande_id == demandeForms.id_demande
-        })
-        let index
-        if(livraison){
-            if(livraison.Livraisons.reception_livraison.length > 0){
-                index = livraison.Livraisons.reception_livraison.length - 1
-                date = formatDate(livraison.Livraisons.reception_livraison[index].date_reception)
-            }
+        if(demandeForms.reception_piece.length>0 && demandeForms.demande_livree == true){
+            let index = demandeForms.reception_piece.length-1
+            return (<span className="text-theme-xs text-gray-700 font-medium dark:text-gray-400">{formatDate(demandeForms.reception_piece[index].date)}</span>) 
+        }else{
+            return (<span className="text-xs">N/A</span>)
         }
-         return (<span className="text-gray-500 text-theme-sm dark:text-gray-400">{date}</span>)
     }
 
     const handleClearFilters = () =>{
@@ -522,8 +504,8 @@ export default function AllDemandesList() {
                         <Column field="date_demande" header="Date d'émission" body={demandeDateTemplate} sortable></Column>
                         <Column field="statut_demande" header="Statut Validation" body={statutTemplate}></Column>
                         <Column header="Date Validation" body={dateValidationTemplate}></Column>
-                        <Column header="Date Livraison" body={dateLivraisonTemplate}></Column>
-                        <Column header="Statut Livraison" body={statutLivraisonTemplate}></Column>
+                        {/* <Column header="Date Livraison" body={dateLivraisonTemplate}></Column> */}
+                        <Column header="Statut Reception" body={statutReceptionTemplate}></Column>
                         <Column header="Date Reception" body={dateReceptionTemplate}></Column>
                         <Column header="Actions" body={actionTemplate}></Column>
                     </DataTable>

@@ -85,5 +85,18 @@ export class Demandes {
       throw error.response.data;
     }
   }
+
+  async receivePiece(formData) {
+    try {
+      const response = await axios.post(`${urlBase}/api/demandes/receivePiece`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+      return response.data;
+    } catch (error) {
+      throw error.response.data;
+    }
+  }
 }
 

@@ -5,7 +5,9 @@ const path = require("path");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const cloudinary = require("../../config/clouddinaryConifg");
-const upload = require("../../middlewares/uploads");
+const multer = require("multer")
+const upload = multer({ storage: multer.memoryStorage() });
+const ExcelJS = require("exceljs");
 
 // baseUrl est l'addresse du site de livraison
 const baseUrl = process.env.FRONTEND_BASE_URL || "https://livraisons.greenpayci.com";
@@ -18,6 +20,11 @@ let test_env = TEST_ENV
 if (test_env) {
   GENERAL_URL = localUrl
 }
+
+const normalize = (value) => {
+  if (value === null || value === undefined) return null;
+  return String(value).trim();
+};
 
 const addPiece = async (req, res) => {
   try {
@@ -47,6 +54,7 @@ const addPiece = async (req, res) => {
         type: type,
         created_by: nomUser,
         user_id: parseInt(user_id),
+        created_at: new Date(),
       }
     })
 
@@ -1239,6 +1247,129 @@ const setStockLot = async (req, res) => {
   }
 }
 
+const setStockSn = async (req, res) => {
+  const {
+    item_id,
+    model_id,
+    service_id,
+    origine,
+    codeStock,
+    motif,
+    userId,
+    commentaire,
+  } = req.body
+  const file = req.file;
+
+
+  try {
+    if (!file) {
+      return res.status(400).json({ message: "Excel file is required" });
+    }
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(file.buffer);
+
+    const worksheet = workbook.worksheets[0];
+
+    const headers = {};
+    worksheet.getRow(1).eachCell((cell, colNumber) => {
+      headers[String(cell.value).trim().toUpperCase()] = colNumber;
+    });
+
+    if (!headers["SERIAL NUMBER"]) {
+      return res.status(400).json({
+        message: "Missing required column: SERIAL NUMBER",
+      });
+    }
+
+    // 3️⃣ Parse rows
+    const rows = [];
+    const serialNumbers = new Set();
+    const cartons = new Set();
+    const lots = new Set();
+
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) return;
+
+      const serialNumber = normalize(
+        row.getCell(headers["SERIAL NUMBER"]).value
+      );
+
+      if (!serialNumber) return;
+
+      // Detect duplicates in file
+      if (serialNumbers.has(serialNumber)) {
+        throw new Error(
+          `Duplicate SERIAL NUMBER in file: ${serialNumber} (row ${rowNumber})`
+        );
+      }
+
+      serialNumbers.add(serialNumber);
+
+      if (headers["CARTON"]) {
+        const carton = normalize(row.getCell(headers["CARTON"]).value);
+        if (carton) cartons.add(carton);
+      }
+
+      if (headers["LOT"]) {
+        const lot = normalize(row.getCell(headers["LOT"]).value);
+        if (lot) lots.add(lot);
+      }
+
+      rows.push({
+        serial_number: serialNumber,
+        carton: headers["CARTON"]
+          ? normalize(row.getCell(headers["CARTON"]).value)
+          : null,
+        lot: headers["LOT"]
+          ? normalize(row.getCell(headers["LOT"]).value)
+          : null,
+        item_id: parseInt(item_id),
+        model_id: parseInt(model_id),
+        service_id: parseInt(service_id),
+      });
+    });
+
+    if (rows.length === 0) {
+      return res.status(400).json({ message: "Excel file is empty" });
+    }
+
+    const newStock = await prisma.stocks.create({
+      data: {
+        code_stock: codeStock,
+        piece_id: parseInt(item_id),
+        model_id: parseInt(model_id),
+        service_id: parseInt(service_id),
+        quantite_lot: headers["LOT"] ? lots.size : 0,
+        quantite_carton: headers["CARTON"] ? cartons.size : 0,
+        quantite_piece: serialNumbers.size,
+        created_at: new Date(),
+        created_by: parseInt(userId),
+        last_update: new Date(),
+        updated_by: parseInt(userId), 
+      }
+    })
+
+    // 4️⃣ STORE TO DATABASE (example with Prisma)
+    /*
+    await prisma.stock_sn.createMany({
+      data: rows,
+      skipDuplicates: true,
+    });
+    */
+
+    // For now, just return preview
+    return res.status(200).json({
+      message: "Stock SN created successfully",
+      inserted: rows.length,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: error.message || "Failed to process Excel file",
+    });
+  }
+}
+
 const getAllMouvementStock = async (req, res) => {
   try {
     const mouvement = await prisma.mouvement_stock.findMany({
@@ -1279,7 +1410,7 @@ const getOneStockMouvements = async (req, res) => {
       where: {
         stock_id: parseInt(id)
       },
-      orderBy:{
+      orderBy: {
         date: 'desc'
       },
     })
@@ -1366,7 +1497,7 @@ const getCartonPiece = async (req, res) => {
   }
 }
 
-const getStockPiece = async (req, res) => {
+const getQuantitePiece = async (req, res) => {
   const { item_id, model_id, service_id } = req.params
   try {
     const quantite = await prisma.stock_piece.findFirst({
@@ -1382,6 +1513,29 @@ const getStockPiece = async (req, res) => {
     }
 
     return res.status(200).json(quantite.quantite)
+  } catch (error) {
+    res.status(500).json({ message: "Erreur serveur", error })
+    console.log(error)
+  }
+}
+
+const getAllOneQuantitePiece = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const stock = await prisma.stock_piece.findMany({
+      where: {
+        piece_id: parseInt(id),
+      },
+      orderBy: {
+        id: 'desc',
+      },
+    })
+
+    if (!stock) {
+      return res.status(404).json({ message: "Aucune quantité trouvée !" })
+    }
+
+    return res.status(200).json(stock)
   } catch (error) {
     res.status(500).json({ message: "Erreur serveur", error })
     console.log(error)
@@ -1472,6 +1626,29 @@ const getLotStock = async (req, res) => {
   }
 }
 
+const getStockParPiece = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const stock = await prisma.stocks.findMany({
+      where: {
+        piece_id: parseInt(id),
+      },
+      orderBy: {
+        id: 'desc',
+      },
+    })
+
+    if (!stock) {
+      return res.status(404).json({ message: "Stock introuvable !" })
+    }
+
+    return res.status(200).json(stock)
+  } catch (error) {
+    res.status(500).json({ message: "Erreur serveur", error })
+    console.log(error)
+  }
+}
+
 module.exports = {
   setStockPiece,
   getAllItems,
@@ -1485,7 +1662,7 @@ module.exports = {
   getCartonPiece,
   getItemModels,
   getItemServices,
-  getStockPiece,
+  getQuantitePiece,
   getAllTypeMouvementStock,
   setStockCarton,
   setStockPieceCarton,
@@ -1500,4 +1677,6 @@ module.exports = {
   getCartonStock,
   getLotStock,
   getOneStockMouvements,
+  getStockParPiece,
+  getAllOneQuantitePiece,
 }

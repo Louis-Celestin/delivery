@@ -29,9 +29,9 @@ const baseUrl = process.env.FRONTEND_BASE_URL || "https://livraisons.greenpayci.
 const localUrl = "http://localhost:5173"
 // GENERAL_URL va être utilisée dans les mails envoyés pour pouvoir rediriger correctement l'utilisateur vers la page avec le bon lien
 // En test GENERAL_URL doit avoir la valeur de localUrl et celle de baseUrl lors du deploiement.
-let GENERAL_URL = baseUrl 
+let GENERAL_URL = baseUrl
 let test_env = TEST_ENV
-if(test_env){
+if (test_env) {
   GENERAL_URL = localUrl
 }
 
@@ -115,37 +115,37 @@ const deliver = async (req, res) => {
     let livraisonTypeName = typeLivraison.nom_type_livraison.toUpperCase();
 
     const service = await prisma.services.findUnique({
-      where:{
+      where: {
         id: parseInt(service_recepteur)
       }
     })
 
     const userService = await prisma.user_services.findMany({
-      where:{
+      where: {
         service_id: parseInt(service_recepteur)
       },
-      include:{
+      include: {
         users: true
       }
     })
-    
+
     let recepteurs
-    if(role_recepteur){
+    if (role_recepteur) {
       const userRole = await prisma.user_roles.findMany({
-        where:{
+        where: {
           role_id: parseInt(role_recepteur)
         },
-        include:{
+        include: {
           users: true
         }
       })
       recepteurs = userRole.map(us => us.users)
-    }else{
+    } else {
       const userRole = await prisma.user_roles.findMany({
-        where:{
+        where: {
           role_id: 2
         },
-        include:{
+        include: {
           users: true
         }
       })
@@ -153,14 +153,14 @@ const deliver = async (req, res) => {
     }
 
     const supervisionRole = await prisma.user_roles.findMany({
-      where:{
+      where: {
         role_id: 13
       },
-      include:{
+      include: {
         users: true
       }
     })
-            
+
     const service_users = userService.map(us => us.users)
     const superviseurs = supervisionRole.map(us => us.users)
 
@@ -169,9 +169,9 @@ const deliver = async (req, res) => {
     const url = GENERAL_URL
     let deliveryLink = `${url}/formulaire/${nouvelleLivraison.id_livraison}`;
 
-    
-    const commentaire_mail = commentaire ? commentaire : '(sans commentaire)' 
-    if ((service_users && service_users.length > 0) || (recepteurs && recepteurs.length > 0) ) {
+
+    const commentaire_mail = commentaire ? commentaire : '(sans commentaire)'
+    if ((service_users && service_users.length > 0) || (recepteurs && recepteurs.length > 0)) {
       const subject = `NOUVELLE LIVRAISON (${livraisonTypeName})`;
       const html = `
         <p>Bonjour,</p>
@@ -208,14 +208,14 @@ const deliver = async (req, res) => {
           html,
         });
       }
-      if (superviseurs){
+      if (superviseurs) {
         for (const superviseur of superviseurs) {
-        await sendMail({
-          to: superviseur.email,
-          subject,
-          html,
-        });
-      }
+          await sendMail({
+            to: superviseur.email,
+            subject,
+            html,
+          });
+        }
       }
     }
 
@@ -235,8 +235,8 @@ const getAllLivraisons = async (req, res) => {
     const livraisons = await prisma.livraison.findMany({
       where: { deleted: false },
       orderBy: { date_livraison: 'desc' },
-      include : {
-        validations : true
+      include: {
+        validations: true
       }
     });
 
@@ -245,26 +245,26 @@ const getAllLivraisons = async (req, res) => {
     res.status(500).json({ message: "Erreur lors de la récupération des livraisons", error });
   }
 };
-    
+
 const getOneLivraison = async (req, res) => {
-    const { id } = req.params;
-  
-    try {
-      const livraison = await prisma.livraison.findUnique({
-        where: { id_livraison: parseInt(id) },
-        include: {
-          validations: true,
-        }
-      });
-  
-      if (!livraison || livraison.deleted) {
-        return res.status(404).json({ message: "Livraison introuvable" });
+  const { id } = req.params;
+
+  try {
+    const livraison = await prisma.livraison.findUnique({
+      where: { id_livraison: parseInt(id) },
+      include: {
+        validations: true,
       }
-  
-      res.status(200).json(livraison);
-    } catch (error) {
-      res.status(500).json({ message: "Erreur serveur", error });
+    });
+
+    if (!livraison || livraison.deleted) {
+      return res.status(404).json({ message: "Livraison introuvable" });
     }
+
+    res.status(200).json(livraison);
+  } catch (error) {
+    res.status(500).json({ message: "Erreur serveur", error });
+  }
 };
 
 /* 
@@ -285,17 +285,17 @@ const updateLivraison = async (req, res) => {
 
   try {
     const produits = typeof produitsLivre === "string"
-    ? JSON.parse(produitsLivre)
-    : produitsLivre;
-    
+      ? JSON.parse(produitsLivre)
+      : produitsLivre;
+
     let utilisateur = null;
-    
+
     utilisateur = await prisma.users.findUnique({
       where: {
         id_user: parseInt(user_id)
       }
     })
-    
+
     if (!utilisateur) {
       return res.status(404).json({ message: "Utilisateur non trouvé" });
     }
@@ -309,7 +309,7 @@ const updateLivraison = async (req, res) => {
     if (!typeLivraison) {
       return res.status(404).json({ message: "Type de livraison non trouvé" });
     }
-    
+
     // Données à mettre à jour
     const dataToUpdate = {
       produitsLivre: typeof produitsLivre === "string" ? produitsLivre : JSON.stringify(produitsLivre),
@@ -338,37 +338,37 @@ const updateLivraison = async (req, res) => {
     let livraisonTypeName = typeLivraison.nom_type_livraison.toUpperCase();
 
     const service = await prisma.services.findUnique({
-      where:{
+      where: {
         id: parseInt(service_recepteur)
       }
     })
 
     const userService = await prisma.user_services.findMany({
-      where:{
+      where: {
         service_id: parseInt(service_recepteur)
       },
-      include:{
+      include: {
         users: true
       }
     })
-    
+
     let recepteurs
-    if(role_recepteur){
+    if (role_recepteur) {
       const userRole = await prisma.user_roles.findMany({
-        where:{
+        where: {
           role_id: parseInt(role_recepteur)
         },
-        include:{
+        include: {
           users: true
         }
       })
       recepteurs = userRole.map(us => us.users)
-    }else{
+    } else {
       const userRole = await prisma.user_roles.findMany({
-        where:{
+        where: {
           role_id: 2
         },
-        include:{
+        include: {
           users: true
         }
       })
@@ -376,14 +376,14 @@ const updateLivraison = async (req, res) => {
     }
 
     const supervisionRole = await prisma.user_roles.findMany({
-      where:{
+      where: {
         role_id: 13
       },
-      include:{
+      include: {
         users: true
       }
     })
-            
+
     const service_users = userService.map(us => us.users)
     const superviseurs = supervisionRole.map(us => us.users)
 
@@ -392,8 +392,8 @@ const updateLivraison = async (req, res) => {
     const url = GENERAL_URL
     let deliveryLink = `${url}/formulaire/${updated.id_livraison}`;
 
-    const commentaire_mail = commentaire ? commentaire : '(sans commentaire)' 
-    if ((service_users && service_users.length > 0) || (recepteurs && recepteurs.length > 0) ) {
+    const commentaire_mail = commentaire ? commentaire : '(sans commentaire)'
+    if ((service_users && service_users.length > 0) || (recepteurs && recepteurs.length > 0)) {
       const subject = `MODIFICATION LIVRAISON (${livraisonTypeName})`;
       const html = `
         <p>Bonjour,</p>
@@ -430,40 +430,40 @@ const updateLivraison = async (req, res) => {
           html,
         });
       }
-      if (superviseurs){
+      if (superviseurs) {
         for (const superviseur of superviseurs) {
-        await sendMail({
-          to: superviseur.email,
-          subject,
-          html,
-        });
-      }
+          await sendMail({
+            to: superviseur.email,
+            subject,
+            html,
+          });
+        }
       }
     }
 
     return res.status(200).json(updated);
   } catch (error) {
-      console.error(error);
-      return res.status(500).json({ message: "Erreur lors de la mise à jour", error });
+    console.error(error);
+    return res.status(500).json({ message: "Erreur lors de la mise à jour", error });
   }
 };
-  
+
 const deleteLivraison = async (req, res) => {
-    const { id } = req.params;
-  
-    try {
-      const deleted = await prisma.livraison.update({
-        where: { id_livraison: parseInt(id) },
-        data: {
-          deleted: true,
-          date_deleted: new Date()
-        }
-      });
-  
-      res.status(200).json({ message: "Livraison supprimée (soft delete)", deleted });
-    } catch (error) {
-      res.status(500).json({ message: "Erreur lors de la suppression", error });
-    }
+  const { id } = req.params;
+
+  try {
+    const deleted = await prisma.livraison.update({
+      where: { id_livraison: parseInt(id) },
+      data: {
+        deleted: true,
+        date_deleted: new Date()
+      }
+    });
+
+    res.status(200).json({ message: "Livraison supprimée (soft delete)", deleted });
+  } catch (error) {
+    res.status(500).json({ message: "Erreur lors de la suppression", error });
+  }
 };
 
 /* Ajout d'une fonction deliverOld specialement pour les livraisons anciennes */
@@ -472,109 +472,113 @@ const deliverOld = async (req, res) => {
     produitsLivre,
     commentaire,
     user_id,
-      nom_livreur,
-      nom_validateur,
-      type_livraison_id,
-      isAncienne,
-      date_livraison
-    } = req.body;
-  
-    try {
+    nom_livreur,
+    nom_validateur,
+    type_livraison_id,
+    isAncienne,
+    date_livraison
+  } = req.body;
 
-      // Verification de l'agent livreur
-      const produits = typeof produitsLivre === "string"
-        ? JSON.parse(produitsLivre)
-        : produitsLivre;
-  
-      const typeLivraison = await prisma.typeLivraison.findUnique({
+  try {
+
+    // Verification de l'agent livreur
+    const produits = typeof produitsLivre === "string"
+      ? JSON.parse(produitsLivre)
+      : produitsLivre;
+
+    const typeLivraison = await prisma.typeLivraison.findUnique({
+      where: {
+        id_type_livraison: parseInt(type_livraison_id)
+      }
+    });
+
+    if (!typeLivraison) {
+      return res.status(404).json({ message: "Type de livraison non trouvé" });
+    }
+    let utilisateur = null;
+    if (!isAncienne) {
+      utilisateur = await prisma.users.findUnique({
         where: {
-          id_type_livraison: parseInt(type_livraison_id)
+          id_user: parseInt(user_id)
         }
       });
-  
-      if (!typeLivraison) {
-        return res.status(404).json({ message: "Type de livraison non trouvé" });
-      }  
-      let utilisateur = null;
-      if (!isAncienne) {
-        utilisateur = await prisma.users.findUnique({
+
+      if (!utilisateur) {
+        return res.status(404).json({ message: "Utilisateur non trouvé" });
+      }
+    }
+
+    const signature_expediteur = null
+
+    const nouvelleLivraison = await prisma.livraison.create({
+      data: {
+        signature_expediteur: 'Validé',
+        statut_livraison: "livre",
+        qte_totale_livraison: produits.length,
+        produitsLivre: JSON.stringify(produits),
+        commentaire,
+        nom_livreur: nom_livreur || null,
+        date_livraison: isAncienne && date_livraison
+          ? new Date(date_livraison)
+          : new Date(),
+        deleted: false,
+        type_livraison_id: parseInt(type_livraison_id),
+        user_id: utilisateur ? utilisateur.id_user : null,
+      }
+    });
+
+    // Si c’est une livraison de chargeurs, on traite les transactions
+    if (parseInt(type_livraison_id) === 5) {
+      for (const item of produits) {
+        const chargeur = await prisma.chargeurs.findUnique({
           where: {
-            id_user: parseInt(user_id)
+            id_chargeur: parseInt(1)
           }
         });
-  
-        if (!utilisateur) {
-          return res.status(404).json({ message: "Utilisateur non trouvé" });
-        }
-      }
 
-      const signature_expediteur = null
-  
-      const nouvelleLivraison = await prisma.livraison.create({
-        data: {
-          signature_expediteur: 'Validé',
-          statut_livraison: "livre",
-          qte_totale_livraison: produits.length,
-          produitsLivre: JSON.stringify(produits),
-          commentaire,
-          nom_livreur: nom_livreur || null,
-          date_livraison: isAncienne && date_livraison
-            ? new Date(date_livraison)
-            : new Date(),
-          deleted: false,
-          type_livraison_id: parseInt(type_livraison_id),
-          user_id: utilisateur ? utilisateur.id_user : null,
+        if (!chargeur) {
+          continue; // on ignore les chargeurs non trouvés
         }
-      });
-  
-      // Si c’est une livraison de chargeurs, on traite les transactions
-      if (parseInt(type_livraison_id) === 5) {
-        for (const item of produits) {
-          const chargeur = await prisma.chargeurs.findUnique({
-            where: {
-              id_chargeur: parseInt(1)
-            }
-          });
-  
-          if (!chargeur) {
-            continue; // on ignore les chargeurs non trouvés
-          }
-  
-          const quantite = parseInt(item.quantite || 1);
-  
-          // Créer la transaction (type sortie)
-          await prisma.transactions.create({
-            data: {
-              type_transaction: "sortie",
-              quantite,
-              date_transaction: new Date(),
-              chargeurs : {connect : {
-                id_chargeur : parseInt(1)
-              }},
-              users: utilisateur ? {connect : {
-                id_user : parseInt(utilisateur.id_user)
-              }} : null
-            }
-          }).then((resultats)=>{
-            console.log(resultats)
-          }).catch(err=>{console.log(err)})
-  
-          // Mettre à jour le stock
-          await prisma.chargeurs.update({
-            where: { id_chargeur: parseInt(1) },
-            data: {
-              stock: {
-                decrement: quantite
+
+        const quantite = parseInt(item.quantite || 1);
+
+        // Créer la transaction (type sortie)
+        await prisma.transactions.create({
+          data: {
+            type_transaction: "sortie",
+            quantite,
+            date_transaction: new Date(),
+            chargeurs: {
+              connect: {
+                id_chargeur: parseInt(1)
               }
+            },
+            users: utilisateur ? {
+              connect: {
+                id_user: parseInt(utilisateur.id_user)
+              }
+            } : null
+          }
+        }).then((resultats) => {
+          console.log(resultats)
+        }).catch(err => { console.log(err) })
+
+        // Mettre à jour le stock
+        await prisma.chargeurs.update({
+          where: { id_chargeur: parseInt(1) },
+          data: {
+            stock: {
+              decrement: quantite
             }
-          });
-        }
+          }
+        });
       }
+    }
 
-      let final_nom_validateur = nom_validateur;
-      let final_date_validation = new Date(date_livraison);
+    let final_nom_validateur = nom_validateur;
+    let final_date_validation = new Date(date_livraison);
 
-      const newValidation = await prisma.validations.create({
+    const newValidation = await prisma.validations.create({
       data: {
         livraison_id: parseInt(nouvelleLivraison.id_livraison),
         commentaire,
@@ -585,16 +589,16 @@ const deliverOld = async (req, res) => {
       },
     });
 
-      res.status(201).json({
-        message: "Livraison enregistrée avec succès",
-        livraison: nouvelleLivraison,
-        newValidation
-      });
-  
-    } catch (error) {
-      console.error("Erreur lors de la livraison :", error);
-      res.status(500).json({ message: "Erreur interne", error });
-    }
+    res.status(201).json({
+      message: "Livraison enregistrée avec succès",
+      livraison: nouvelleLivraison,
+      newValidation
+    });
+
+  } catch (error) {
+    console.error("Erreur lors de la livraison :", error);
+    res.status(500).json({ message: "Erreur interne", error });
+  }
 };
 
 const deliverStock = async (req, res) => {
@@ -610,14 +614,14 @@ const deliverStock = async (req, res) => {
       otherFields,
     } = req.body;
 
-    const typeLivraison = await prisma.stock_dt.findUnique({
+    const typeLivraison = await prisma.items.findUnique({
       where: {
         id_piece: parseInt(type_livraison_id)
       }
     });
 
     if (!typeLivraison) {
-      return res.status(404).json({ message: "Type de pièce non trouvée" });
+      return res.status(404).json({ message: "Pièce non trouvée" });
     }
 
     let utilisateur = null;
@@ -643,15 +647,15 @@ const deliverStock = async (req, res) => {
     }
 
     const autres = typeof otherFields === "string"
-    ? JSON.parse(otherFields)
-    : otherFields
+      ? JSON.parse(otherFields)
+      : otherFields
 
     const nouvelleLivraison = await prisma.Livraisons.create({
       data: {
         user_id: utilisateur ? utilisateur.id_user : null,
         quantite_livraison: parseInt(quantite),
         nom_livreur: nomLivreur ? nomLivreur : null,
-        commentaire_livraison : commentaire,
+        commentaire_livraison: commentaire,
         signature_expediteur: signature_expediteur ? signature_expediteur : null,
         type: "livraison_piece",
         statut_livraison: "en_cours",
@@ -667,45 +671,45 @@ const deliverStock = async (req, res) => {
           }
         }
       },
-      include:{
+      include: {
         livraison_piece: true
       }
     });
 
     await prisma.demandes.update({
-      where: { id_demande: parseInt(demande_id)},
-      data: { demande_livree : true},
+      where: { id: parseInt(demande_id) },
+      data: { demande_livree: true },
     })
 
 
     // *********** GESTION DES MAILS ************
 
-    const piece = await prisma.stock_dt.findUnique({
-      where:{
+    const piece = await prisma.items.findUnique({
+      where: {
         id_piece: parseInt(type_livraison_id)
       }
     });
 
     const service = await prisma.services.findUnique({
-      where:{
+      where: {
         id: parseInt(service_reception)
       }
     })
 
     const userService = await prisma.user_services.findMany({
-      where:{
+      where: {
         service_id: parseInt(service_reception)
       },
-      include:{
+      include: {
         users: true
       }
     })
 
     const userRole = await prisma.user_roles.findMany({
-      where:{
+      where: {
         role_id: 12
       },
-      include:{
+      include: {
         users: true
       }
     })
@@ -716,7 +720,7 @@ const deliverStock = async (req, res) => {
     let serviceReception = service.nom_service.toUpperCase();
     let quantiteProduits = quantite
     let commentaire_mail = commentaire ? commentaire : "(Sans commentaire)"
-    
+
     const url = GENERAL_URL
     const deliveryLink = `${url}/demande-details/${demande_id}`;
 
@@ -744,20 +748,20 @@ const deliverStock = async (req, res) => {
         <p>Green - Pay vous remercie.</p>
       `;
 
-      for (const recepteur of recepteurs) {
-        await sendMail({
-          to: recepteur.email,
-          subject,
-          html,
-        });
-      }
-      for (const service_user of service_users) {
-        await sendMail({
-          to: service_user.email,
-          subject,
-          html,
-        });
-      }
+      // for (const recepteur of recepteurs) {
+      //   await sendMail({
+      //     to: recepteur.email,
+      //     subject,
+      //     html,
+      //   });
+      // }
+      // for (const service_user of service_users) {
+      //   await sendMail({
+      //     to: service_user.email,
+      //     subject,
+      //     html,
+      //   });
+      // }
     }
 
     res.status(201).json({
@@ -774,12 +778,12 @@ const deliverStock = async (req, res) => {
 const getAllTypeLivraisonCommerciale = async (req, res) => {
   try {
     const typeLivraison = await prisma.type_livraison_commerciale.findMany({
-        orderBy: { nom_type_livraison: 'asc' },
+      orderBy: { nom_type_livraison: 'asc' },
     });
 
     res.status(200).json(typeLivraison);
   } catch (error) {
-      res.status(500).json({ message: "Erreur lors de la récupération des types de livraison", error });
+    res.status(500).json({ message: "Erreur lors de la récupération des types de livraison", error });
   }
 }
 
@@ -796,8 +800,8 @@ const getAllStockDeliveries = async (req, res) => {
     })
 
     res.status(200).json(stockDeliveries);
-  } catch (error){
-    res.status(500).json({ message: "Erreur lors de la récupération de toutes les livraisons de pièces", error});
+  } catch (error) {
+    res.status(500).json({ message: "Erreur lors de la récupération de toutes les livraisons de pièces", error });
   }
 }
 
@@ -831,16 +835,16 @@ const receiveStock = async (req, res) => {
     commentaire,
     user_id,
   } = req.body;
-  try{
+  try {
 
     const livraison = await prisma.livraison_piece.findUnique({
       where: { id: parseInt(livraison_id) },
-      include: { 
+      include: {
         Livraisons: true
       }
     })
 
-    if (!livraison){
+    if (!livraison) {
       return res.status(404).json({ message: "Livraison introuvable." });
     }
     if (livraison.Livraisons.statut_livraison === "livre") {
@@ -849,7 +853,7 @@ const receiveStock = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: "Signature du récepteur requise." });
     }
-  
+
     const uploadResult = await cloudinary.uploader.upload(req.file.path, {
       folder: "greenpay/signatures",
     });
@@ -869,12 +873,12 @@ const receiveStock = async (req, res) => {
 
     const newReception = await prisma.reception_livraison.create({
       data: {
-        livraison_id : parseInt(livraison_id),
+        livraison_id: parseInt(livraison_id),
         date_reception: new Date(),
-        user_id : parseInt(user_id),
+        user_id: parseInt(user_id),
         nom_recepteur,
         commentaire_reception: commentaire,
-        signature_recepteur: signature? signature : '',
+        signature_recepteur: signature ? signature : '',
         statut_reception: 'recu',
       }
     })
@@ -883,40 +887,40 @@ const receiveStock = async (req, res) => {
       where: { id: livraison.id },
       data: { statut_livraison: "livre" },
       include: {
-        livraison_piece : true
+        livraison_piece: true
       }
     })
-    
+
     const piece = await prisma.stock_dt.findUnique({
-      where:{
+      where: {
         id_piece: livraison.piece_id
       }
     });
 
     await prisma.stock_dt.update({
-      where:{
+      where: {
         id_piece: livraison.piece_id
       },
       data: {
         quantite: piece.quantite - livraison.Livraisons.quantite_livraison
       }
-    }) 
+    })
 
 
     // *********** GESTION DES MAILS ************
 
 
     const service = await prisma.services.findUnique({
-      where:{
+      where: {
         id: parseInt(livraison.Livraisons.service_id)
       }
     })
 
     const userRole = await prisma.user_roles.findMany({
-      where:{
+      where: {
         role_id: 1
       },
-      include:{
+      include: {
         users: true
       }
     })
@@ -926,7 +930,7 @@ const receiveStock = async (req, res) => {
     let quantiteProduits = livraison.Livraisons.quantite_livraison
     let commentaire_mail = commentaire ? commentaire : "(Sans commentaire)"
     let serviceReception = service.nom_service.toUpperCase();
-    
+
     const url = GENERAL_URL
     const deliveryLink = `${url}/demande-details/${livraison.demande_id}`;
 
@@ -965,14 +969,14 @@ const receiveStock = async (req, res) => {
 
     return res.status(201).json(newReception);
 
-  } catch (error){
+  } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Erreur serveur." });
   }
 }
 
 const addDeliveryType = async (req, res) => {
-  try{
+  try {
     const {
       typeLivraison,
       user_id,
@@ -983,7 +987,7 @@ const addDeliveryType = async (req, res) => {
         nom_type_livraison: typeLivraison
       }
     })
-    if(existingType){
+    if (existingType) {
       console.log("Type de livraison déjà existant")
       return res.status(400).json({ message: "Type de livraison déjà existant" });
     }
@@ -1000,7 +1004,7 @@ const addDeliveryType = async (req, res) => {
     let nomUser = utilisateur.fullname
 
     const nouveauTypeLivraison = await prisma.type_livraison_commerciale.create({
-      data:{
+      data: {
         nom_type_livraison: typeLivraison,
         created_by: nomUser,
       }
@@ -1018,7 +1022,7 @@ const addDeliveryType = async (req, res) => {
 
 const getOneTypeLivraison = async (req, res) => {
   const { id } = req.params;
-  try{
+  try {
     const typeLivraison = await prisma.type_livraison_commerciale.findUnique({
       where: {
         id_type_livraison: parseInt(id)
@@ -1042,13 +1046,13 @@ const updateTypeLivraison = async (req, res) => {
     user_id,
   } = req.body
 
-  try{
+  try {
     let existingType = await prisma.type_livraison_commerciale.findFirst({
       where: {
         nom_type_livraison: typeLivraison
       }
     })
-    if(existingType){
+    if (existingType) {
       console.log("Type de livraison déjà existant")
       return res.status(400).json({ message: "Type de livraison déjà existant" });
     }
@@ -1079,13 +1083,13 @@ const updateTypeLivraison = async (req, res) => {
 
     return res.status(200).json(updatedType);
   } catch (error) {
-      console.error(error);
-      return res.status(500).json({ message: "Erreur lors de la mise à jour", error });
+    console.error(error);
+    return res.status(500).json({ message: "Erreur lors de la mise à jour", error });
   }
 }
 
 const deleteTypeLivraison = async (req, res) => {
-  try{
+  try {
     const { id } = req.params;
     const {
       user_id
@@ -1136,15 +1140,15 @@ const updateDeliveryStock = async (req, res) => {
   } = req.body;
 
   try {
-    
+
     let utilisateur = null;
-    
+
     utilisateur = await prisma.users.findUnique({
       where: {
         id_user: parseInt(user_id)
       }
     })
-    
+
     if (!utilisateur) {
       return res.status(404).json({ message: "Utilisateur non trouvé" });
     }
@@ -1152,15 +1156,15 @@ const updateDeliveryStock = async (req, res) => {
     let nomLivreur = utilisateur.fullname
 
     const autres = typeof otherFields === "string"
-    ? JSON.parse(otherFields)
-    : otherFields
-    
+      ? JSON.parse(otherFields)
+      : otherFields
+
     // Données à mettre à jour
     const dataToUpdate = {
       user_id: utilisateur ? utilisateur.id_user : null,
       quantite_livraison: parseInt(quantite),
       nom_livreur: nomLivreur ? nomLivreur : null,
-      commentaire_livraison : commentaire,
+      commentaire_livraison: commentaire,
       type: "livraison_piece",
       statut_livraison: "en_cours",
       role_id: role_reception ? parseInt(role_reception) : null,
@@ -1188,31 +1192,31 @@ const updateDeliveryStock = async (req, res) => {
     // *********** GESTION DES MAILS ************
 
     const piece = await prisma.stock_dt.findUnique({
-      where:{
+      where: {
         id_piece: parseInt(type_livraison_id)
       }
     });
 
     const service = await prisma.services.findUnique({
-      where:{
+      where: {
         id: parseInt(service_reception)
       }
     })
 
     const userService = await prisma.user_services.findMany({
-      where:{
+      where: {
         service_id: parseInt(service_reception)
       },
-      include:{
+      include: {
         users: true
       }
     })
 
     const userRole = await prisma.user_roles.findMany({
-      where:{
+      where: {
         role_id: 12
       },
-      include:{
+      include: {
         users: true
       }
     })
@@ -1223,7 +1227,7 @@ const updateDeliveryStock = async (req, res) => {
     let serviceReception = service.nom_service.toUpperCase();
     let quantiteProduits = quantite
     let commentaire_mail = commentaire ? commentaire : "(Sans commentaire)"
-    
+
     const url = GENERAL_URL
     const deliveryLink = `${url}/demande-details/${updated.demande_id}`;
 
@@ -1269,188 +1273,188 @@ const updateDeliveryStock = async (req, res) => {
 
     return res.status(200).json(updated);
   } catch (error) {
-      console.error(error);
-      return res.status(500).json({ message: "Erreur lors de la mise à jour", error });
+    console.error(error);
+    return res.status(500).json({ message: "Erreur lors de la mise à jour", error });
   }
 }
 
 const generateLivraisonPDF = async (req, res) => {
-    const { id } = req.params;
-  
-    try {
-      const data = await prisma.livraison.findUnique({
-        where: { id_livraison: parseInt(id) },
-        include: {
-          validations: true,
-        }
-      });
+  const { id } = req.params;
 
-      console.log(data)
-  
-      if (!data) return res.status(404).json({ message: "Livraison introuvable" });
-      if (data.validations.length < 1) return res.status(400).json({ message: "Aucune validation trouvée" });
-  
-      const livraison = {
-        ...data,
-        produitsLivre: typeof data.produitsLivre === "string"
-          ? JSON.parse(data.produitsLivre)
-          : data.produitsLivre
-      };
-  
-      // 🔎 Récupération de l'agent qui a fait la livraison (si user_id défini)
-      let expediteurNom = "N/A";
-      // console.log(livraison)
-      if (livraison.nom_livreur) {
-        expediteurNom = livraison.nom_livreur;
-      } else if (livraison.user_id) {
-        const user = await prisma.users.findUnique({
-          where: { id_user: livraison.user_id }
-        });
-        if (user) {
-          expediteurNom = user.fullname;
-        }
+  try {
+    const data = await prisma.livraison.findUnique({
+      where: { id_livraison: parseInt(id) },
+      include: {
+        validations: true,
       }
-  
-      // 🗺️ Sélection du template
-      const templatesMap = {
-        0: "livraison_base.html",
-        1: "livraison_tpe_gim.html",
-        2: "livraison_tpe_repare.html",
-        3: "livraison_mj_gim.html",
-        4: "livraison_tpe_mobile.html",
-        5: "livraison_chargeur_tpe.html",
-        6: "livraison_tpe_ecobank.html",
-        7: "livraison_chargeur_tpe.html",
-        8: "livraison_chargeur_decom.html",
-      };
-  
-      const templateFile = templatesMap[0];
-      // if (!templateFile) return res.status(400).json({ message: "Type de livraison inconnu" });
-  
-      const filePath = path.join(__dirname, "../../statics/templates/", templateFile);
-      let html = fs.readFileSync(filePath, "utf8");
-  
-      // 🧱 Construction du tableau
-      const produitsRows = livraison.produitsLivre.map((p, index) => {
-        let row = "";
-        const has = (m) => p.mobile_money?.includes(m) ? "✔" : "";
-        row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${p.banque}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
-        // switch (livraison.type_livraison_id) {
-        //   case 1:
-        //     row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${p.banque}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
-        //     break;
-        //   case 2:
-        //     row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td></tr>`;
-        //     break;
-        //   case 3:
-        //     row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${p.banque}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
-        //     break;
-        //   case 4:
-        //     row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
-        //     break;
-        //   case 5:
-        //     row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td></tr>`;
-        //     break;
-        //   case 6:
-        //     row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${p.banque}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
-        //     break;
-        //   case 7:
-        //     row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td></tr>`;
-        //     break;
-        //   case 8:
-        //     row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td></tr>`;
-        //     break;
-        //   default:
-        //     row = "";
-        // }
-      
-        // ➕ Ajout du saut de page toutes les 20 lignes
-        if ((index + 1) % 20 === 0) {
-          row += `<tr class="page-break"></tr>`;
-        }
-      
-        return row;
-      }).join("\n");
+    });
 
-      const typeLivraison = await prisma.type_livraison_commerciale.findUnique({
-        where: {
-          id_type_livraison: livraison.type_livraison_id
-        }
-      })
-      
-      // console.log(livraison.validations[0].signature)
-      // 🧩 Remplacement des balises HTML
-      let index = livraison.validations.length-1
-      html = html
-        .replaceAll("{{type_livraison}}", typeLivraison.nom_type_livraison.toUpperCase())
-        .replace("{{commentaire}}", livraison.commentaire || "")
-        .replace("{{commentaire_reception}}", livraison.validations[index].commentaire)
-        .replace("{{date_livraison}}", formatDate(livraison.date_livraison))
-        .replace("{{qte_totale_livraison}}", livraison.qte_totale_livraison || livraison.produitsLivre.length)
-        .replace("{{nom_expediteur}}", expediteurNom)
-        .replace("{{nom_recepteur}}", livraison.validations[index].nom_recepteur || "Receveur")
-        .replace("{{produitsRows}}", produitsRows)
-        .replace("{{signature}}", livraison.validations[index].signature || "Validé")
-        .replace("{{date_validation}}", livraison.validations[index].date_validation ? formatDate(livraison.validations[index].date_validation) : "N/A")
-        .replace("{{signature_expediteur}}", livraison.signature_expediteur || "Signé")
-        .replace(/(\.title_type\s*\{)([\s\S]*?)(\})/gi, (match, open, content, close) => {
-          let newContent = " background-color: white; color: black;";
-          switch(livraison.type_livraison_id){
-            case 1:
-              newContent = " background-color: #cda5f5; color: #ffff;"
-            break;
-            case 2:
-              newContent = " background-color: #ee6060; color: #ffff;"
-            break;
-            case 3:
-              newContent = " background-color: #a476d2; color: #ffff;"
-            break;
-            case 4:
-              newContent = " background-color: #77ef83; color: #ffff;"
-            break;
-            case 5:
-              newContent = " background-color: #eaee7f; color: #ffff;"
-            break;
-            case 6:
-              newContent = " background-color: #80d8e6; color: #ffff;"
-            break;
-            default:
-              newContent = " background-color: white; color: black;"
-          }
-          return open + newContent + close;
-        })
+    console.log(data)
 
-      // 🖨️ Génération PDF
-      const browser = await puppeteer.launch({ headless: "new", args : ["--no-sandbox", "--disable-setuid-sandbox"] });
-      const page = await browser.newPage();
-      await page.setContent(html, { waitUntil: "networkidle0" });
-  
-      const pdfBuffer = await page.pdf({
-        format: "A4",
-        printBackground: true,
+    if (!data) return res.status(404).json({ message: "Livraison introuvable" });
+    if (data.validations.length < 1) return res.status(400).json({ message: "Aucune validation trouvée" });
+
+    const livraison = {
+      ...data,
+      produitsLivre: typeof data.produitsLivre === "string"
+        ? JSON.parse(data.produitsLivre)
+        : data.produitsLivre
+    };
+
+    // 🔎 Récupération de l'agent qui a fait la livraison (si user_id défini)
+    let expediteurNom = "N/A";
+    // console.log(livraison)
+    if (livraison.nom_livreur) {
+      expediteurNom = livraison.nom_livreur;
+    } else if (livraison.user_id) {
+      const user = await prisma.users.findUnique({
+        where: { id_user: livraison.user_id }
       });
-  
-      await browser.close();
-  
-      res.set({
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename=livraison_${livraison.id_livraison}.pdf`
-      });
-  
-      return res.send(pdfBuffer);
-  
-    } catch (err) {
-      console.error(err);
-      return res.status(500).json({ message: "Erreur lors de la génération du PDF" });
+      if (user) {
+        expediteurNom = user.fullname;
+      }
     }
+
+    // 🗺️ Sélection du template
+    const templatesMap = {
+      0: "livraison_base.html",
+      1: "livraison_tpe_gim.html",
+      2: "livraison_tpe_repare.html",
+      3: "livraison_mj_gim.html",
+      4: "livraison_tpe_mobile.html",
+      5: "livraison_chargeur_tpe.html",
+      6: "livraison_tpe_ecobank.html",
+      7: "livraison_chargeur_tpe.html",
+      8: "livraison_chargeur_decom.html",
+    };
+
+    const templateFile = templatesMap[0];
+    // if (!templateFile) return res.status(400).json({ message: "Type de livraison inconnu" });
+
+    const filePath = path.join(__dirname, "../../statics/templates/", templateFile);
+    let html = fs.readFileSync(filePath, "utf8");
+
+    // 🧱 Construction du tableau
+    const produitsRows = livraison.produitsLivre.map((p, index) => {
+      let row = "";
+      const has = (m) => p.mobile_money?.includes(m) ? "✔" : "";
+      row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${p.banque}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
+      // switch (livraison.type_livraison_id) {
+      //   case 1:
+      //     row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${p.banque}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
+      //     break;
+      //   case 2:
+      //     row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td></tr>`;
+      //     break;
+      //   case 3:
+      //     row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${p.banque}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
+      //     break;
+      //   case 4:
+      //     row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
+      //     break;
+      //   case 5:
+      //     row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td></tr>`;
+      //     break;
+      //   case 6:
+      //     row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${p.banque}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
+      //     break;
+      //   case 7:
+      //     row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td></tr>`;
+      //     break;
+      //   case 8:
+      //     row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td></tr>`;
+      //     break;
+      //   default:
+      //     row = "";
+      // }
+
+      // ➕ Ajout du saut de page toutes les 20 lignes
+      if ((index + 1) % 20 === 0) {
+        row += `<tr class="page-break"></tr>`;
+      }
+
+      return row;
+    }).join("\n");
+
+    const typeLivraison = await prisma.type_livraison_commerciale.findUnique({
+      where: {
+        id_type_livraison: livraison.type_livraison_id
+      }
+    })
+
+    // console.log(livraison.validations[0].signature)
+    // 🧩 Remplacement des balises HTML
+    let index = livraison.validations.length - 1
+    html = html
+      .replaceAll("{{type_livraison}}", typeLivraison.nom_type_livraison.toUpperCase())
+      .replace("{{commentaire}}", livraison.commentaire || "")
+      .replace("{{commentaire_reception}}", livraison.validations[index].commentaire)
+      .replace("{{date_livraison}}", formatDate(livraison.date_livraison))
+      .replace("{{qte_totale_livraison}}", livraison.qte_totale_livraison || livraison.produitsLivre.length)
+      .replace("{{nom_expediteur}}", expediteurNom)
+      .replace("{{nom_recepteur}}", livraison.validations[index].nom_recepteur || "Receveur")
+      .replace("{{produitsRows}}", produitsRows)
+      .replace("{{signature}}", livraison.validations[index].signature || "Validé")
+      .replace("{{date_validation}}", livraison.validations[index].date_validation ? formatDate(livraison.validations[index].date_validation) : "N/A")
+      .replace("{{signature_expediteur}}", livraison.signature_expediteur || "Signé")
+      .replace(/(\.title_type\s*\{)([\s\S]*?)(\})/gi, (match, open, content, close) => {
+        let newContent = " background-color: white; color: black;";
+        switch (livraison.type_livraison_id) {
+          case 1:
+            newContent = " background-color: #cda5f5; color: #ffff;"
+            break;
+          case 2:
+            newContent = " background-color: #ee6060; color: #ffff;"
+            break;
+          case 3:
+            newContent = " background-color: #a476d2; color: #ffff;"
+            break;
+          case 4:
+            newContent = " background-color: #77ef83; color: #ffff;"
+            break;
+          case 5:
+            newContent = " background-color: #eaee7f; color: #ffff;"
+            break;
+          case 6:
+            newContent = " background-color: #80d8e6; color: #ffff;"
+            break;
+          default:
+            newContent = " background-color: white; color: black;"
+        }
+        return open + newContent + close;
+      })
+
+    // 🖨️ Génération PDF
+    const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox", "--disable-setuid-sandbox"] });
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: "networkidle0" });
+
+    const pdfBuffer = await page.pdf({
+      format: "A4",
+      printBackground: true,
+    });
+
+    await browser.close();
+
+    res.set({
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename=livraison_${livraison.id_livraison}.pdf`
+    });
+
+    return res.send(pdfBuffer);
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Erreur lors de la génération du PDF" });
+  }
 };
 
 const generateTotalLivraisonPDF = async (req, res) => {
   const { listId } = req.body
   const zip = new JSZip();
 
-  for(const id of listId){
-    try{
+  for (const id of listId) {
+    try {
       livraison_data = await prisma.livraison.findUnique({
         where: {
           id_livraison: parseInt(id)
@@ -1468,7 +1472,7 @@ const generateTotalLivraisonPDF = async (req, res) => {
           ? JSON.parse(livraison_data.produitsLivre)
           : livraison_data.produitsLivre
       };
-  
+
       let expediteurNom = livraison.nom_livreur || "N/A";
       if (!livraison.nom_livreur && livraison.user_id) {
         const user = await prisma.users.findUnique({
@@ -1476,23 +1480,23 @@ const generateTotalLivraisonPDF = async (req, res) => {
         });
         if (user) expediteurNom = user.fullname;
       }
-  
+
       const templateFile = "livraison_base.html";
-  
+
       const filePath = path.join(__dirname, "../../statics/templates/", templateFile);
       let html = fs.readFileSync(filePath, "utf8");
-  
+
       // 🧱 Construction du tableau
       const produitsRows = livraison.produitsLivre.map((p, index) => {
         let row = "";
         const has = (m) => p.mobile_money?.includes(m) ? "✔" : "";
         row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${p.banque}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
-      
+
         // ➕ Ajout du saut de page toutes les 20 lignes
         if ((index + 1) % 20 === 0) {
           row += `<tr class="page-break"></tr>`;
         }
-      
+
         return row;
       }).join("\n");
 
@@ -1501,10 +1505,10 @@ const generateTotalLivraisonPDF = async (req, res) => {
           id_type_livraison: livraison.type_livraison_id
         }
       })
-      
+
       // console.log(livraison.validations[0].signature)
       // 🧩 Remplacement des balises HTML
-      let index = livraison.validations.length-1
+      let index = livraison.validations.length - 1
       html = html
         .replaceAll("{{type_livraison}}", typeLivraison.nom_type_livraison.toUpperCase())
         .replace("{{commentaire}}", livraison.commentaire || "")
@@ -1519,25 +1523,25 @@ const generateTotalLivraisonPDF = async (req, res) => {
         .replace("{{signature_expediteur}}", livraison.signature_expediteur || "Signé")
         .replace(/(\.title_type\s*\{)([\s\S]*?)(\})/gi, (match, open, content, close) => {
           let newContent = " background-color: white; color: black;";
-          switch(livraison.type_livraison_id){
+          switch (livraison.type_livraison_id) {
             case 1:
               newContent = " background-color: #cda5f5; color: #ffff;"
-            break;
+              break;
             case 2:
               newContent = " background-color: #ee6060; color: #ffff;"
-            break;
+              break;
             case 3:
               newContent = " background-color: #a476d2; color: #ffff;"
-            break;
+              break;
             case 4:
               newContent = " background-color: #77ef83; color: #ffff;"
-            break;
+              break;
             case 5:
               newContent = " background-color: #eaee7f; color: #ffff;"
-            break;
+              break;
             case 6:
               newContent = " background-color: #80d8e6; color: #ffff;"
-            break;
+              break;
             default:
               newContent = " background-color: white; color: black;"
           }
@@ -1545,20 +1549,20 @@ const generateTotalLivraisonPDF = async (req, res) => {
         })
 
       // 🖨️ Génération PDF
-      const browser = await puppeteer.launch({ headless: "new", args : ["--no-sandbox", "--disable-setuid-sandbox"] });
+      const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox", "--disable-setuid-sandbox"] });
       const page = await browser.newPage();
       await page.setContent(html, { waitUntil: "networkidle0" });
-  
+
       const pdfBuffer = await page.pdf({
         format: "A4",
         printBackground: true,
       });
-  
+
       await browser.close();
       const date_text = new Date(livraison.validations[index].date_validation).toISOString().replace(/[:.]/g, "-")
 
       zip.file(`livraison_${livraison.id_livraison}_${typeLivraison.nom_type_livraison.toUpperCase()}_${date_text}.pdf`, pdfBuffer);
-  
+
     } catch (err) {
       console.error(err);
       return res.status(500).json({ message: "Erreur lors de la génération du PDF" });
@@ -1566,7 +1570,7 @@ const generateTotalLivraisonPDF = async (req, res) => {
   }
   const zipBuffer = await zip.generateAsync({ type: "nodebuffer" });
 
-  const timestamp = new Date().toISOString().replace(/[:.]/g, "-"); 
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   const zipName = `livraisons_${timestamp}.zip`;
 
   res.set({
@@ -1580,7 +1584,7 @@ const generateTotalLivraisonPDF = async (req, res) => {
 const getAllTypeParametrage = async (req, res) => {
   try {
     const typeParametrage = await prisma.type_parametrage.findMany({
-      orderBy: { id : 'asc' },
+      orderBy: { id: 'asc' },
     });
 
     res.status(200).json(typeParametrage);
@@ -1603,8 +1607,8 @@ const makeRemplacement = async (req, res) => {
     } = req.body;
 
     const produits = typeof detailsRemplacement === "string"
-    ? JSON.parse(detailsRemplacement)
-    : detailsRemplacement;
+      ? JSON.parse(detailsRemplacement)
+      : detailsRemplacement;
 
     let utilisateur = await prisma.users.findUnique({
       where: {
@@ -1613,13 +1617,13 @@ const makeRemplacement = async (req, res) => {
     });
 
     const detailsParams = typeof detailsParametrage === "string"
-    ? JSON.parse(detailsParametrage)
-    : detailsParametrage;
+      ? JSON.parse(detailsParametrage)
+      : detailsParametrage;
 
     if (!utilisateur) {
       return res.status(404).json({ message: "Utilisateur non trouvé" });
     }
-    
+
     // Gestion de l'upload Cloudinary
     const uploadResult = await cloudinary.uploader.upload(req.file.path, {
       folder: "greenpay/signatures",
@@ -1653,42 +1657,42 @@ const makeRemplacement = async (req, res) => {
     /******************************** GESTION DES MAILS  ***********************************/
 
     const ancienModel = await prisma.model_piece.findUnique({
-      where:{
+      where: {
         id_model: parseInt(ancien_model)
       }
     })
     const nouveModel = await prisma.model_piece.findUnique({
-      where:{
+      where: {
         id_model: parseInt(nouveau_model)
       }
     })
 
     const userService = await prisma.user_services.findMany({
-      where:{
+      where: {
         service_id: parseInt(service_recepteur)
       },
-      include:{
+      include: {
         users: true
       }
     })
-    
+
     let recepteurs
-    if(role_recepteur){
+    if (role_recepteur) {
       const userRole = await prisma.user_roles.findMany({
-        where:{
+        where: {
           role_id: parseInt(role_recepteur)
         },
-        include:{
+        include: {
           users: true
         }
       })
       recepteurs = userRole.map(us => us.users)
-    }else{
+    } else {
       const userRole = await prisma.user_roles.findMany({
-        where:{
+        where: {
           role_id: 2
         },
-        include:{
+        include: {
           users: true
         }
       })
@@ -1696,23 +1700,23 @@ const makeRemplacement = async (req, res) => {
     }
 
     const supervisionRole = await prisma.user_roles.findMany({
-      where:{
+      where: {
         role_id: 13
       },
-      include:{
+      include: {
         users: true
       }
     })
-            
+
     const service_users = userService.map(us => us.users)
     const superviseurs = supervisionRole.map(us => us.users)
 
     const url = GENERAL_URL
     let deliveryLink = `${url}/remplacement-details/${nouveauRemplacement.id}`;
 
-    
-    const commentaire_mail = commentaire ? commentaire : '(sans commentaire)' 
-    if ((service_users && service_users.length > 0) || (recepteurs && recepteurs.length > 0) ) {
+
+    const commentaire_mail = commentaire ? commentaire : '(sans commentaire)'
+    if ((service_users && service_users.length > 0) || (recepteurs && recepteurs.length > 0)) {
       const subject = `NOUVEAU REMPLACEMENT TPE`;
       const html = `
         <p>Bonjour,</p>
@@ -1750,14 +1754,14 @@ const makeRemplacement = async (req, res) => {
           html,
         });
       }
-      if (superviseurs){
+      if (superviseurs) {
         for (const superviseur of superviseurs) {
-        await sendMail({
-          to: superviseur.email,
-          subject,
-          html,
-        });
-      }
+          await sendMail({
+            to: superviseur.email,
+            subject,
+            html,
+          });
+        }
       }
     }
 
@@ -1777,8 +1781,8 @@ const getAllRemplacements = async (req, res) => {
     const remplacements = await prisma.remplacements.findMany({
       where: { deleted: false },
       orderBy: { date_remplacement: 'desc' },
-      include : {
-        validation_remplacement : true
+      include: {
+        validation_remplacement: true
       }
     });
 
@@ -1790,7 +1794,7 @@ const getAllRemplacements = async (req, res) => {
 
 const getOneRemplacement = async (req, res) => {
   const { id } = req.params;
-  
+
   try {
     const remplacement = await prisma.remplacements.findUnique({
       where: { id: parseInt(id) },
@@ -1865,12 +1869,12 @@ const validateRemplacement = async (req, res) => {
     /******************************* GESTION DES MAILS  *******************************/
 
     const ancienModel = await prisma.model_piece.findUnique({
-      where:{
+      where: {
         id_model: parseInt(remplacement.old_model_id)
       }
     })
     const nouveModel = await prisma.model_piece.findUnique({
-      where:{
+      where: {
         id_model: parseInt(remplacement.new_model_id)
       }
     })
@@ -1878,29 +1882,29 @@ const validateRemplacement = async (req, res) => {
     let produitsLivre = remplacement.details_remplacement
 
     const produits = typeof produitsLivre === "string"
-    ? JSON.parse(produitsLivre)
-    : produitsLivre;
+      ? JSON.parse(produitsLivre)
+      : produitsLivre;
 
     const supervisionRole = await prisma.user_roles.findMany({
-      where:{
+      where: {
         role_id: 13
       },
-      include:{
+      include: {
         users: true
       }
     })
     const superviseurs = supervisionRole.map(us => us.users)
 
     const roleLivraison = await prisma.user_roles.findMany({
-      where:{
+      where: {
         role_id: 1
       },
-      include:{
+      include: {
         users: true
       }
     })
     const livreurs = roleLivraison.map(us => us.users)
-    
+
     const url = GENERAL_URL
     let deliveryLink = `${url}/remplacement-details/${remplacement.id}`;
     let commentaire_mail = commentaire ? commentaire : '(sans commentaire)'
@@ -1937,7 +1941,7 @@ const validateRemplacement = async (req, res) => {
           html,
         });
       }
-      if (superviseurs){
+      if (superviseurs) {
         for (const superviseur of superviseurs) {
           await sendMail({
             to: superviseur.email,
@@ -1958,10 +1962,10 @@ const validateRemplacement = async (req, res) => {
 const generateDeliveriesXLSX = async (req, res) => {
   const { listId } = req.body
 
-  try{
+  try {
 
     const workbook = new ExcelJS.Workbook();
-  
+
     const resumeSheet = workbook.addWorksheet("Résumé");
 
     const resumeHeaders = [
@@ -2020,7 +2024,7 @@ const generateDeliveriesXLSX = async (req, res) => {
       cell.alignment = { vertical: "middle", horizontal: "center" };
     });
 
-    for(const id of listId){
+    for (const id of listId) {
       const livraison_data = await prisma.livraison.findUnique({
         where: {
           id_livraison: parseInt(id)
@@ -2029,16 +2033,16 @@ const generateDeliveriesXLSX = async (req, res) => {
           validations: true,
         }
       })
-  
+
       if (!livraison_data || livraison_data.validations.length < 1 || livraison_data.statut_livraison != 'livre') continue;
-  
+
       const livraison = {
         ...livraison_data,
         produitsLivre: typeof livraison_data.produitsLivre === "string"
           ? JSON.parse(livraison_data.produitsLivre)
           : livraison_data.produitsLivre
       };
-  
+
       let expediteurNom = livraison.nom_livreur || "N/A";
       if (!livraison.nom_livreur && livraison.user_id) {
         const user = await prisma.users.findUnique({
@@ -2052,15 +2056,15 @@ const generateDeliveriesXLSX = async (req, res) => {
       const recepteurNom = livraison.validations[index]?.nom_recepteur || "Réception";
 
       const typeLivraison = await prisma.type_livraison_commerciale.findUnique({
-        where:{
+        where: {
           id_type_livraison: livraison.type_livraison_id
         }
       })
 
       let typeModel = null
-      if(livraison.model_id){
+      if (livraison.model_id) {
         typeModel = await prisma.model_piece.findUnique({
-          where:{
+          where: {
             id_model: livraison.model_id
           }
         })
@@ -2069,7 +2073,7 @@ const generateDeliveriesXLSX = async (req, res) => {
       resumeSheet.addRow([
         livraison.id_livraison,
         typeLivraison.nom_type_livraison.toUpperCase(),
-        typeModel? typeModel.nom_model.toUpperCase() : 'N/A',
+        typeModel ? typeModel.nom_model.toUpperCase() : 'N/A',
         livraison.date_livraison,
         livraison.qte_totale_livraison,
         livraison.validations[index]?.date_validation,
@@ -2091,7 +2095,7 @@ const generateDeliveriesXLSX = async (req, res) => {
           has("MTN"),
           has("MOOV"),
           p.commentaireTPE,
-          typeModel? typeModel.nom_model.toUpperCase() : 'N/A' ,
+          typeModel ? typeModel.nom_model.toUpperCase() : 'N/A',
           typeLivraison.nom_type_livraison.toUpperCase(),
           livraison.validations[index]?.date_validation,
           livraison.nom_livreur,
@@ -2155,7 +2159,7 @@ const generateDeliveriesXLSX = async (req, res) => {
     res.setHeader("Content-Disposition", `attachment; filename=${fileName}`);
     res.send(buffer);
 
-  } catch(err){
+  } catch (err) {
     console.error("Erreur XLSX:", err);
     res.status(500).json({ message: "Erreur lors de la génération du XLSX" });
   }
@@ -2164,18 +2168,18 @@ const generateDeliveriesXLSX = async (req, res) => {
 const generateRemplacementsXLSX = async (req, res) => {
   const { listId } = req.body
 
-  try{
+  try {
 
     const workbook = new ExcelJS.Workbook();
-  
+
     const resumeSheet = workbook.addWorksheet("Résumé");
 
     const parametrages = await prisma.type_parametrage.findMany({
-      orderBy:{
+      orderBy: {
         id: 'asc'
       }
     })
-    const listParams = parametrages.map((item) =>{
+    const listParams = parametrages.map((item) => {
       return item.nom_parametrage.toUpperCase()
     })
     const resumeHeaders = [
@@ -2237,7 +2241,7 @@ const generateRemplacementsXLSX = async (req, res) => {
       cell.alignment = { vertical: "middle", horizontal: "center" };
     });
 
-    for(const id of listId){
+    for (const id of listId) {
       const livraison_data = await prisma.remplacements.findUnique({
         where: {
           id: parseInt(id)
@@ -2246,19 +2250,19 @@ const generateRemplacementsXLSX = async (req, res) => {
           validation_remplacement: true,
         }
       })
-  
+
       if (!livraison_data || livraison_data.validation_remplacement.length < 1 || livraison_data.statut != 'livre') continue;
-  
+
       const livraison = {
         ...livraison_data,
         details_remplacement: typeof livraison_data.details_remplacement === "string"
-        ? JSON.parse(livraison_data.details_remplacement)
-        : livraison_data.details_remplacement,
+          ? JSON.parse(livraison_data.details_remplacement)
+          : livraison_data.details_remplacement,
         details_parametrage: typeof livraison_data.details_parametrage === "string"
-        ? JSON.parse(livraison_data.details_parametrage)
-        : livraison_data.details_parametrage,
+          ? JSON.parse(livraison_data.details_parametrage)
+          : livraison_data.details_parametrage,
       };
-  
+
       let expediteurNom = livraison.nom_livreur || "N/A";
       if (!livraison.nom_livreur && livraison.user_id) {
         const user = await prisma.users.findUnique({
@@ -2272,21 +2276,21 @@ const generateRemplacementsXLSX = async (req, res) => {
       const recepteurNom = livraison.validation_remplacement[index]?.nom_recepteur || "Réception";
 
       const oldModel = await prisma.model_piece.findUnique({
-        where:{
+        where: {
           id_model: livraison.old_model_id
         }
       })
 
       const newModel = await prisma.model_piece.findUnique({
-        where:{
+        where: {
           id_model: livraison.new_model_id
         }
       })
 
       resumeSheet.addRow([
         livraison.id,
-        oldModel? oldModel.nom_model.toUpperCase() : 'N/A',
-        newModel? newModel.nom_model.toUpperCase() : 'N/A',
+        oldModel ? oldModel.nom_model.toUpperCase() : 'N/A',
+        newModel ? newModel.nom_model.toUpperCase() : 'N/A',
         livraison.date_remplacement,
         livraison.quantite,
         livraison.validation_remplacement[index]?.date_validation,
@@ -2304,9 +2308,9 @@ const generateRemplacementsXLSX = async (req, res) => {
           p.pointMarchand,
           p.caisse,
           p.ancienSN,
-          oldModel? oldModel.nom_model.toUpperCase() : 'N/A',
+          oldModel ? oldModel.nom_model.toUpperCase() : 'N/A',
           p.nouvelSN,
-          newModel? newModel.nom_model.toUpperCase() : 'N/A',
+          newModel ? newModel.nom_model.toUpperCase() : 'N/A',
           p.banque || "",
           has("OM"),
           has("MTN"),
@@ -2378,7 +2382,7 @@ const generateRemplacementsXLSX = async (req, res) => {
     res.setHeader("Content-Disposition", `attachment; filename=${fileName}`);
     res.send(buffer);
 
-  } catch(err){
+  } catch (err) {
     console.error("Erreur XLSX:", err);
     res.status(500).json({ message: "Erreur lors de la génération du XLSX" });
   }
@@ -2399,8 +2403,8 @@ const updateRemplacement = async (req, res) => {
     } = req.body;
 
     const produits = typeof detailsRemplacement === "string"
-    ? JSON.parse(detailsRemplacement)
-    : detailsRemplacement;
+      ? JSON.parse(detailsRemplacement)
+      : detailsRemplacement;
 
     let utilisateur = await prisma.users.findUnique({
       where: {
@@ -2409,13 +2413,13 @@ const updateRemplacement = async (req, res) => {
     });
 
     const detailsParams = typeof detailsParametrage === "string"
-    ? JSON.parse(detailsParametrage)
-    : detailsParametrage;
+      ? JSON.parse(detailsParametrage)
+      : detailsParametrage;
 
     if (!utilisateur) {
       return res.status(404).json({ message: "Utilisateur non trouvé" });
     }
-  
+
     const dataToUpdate = {
       quantite: produits.length,
       details_remplacement: JSON.stringify(produits),
@@ -2435,48 +2439,48 @@ const updateRemplacement = async (req, res) => {
       where: {
         id: parseInt(id)
       },
-      data : dataToUpdate,
+      data: dataToUpdate,
     });
 
     /******************************** GESTION DES MAILS  ***********************************/
 
     const ancienModel = await prisma.model_piece.findUnique({
-      where:{
+      where: {
         id_model: parseInt(ancien_model)
       }
     })
     const nouveModel = await prisma.model_piece.findUnique({
-      where:{
+      where: {
         id_model: parseInt(nouveau_model)
       }
     })
 
     const userService = await prisma.user_services.findMany({
-      where:{
+      where: {
         service_id: parseInt(service_recepteur)
       },
-      include:{
+      include: {
         users: true
       }
     })
-    
+
     let recepteurs
-    if(role_recepteur){
+    if (role_recepteur) {
       const userRole = await prisma.user_roles.findMany({
-        where:{
+        where: {
           role_id: parseInt(role_recepteur)
         },
-        include:{
+        include: {
           users: true
         }
       })
       recepteurs = userRole.map(us => us.users)
-    }else{
+    } else {
       const userRole = await prisma.user_roles.findMany({
-        where:{
+        where: {
           role_id: 2
         },
-        include:{
+        include: {
           users: true
         }
       })
@@ -2484,23 +2488,23 @@ const updateRemplacement = async (req, res) => {
     }
 
     const supervisionRole = await prisma.user_roles.findMany({
-      where:{
+      where: {
         role_id: 13
       },
-      include:{
+      include: {
         users: true
       }
     })
-            
+
     const service_users = userService.map(us => us.users)
     const superviseurs = supervisionRole.map(us => us.users)
 
     const url = GENERAL_URL
     let deliveryLink = `${url}/remplacement-details/${nouveauRemplacement.id}`;
 
-    
-    const commentaire_mail = commentaire ? commentaire : '(sans commentaire)' 
-    if ((service_users && service_users.length > 0) || (recepteurs && recepteurs.length > 0) ) {
+
+    const commentaire_mail = commentaire ? commentaire : '(sans commentaire)'
+    if ((service_users && service_users.length > 0) || (recepteurs && recepteurs.length > 0)) {
       const subject = `MODIFICATION REMPLACEMENT TPE`;
       const html = `
         <p>Bonjour,</p>
@@ -2538,14 +2542,14 @@ const updateRemplacement = async (req, res) => {
           html,
         });
       }
-      if (superviseurs){
+      if (superviseurs) {
         for (const superviseur of superviseurs) {
-        await sendMail({
-          to: superviseur.email,
-          subject,
-          html,
-        });
-      }
+          await sendMail({
+            to: superviseur.email,
+            subject,
+            html,
+          });
+        }
       }
     }
 
@@ -2583,15 +2587,15 @@ const returnRemplacement = async (req, res) => {
 
     if (!user_id) return res.status(403).json({ message: "Utilisateur non authentifié." });
 
-      const user = await prisma.users.findUnique({
-        where: { id_user: parseInt(user_id) },
-      });
+    const user = await prisma.users.findUnique({
+      where: { id_user: parseInt(user_id) },
+    });
 
-      if (!user) {
-        return res.status(404).json({ message: "Utilisateur non trouvé." });
-      }
+    if (!user) {
+      return res.status(404).json({ message: "Utilisateur non trouvé." });
+    }
 
-      const newValidation = await prisma.validation_remplacement.create({
+    const newValidation = await prisma.validation_remplacement.create({
       data: {
         remplacement_id: parseInt(remplacement_id),
         commentaire: commentaire_return,
@@ -2610,13 +2614,13 @@ const returnRemplacement = async (req, res) => {
     /******************************* GESTION DES MAILS  *******************************/
 
     const ancienModel = await prisma.model_piece.findUnique({
-      where:{
+      where: {
         id_model: parseInt(remplacement.old_model_id)
       }
     })
-    
+
     const nouveModel = await prisma.model_piece.findUnique({
-      where:{
+      where: {
         id_model: parseInt(remplacement.new_model_id)
       }
     })
@@ -2624,29 +2628,29 @@ const returnRemplacement = async (req, res) => {
     let produitsLivre = remplacement.produitsLivre
 
     const produits = typeof produitsLivre === "string"
-    ? JSON.parse(produitsLivre)
-    : produitsLivre;
+      ? JSON.parse(produitsLivre)
+      : produitsLivre;
 
     const supervisionRole = await prisma.user_roles.findMany({
-      where:{
+      where: {
         role_id: 13
       },
-      include:{
+      include: {
         users: true
       }
     })
     const superviseurs = supervisionRole.map(us => us.users)
 
     const roleLivraison = await prisma.user_roles.findMany({
-      where:{
+      where: {
         role_id: 1
       },
-      include:{
+      include: {
         users: true
       }
     })
     const livreurs = roleLivraison.map(us => us.users)
-    
+
     const url = GENERAL_URL
     let deliveryLink = `${url}/remplacement-details/${remplacement.id}`;
     let commentaire_mail = commentaire_return ? commentaire_return : '(sans commentaire)'
@@ -2683,7 +2687,7 @@ const returnRemplacement = async (req, res) => {
           html,
         });
       }
-      if (superviseurs){
+      if (superviseurs) {
         for (const superviseur of superviseurs) {
           await sendMail({
             to: superviseur.email,
@@ -2694,7 +2698,7 @@ const returnRemplacement = async (req, res) => {
       }
     }
 
-    return res.status(201).json({ 
+    return res.status(201).json({
       message: "Livraison retournée avec succès.",
       newValidation,
     });
@@ -2752,12 +2756,12 @@ const generateRemplacementPDF = async (req, res) => {
       let row = "";
       const has = (m) => p.mobile_money?.includes(m) ? "✔" : "";
       row = `<tr><td>${p.pointMarchand}</td><td>${p.ancienSN}</td><td>${p.nouvelSN}</td><td>${p.caisse}</td><td>${p.banque}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
-    
+
       // ➕ Ajout du saut de page toutes les 20 lignes
       if ((index + 1) % 20 === 0) {
         row += `<tr class="page-break"></tr>`;
       }
-    
+
       return row;
     }).join("\n");
 
@@ -2772,10 +2776,10 @@ const generateRemplacementPDF = async (req, res) => {
         id_model: livraison.new_model_id
       }
     })
-    
+
     // console.log(livraison.validations[0].signature)
     // 🧩 Remplacement des balises HTML
-    let index = livraison.validation_remplacement.length-1
+    let index = livraison.validation_remplacement.length - 1
     html = html
       .replace("{{ancien_tpe}}", ancien_model.nom_model.toUpperCase())
       .replace("{{nouveau_tpe}}", nouveau_model.nom_model.toUpperCase())
@@ -2791,7 +2795,7 @@ const generateRemplacementPDF = async (req, res) => {
       .replace("{{signature_expediteur}}", livraison.signature_expediteur || "Signé")
 
     // 🖨️ Génération PDF
-    const browser = await puppeteer.launch({ headless: "new", args : ["--no-sandbox", "--disable-setuid-sandbox"] });
+    const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox", "--disable-setuid-sandbox"] });
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });
 
@@ -2814,8 +2818,6 @@ const generateRemplacementPDF = async (req, res) => {
     return res.status(500).json({ message: "Erreur lors de la génération du PDF" });
   }
 };
-
-
 
 
 module.exports = {

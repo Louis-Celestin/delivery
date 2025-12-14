@@ -219,7 +219,8 @@ const getAllDemandes = async (req, res) => {
     const demandes = await prisma.demandes.findMany({
       orderBy: { date_demande: 'desc' },
       include: {
-        validation_demande: true
+        validation_demande: true,
+        reception_piece: true,
       }
     });
 
@@ -237,6 +238,7 @@ const getOneDemande = async (req, res) => {
       where: { id: parseInt(id) },
       include: {
         validation_demande: true,
+        reception_piece: true,
       }
     });
 
@@ -1475,6 +1477,152 @@ const updateDemande = async (req, res) => {
   }
 };
 
+const receivePiece = async (req, res) => {
+  const {
+    itemId,
+    demandeId,
+    commentaire,
+    user_id,
+  } = req.body;
+  try {
+    const demande = await prisma.demandes.findUnique({
+      where: { id: parseInt(demandeId) },
+    })
+
+    if (!demande) {
+      return res.status(404).json({ message: "Demande introuvable." });
+    }
+    if (demande.demande_livree == true) {
+      return res.status(400).json({ message: "Demande déjà réceptionnée." });
+    }
+    if (!req.file) {
+      return res.status(400).json({ message: "Signature du récepteur requise." });
+    }
+
+    const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+      folder: "greenpay/signatures",
+    });
+    const signature = uploadResult.secure_url;
+
+    if (!user_id) return res.status(403).json({ message: "Utilisateur non authentifié." });
+
+    const utilisateur = await prisma.users.findUnique({
+      where: { id_user: parseInt(user_id) },
+    });
+
+    if (!utilisateur) {
+      return res.status(404).json({ message: "Utilisateur non trouvé." });
+    }
+
+    let nom_recepteur = utilisateur.fullname
+
+    const newReception = await prisma.reception_piece.create({
+      data: {
+        item_id: parseInt(itemId),
+        user_id: parseInt(user_id),
+        demande_id: parseInt(demandeId),
+        date: new Date(),
+        signature_recepteur: signature ? signature : '',
+        nom_recepteur,
+        commentaire,
+      }
+    })
+
+    await prisma.demandes.update({
+      where: { id: demande.id },
+      data: { demande_livree: true },
+    })
+
+    // *********** GESTION DES MAILS ************
+
+    const service = await prisma.services.findUnique({
+      where: {
+        id: parseInt(demande.service_demandeur)
+      }
+    })
+
+    const userRole = await prisma.user_roles.findMany({
+      where: {
+        role_id: 3
+      },
+      include: {
+        users: true
+      }
+    })
+
+    const typeMouvement = await prisma.type_mouvement_stock.findUnique({
+      where: {
+        id: demande.type_demande
+      }
+    })
+
+    const piece = await prisma.items.findUnique({
+      where: {
+        id_piece: demande.item_id
+      }
+    })
+    let demandeurs = userRole.map(us => us.users)
+
+    let quantiteProduits = demande.qte_total_demande
+    let commentaire_mail = commentaire ? commentaire : "(Sans commentaire)"
+    let serviceReception = service.nom_service.toUpperCase();
+
+    const url = GENERAL_URL
+    const deliveryLink = `${url}/demande-details/${demande.id}`;
+
+    if ((demandeurs && demandeurs.length > 0)) {
+      const subject = `DEMANDE RECEPTIONNEE`;
+      const html = `
+        <p>Bonjour,</p>
+        <p>La demande de stock ${demande.id} a été réceptionnée.</p>
+        <ul>
+          <li><strong>Pièce demandée:</strong> ${piece.nom_piece}</li>
+          <li><strong>Nombre de produits:</strong> ${quantiteProduits} ${typeMouvement.titre}</li>
+          <li><strong>Service:</strong> ${serviceReception}</li>
+        </ul>
+        <br>
+          <p>Commentaire : ${commentaire_mail}<p>
+        <br>
+        <p>Retrouvez la demande à ce lien : 
+          <span>
+            <a href="${deliveryLink}" target="_blank" style="background-color: #73dced; color: white; padding: 7px 12px; text-decoration: none; border-radius: 5px;">
+              Cliquez ici !
+            </a>
+          </span>
+        </p>
+        <br><br>
+        <p>Green - Pay vous remercie.</p>
+      `;
+
+      // for (const demandeur of demandeurs) {
+      //   await sendMail({
+      //     to: demandeur.email,
+      //     subject,
+      //     html,
+      //   });
+      // }
+    }
+
+    return res.status(201).json(newReception);
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Erreur serveur." });
+  }
+}
+
+const getAllReceptionsPiece = async (req, res) => {
+  try {
+    const receptions = await prisma.reception_piece.findMany({
+      orderBy: { date: 'desc' },
+    });
+
+    res.status(200).json(receptions);
+  } catch (error) {
+    res.status(500).json({ message: "Erreur lors de la récupération des receptions", error });
+  }
+}
+
 const generateDemandePDF = async (req, res) => {
   const { id } = req.params;
 
@@ -1702,4 +1850,5 @@ module.exports = {
   cancelDemande,
   updateDemande,
   generateDemandePDF,
+  receivePiece,
 }

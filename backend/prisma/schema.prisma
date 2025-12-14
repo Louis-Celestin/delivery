@@ -60,6 +60,7 @@ model demandes {
   stocks                             stocks                  @relation(fields: [stock_id], references: [id], onDelete: NoAction, map: "demandes_ibfk_9")
   livraison_piece                    livraison_piece?
   mouvement_stock                    mouvement_stock[]
+  reception_piece                    reception_piece[]
   validation_demande                 validation_demande[]
 
   @@index([id_demandeur], map: "id_demandeur")
@@ -74,6 +75,7 @@ model items {
   id_piece        Int               @id @default(autoincrement())
   nom_piece       String            @db.VarChar(255)
   type            items_type?
+  created_at      DateTime?         @db.DateTime(0)
   created_by      String?           @db.VarChar(255)
   user_id         Int?
   is_deleted      Boolean           @default(false)
@@ -83,6 +85,7 @@ model items {
   items_services  items_services[]
   livraison_piece livraison_piece[]
   mouvement_stock mouvement_stock[]
+  reception_piece reception_piece[]
   stock_carton    stock_carton[]
   stock_lot       stock_lot[]
   stock_piece     stock_piece[]
@@ -255,6 +258,7 @@ model remplacements {
 model roles {
   id_role       Int             @id @default(autoincrement())
   nom_role      String?         @db.VarChar(255)
+  description   String?         @db.LongText
   Livraisons    Livraisons[]
   demandes      demandes[]
   livraison     livraison[]
@@ -406,6 +410,7 @@ model users {
   items                                 items[]
   livraison                             livraison[]
   reception_livraison                   reception_livraison[]
+  reception_piece                       reception_piece[]
   remplacements                         remplacements[]
   stocks_stocks_created_byTousers       stocks[]                     @relation("stocks_created_byTousers")
   stocks_stocks_updated_byTousers       stocks[]                     @relation("stocks_updated_byTousers")
@@ -493,6 +498,24 @@ model stocks {
   @@index([piece_id], map: "piece_id")
   @@index([service_id], map: "service_id")
   @@index([updated_by], map: "updated_by")
+}
+
+model reception_piece {
+  id                  Int       @id @default(autoincrement())
+  item_id             Int
+  user_id             Int
+  demande_id          Int?
+  date                DateTime  @default(now()) @db.DateTime(0)
+  signature_recepteur String?   @db.VarChar(255)
+  nom_recepteur       String?   @db.VarChar(255)
+  commentaire         String?   @db.LongText
+  items               items     @relation(fields: [item_id], references: [id_piece], onDelete: Cascade, map: "reception_piece_ibfk_1")
+  users               users     @relation(fields: [user_id], references: [id_user], onDelete: Cascade, map: "reception_piece_ibfk_2")
+  demandes            demandes? @relation(fields: [demande_id], references: [id], onDelete: Cascade, map: "reception_piece_ibfk_3")
+
+  @@index([demande_id], map: "demande_id")
+  @@index([item_id], map: "item_id")
+  @@index([user_id], map: "user_id")
 }
 
 enum livraison_statut_livraison {

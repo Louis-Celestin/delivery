@@ -87,9 +87,12 @@ export default function AllItemsList() {
         )
     }
     const nomTemplate = (piece) => {
+        const detailLink = `/voir-piece/${piece.id_piece}`
         return (
             <>
-                <span className="text-sm text-gray-700 text- font-medium">{piece.nom_piece}</span>
+                <Link to={detailLink}>
+                    <span className="text-sm text-gray-700 text- font-medium">{piece.nom_piece}</span>
+                </Link>
             </>
         )
     }
@@ -167,11 +170,15 @@ export default function AllItemsList() {
     }
     const actionTemplate = (piece) => {
         const modifLink = `/modifier-piece/${piece.id_piece}`
+        const detailLink = `/voir-piece/${piece.id_piece}`
         return (
             <>
                 <div className="flex justify-between">
                     <Link to={modifLink}>
                         <span><i className="pi pi-pencil"></i></span>
+                    </Link>
+                    <Link to={detailLink}>
+                        <span><i className="pi pi-eye"></i></span>
                     </Link>
                 </div>
             </>

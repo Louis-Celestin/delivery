@@ -12,6 +12,9 @@ import TextArea from "../input/TextArea"
 import Select from "../Select"
 import Checkbox from "../input/Checkbox"
 import { MultiSelect } from "primereact/multiselect"
+// import FileInput from "../input/FileInput"
+import { FileUpload } from "primereact/fileupload"
+import ExcelJS from "exceljs"
 
 export default function CreateStockInputs() {
 
@@ -91,6 +94,7 @@ export default function CreateStockInputs() {
     const [parPieceCarton, setParPieceCarton] = useState(false)
     const [parCarton, setParCarton] = useState(false)
     const [parPiece, setParPiece] = useState(false)
+    const [parSn, setParSn] = useState(false)
 
     const [selectedEntree, setSelectedEntree] = useState(true)
 
@@ -108,6 +112,13 @@ export default function CreateStockInputs() {
     const [destination, setDestination] = useState('')
 
     const [stocks, setStocks] = useState([])
+
+    const [avecLot, setAvecLot] = useState(false)
+    const [avecCarton, setAvecCarton] = useState(false)
+
+    const [excelFile, setExcelFile] = useState(null)
+    const [analysis, setAnalysis] = useState(null);
+    const [entreeParSnModalOpen, setEntreeParSnModalOpen] = useState(false)
 
     useEffect(() => {
         const fetchPieces = async () => {
@@ -270,6 +281,82 @@ export default function CreateStockInputs() {
         }
     }
 
+    const normalize = (value) => {
+        if (value === null || value === undefined) return null;
+        return String(value).trim(); // handles numbers + strings
+    };
+
+    const analyzeExcel = async (file) => {
+        const workbook = new ExcelJS.Workbook();
+        const buffer = await file.arrayBuffer();
+        await workbook.xlsx.load(buffer);
+
+        const worksheet = workbook.worksheets[0];
+
+        // Read headers dynamically
+        const headers = {};
+        worksheet.getRow(1).eachCell((cell, colNumber) => {
+            headers[String(cell.value).trim().toUpperCase()] = colNumber;
+        });
+
+        // Required column
+        if (!headers["SERIAL NUMBER"]) {
+            throw new Error("Missing required column: SERIAL NUMBER");
+        }
+
+        const serialNumbers = new Set();
+        const cartons = new Set();
+        const lots = new Set();
+
+        worksheet.eachRow((row, rowNumber) => {
+            if (rowNumber === 1) return;
+
+            const sn = normalize(row.getCell(headers["SERIAL NUMBER"]).value);
+            if (sn) serialNumbers.add(sn);
+
+            if (headers["CARTON"]) {
+                const carton = normalize(row.getCell(headers["CARTON"]).value);
+                if (carton) cartons.add(carton);
+            }
+
+            if (headers["LOT"]) {
+                const lot = normalize(row.getCell(headers["LOT"]).value);
+                if (lot) lots.add(lot);
+            }
+        });
+
+        return {
+            serialNumberCount: serialNumbers.size,
+            cartonCount: headers["CARTON"] ? cartons.size : null,
+            lotCount: headers["LOT"] ? lots.size : null,
+        };
+    };
+
+    const onUpload = async ({ files }) => {
+        if (!files?.length) {
+            console.log('No file')
+            return
+        };
+        setAnalysis(null);
+        setLoadingValidation(true);
+        setExcelFile(files[0])
+
+        try {
+            const result = await analyzeExcel(files[0]);
+            setAnalysis(result);
+        } catch (err) {
+            console.log("Error analyse: ", err)
+            Swal.fire({
+                title: "Error",
+                text: `Erreur dans l'upload : ${err.message}`,
+                icon: "error"
+            })
+            setAnalysis(null);
+        } finally {
+            setLoadingValidation(false);
+        }
+    };
+
     const handleSelectLotCarton = async (id) => {
         setSelectedLot(id)
         const cartons_data_all = await stockData.getCartonLot(id)
@@ -325,12 +412,12 @@ export default function CreateStockInputs() {
             setError("Vous devez déterminer un code au stock !")
             return false
         }
-        const existingStock = stocks.find((item) =>{
+        const existingStock = stocks.find((item) => {
             const sameCode = item.code_stock.toLowerCase().trim() == codeStock.toLowerCase().trim()
             return sameCode
         })
 
-        if(existingStock){
+        if (existingStock) {
             setError("Un Stock du même code existe déjà !")
             return
         }
@@ -887,6 +974,18 @@ export default function CreateStockInputs() {
         }
     }
 
+    // FONCTIONS POUR MOUVEMENT STOCK PAR SN
+    const handleEntreeParSn = () => {
+        if (!checkValidate()) {
+            return
+        }
+        if (!excelFile) {
+            setError('Vous devez choisir un fichier !')
+            return
+        }
+        setEntreeParSnModalOpen(true)
+    }
+
     const handleValidate = async () => {
         setEntreeParPieceModalOpen(false)
         setEntreeParCartonModalOpen(false)
@@ -911,6 +1010,37 @@ export default function CreateStockInputs() {
             const response = await stockData.createStock(payload)
             console.log(response)
 
+            Swal.fire({
+                title: "Succès",
+                text: "Stock créé avec succès !",
+                icon: "success"
+            })
+            navigate('/voir-stocks')
+        } catch (error) {
+            Swal.fire({
+                title: "Attention",
+                text: "Une erreur est survenue lors de la création !",
+                icon: "warning"
+            })
+            navigate('/voir-stocks')
+        } finally {
+            setLoadingValidation(false)
+        }
+    }
+
+    const handleValidateParSn = async () => {
+        const fromData = new FormData()
+        fromData.append("item_id", selectedPiece)
+        fromData.append("model_id", selectedModel)
+        fromData.append("service_id", selectedService)
+        fromData.append("file", excelFile)
+
+        try {
+            setLoadingValidation(true)
+            console.log('Sending file...')
+
+            const response = await stockData.setStockSn(fromData)
+            console.log(response)
             Swal.fire({
                 title: "Succès",
                 text: "Stock créé avec succès !",
@@ -1062,6 +1192,7 @@ export default function CreateStockInputs() {
                                                                 setParCartonLot(false)
                                                                 setParPiece(false)
                                                                 setParPieceCarton(false)
+                                                                setParSn(false)
                                                             }
                                                         }}
                                                         readOnly
@@ -1116,6 +1247,7 @@ export default function CreateStockInputs() {
                                                                 setParCartonLot(false)
                                                                 setParPiece(false)
                                                                 setParPieceCarton(false)
+                                                                setParSn(false)
                                                             }
                                                         }}
                                                         readOnly
@@ -1134,10 +1266,30 @@ export default function CreateStockInputs() {
                                                                 setParCartonLot(false)
                                                                 setParPiece(true)
                                                                 setParPieceCarton(false)
+                                                                setParSn(false)
                                                             }
                                                         }}
                                                         readOnly
                                                         label="Par Pièce"
+                                                    />
+                                                </div>
+                                                <div className="flex items-center gap-3 my-2">
+                                                    <Checkbox
+                                                        checked={parSn}
+                                                        onChange={() => {
+                                                            if (parSn) {
+                                                                setParSn(false)
+                                                            } else {
+                                                                setParLot(false)
+                                                                setParCarton(false)
+                                                                setParCartonLot(false)
+                                                                setParPiece(false)
+                                                                setParPieceCarton(false)
+                                                                setParSn(true)
+                                                            }
+                                                        }}
+                                                        readOnly
+                                                        label="Par S/N"
                                                     />
                                                 </div>
                                             </div>
@@ -1657,6 +1809,51 @@ export default function CreateStockInputs() {
                                                                         </button>
                                                                     </div>
                                                                 </div> */}
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <></>
+                                        )}
+                                        {parSn ? (
+                                            <>
+                                                <div className="space-y-5">
+                                                    <div className="space-y-2.5">
+                                                        <div className="py-3 text-center">
+                                                            <span className="text-sm font-semibold">Insertion S/N</span>
+                                                        </div>
+                                                        <div>
+                                                            <FileUpload
+                                                                mode="basic"
+                                                                name="file"
+                                                                accept=".xlsx,.xls"
+                                                                maxFileSize={5_000_000}
+                                                                customUpload
+                                                                uploadHandler={onUpload}
+                                                                chooseLabel="Upload Excel"
+                                                                auto
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-center">
+                                                        {loadingValidation ? (
+                                                            <>
+                                                                <div>
+                                                                    <ProgressSpinner style={{ width: '50px', height: '50px' }} strokeWidth="8" animationDuration=".5s" />
+                                                                </div>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <div className="w-full flex justify-center items-center">
+                                                                    <button className="w-1/2 flex items-center justify-between bg-green-400 p-2 rounded-2xl"
+                                                                        onClick={handleEntreeParSn}
+                                                                    >
+                                                                        <span>Entrée</span>
+                                                                        <i className="pi pi-arrow-circle-down"></i>
+                                                                    </button>
+                                                                </div>
                                                             </>
                                                         )}
                                                     </div>
@@ -2199,6 +2396,57 @@ export default function CreateStockInputs() {
                     <div className='w-full mt-6 flex justify-center items-center'>
                         <button
                             onClick={handleValidateParPiece}
+                            className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
+                            Valider
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+            <Modal isOpen={entreeParSnModalOpen} onClose={() => setEntreeParSnModalOpen(false)} className="p-4 max-w-md">
+                <div className="space-y-5">
+                    <div className="w-full text-center">
+                        <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium">Nouveau Stock</span>
+                    </div>
+                    <div className="text-center flex flex-col">
+                        <span className="font-bold text-sm">
+                            {codeStock}
+                        </span>
+                        <span>
+                            <span className="text-sm text-gray-800 font-medium">{nomPiece} </span>
+                            -
+                            <span className="font-semibold"> {nomModel}</span> |
+                            <span className="font-medium text-gray-700"> {nomService}</span>
+                        </span>
+                    </div>
+                    <div className="ms-5 text-center">
+                        <span className="text-sm text-gray-800 underline">Motif: {motif}</span>
+                    </div>
+                    {analysis && (
+                        <div className="space-y-2">
+                            <div className="space-y-1 ms-5 border-b pb-2 text-sm">
+                                <div>
+                                    <span>Mouvement : <span className="text-green-600 font-bold">{analysis.serialNumberCount} </span>S/N trouvé(s)</span>
+                                </div>
+                            </div>
+                            {analysis.cartonCount !== null && (
+                                <div className="space-y-1 ms-5 border-b pb-2 text-sm">
+                                    <div>
+                                        <span>Mouvement : <span className="text-green-600 font-bold">{analysis.cartonCount} </span>Carton(s) trouvé(s)</span>
+                                    </div>
+                                </div>
+                            )}
+                            {analysis.lotCount !== null && (
+                                <div className="space-y-1 ms-5 border-b pb-2 text-sm">
+                                    <div>
+                                        <span>Mouvement : <span className="text-green-600 font-bold">{analysis.lotCount} </span>Lot(s) trouvé(s)</span>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                    <div className='w-full mt-6 flex justify-center items-center'>
+                        <button
+                            onClick={handleValidateParSn}
                             className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
                             Valider
                         </button>

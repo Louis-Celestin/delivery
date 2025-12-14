@@ -268,6 +268,24 @@ export default function StockDetails() {
             </>
         )
     }
+    const receveurTemplate = (mouvement) => {
+        const demande = demandes.find((item) => {
+            return item.id == mouvement.demande_id
+        })
+        let nomRecepteur = 'N/A'
+        if(demande){
+            if(demande.demande_livree == true){
+                let index_reception = demande.reception_piece.length - 1
+                nomRecepteur = demande.reception_piece[index_reception].nom_recepteur
+            }
+        }
+
+        return(
+            <>
+                <span>{nomRecepteur}</span>
+            </>
+        )
+    }
     const origineTemplate = (mouvement) => {
         const service = services.find((item) => {
             return mouvement.service_origine == item.id
@@ -432,7 +450,7 @@ export default function StockDetails() {
                                             <Column field="stock_final" header="Stock Final" body={finalTemplate} sortable></Column>
                                             <Column field="quantite_totale_piece" header="Quantité totale" body={totalTemplate} sortable></Column>
                                             <Column header="Demandeur" body={demandeurTemplate}></Column>
-                                            <Column header="Receveur"></Column>
+                                            <Column header="Receveur" body={receveurTemplate}></Column>
                                             {/* <Column field="service_origine" header="Origine" body={origineTemplate}></Column> */}
                                             {/* <Column field="service_destination" header="Destination" body={destinationTemplate}></Column> */}
                                             <Column field="date" header="Date" body={dateTemplate} sortable></Column>

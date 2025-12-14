@@ -165,11 +165,19 @@ export default function DemandeDetails() {
                         setCommentaireValidation(demandeData.validation_demande[index].commentaire)
                         setIsCompleted(true)
                         if (demandeData.demande_livree) {
+                            let index_reception
                             setIsDelivered(true);
+                            setIsReceived(true)
+                            index_reception = demandeData.reception_piece.length - 1
+                            setCommentaireReception(demandeData.reception_piece[index_reception].commentaire)
+                            setNomRecepteur(demandeData.reception_piece[index_reception].nom_recepteur)
+                            setStatutLivraison('Reçu')
+                            setStatutClassLivraison('text-sm rounded-xl p-1 bg-green-100 text-green-500 font-bold')
                         } else {
-                            if (roles_id.includes(1)) {
-                                setIsLivreur(true)
+                            if (roles_id.includes(12)) {
+                                setIsReception(true)
                             }
+
                         }
                     }
                     else if (demandeData.statut_demande == 'retourne') {
@@ -214,8 +222,10 @@ export default function DemandeDetails() {
                     const piece = items_data.find((item) => {
                         return item.id_piece == demandeData.item_id
                     })
-                    const nom_piece = piece ? piece.nom_piece : ''
-                    setNomPiece(nom_piece)
+                    if(piece){
+                        setNomPiece(piece.nom_piece)
+                        setPieceId(piece.id_piece)
+                    }
                     setNomDemandeur(demandeData.nom_demandeur)
                     setNomenclature(demandeData.nomenclature)
                     const autres = JSON.parse(demandeData.champs_autre)
@@ -253,48 +263,48 @@ export default function DemandeDetails() {
                     const nomType = typeMouvement ? typeMouvement.titre : ''
                     setTypeDemande(nomType)
 
-                    let livraison_data = await livraisonData.getOneLivraisonDemande(id)
-                    let index_reception
-                    console.log(livraison_data)
-                    setLivraisonID(livraison_data.id)
-                    setNomLivreur(livraison_data.Livraisons.nom_livreur)
-                    setQuantiteLivraison(livraison_data.Livraisons.quantite_livraison)
-                    setDateLivraison(formatDate(livraison_data.Livraisons.date_livraison))
-                    setCommentaireLivraison(livraison_data.Livraisons.commentaire_livraison)
-                    const autresLivraison = JSON.parse(livraison_data.Livraisons.autres_champs_livraison)
-                    setOtherFieldsLivraison(autresLivraison)
+                    // let livraison_data = await livraisonData.getOneLivraisonDemande(id)
+                    // let index_reception
+                    // console.log(livraison_data)
+                    // setLivraisonID(livraison_data.id)
+                    // setNomLivreur(livraison_data.Livraisons.nom_livreur)
+                    // setQuantiteLivraison(livraison_data.Livraisons.quantite_livraison)
+                    // setDateLivraison(formatDate(livraison_data.Livraisons.date_livraison))
+                    // setCommentaireLivraison(livraison_data.Livraisons.commentaire_livraison)
+                    // const autresLivraison = JSON.parse(livraison_data.Livraisons.autres_champs_livraison)
+                    // setOtherFieldsLivraison(autresLivraison)
 
-                    let statut_livraison = livraison_data.Livraisons.statut_livraison
-                    if (statut_livraison == 'livre' || statut_livraison == 'retourne') {
-                        setIsReceived(true)
-                        index_reception = livraison_data.Livraisons.reception_livraison.length - 1
-                        setCommentaireReception(livraison_data.Livraisons.reception_livraison[index_reception].commentaire_reception)
-                        setNomRecepteur(livraison_data.Livraisons.reception_livraison[index_reception].nom_recepteur)
+                    // let statut_livraison = livraison_data.Livraisons.statut_livraison
+                    // if (statut_livraison == 'livre' || statut_livraison == 'retourne') {
+                    //     setIsReceived(true)
+                    //     index_reception = livraison_data.Livraisons.reception_livraison.length - 1
+                    //     setCommentaireReception(livraison_data.Livraisons.reception_livraison[index_reception].commentaire_reception)
+                    //     setNomRecepteur(livraison_data.Livraisons.reception_livraison[index_reception].nom_recepteur)
 
-                        if (statut_livraison == 'livre') {
-                            setStatutLivraison('Livrée')
-                            setStatutClassLivraison('text-sm rounded-xl p-1 bg-green-100 text-green-500 font-bold')
-                        }
+                    //     if (statut_livraison == 'livre') {
+                    //         setStatutLivraison('Livrée')
+                    //         setStatutClassLivraison('text-sm rounded-xl p-1 bg-green-100 text-green-500 font-bold')
+                    //     }
 
-                        else if (statut_livraison == 'retourne') {
-                            if (roles_id.includes(12)) {
-                                setIsReception(true)
-                            }
-                            setIsLivreur(true)
-                            setModifyLivraison(true)
-                            setStatutLivraison('Retournée')
-                            setStatutClassLivraison('text-sm rounded-xl p-1 bg-red-100 text-red-500 font-bold')
-                        }
-                    }
+                    //     else if (statut_livraison == 'retourne') {
+                    //         if (roles_id.includes(12)) {
+                    //             setIsReception(true)
+                    //         }
+                    //         setIsLivreur(true)
+                    //         setModifyLivraison(true)
+                    //         setStatutLivraison('Retournée')
+                    //         setStatutClassLivraison('text-sm rounded-xl p-1 bg-red-100 text-red-500 font-bold')
+                    //     }
+                    // }
 
-                    else if (statut_livraison == 'en_cours') {
-                        if (roles_id.includes(12)) {
-                            setIsReception(true)
-                        }
-                        setStatutLivraison('En attente')
-                        setModifyLivraison(true)
-                        setIsLivreur(true)
-                    }
+                    // else if (statut_livraison == 'en_cours') {
+                    //     if (roles_id.includes(12)) {
+                    //         setIsReception(true)
+                    //     }
+                    //     setStatutLivraison('En attente')
+                    //     setModifyLivraison(true)
+                    //     setIsLivreur(true)
+                    // }
 
 
                 } catch (error) {
@@ -468,9 +478,11 @@ export default function DemandeDetails() {
             setIsModalReceptionOpen(false)
             const sign = signatureReception.toDataURL('image/png')
             const fd = new FormData();
-            fd.append('livraison_id', livraisonID);
-            fd.append('user_id', user_id);
+
+            fd.append('itemId', pieceId);
+            fd.append('demandeId', id);
             fd.append('commentaire', messageReception);
+            fd.append('user_id', user_id);
             if (sign) {
                 const blob = await fetch(sign).then(res => res.blob());
                 fd.append('signature', blob, 'signature.png');
@@ -478,19 +490,8 @@ export default function DemandeDetails() {
             for (let [key, value] of fd.entries()) {
                 console.log(`${key}:`, value);
             }
-            const response = await livraisonData.receiveStock(fd);
+            const response = await demandes.receivePiece(fd);
 
-            // let piece_id = 1
-            // let stock_initial = piece.quantite
-            // let nouveau_stock = stock_initial - quantiteProduit
-            // let utilisateur_id = null
-
-            // let modifStock = null
-            // if(livraisonID == 7 || livraisonID == 8 || livraisonID == 5){
-            //     modifStock = await stock.setStock(piece_id, stock_initial, nouveau_stock, utilisateur_id)
-            //     console.log(modifStock)
-            //     console.log("Diminution stock chargeur")
-            // }
             Swal.fire({
                 title: "Succès",
                 text: "Formulaire réceptionné avec succès",
@@ -566,15 +567,6 @@ export default function DemandeDetails() {
                                         {statutDemande}
                                     </span>
                                 </div>
-                                {isDelivered ? (
-                                    <div className='mt-3'>
-                                        <span className='rounded-2xl bg-cyan-400 p-1 text-sm text-white font-semibold'>
-                                            Cette demande a été livrée.
-                                        </span>
-                                    </div>
-                                ) : (
-                                    <></>
-                                )}
                             </div>
                             <div className='text-right'>
                                 <div className='grid grid-cols-2'>
@@ -661,7 +653,7 @@ export default function DemandeDetails() {
                                         ) : (
                                             <></>
                                         )}
-                                        {isLivreur ? (
+                                        {/* {isLivreur ? (
                                             <>
                                                 {modifyLivraison ? (
                                                     <>
@@ -681,7 +673,7 @@ export default function DemandeDetails() {
                                             </>
                                         ) : (
                                             <></>
-                                        )}
+                                        )} */}
                                         {isReception ? (
                                             <>
                                                 {loadingReception ? (
@@ -699,14 +691,7 @@ export default function DemandeDetails() {
                                                                 setIsModalReceptionOpen(true)
                                                             }}>
                                                             <span className='mr-4'><i className="pi pi-inbox"></i></span>
-                                                            <span className='text-sm text-gray-700 font-medium'>Réceptionner livraison</span>
-                                                        </button>
-                                                        <button className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'
-                                                            onClick={() => {
-                                                                setIsModalReturnLivraisonOpen(true)
-                                                            }}>
-                                                            <span className='mr-4'><i className="pi pi-arrow-left"></i></span>
-                                                            <span className='text-sm text-gray-700 font-medium'>Retourner livraison</span>
+                                                            <span className='text-sm text-gray-700 font-medium'>Réceptionner Pièces</span>
                                                         </button>
                                                     </>
                                                 )}
@@ -747,12 +732,12 @@ export default function DemandeDetails() {
                             <></>
                         )}
                         {
-                            isDelivered ? (
+                            recu ? (
                                 <>
                                     <div className='grid grid-cols-2 justify-between items-center mb-6'>
                                         <div>
                                             <div>
-                                                <span>{`Livraison du ${dateLivraison}`}</span>
+                                                <span>Statut réception</span>
                                             </div>
                                             <div className='mt-3'>
                                                 <span className={statutClassLivraison}>
@@ -761,7 +746,7 @@ export default function DemandeDetails() {
                                             </div>
                                         </div>
                                     </div>
-                                    <div>
+                                    {/* <div>
                                         <div className='overflow-hidden mb-6 pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
                                             <div className='mb-6 pb-2 w-full border-b'>
                                                 <span className='text-sm mr-2'>Commentaire livraison</span>
@@ -773,14 +758,14 @@ export default function DemandeDetails() {
                                                 <p className='text-xs opacity-20'>Sans commentaire</p>
                                             )}
                                         </div>
-                                    </div>
+                                    </div> */}
                                     {isReceived ? (
                                         <div>
                                             <div className='overflow-hidden mb-6 pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
                                                 <div className='mb-6 pb-2 w-full border-b text-right'>
                                                     <span className='text-sm mr-2'>Commentaire réception</span>
                                                     <span className='text-sm'><i className="pi pi-comment"></i></span>
-                                                </div>
+                                                </div>      
                                                 {commentaireReception ? (
                                                     <p className='text-sm text-orange-500 text-right'>{commentaireReception}</p>
                                                 ) : (
@@ -860,30 +845,6 @@ export default function DemandeDetails() {
                                             <></>
                                         )}
                                         {otherFields.map((field) => {
-                                            return (
-                                                <>
-                                                    <tr className='border h-15'>
-                                                        <th className='border w-1/2'>{field.titre}</th>
-                                                        <th className='border w-1/2'>{field.information}</th>
-                                                    </tr>
-                                                </>
-                                            )
-                                        })}
-                                        {isDelivered ? (
-                                            <>
-                                                <tr className='border h-15'>
-                                                    <th className='border w-1/2'>Livreur</th>
-                                                    <th className='border w-1/2'>{nomLivreur}</th>
-                                                </tr>
-                                                <tr className='border h-15'>
-                                                    <th className='border w-1/2'>Quantité livrée</th>
-                                                    <th className='border w-1/2'>{quantiteLivraison}</th>
-                                                </tr>
-                                            </>
-                                        ) : (
-                                            <></>
-                                        )}
-                                        {otherFieldsLivraison.map((field) => {
                                             return (
                                                 <>
                                                     <tr className='border h-15'>
@@ -1047,7 +1008,7 @@ export default function DemandeDetails() {
                                 Clear
                             </button>
                             <button
-                                onClick={'handleReception'}
+                                onClick={handleReception}
                                 className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
                                 Valider
                             </button>

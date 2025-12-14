@@ -165,6 +165,12 @@ import AllStocks from "./pages/GestionStock/AllStocks"
 // @ts-ignore
 import StockDetails from "./pages/GestionStock/StockDetails"
 
+// @ts-ignore
+import UserDetails from "./pages/Accounts/UserDetails"
+
+// @ts-ignore
+import ItemDetails from "./pages/GestionStock/ItemDetails"
+
 export default function App() {
   return (
     <>
@@ -196,6 +202,7 @@ export default function App() {
 
               {/* Stock */}
               <Route path="/voir-items" element={<AllItems />} />
+              <Route path="/voir-piece/:id" element={<ItemDetails />} />
               <Route path="/modifier-stock/:id" element={<ModifyStockForm />} />
               <Route path="/ajouter-stock" element={<AjouterStockForm />} />
               <Route path="/ajouter-piece" element={<AjouterPieceForm />} />
@@ -220,6 +227,9 @@ export default function App() {
               <Route path="/tous-les-remplacements" element={<AllRemplacements />} />
               <Route path="/remplacement-details/:id" element={<RemplacementDetails />} />
               <Route path="/modifier-remplacement/:id" element={<ModifyRemplacementForm />} />
+
+              {/* User */}
+              <Route path="/user-profil" element={<UserDetails />} />
 
 
               {/****** Gestion *******/}
