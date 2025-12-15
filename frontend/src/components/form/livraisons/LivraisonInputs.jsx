@@ -161,7 +161,6 @@ export default function LivraisonInputs() {
     })
     if (model) {
       setNomModel(model.nom_model.toUpperCase())
-      setMessageTPE(model.nom_model.toUpperCase())
     }
   }
 

@@ -277,12 +277,12 @@ export default function AllDemandesList() {
                 {demandeForms.statut_demande == 'valide' ? 
                 (
                     <>
-                        {printingId === demandeForms.id_demande ? (
+                        {printingId === demandeForms.id ? (
                             <span className='mx-1'>
                                 <ProgressSpinner style={{width: '15px', height: '15px'}} strokeWidth="8" animationDuration=".5s" />
                             </span>
                         ) : (
-                            <button onClick={() => handleGeneratePdf(demandeForms.id_demande)}><span className="mx-1 text-gray-500 text-theme-sm dark:text-gray-400"><i className="pi pi-print"></i></span></button>
+                            <button onClick={() => handleGeneratePdf(demandeForms.id)}><span className="mx-1 text-gray-500 text-theme-sm dark:text-gray-400"><i className="pi pi-print"></i></span></button>
                         )}
                     </>
                 ) : (

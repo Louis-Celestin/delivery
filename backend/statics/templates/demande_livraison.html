@@ -95,10 +95,6 @@
             {{commentaire_validation}}
         </div>
         <div>
-            <strong>Commentaire livraison : </strong>
-            {{commentaire_livraison}}
-        </div>
-        <div>
             <strong>Commentaire réception : </strong>
             {{commentaire_reception}}
         </div>
@@ -106,7 +102,7 @@
             <tbody>
                 <tr>
                     <th>Stock de départ</th>
-                    <th>DIRECTION TECHNIQUE</th>
+                    <th>{{service_donneur}}</th>
                 </tr>
                 <tr>
                     <th>Service demandeur</th>
@@ -115,6 +111,10 @@
                 <tr>
                     <th>Demandeur</th>
                     <th>{{nom_demandeur}}</th>
+                </tr>
+                <tr>
+                    <th>Type demande</th>
+                    <th>{{mouvement}}</th>
                 </tr>
                 <tr>
                     <th>Stock initiale</th>
@@ -130,15 +130,6 @@
                 </tr>
                 {{autre_champs}}
                 <tr>
-                    <th>Livreur</th>
-                    <th>{{nom_livreur}}</th>
-                </tr>
-                <tr>
-                    <th>Quantitée livrée</th>
-                    <th>{{quantite_livraison}}</th>
-                </tr>
-                {{autre_champs_livraison}}
-                <tr>
                     <th>Recepteur</th>
                     <th>{{nom_recepteur}}</th>
                 </tr>
@@ -152,13 +143,6 @@
                 <div class="footer-signature">
                     <img src="{{signature}}" alt="" class="signature-image"/>
                     <span class="date-operation">{{date_validation_demande}}</span>
-                </div>
-            </div>
-            <div>
-                <span class="nom-signature"><strong>Livraison :</strong> <br> {{nom_livreur}}</span>
-                <div class="footer-signature">
-                    <img src="{{signature_livraison}}" alt="" class="signature-image"/>
-                    <span class="date-operation">{{date_livraison}}</span>
                 </div>
             </div>
             <div>

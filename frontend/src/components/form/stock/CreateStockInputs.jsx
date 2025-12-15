@@ -1174,11 +1174,9 @@ export default function CreateStockInputs() {
                                     <Label>Commentaire</Label>
                                     <TextArea
                                         type="text"
+                                        placeholder="Ajoutez un commentaire"
                                         value={commentaire}
-                                        onChange={(e) => {
-                                            const value = e.target.value
-                                            setCommentaire(value)
-                                        }}
+                                        onChange={(value) => setCommentaire(value)}
                                     />
                                 </div>
                                 <div className="space-y-5">

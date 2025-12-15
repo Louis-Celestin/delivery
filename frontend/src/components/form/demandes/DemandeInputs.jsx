@@ -118,6 +118,7 @@ export default function DemandeInputs() {
   const [loadingValidation, setLoadingValidation] = useState(false)
 
   const [detailsDemande, setDetailsDemande] = useState([])
+  const [detailsDemandeur, setDetailsDemandeur] = useState([])
 
   const [quantite, setQuantite] = useState(0)
 
@@ -167,10 +168,17 @@ export default function DemandeInputs() {
           return item.is_deleted == false
         })
         setStocks(stocks_data)
-        const options_stocks = stocks_data.map((item) => ({
-          value: item.id,
-          label: item.code_stock
-        }))
+        const options_stocks = stocks_data.map((item) => {
+          const serviceStock = services_data.find((s) => {
+            return s.id == item.service_id
+          })
+          const nomService = serviceStock ? serviceStock.nom_service : ''
+          return({
+            value: item.id,
+            label: `${item.code_stock} - ${nomService}`
+          })
+        })
+          
         setOptionsStocks(options_stocks)
 
         const models_data = await stockData.getAllModels()
@@ -266,8 +274,8 @@ export default function DemandeInputs() {
   }
 
   const selectedStockTemplate = (option, props) => {
-    if(option) {
-      return(
+    if (option) {
+      return (
         <>
           <span className="text-sm font-semibold">{option.label}</span>
         </>
@@ -285,7 +293,6 @@ export default function DemandeInputs() {
       return item.id == value
     })
     if (stock) {
-      console.log(stock)
       setNomStock(stock.code_stock)
       setQuantitePiece(stock.quantite_piece)
       // setQuantiteCarton(stock.quantite_carton)
@@ -296,9 +303,9 @@ export default function DemandeInputs() {
         return item.is_deleted == false
       })
       setQuantiteCarton(stock_carton.length)
-      if(stock_carton.length > 0){
+      if (stock_carton.length > 0) {
         setHasCarton(true)
-      } else{
+      } else {
         setHasCarton(false)
       }
       const carton_simple = stock_carton.filter((item) => {
@@ -322,10 +329,31 @@ export default function DemandeInputs() {
         label: `Lot ${item.numero_lot} - ${item.quantite_carton} cartons - ${item.quantite_piece} pièces`
       }))
       setOptionsLot(options_lot)
-      if(stock_lot.length > 0){
+      if (stock_lot.length > 0) {
         setHasLot(true)
-      } else{
+      } else {
         setHasLot(false)
+      }
+
+      if (stock && stock.piece_id == 1 && stock.service_id == 5) {
+        const stock_demandeur = stocks.find((item) => {
+          return item.service_id == 3
+        })
+        if (stock_demandeur) {
+          setQuantitePieceDemandeur(stock_demandeur.quantite_piece)
+
+          const stock_carton_all = await stockData.getCartonStock(stock_demandeur.id)
+          const stock_carton = stock_carton_all.filter((item) => {
+            return item.is_deleted == false
+          })
+          setQuantiteCartonDemandeur(stock_carton.length)
+
+          const stock_lot_all = await stockData.getLotStock(stock_demandeur.id)
+          const stock_lot = stock_lot_all.filter((item) => {
+            return item.is_deleted == false
+          })
+          setQuantiteLotDemandeur(stock_lot.length)
+        }
       }
     }
 
@@ -541,6 +569,7 @@ export default function DemandeInputs() {
 
     const finalStockLotDemandeur = quantiteLotDemandeur + selectedLots.length
     const finalStockPieceDemandeur = quantitePieceDemandeur + destockPiece
+    const finalStockCartonDemandeur = quantiteCartonDemandeur + destockCarton
 
     const listeLots = selectedLots ? selectedLots : []
     setQuantite(selectedLots.length)
@@ -565,6 +594,24 @@ export default function DemandeInputs() {
       stockFinalLotDemandeur: finalStockLotDemandeur,
     }
     setDetailsDemande(details)
+    const details_demandeur = {
+      model: selectedModel,
+      service: serviceUser,
+      typeMouvement: 1,
+      stockInitialLot: quantiteLotDemandeur ? quantiteLotDemandeur : 0,
+      quantiteMouvementLot: selectedLots.length,
+      stockFinalLot: finalStockLotDemandeur,
+      stockInitialCarton: quantiteCartonDemandeur ? quantiteCartonDemandeur : 0,
+      quantiteMouvementCarton: destockCarton,
+      stockFinalCarton: finalStockCartonDemandeur,
+      quantiteCartonLot: quantiteCartonLot ? quantiteCartonLot : 0,
+      stockInitialPiece: quantitePieceDemandeur ? quantitePieceDemandeur : 0,
+      quantiteMouvementPiece: destockPiece,
+      stockFinalPiece: finalStockPieceDemandeur,
+      quantitePieceCarton: quantitePieceCarton ? quantitePieceCarton : 0,
+      listeLots,
+    }
+    setDetailsDemandeur(details_demandeur)
   }
 
   // FONCTIONS POUR MOUVEMENT PAR CARTONS LOT
@@ -627,6 +674,20 @@ export default function DemandeInputs() {
       stockFinalCartonDemandeur: finalStockCartonDemandeur,
     }
     setDetailsDemande(details)
+    const details_demandeur = {
+      model: selectedModel,
+      service: serviceUser,
+      typeMouvement: 4,
+      stockInitialCarton: quantiteCartonDemandeur ? quantiteCartonDemandeur : 0,
+      quantiteMouvementCarton: selectedCartons.length,
+      stockFinalCarton: finalStockCartonDemandeur,
+      stockInitialPiece: quantitePieceDemandeur ? quantitePieceDemandeur : 0,
+      quantiteMouvementPiece: destockPiece,
+      stockFinalPiece: finalStockPieceDemandeur,
+      quantitePieceCarton: quantitePieceCarton ? quantitePieceCarton : 0,
+      cartons,
+    }
+    setDetailsDemandeur(details_demandeur)
   }
 
   // FONCTIONS POUR MOUVEMENT PAR PIECES CARTON
@@ -677,6 +738,17 @@ export default function DemandeInputs() {
       stockFinalPieceDemandeur: finalStockPieceDemandeur,
     }
     setDetailsDemande(details)
+    const details_demandeur = {
+      model: selectedModel,
+      service: selectedServicePiece,
+      typeMouvement: 5,
+      stockInitial: quantitePiece ? quantitePiece : 0,
+      quantiteMouvement: newStockPiece,
+      stockFinal: final,
+      stockInitialPieceDemandeur: quantitePieceDemandeur ? quantitePieceDemandeur : 0,
+      stockFinalPieceDemandeur: finalStockPieceDemandeur,
+    }
+    setDetailsDemandeur(details_demandeur)
   }
 
   // FONCTIONS POUR MOUVEMENT PAR CARTON
@@ -727,6 +799,20 @@ export default function DemandeInputs() {
       stockFinalCartonDemandeur: finalStockCartonDemandeur,
     }
     setDetailsDemande(details)
+    const details_demandeur = {
+      model: selectedModel,
+      service: serviceUser,
+      typeMouvement: 4,
+      stockInitialCarton: quantiteCartonDemandeur ? quantiteCartonDemandeur : 0,
+      quantiteMouvementCarton: selectedCartons.length,
+      stockFinalCarton: finalStockCartonDemandeur,
+      stockInitialPiece: quantitePieceDemandeur ? quantitePieceDemandeur : 0,
+      quantiteMouvementPiece: destockPiece,
+      stockFinalPiece: finalStockPieceDemandeur,
+      quantitePieceCarton: quantitePieceCarton ? quantitePieceCarton : 0,
+      cartons,
+    }
+    setDetailsDemandeur(details_demandeur)
   }
 
   // FONCTIONS POUR MOUVEMENT STOCK PAR PIECE
@@ -761,6 +847,15 @@ export default function DemandeInputs() {
       stockFinalPieceDemandeur: finalStockPieceDemandeur,
     }
     setDetailsDemande(details)
+    const details_demandeur = {
+      model: selectedModel,
+      service: serviceUser,
+      typeMouvement: 5,
+      stockInitial: quantitePieceDemandeur ? quantitePieceDemandeur : 0,
+      quantiteMouvement: newStockPiece,
+      stockFinal: finalStockPieceDemandeur,
+    }
+    setDetailsDemandeur(details_demandeur)
   }
 
   const handleValidate = async () => {
@@ -777,6 +872,7 @@ export default function DemandeInputs() {
       quantite_demande: quantite,
       nomenclature,
       detailsDemande,
+      detailsDemandeur,
       userId,
       itemId: selectedPiece,
       idDemandeur: selectedUser,
@@ -867,11 +963,9 @@ export default function DemandeInputs() {
                         <Label>Commentaire</Label>
                         <TextArea
                           type="text"
+                          placeholder="Ajoutez un commentaire"
                           value={commentaire}
-                          onChange={(e) => {
-                            const value = e.target.value
-                            setCommentaire(value)
-                          }}
+                          onChange={(value) => setCommentaire(value)}
                         />
                       </div>
                     </div>
@@ -1030,7 +1124,7 @@ export default function DemandeInputs() {
                           ) : (
                             <></>
                           )}
-                          {(!hasCarton && !hasLot)? (
+                          {(!hasCarton && !hasLot) ? (
                             <>
                               <div className="flex items-center gap-3 my-2">
                                 {/* Par piece */}

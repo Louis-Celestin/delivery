@@ -39,6 +39,7 @@ model demandes {
   qte_total_demande                  Int?
   nomenclature                       String?                 @db.VarChar(255)
   details_demande                    String                  @db.LongText
+  details_demandeur                  String?                 @db.LongText
   statut_demande                     demandes_statut_demande
   user_id                            Int?
   stock_id                           Int
@@ -478,7 +479,7 @@ model validations {
 
 model stocks {
   id                             Int               @id @default(autoincrement())
-  code_stock                     String?           @unique(map: "code_stock") @db.VarChar(255)
+  code_stock                     String?           @db.VarChar(255)
   piece_id                       Int
   model_id                       Int
   service_id                     Int

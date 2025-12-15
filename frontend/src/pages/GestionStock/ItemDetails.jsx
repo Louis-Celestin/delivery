@@ -91,6 +91,18 @@ export default function ItemDetails() {
         )
     }
 
+    const serviceTemplate = (stock) => {
+        const service = services.find((item) => {
+            return item.id == stock.service_id
+        })
+        const nomService = service ? service.nom_service : 'N/A'
+        return (
+            <>
+                <span className="font-medium">{nomService}</span>
+            </>
+        )
+    }
+
     const modelTemplate = (stock) => {
         const model = allModels.find((item) => {
             return item.id_model == selectedModel
@@ -169,7 +181,7 @@ export default function ItemDetails() {
                                         {selectedModel ? (
                                             <>
                                                 <div>
-                                                    <div>
+                                                    {/* <div>
                                                         <span className="text-xs bg-blue-200 px-1.5 font-semibold">Stocks par service</span>
                                                         <div className="grid grid-cols-6">
                                                             {modelServices.map((item) => {
@@ -196,7 +208,7 @@ export default function ItemDetails() {
                                                                 )
                                                             })}
                                                         </div>
-                                                    </div>
+                                                    </div> */}
                                                     <div>
                                                         <span className="text-xs bg-blue-200 px-1.5 font-semibold">Stocks par code</span>
                                                         <DataTable
@@ -211,6 +223,7 @@ export default function ItemDetails() {
 
                                                             <Column field="id" header="ID"></Column>
                                                             <Column field="code_stock" header="Code" body={codeTemplate}></Column>
+                                                            <Column field="service_id" header="Service" body={serviceTemplate}></Column>
                                                             <Column field="model_id" header="Modèle" body={modelTemplate}></Column>
                                                             <Column field="quantite_piece" header="Quantité"></Column>
                                                             <Column field="created_at" header="Date creation"></Column>

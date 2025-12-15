@@ -139,14 +139,18 @@ export default function StockDetails() {
 
                 const mouvements = await stockData.getOneStockMouvements(id)
                 const first = mouvements[mouvements.length - 1]
-                console.log(first)
                 setInitialisation(first)
                 const details_first = JSON.parse(first.details_mouvement)
                 setDetailsInitialisation(details_first)
-                console.log(details_first)
 
                 const services_data = await userData.getAllServices()
                 setServices(services_data)
+
+                const service = services_data.find((item) => {
+                    return item.id == stock_data.service_id
+                })
+                const nom_service = service ? service.nom_service : ''
+                setNomService(nom_service)
 
                 const mouvement_data = await stockData.getOneStockMouvements(id)
                 setAllMouvements(mouvement_data)
@@ -365,7 +369,7 @@ export default function StockDetails() {
                                 <div className="border-b flex justify-between pb-3">
                                     <div className="flex flex-col">
                                         <span className="text-cyan-700 font-semibold text-xl">{codeStock}</span>
-                                        <span className="text-sm font-normal">{nomPiece} - <span className="text-xs font-bold text-red-900">{nomModel}</span></span>
+                                        <span className="text-sm font-normal">{nomPiece} - <span className="text-xs font-bold text-red-900">{nomModel}</span> - <span className="text-xs font-bold text-red-900">{nomService}</span></span>
                                     </div>
                                     <div className="flex flex-col">
                                         <span style={{ fontSize: '11px' }}>Auteur</span>
