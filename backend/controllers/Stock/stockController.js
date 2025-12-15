@@ -1269,14 +1269,14 @@ const setStockSn = async (req, res) => {
 
   try {
     /* =========================
-       1️⃣ BASIC VALIDATION
+       1️⃣ VALIDATION
     ========================== */
     if (!file) {
       return res.status(400).json({ message: "Excel file is required" });
     }
 
     /* =========================
-       2️⃣ READ EXCEL
+       2️⃣ LOAD EXCEL
     ========================== */
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(file.buffer);
@@ -1296,9 +1296,8 @@ const setStockSn = async (req, res) => {
     /* =========================
        3️⃣ PARSE ROWS
     ========================== */
-    const rows = [];
     const serialNumbers = new Set();
-    const lots = new Set();
+    const rows = [];
 
     worksheet.eachRow((row, rowNumber) => {
       if (rowNumber === 1) return;
@@ -1312,17 +1311,11 @@ const setStockSn = async (req, res) => {
 
       serialNumbers.add(sn);
 
-      const lot = headers["LOT"]
-        ? extractNumber(row.getCell(headers["LOT"]).value)
-        : null;
-
       const carton = headers["CARTON"]
         ? extractNumber(row.getCell(headers["CARTON"]).value)
         : null;
 
-      if (lot !== null) lots.add(lot);
-
-      rows.push({ sn, lot, carton });
+      rows.push({ sn, carton });
     });
 
     if (rows.length === 0) {
@@ -1330,22 +1323,7 @@ const setStockSn = async (req, res) => {
     }
 
     /* =========================
-       4️⃣ BUILD HIERARCHY
-    ========================== */
-    const hierarchy = {};
-
-    for (const r of rows) {
-      const lotKey = r.lot ?? "NO_LOT";
-      const cartonKey = r.carton ?? "NO_CARTON";
-
-      if (!hierarchy[lotKey]) hierarchy[lotKey] = {};
-      if (!hierarchy[lotKey][cartonKey]) hierarchy[lotKey][cartonKey] = [];
-
-      hierarchy[lotKey][cartonKey].push(r.sn);
-    }
-
-    /* =========================
-       5️⃣ CHECK EXISTING SNs (DB)
+       4️⃣ CHECK EXISTING SNs
     ========================== */
     const existingSNs = await prisma.serial_numbers.findMany({
       where: {
@@ -1364,99 +1342,77 @@ const setStockSn = async (req, res) => {
     }
 
     /* =========================
-       6️⃣ PREPARE TRANSACTION QUERIES
+       5️⃣ BUILD CARTON HIERARCHY
     ========================== */
-    const queries = [];
+    const hierarchy = {};
 
-    // STOCK
-    const stockCreate = prisma.stocks.create({
+    for (const r of rows) {
+      const cartonKey = r.carton ?? "NO_CARTON";
+
+      if (!hierarchy[cartonKey]) hierarchy[cartonKey] = [];
+      hierarchy[cartonKey].push(r.sn);
+    }
+
+    /* =========================
+       6️⃣ CREATE STOCK (TX 1)
+    ========================== */
+    const [newStock] = await prisma.$transaction([
+      prisma.stocks.create({
+        data: {
+          code_stock: codeStock,
+          piece_id: parseInt(item_id),
+          model_id: parseInt(model_id),
+          service_id: parseInt(service_id),
+          quantite_lot: 0,
+          quantite_carton: Object.keys(hierarchy)
+            .filter(k => k !== "NO_CARTON").length,
+          quantite_piece: serialNumbers.size,
+          created_at: new Date(),
+          created_by: parseInt(userId),
+          last_update: new Date(),
+          updated_by: parseInt(userId),
+        },
+      }),
+    ]);
+
+    /* =========================
+       7️⃣ MOUVEMENT
+    ========================== */
+    const details = {
+      stockFinalCarton: Object.keys(hierarchy).length,
+      stockFinalPiece: serialNumbers.size,
+    }
+    await prisma.mouvement_stock.create({
       data: {
-        code_stock: codeStock,
+        type: "entree",
+        mouvement: 6,
+        date: new Date(),
+        stock_id: newStock.id,
         piece_id: parseInt(item_id),
+        origine,
+        service_destination: parseInt(service_id),
         model_id: parseInt(model_id),
-        service_id: parseInt(service_id),
-        quantite_lot: headers["LOT"] ? lots.size : 0,
-        quantite_carton: Object.values(hierarchy)
-          .reduce((acc, l) => acc + Object.keys(l).length, 0),
-        quantite_piece: serialNumbers.size,
-        created_at: new Date(),
-        created_by: parseInt(userId),
-        last_update: new Date(),
-        updated_by: parseInt(userId),
+        stock_initial: 0,
+        quantite: serialNumbers.size,
+        stock_final: serialNumbers.size,
+        quantite_totale_piece: serialNumbers.size,
+        motif,
+        commentaire,
+        details_mouvement: JSON.stringify(details),
       },
     });
 
-    queries.push(stockCreate);
-
     /* =========================
-       7️⃣ EXECUTE FIRST TRANSACTION
-       (Need stock_id for children)
+       8️⃣ CREATE CARTONS + SNs
     ========================== */
-    const [newStock] = await prisma.$transaction(queries);
+    for (const [cartonKey, sns] of Object.entries(hierarchy)) {
 
-    /* =========================
-       8️⃣ SECOND TRANSACTION (STRUCTURE)
-    ========================== */
-    const structureQueries = [];
+      let cartonId = null;
 
-    structureQueries.push(
-      prisma.mouvement_stock.create({
-        data: {
-          type: "entree",
-          mouvement: 6,
-          date: new Date(),
-          stock_id: newStock.id,
-          piece_id: parseInt(item_id),
-          origine,
-          service_destination: parseInt(service_id),
-          model_id: parseInt(model_id),
-          stock_initial: 0,
-          quantite: serialNumbers.size,
-          stock_final: serialNumbers.size,
-          quantite_totale_piece: serialNumbers.size,
-          motif,
-          commentaire,
-          details_mouvement: JSON.stringify({
-            lots: lots.size,
-            cartons: Object.values(hierarchy).reduce((a, l) => a + Object.keys(l).length, 0),
-            serial_numbers: serialNumbers.size,
-          }),
-        },
-      })
-    );
-
-    const serialInserts = [];
-
-    for (const [lotKey, cartons] of Object.entries(hierarchy)) {
-      structureQueries.push(
-        prisma.stock_lot.create({
-          data: {
-            numero_lot: lotKey === "NO_LOT" ? null : parseInt(lotKey),
-            stock_id: newStock.id,
-            piece_id: parseInt(item_id),
-            service_id: parseInt(service_id),
-            model_id: parseInt(model_id),
-            quantite_carton: Object.keys(cartons).length,
-            quantite_piece: Object.values(cartons)
-              .reduce((acc, sns) => acc + sns.length, 0),
-          },
-        })
-      );
-    }
-
-    const lotsCreated = await prisma.$transaction(structureQueries);
-
-    /* =========================
-       9️⃣ SERIAL NUMBERS (OUTSIDE TX)
-    ========================== */
-    for (const lot of lotsCreated.filter(l => l.numero_lot !== undefined)) {
-      const cartons = hierarchy[lot.numero_lot ?? "NO_LOT"];
-
-      for (const [cartonKey, sns] of Object.entries(cartons)) {
+      if (cartonKey !== "NO_CARTON") {
         const carton = await prisma.stock_carton.create({
           data: {
-            numero_carton: cartonKey === "NO_CARTON" ? null : parseInt(cartonKey),
-            lot_id: lot.id,
+            numero_carton: parseInt(cartonKey),
             stock_id: newStock.id,
             piece_id: parseInt(item_id),
             service_id: parseInt(service_id),
@@ -1465,27 +1421,27 @@ const setStockSn = async (req, res) => {
             quantite_totale_piece: sns.length,
           },
         });
+        cartonId = carton.id;
+      }
 
-        const CHUNK = 1000;
-        for (let i = 0; i < sns.length; i += CHUNK) {
-          await prisma.serial_numbers.createMany({
-            data: sns.slice(i, i + CHUNK).map(sn => ({
-              serial_number: sn,
-              stock_id: newStock.id,
-              lot_id: lot.id,
-              carton_id: carton.id,
-              item_id: parseInt(item_id),
-              service_id: parseInt(service_id),
-              model_id: parseInt(model_id),
-              created_at: new Date(),
-            })),
-          });
-        }
+      const CHUNK = 1000;
+      for (let i = 0; i < sns.length; i += CHUNK) {
+        await prisma.serial_numbers.createMany({
+          data: sns.slice(i, i + CHUNK).map(sn => ({
+            serial_number: sn,
+            stock_id: newStock.id,
+            carton_id: cartonId,
+            item_id: parseInt(item_id),
+            service_id: parseInt(service_id),
+            model_id: parseInt(model_id),
+            created_at: new Date(),
+          })),
+        });
       }
     }
 
     return res.status(200).json({
-      message: "Stock SN created successfully",
+      message: "Stock SN created successfully (no LOT)",
       inserted: serialNumbers.size,
     });
 

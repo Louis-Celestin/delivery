@@ -83,7 +83,7 @@ export default function StockDetails() {
 
                 const models = await stockData.getAllModels()
                 const model = models.find((item) => {
-                    return item.id_model = stock_data.model_id
+                    return item.id_model == stock_data.model_id
                 })
                 const nom_model = model ? model.nom_model : ''
                 setNomModel(nom_model)
