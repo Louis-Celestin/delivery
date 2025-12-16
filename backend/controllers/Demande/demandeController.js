@@ -635,6 +635,14 @@ const validateDemande = async (req, res) => {
               is_deleted: true,
             }
           })
+          await prisma.serial_numbers.updateMany({
+            where: {
+              carton_id: parseInt(id),
+            },
+            data: {
+              is_deleted: true,
+            }
+          })
         }
       }
 
@@ -991,7 +999,14 @@ const validateDemande = async (req, res) => {
           await prisma.stock_carton.update({
             where: {
               id: parseInt(id),
-              lot_id: updatedLot.id,
+            },
+            data: {
+              is_deleted: true,
+            }
+          })
+          await prisma.serial_numbers.updateMany({
+            where: {
+              carton_id: parseInt(id),
             },
             data: {
               is_deleted: true,
@@ -1168,6 +1183,14 @@ const validateDemande = async (req, res) => {
           await prisma.stock_carton.updateMany({
             where: {
               lot_id: parseInt(id)
+            },
+            data: {
+              is_deleted: true,
+            }
+          })
+          await prisma.serial_numbers.updateMany({
+            where: {
+              lot_id: parseInt(id),
             },
             data: {
               is_deleted: true,
