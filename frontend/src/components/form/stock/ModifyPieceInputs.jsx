@@ -17,7 +17,7 @@ export default function ModifyPieceInputs() {
     const usersData = new Users()
     const { id } = useParams();
     const userId = localStorage.getItem('id');
-    const role = localStorage.getItem("role_id")
+    // const role = localStorage.getItem("role_id")
     const navigate = useNavigate();
 
     const [loadingStock, setLoadingStock] = useState(false)
@@ -128,17 +128,7 @@ export default function ModifyPieceInputs() {
 
     const handleModify = async (e) => {
         e.preventDefault();
-        if (role != 1 && role != 3) {
-            Swal.fire({
-                title: "Error",
-                text: "Vous n'êtes pas authorisé à faire cette action !",
-                icon: "error"
-            });
-            localStorage.removeItem('token');
-            localStorage.removeItem('username');
-            navigate('/signin');
-            return
-        }
+        
         setIsConfirmModalOpen(false)
         setLoadingModif(true)
 

@@ -66,7 +66,6 @@ export class Demandes {
   async updateDemande(id, payload) {
     try {
       const response = await axios.put(`${urlBase}/api/demandes/updateDemande/${id}`, payload)
-      // console.log(response)
       return response.data;
     } catch (error) {
       throw error.response.data

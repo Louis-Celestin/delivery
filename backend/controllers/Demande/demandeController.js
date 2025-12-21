@@ -501,6 +501,19 @@ const validateDemande = async (req, res) => {
       initial = Number(detailsMouvement.stockInitialCarton)
       stock = Number(detailsMouvement.quantiteMouvementCarton)
       final = Number(detailsMouvement.stockFinalCarton)
+
+      const listCarton = detailsMouvement.cartons
+
+      let serialNumbers = null
+      for (let id of listCarton) {
+        serialNumbers = await prisma.serial_numbers.findMany({
+          where: {
+            carton_id: parseInt(id)
+          }
+        })
+      }
+      detailsMouvement.listeSn = serialNumbers ? serialNumbers : null
+
       dataMouvement = {
         type: 'sortie',
         mouvement: 4,
@@ -537,8 +550,6 @@ const validateDemande = async (req, res) => {
 
       initialDemandeur = Number(detailsMouvement.stockInitialCartonDemandeur)
       finalDemandeur = Number(detailsMouvement.stockFinalCartonDemandeur)
-
-      const listCarton = detailsMouvement.cartons
 
       const stockDonneur = await prisma.stocks.update({
         where: {
@@ -839,6 +850,20 @@ const validateDemande = async (req, res) => {
       stock = Number(detailsMouvement.quantiteMouvementCartonLot)
       final = Number(detailsMouvement.stockFinalCartonLot)
       finalPieceLot = Number(detailsMouvement.stockFinalPieceLot)
+
+      const listCartonLot = detailsMouvement.cartons
+
+      let serialNumbers = null
+      for (let id of listCartonLot) {
+        serialNumbers = await prisma.serial_numbers.findMany({
+          where: {
+            carton_id: parseInt(id)
+          }
+        })
+      }
+      detailsMouvement.listeSn = serialNumbers ? serialNumbers : null
+
+
       dataMouvement = {
         type: 'sortie',
         mouvement: 2,
@@ -906,7 +931,7 @@ const validateDemande = async (req, res) => {
         })
       }
 
-      const listCartonLot = detailsMouvement.cartons
+      // const listCartonLot = detailsMouvement.cartons
 
       initialDemandeur = Number(detailsMouvement.stockInitialCartonDemandeur)
       finalDemandeur = Number(detailsMouvement.stockFinalCartonDemandeur)
@@ -1317,7 +1342,7 @@ const returnDemande = async (req, res) => {
   } = req.body;
   try {
     const demande = await prisma.demandes.findUnique({
-      where: { id_demande: parseInt(demande_id) },
+      where: { id: parseInt(demande_id) },
     });
 
     if (!demande) return res.status(404).json({ message: "Demande introuvable." });
@@ -1361,19 +1386,19 @@ const returnDemande = async (req, res) => {
 
     const piece = await prisma.items.findUnique({
       where: {
-        id_piece: parseInt(demande.itemId)
-      }
+        id_piece: demande.item_id,
+      },
     });
 
     const service = await prisma.services.findUnique({
       where: {
-        id: parseInt(demande.service_demandeur)
-      }
+        id: demande.service_demandeur,
+      },
     })
 
     const userService = await prisma.user_services.findMany({
       where: {
-        service_id: parseInt(demande.service_demandeur)
+        service_id: demande.service_demandeur,
       },
       include: {
         users: true
@@ -1423,18 +1448,18 @@ const returnDemande = async (req, res) => {
       <br><br>
       <p>Green - Pay vous remercie.</p>
       `;
-      await sendMail({
-        to: demandeur.email,
-        subject,
-        html,
-      });
-      for (const service_user of service_users) {
-        await sendMail({
-          to: service_user.email,
-          subject,
-          html,
-        });
-      }
+      // await sendMail({
+      //   to: demandeur.email,
+      //   subject,
+      //   html,
+      // });
+      // for (const service_user of service_users) {
+      //   await sendMail({
+      //     to: service_user.email,
+      //     subject,
+      //     html,
+      //   });
+      // }
     }
 
     return res.status(201).json({
@@ -1491,28 +1516,28 @@ const cancelDemande = async (req, res) => {
     });
 
     await prisma.demandes.update({
-      where: { id_demande: parseInt(demande_id) },
+      where: { id: parseInt(demande_id) },
       data: { statut_demande: 'refuse' },
     });
 
 
     /************************************     GESTION MAILS     **************************************/
 
-    const piece = await prisma.stock_dt.findUnique({
+    const piece = await prisma.items.findUnique({
       where: {
-        id_piece: parseInt(demande.type_demande_id)
+        id_piece: demande.item_id
       }
     });
 
     const service = await prisma.services.findUnique({
       where: {
-        id: parseInt(demande.service_demandeur)
+        id: demande.service_demandeur
       }
     })
 
     const userService = await prisma.user_services.findMany({
       where: {
-        service_id: parseInt(demande.service_demandeur)
+        service_id: demande.service_demandeur
       },
       include: {
         users: true
@@ -1534,14 +1559,14 @@ const cancelDemande = async (req, res) => {
     let quantite = demande.qte_total_demande;
     let commentaire_mail = commentaire_refus ? commentaire_refus : '(sans commentaire)';
     const url = GENERAL_URL
-    let demandeLink = `${url}/demande-details/${demande.id_demande}`;
+    let demandeLink = `${url}/demande-details/${demande.id}`;
     // const demandeLink = `https://livraisons.greenpayci.com/formulaire-recu/${nouvelleLivraison.id_demande}`
     const sendMail = require("../../utils/emailSender");
     if ((service_users && service_users.length > 0) || demandeur) {
       const subject = `DEMANDE REFUSÉE`;
       const html = `
       <p>Bonjour,</p>
-      <p>La demande ${demande.id_demande} pour ${motif} a été refusée.</p>
+      <p>La demande ${demande.id} pour ${motif} a été refusée.</p>
       <ul>
         <li><strong>Type de demande:</strong> ${demandeTypeName}</li>
         <li><strong>Nombre de produits:</strong> ${quantite}</li>
@@ -1563,18 +1588,18 @@ const cancelDemande = async (req, res) => {
       <br><br>
       <p>Green - Pay vous remercie.</p>
       `;
-      await sendMail({
-        to: demandeur.email,
-        subject,
-        html,
-      });
-      for (const service_user of service_users) {
-        await sendMail({
-          to: service_user.email,
-          subject,
-          html,
-        });
-      }
+      // await sendMail({
+      //   to: demandeur.email,
+      //   subject,
+      //   html,
+      // });
+      // for (const service_user of service_users) {
+      //   await sendMail({
+      //     to: service_user.email,
+      //     subject,
+      //     html,
+      //   });
+      // }
     }
 
     return res.status(201).json({
@@ -1590,84 +1615,101 @@ const cancelDemande = async (req, res) => {
 };
 
 const updateDemande = async (req, res) => {
-  const { id } = req.params;
-  const {
-    produitsDemandes,
-    commentaire,
-    nom_demandeur,
-    user_id,
-    type_demande_id,
-    service_id,
-    role_validateur,
-    id_demandeur,
-    qte_total_demande,
-    motif_demande,
-    otherFields,
-  } = req.body;
-
   try {
+    const { id } = req.params
+    const {
+      nomDemandeur,
+      commentaire,
+      selectedStock,
+      quantite_demande,
+      nomenclature,
+      detailsDemande,
+      detailsDemandeur,
+      userId,
+      itemId,
+      idDemandeur,
+      motif,
+      serviceDemandeur,
+      champsAutre,
+    } = req.body;
 
-    const produits = typeof produitsDemandes === "string"
-      ? JSON.parse(produitsDemandes)
-      : produitsDemandes;
+    const details = typeof detailsDemande === "string"
+      ? JSON.parse(detailsDemande)
+      : detailsDemande;
 
-    const autres = typeof otherFields === "string"
-      ? JSON.parse(otherFields)
-      : otherFields
+    const autres = typeof champsAutre === "string"
+      ? JSON.parse(champsAutre)
+      : champsAutre
 
-    let utilisateur = null;
-
-    utilisateur = await prisma.users.findUnique({
+    const piece = await prisma.items.findUnique({
       where: {
-        id_user: parseInt(user_id)
+        id_piece: parseInt(itemId)
       }
     })
+
+    if (!piece) {
+      return res.status(404).json({ message: "Pièce introuvable !" })
+    }
+
+    const stock = await prisma.stocks.findUnique({
+      where: {
+        id: parseInt(selectedStock)
+      }
+    })
+
+    if (!stock) {
+      return res.status(404).json({ message: "Stock introuvable !" })
+    }
+
+    let utilisateur = null;
+    utilisateur = await prisma.users.findUnique({
+      where: {
+        id_user: parseInt(userId)
+      }
+    });
 
     if (!utilisateur) {
       return res.status(404).json({ message: "Utilisateur non trouvé" });
     }
 
-    const dataToUpdate = {
-      nom_demandeur: nom_demandeur ? nom_demandeur : '',
+    const data = {
+      nom_demandeur: nomDemandeur,
       date_demande: new Date(),
       commentaire,
-      signature_demandeur: '',
-      qte_total_demande: parseInt(qte_total_demande),
-      produit_demande: typeof produitsDemandes === "string" ? produitsDemandes : JSON.stringify(produitsDemandes),
-      statut_demande: "en_cours",
-      user_id: utilisateur ? utilisateur.id_user : null,
-      type_demande_id: parseInt(type_demande_id),
-      role_id_recepteur: parseInt(role_validateur),
-      id_demandeur: parseInt(id_demandeur) || null,
-      motif_demande: motif_demande || null,
-      service_demandeur: parseInt(service_id),
-      champs_autre: JSON.stringify(autres),
-    };
-
-    const updated = await prisma.demandes.update({
-      where: { id_demande: parseInt(id) },
-      data: dataToUpdate
-    });
+      qte_total_demande: quantite_demande,
+      nomenclature,
+      details_demande: JSON.stringify(detailsDemande),
+      details_demandeur: JSON.stringify(detailsDemandeur),
+      statut_demande: 'en_cours',
+      user_id: parseInt(userId),
+      stock_id: parseInt(selectedStock),
+      item_id: parseInt(itemId),
+      type_demande: parseInt(details.typeMouvement),
+      id_demandeur: parseInt(idDemandeur),
+      motif_demande: motif,
+      service_demandeur: parseInt(serviceDemandeur),
+      champs_autre: JSON.stringify(autres)
+    }
+    const updatedDemande = await prisma.demandes.update({
+      where: {
+        id: parseInt(id),
+      },
+      data,
+    })
 
 
     /************************** GESTION DES MAILS ********************************/
-
-
-    const piece = await prisma.stock_dt.findUnique({
-      where: {
-        id_piece: parseInt(type_demande_id)
-      }
-    });
-
     const service = await prisma.services.findUnique({
       where: {
-        id: parseInt(service_id)
+        id: parseInt(serviceDemandeur)
       }
     })
 
+    const nomService = service.nom_service.toUpperCase()
+
     const userService = await prisma.user_services.findMany({
       where: {
-        service_id: parseInt(service_id)
+        service_id: parseInt(serviceDemandeur)
       },
       include: {
         users: true
@@ -1676,68 +1718,64 @@ const updateDemande = async (req, res) => {
 
     const userRole = await prisma.user_roles.findMany({
       where: {
-        role_id: parseInt(role_validateur)
+        role_id: 4,
       },
       include: {
         users: true
+      }
+    })
+    const mouvement = await prisma.type_mouvement_stock.findUnique({
+      where: {
+        id: details.typeMouvement
       }
     })
 
     const service_users = userService.map(us => us.users)
     const validateurs = userRole.map(us => us.users)
 
-    let motif = motif_demande
-    let demandeTypeName = piece.nom_piece.toUpperCase()
+    let nomPiece = piece.nom_piece.toUpperCase()
 
-    let serviceDemandeur = service.nom_service.toUpperCase();
+    let quantiteDemande = quantite_demande;
 
-    let quantite = updated.qte_total_demande;
-    let commentaire_mail = updated.commentaire ? updated.commentaire : '(sans commentaire)';
+    let commentaire_mail = commentaire ? commentaire : '(sans commentaire)';
+
     const url = GENERAL_URL
-    let demandeLink = `${url}/demande-details/${updated.id_demande}`;
-    // const demandeLink = `https://livraisons.greenpayci.com/formulaire-recu/${nouvelleLivraison.id_demande}`
+    let demandeLink = `${url}/demande-details/${updatedDemande.id}`;
 
-    let attachments = []
-    // attachments = uploadedFiles.map((url, index) => ({
-    //   filename: `fichier-${index + 1}${path.extname(url) || '.pdf'}`, // fallback to .pdf
-    //   path: url
-    // }));
-
-    console.log(attachments.length, attachments)
     const sendMail = require("../../utils/emailSender");
 
     if ((service_users && service_users.length > 0) || (validateurs && validateurs.length > 0)) {
-      const subject = `MODIFICATION DEMANDE ${motif}`;
+      const subject = `DEMANDE POUR ${motif} MODIFIÉE`;
       let html = `
-      <p>Bonjour,</p>
-      <p>La demande ${updated.id_demande} a été modifiée.</p>
-      <ul>
-        <li><strong>Type de demande:</strong> ${demandeTypeName}</li>
-        <li><strong>Nombre de produits:</strong> ${quantite}</li>
-      </ul>
-      <ul>
-        <li><strong>Service demandeur:</strong> ${serviceDemandeur}</li>
-        <li><strong>Nom demandeur:</strong> ${updated.nom_demandeur}</li>
-      </ul>
-      <br>
-      <p>Commentaire : ${commentaire_mail}<p>
-      <br>
-      <p>Retrouvez la demande à ce lien : 
+        <p>Bonjour,</p>
+        <p>La demande ${updatedDemande.id} a été modifiée.</p>
+        <ul>
+          <li><strong>Demande de :</strong> ${nomPiece}</li>
+          <li><strong>${mouvement.titre}</strong></li>
+          <li><strong>Nombre de produits:</strong> ${quantiteDemande}</li>
+        </ul>
+        <ul>
+          <li><strong>Service demandeur:</strong> ${nomService}</li>
+          <li><strong>Nom demandeur:</strong> ${nomDemandeur}</li>
+        </ul>
+        <br>
+        <p>Commentaire : ${commentaire_mail}<p>
+        <br>
+        <p>Retrouvez la demande à ce lien : 
           <span>
           <a href="${demandeLink}" target="_blank" style="background-color: #73dced; color: white; padding: 7px 12px; text-decoration: none; border-radius: 5px;">
-              Cliquez ici !
+            Cliquez ici !
           </a>
           </span>
-      </p>
-      <br><br>
-      <p>Green - Pay vous remercie.</p>
-      `;
+        </p>
+        <br><br>
+        <p>Green - Pay vous remercie.</p>
+        `;
       for (const service_user of service_users) {
         await sendMail({
           to: service_user.email,
           subject,
           html,
-          attachments
         });
       }
       for (const validateur of validateurs) {
@@ -1745,15 +1783,18 @@ const updateDemande = async (req, res) => {
           to: validateur.email,
           subject,
           html,
-          attachments
         });
       }
     }
 
-    return res.status(200).json(updated);
+    res.status(201).json({
+      message: "Demande modifiée avec succès",
+      demandes: updatedDemande
+    });
+
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Erreur lors de la mise à jour", error });
+    console.error("Erreur lors de la demande :", error);
+    res.status(500).json({ message: "Erreur interne", error });
   }
 };
 

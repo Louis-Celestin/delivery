@@ -47,9 +47,14 @@ export default function DemandeDetails() {
     const [commentaireValidation, setCommentaireValidation] = useState('');
     const [statutDemande, setStatutDemande] = useState('en attente');
     const [statutClass, setStatutClass] = useState('text-sm rounded-xl p-1 bg-orange-100 text-orange-500 font-bold')
+
     const [recu, setRecu] = useState(false);
     const [isDelivered, setIsDelivered] = useState(false);
     const [attente, setAttente] = useState(true)
+    const [valide, setValide] = useState(false)
+    const [retourne, setRetourne] = useState(false)
+    const [refuse, setRefuse] = useState(false)
+
     const [serviceDemandeur, setServiceDemandeur] = useState('');
     const [nomDemandeur, setNomDemandeur] = useState('')
 
@@ -137,6 +142,7 @@ export default function DemandeDetails() {
                     let index;
                     setDemandeDetails(demandeData);
                     setMotifDemande(demandeData.motif_demande)
+                    setCommentaire(demandeData.commentaire)
 
                     const services_data = await usersData.getAllServices()
                     const service = services_data.find((item) => {
@@ -154,11 +160,13 @@ export default function DemandeDetails() {
                         if (roles_id.includes(3)) {
                             setIsDemandeur(true)
                         }
+                        setAttente(true)
                     }
                     if (demandeData.statut_demande == 'valide') {
                         setActionButtons(true)
                         setStatutDemande('Validée')
                         setAttente(false)
+                        setValide(true)
                         setStatutClass('text-sm rounded-xl p-1 bg-green-100 text-green-500 font-bold')
                         setRecu(true)
                         index = demandeData.validation_demande.length - 1
@@ -187,6 +195,7 @@ export default function DemandeDetails() {
                         setActionButtons(false)
                         setRecu(true)
                         setAttente(true)
+                        setRetourne(true)
                         setStatutDemande('Retournée')
                         setStatutClass('text-sm rounded-xl p-1 bg-red-100 text-red-500 font-bold')
                         index = demandeData.validation_demande.length - 1
@@ -197,6 +206,7 @@ export default function DemandeDetails() {
                         setRecu(true)
                         setAttente(false)
                         setStatutDemande('Refusée')
+                        setRefuse(true)
                         setStatutClass('text-sm rounded-xl p-1 bg-gray-dark text-white font-bold')
                         index = demandeData.validation_demande.length - 1
                         setCommentaireValidation(demandeData.validation_demande[index].commentaire)
@@ -262,50 +272,6 @@ export default function DemandeDetails() {
 
                     const nomType = typeMouvement ? typeMouvement.titre : ''
                     setTypeDemande(nomType)
-
-                    // let livraison_data = await livraisonData.getOneLivraisonDemande(id)
-                    // let index_reception
-                    // console.log(livraison_data)
-                    // setLivraisonID(livraison_data.id)
-                    // setNomLivreur(livraison_data.Livraisons.nom_livreur)
-                    // setQuantiteLivraison(livraison_data.Livraisons.quantite_livraison)
-                    // setDateLivraison(formatDate(livraison_data.Livraisons.date_livraison))
-                    // setCommentaireLivraison(livraison_data.Livraisons.commentaire_livraison)
-                    // const autresLivraison = JSON.parse(livraison_data.Livraisons.autres_champs_livraison)
-                    // setOtherFieldsLivraison(autresLivraison)
-
-                    // let statut_livraison = livraison_data.Livraisons.statut_livraison
-                    // if (statut_livraison == 'livre' || statut_livraison == 'retourne') {
-                    //     setIsReceived(true)
-                    //     index_reception = livraison_data.Livraisons.reception_livraison.length - 1
-                    //     setCommentaireReception(livraison_data.Livraisons.reception_livraison[index_reception].commentaire_reception)
-                    //     setNomRecepteur(livraison_data.Livraisons.reception_livraison[index_reception].nom_recepteur)
-
-                    //     if (statut_livraison == 'livre') {
-                    //         setStatutLivraison('Livrée')
-                    //         setStatutClassLivraison('text-sm rounded-xl p-1 bg-green-100 text-green-500 font-bold')
-                    //     }
-
-                    //     else if (statut_livraison == 'retourne') {
-                    //         if (roles_id.includes(12)) {
-                    //             setIsReception(true)
-                    //         }
-                    //         setIsLivreur(true)
-                    //         setModifyLivraison(true)
-                    //         setStatutLivraison('Retournée')
-                    //         setStatutClassLivraison('text-sm rounded-xl p-1 bg-red-100 text-red-500 font-bold')
-                    //     }
-                    // }
-
-                    // else if (statut_livraison == 'en_cours') {
-                    //     if (roles_id.includes(12)) {
-                    //         setIsReception(true)
-                    //     }
-                    //     setStatutLivraison('En attente')
-                    //     setModifyLivraison(true)
-                    //     setIsLivreur(true)
-                    // }
-
 
                 } catch (error) {
                     console.log("Error fetchind data ", error)
@@ -653,27 +619,6 @@ export default function DemandeDetails() {
                                         ) : (
                                             <></>
                                         )}
-                                        {/* {isLivreur ? (
-                                            <>
-                                                {modifyLivraison ? (
-                                                    <>
-                                                        <Link to={`/modifier-livraison-pieces/${demandeDetails.id}`} className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'>
-                                                            <span className='mr-4'><i className="pi pi-pencil"></i></span>
-                                                            <span className='text-sm text-gray-700 font-medium'>Modifier livraison</span>
-                                                        </Link>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Link to={`/livraison-pieces/${demandeDetails.id}`} className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'>
-                                                            <span className='mr-4'><i className="pi pi-send"></i></span>
-                                                            <span className='text-sm text-gray-700 font-medium'>Faire livraison</span>
-                                                        </Link>
-                                                    </>
-                                                )}
-                                            </>
-                                        ) : (
-                                            <></>
-                                        )} */}
                                         {isReception ? (
                                             <>
                                                 {loadingReception ? (
@@ -732,7 +677,7 @@ export default function DemandeDetails() {
                             <></>
                         )}
                         {
-                            recu ? (
+                            valide ? (
                                 <>
                                     <div className='grid grid-cols-2 justify-between items-center mb-6'>
                                         <div>
@@ -746,19 +691,6 @@ export default function DemandeDetails() {
                                             </div>
                                         </div>
                                     </div>
-                                    {/* <div>
-                                        <div className='overflow-hidden mb-6 pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
-                                            <div className='mb-6 pb-2 w-full border-b'>
-                                                <span className='text-sm mr-2'>Commentaire livraison</span>
-                                                <span className='text-sm'><i className="pi pi-comment"></i></span>
-                                            </div>
-                                            {commentaireLivraison ? (
-                                                <p className='text-sm text-cyan-700'>{commentaireLivraison}</p>
-                                            ) : (
-                                                <p className='text-xs opacity-20'>Sans commentaire</p>
-                                            )}
-                                        </div>
-                                    </div> */}
                                     {isReceived ? (
                                         <div>
                                             <div className='overflow-hidden mb-6 pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
@@ -931,7 +863,7 @@ export default function DemandeDetails() {
                         </div>
                         <div className='w-full mt-6 flex justify-center items-center'>
                             <button
-                                onClick={'handleReturn'}
+                                onClick={handleReturn}
                                 className='w-48 mx-3 bg-red-400 rounded-2xl h-10 flex justify-center items-center'>
                                 Retourner
                             </button>
@@ -966,7 +898,7 @@ export default function DemandeDetails() {
                         </div>
                         <div className='w-full mt-6 flex justify-center items-center'>
                             <button
-                                onClick={'handleCancel'}
+                                onClick={handleCancel}
                                 className='w-48 mx-3 bg-red-400 rounded-2xl h-10 flex justify-center items-center'>
                                 Refuser
                             </button>
