@@ -337,7 +337,7 @@ export default function DemandeInputs() {
 
       if (stock && stock.piece_id == 1 && stock.service_id == 5) {
         const stock_demandeur = stocks.find((item) => {
-          return item.service_id == 3
+          return item.service_id == 3 && item.piece_id == 1 && item.code_stock == stock.code_stock
         })
         if (stock_demandeur) {
           setQuantitePieceDemandeur(stock_demandeur.quantite_piece)
@@ -840,9 +840,9 @@ export default function DemandeInputs() {
       model: selectedModel,
       service: selectedServicePiece,
       typeMouvement: 5,
-      stockInitial: quantitePiece ? quantitePiece : 0,
+      stockInitialPiece: quantitePiece ? quantitePiece : 0,
       quantiteMouvement: newStockPiece,
-      stockFinal: final,
+      stockFinalPiece: final,
       stockInitialPieceDemandeur: quantitePieceDemandeur ? quantitePieceDemandeur : 0,
       stockFinalPieceDemandeur: finalStockPieceDemandeur,
     }
@@ -851,9 +851,9 @@ export default function DemandeInputs() {
       model: selectedModel,
       service: serviceUser,
       typeMouvement: 5,
-      stockInitial: quantitePieceDemandeur ? quantitePieceDemandeur : 0,
+      stockInitialPiece: quantitePieceDemandeur ? quantitePieceDemandeur : 0,
       quantiteMouvement: newStockPiece,
-      stockFinal: finalStockPieceDemandeur,
+      stockFinalPiece: finalStockPieceDemandeur,
     }
     setDetailsDemandeur(details_demandeur)
   }

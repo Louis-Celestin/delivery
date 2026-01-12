@@ -247,7 +247,7 @@ export default function DemandeDetails() {
                         details.stockInitialCartonLot : type_demande == 3 ?
                             details.stockInitialPieceCarton : type_demande == 4 ?
                                 details.stockInitialCarton : type_demande == 5 ?
-                                    details.stockInitial : 0
+                                    details.stockInitialPiece : 0
 
                     setStockDepart(stock_depart)
 
@@ -255,14 +255,14 @@ export default function DemandeDetails() {
                         details.stockFinalCartonLot : type_demande == 3 ?
                             details.stockFinalPieceCarton : type_demande == 4 ?
                                 details.stockFinalCarton : type_demande == 5 ?
-                                    details.stockFinal : 0
+                                    details.stockFinalPiece : 0
 
                     setStockFinal(stock_final)
 
-                    const intial_piece = type_demande == 5 ? details.stockInitial : details.stockInitialPiece
+                    const intial_piece = type_demande == 5 ? details.stockInitialPiece : details.stockInitialPiece
                     setStockDepartPiece(intial_piece)
 
-                    const final_piece = type_demande == 5 ? details.stockFinal : details.stockFinalPiece
+                    const final_piece = type_demande == 5 ? details.stockFinalPiece : details.stockFinalPiece
                     setStockFinalPiece(final_piece)
 
                     const typesMouvement_data = await stock.getAllTypeMouvementStock()

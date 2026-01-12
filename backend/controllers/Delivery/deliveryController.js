@@ -46,6 +46,7 @@ const deliver = async (req, res) => {
       service_recepteur,
       role_recepteur,
       selected_model,
+      selectedStock,
     } = req.body;
 
     // Correction ici : gestion de produitsLivre (string JSON venant de form-data)
@@ -105,6 +106,7 @@ const deliver = async (req, res) => {
         service_id: parseInt(service_recepteur),
         role_id: role_recepteur ? parseInt(role_recepteur) : null,
         model_id: selected_model ? parseInt(selected_model) : null,
+        stock_id: selectedStock ? +selectedStock : null,
       }
     });
 

@@ -9,9 +9,9 @@ const baseUrl = process.env.FRONTEND_BASE_URL || "https://livraisons.greenpayci.
 const localUrl = "http://localhost:5173"
 // GENERAL_URL va être utilisée dans les mails envoyés pour pouvoir rediriger correctement l'utilisateur vers la page avec le bon lien
 // En test GENERAL_URL doit avoir la valeur de localUrl et celle de baseUrl lors du deploiement.
-let GENERAL_URL = baseUrl 
+let GENERAL_URL = baseUrl
 let test_env = TEST_ENV
-if(test_env){
+if (test_env) {
   GENERAL_URL = localUrl
 }
 
@@ -69,30 +69,7 @@ const createValidation = async (req, res) => {
       data: { statut_livraison: "livre" },
     });
 
-    const pieces_chargeurs = await prisma.stock_dt.findUnique({
-      where: {
-        id_piece: 1
-      }
-    })
-    if(livraison.type_livraison_id == 5 || livraison.type_livraison_id == 7 || livraison.type_livraison_id == 8){
-      await prisma.stock_dt.update({
-      where:{
-        id_piece: 1
-      },
-      data: {
-        quantite:  pieces_chargeurs.quantite - livraison.qte_totale_livraison
-      }
-    }) 
-    }
-
-
-    /******************************* GESTION DES MAILS  *******************************/
-
-    let produitsLivre = livraison.produitsLivre
-
-    const produits = typeof produitsLivre === "string"
-    ? JSON.parse(produitsLivre)
-    : produitsLivre;
+    // ***************************************     GESTION STOCK CHARGEUR     *************************************
 
     const typeLivraison = await prisma.type_livraison_commerciale.findUnique({
       where: {
@@ -101,26 +78,76 @@ const createValidation = async (req, res) => {
     })
     let livraisonTypeName = typeLivraison.nom_type_livraison.toUpperCase();
 
+    if (livraison.type_livraison_id == 5 || livraison.type_livraison_id == 7 || livraison.type_livraison_id == 8) {
+      const stockChargeur = await prisma.stocks.findUnique({
+        where: {
+          id: livraison.stock_id,
+        },
+      })
+      const quantiteChargeur = stockChargeur.quantite_piece
+      await prisma.stocks.update({
+        where: {
+          id: stockChargeur.id,
+        },
+        data: {
+          quantite_piece: quantiteChargeur - livraison.qte_totale_livraison,
+          last_update: new Date(),
+        }
+      })
+      const mouvementDetails = {
+        typeMouvement: 5,
+        stockInitialPiece: quantiteChargeur,
+        quantiteMouvement: livraison.qte_totale_livraison,
+        stockFinalPiece: quantiteChargeur - livraison.qte_totale_livraison,
+      }
+      await prisma.mouvement_stock.create({
+        data: {
+          type: 'sortie',
+          mouvement: 5,
+          formulaire_id: livraison.id_livraison,
+          stock_id: stockChargeur.id,
+          piece_id: 1,
+          service_origine: 3,
+          service_destination: livraison.service_id,
+          model_id: 1,
+          stock_initial: quantiteChargeur,
+          quantite: livraison.qte_totale_livraison,
+          stock_final: quantiteChargeur - livraison.qte_totale_livraison,
+          quantite_totale_piece: quantiteChargeur - livraison.qte_totale_livraison,
+          motif: livraisonTypeName,
+          commentaire: livraison.commentaire,
+          details_mouvement: JSON.stringify(mouvementDetails),
+        }
+      })
+    }
+    /******************************* GESTION DES MAILS  *******************************/
+
+    let produitsLivre = livraison.produitsLivre
+
+    const produits = typeof produitsLivre === "string"
+      ? JSON.parse(produitsLivre)
+      : produitsLivre;
+
     const supervisionRole = await prisma.user_roles.findMany({
-      where:{
+      where: {
         role_id: 13
       },
-      include:{
+      include: {
         users: true
       }
     })
     const superviseurs = supervisionRole.map(us => us.users)
 
     const roleLivraison = await prisma.user_roles.findMany({
-      where:{
+      where: {
         role_id: 1
       },
-      include:{
+      include: {
         users: true
       }
     })
     const livreurs = roleLivraison.map(us => us.users)
-    
+
     const url = GENERAL_URL
     let deliveryLink = `${url}/formulaire/${livraison.id_livraison}`;
     let commentaire_mail = commentaire ? commentaire : '(sans commentaire)'
@@ -156,7 +183,7 @@ const createValidation = async (req, res) => {
           html,
         });
       }
-      if (superviseurs){
+      if (superviseurs) {
         for (const superviseur of superviseurs) {
           await sendMail({
             to: superviseur.email,
@@ -303,15 +330,15 @@ const returnDelivery = async (req, res) => {
 
     if (!user_id) return res.status(403).json({ message: "Utilisateur non authentifié." });
 
-      const user = await prisma.users.findUnique({
-        where: { id_user: parseInt(user_id) },
-      });
+    const user = await prisma.users.findUnique({
+      where: { id_user: parseInt(user_id) },
+    });
 
-      if (!user) {
-        return res.status(404).json({ message: "Utilisateur non trouvé." });
-      }
+    if (!user) {
+      return res.status(404).json({ message: "Utilisateur non trouvé." });
+    }
 
-      const newValidation = await prisma.validations.create({
+    const newValidation = await prisma.validations.create({
       data: {
         livraison_id: parseInt(livraison_id),
         etat_validation: 'retourne',
@@ -337,8 +364,8 @@ const returnDelivery = async (req, res) => {
     let produitsLivre = livraison.produitsLivre
 
     const produits = typeof produitsLivre === "string"
-    ? JSON.parse(produitsLivre)
-    : produitsLivre;
+      ? JSON.parse(produitsLivre)
+      : produitsLivre;
 
     const typeLivraison = await prisma.type_livraison_commerciale.findUnique({
       where: {
@@ -348,25 +375,25 @@ const returnDelivery = async (req, res) => {
     let livraisonTypeName = typeLivraison.nom_type_livraison.toUpperCase();
 
     const supervisionRole = await prisma.user_roles.findMany({
-      where:{
+      where: {
         role_id: 13
       },
-      include:{
+      include: {
         users: true
       }
     })
     const superviseurs = supervisionRole.map(us => us.users)
 
     const roleLivraison = await prisma.user_roles.findMany({
-      where:{
+      where: {
         role_id: 1
       },
-      include:{
+      include: {
         users: true
       }
     })
     const livreurs = roleLivraison.map(us => us.users)
-    
+
     const url = GENERAL_URL
     let deliveryLink = `${url}/formulaire/${livraison.id_livraison}`;
     let commentaire_mail = commentaire_return ? commentaire_return : '(sans commentaire)'
@@ -402,7 +429,7 @@ const returnDelivery = async (req, res) => {
           html,
         });
       }
-      if (superviseurs){
+      if (superviseurs) {
         for (const superviseur of superviseurs) {
           await sendMail({
             to: superviseur.email,
@@ -413,7 +440,7 @@ const returnDelivery = async (req, res) => {
       }
     }
 
-    return res.status(201).json({ 
+    return res.status(201).json({
       message: "Livraison retournée avec succès.",
       newValidation,
     });
@@ -601,7 +628,7 @@ const returnDelivery = async (req, res) => {
 //       const maintenancers = await prisma.users.findMany({
 //         where: { role_id: 4 },
 //       });
-  
+
 //       if (maintenancers && maintenancers.length > 0) {
 //         const subject = `NOUVELLE LIVRAISON ${livraisonTypeName}`;
 //         const html = `
@@ -622,7 +649,7 @@ const returnDelivery = async (req, res) => {
 //           <br><br>
 //           <p>Green - Pay vous remercie.</p>
 //         `;
-  
+
 //         for (const maintenancer of maintenancers) {
 //           await sendMail({
 //             to: maintenancer.email,
@@ -669,17 +696,17 @@ const returnDemandeDelivery = async (req, res) => {
 
     if (!user_id) return res.status(403).json({ message: "Utilisateur non authentifié." });
 
-      const user = await prisma.users.findUnique({
-        where: { id_user: parseInt(user_id) },
-        include: { agents: true },
-      });
+    const user = await prisma.users.findUnique({
+      where: { id_user: parseInt(user_id) },
+      include: { agents: true },
+    });
 
-      if (!user || !user.agents) {
-        return res.status(404).json({ message: "Utilisateur ou agent non trouvé." });
-      }
+    if (!user || !user.agents) {
+      return res.status(404).json({ message: "Utilisateur ou agent non trouvé." });
+    }
 
-      final_nom_validateur = user.agents.nom;
-      final_date_validation = new Date();
+    final_nom_validateur = user.agents.nom;
+    final_date_validation = new Date();
 
     await prisma.livraison.update({
       where: { id_livraison: parseInt(livraison_id) },
@@ -687,8 +714,8 @@ const returnDemandeDelivery = async (req, res) => {
     });
 
     await prisma.demandes.update({
-        where: { id_demande: parseInt(demande_id)},
-        data: { demande_livree : false},
+      where: { id_demande: parseInt(demande_id) },
+      data: { demande_livree: false },
     })
 
     const livraisonProduits = await prisma.livraison.findUnique({
@@ -698,21 +725,21 @@ const returnDemandeDelivery = async (req, res) => {
     });
 
     const produits = typeof livraisonProduits.produitsLivre === "string"
-        ? JSON.parse(livraisonProduits.produitsLivre)
-        : livraisonProduits.produitsLivre;
+      ? JSON.parse(livraisonProduits.produitsLivre)
+      : livraisonProduits.produitsLivre;
 
     let livraisonTypeName = ''
-      switch(type_livraison_id){
-        case 8 :
-          livraisonTypeName = 'CHARGEUR (TPE décommissionné RI NOK)';
-          break;
-      }
+    switch (type_livraison_id) {
+      case 8:
+        livraisonTypeName = 'CHARGEUR (TPE décommissionné RI NOK)';
+        break;
+    }
 
     // const baseUrl = process.env.FRONTEND_BASE_URL || "https://livraisons.greenpayci.com";
     // const localUrl = "http://localhost:5173"
     const url = GENERAL_URL
     let deliveryLink = `${url}/formulaire/${livraison.id_livraison}`;
-    if(type_livraison_id == 8){
+    if (type_livraison_id == 8) {
       deliveryLink = `${url}/formulaire-chargeur-decom/${livraison.id_livraison}`;
     }
 
@@ -720,13 +747,13 @@ const returnDemandeDelivery = async (req, res) => {
     const sendMail = require("../../utils/emailSender");
     const livreurs = await prisma.users.findMany({
       where: {
-      role_id: livraison_role,
+        role_id: livraison_role,
       },
     });
     if (livreurs && livreurs.length > 0) {
-    // 2. Prepare email content
-    const subject = `LIVRAISON RETOURNÉE ${livraisonTypeName}`;
-    const html = `
+      // 2. Prepare email content
+      const subject = `LIVRAISON RETOURNÉE ${livraisonTypeName}`;
+      const html = `
       <p>Bonjour,</p>
       <p>La livraison ${livraison.id_livraison} a été retournée.</p>
       <ul>
@@ -746,14 +773,14 @@ const returnDemandeDelivery = async (req, res) => {
       <p>Green - Pay vous remercie.</p>
     `;
 
-    // 3. Send email to each receiver
-    for (const livreur of livreurs) {
-      await sendMail({
-        to: livreur.email,
-        subject,
-        html,
-      });
-    }
+      // 3. Send email to each receiver
+      for (const livreur of livreurs) {
+        await sendMail({
+          to: livreur.email,
+          subject,
+          html,
+        });
+      }
 
     }
 

@@ -1,4 +1,4 @@
-import {useState, useEffect} from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router";
 
 import { ProductDeliveries } from "../../backend/livraisons/productDeliveries"
@@ -28,7 +28,7 @@ export default function AllDeliveriesList({ filterType }) {
     const savedPagination = JSON.parse(sessionStorage.getItem("paginationState"));
 
     const [first, setFirst] = useState(savedPagination?.first || 0);
-    const [rows, setRows] = useState(savedPagination?.rows || 5); 
+    const [rows, setRows] = useState(savedPagination?.rows || 5);
 
     const FILTERS_KEY = "allDeliveriesFilters";
 
@@ -51,14 +51,14 @@ export default function AllDeliveriesList({ filterType }) {
     const statusOptions = [
         { label: 'En cours', value: 'en_cours' },
         { label: 'Livré', value: 'livre' },
-        { label : 'Retourné', value: 'en_attente'},
+        { label: 'Retourné', value: 'en_attente' },
     ];
     const [startDate, setStartDate] = useState(savedFilters?.startDate ? new Date(savedFilters.startDate) : null);
     const [endDate, setEndDate] = useState(savedFilters?.endDate ? new Date(savedFilters.endDate) : null);
-    
+
     const [optionsServices, setOptionsServices] = useState([])
     const [selectedService, setselectedService] = useState(savedFilters?.selectedService || [])
-    
+
     const [optionsType, setOptionsType] = useState([])
     const [selectedType, setSelectedType] = useState(savedFilters?.selectedType || [])
 
@@ -83,16 +83,16 @@ export default function AllDeliveriesList({ filterType }) {
         });
     }, [globalFilter, selectedStatus, selectedType, startDate, endDate, selectedService, selectedModels]);
 
-    useEffect( ()=>{
-        const fetchDeliveriesData = async () =>{
+    useEffect(() => {
+        const fetchDeliveriesData = async () => {
             setLoading(true);
-            try{
+            try {
                 let delivery_data = await productDeliveries.getAllLivraisons();
                 console.log(delivery_data)
                 setDeliveryForms(delivery_data)
 
                 let type_deliveries_data = await productDeliveries.getAllTypeLivraisonCommerciale();
-                let type_deliveries = type_deliveries_data.filter((type) =>{
+                let type_deliveries = type_deliveries_data.filter((type) => {
                     return type.is_deleted == false
                 })
                 setTypesLivraison(type_deliveries)
@@ -115,50 +115,50 @@ export default function AllDeliveriesList({ filterType }) {
                     label: item.nom_model.toUpperCase()
                 }))
                 setOptionsModels(options_models)
-                
-            } catch(error){
-                console.log('Error fetching data ',error)
-            } finally{
+
+            } catch (error) {
+                console.log('Error fetching data ', error)
+            } finally {
                 setLoading(false);
             }
         }; fetchDeliveriesData();
-    },[])
+    }, [])
 
     const handlePageChange = (e) => {
         setFirst(e.first);
         setRows(e.rows);
         sessionStorage.setItem("paginationState", JSON.stringify({ first: e.first, rows: e.rows }));
     };
-    
+
     const formatDate = (date) => {
         const d = new Date(date);
         return d.toLocaleDateString('fr-FR'); // or use any locale you want
     };
-    const handleGeneratePdf = async (id) =>{
+    const handleGeneratePdf = async (id) => {
         setPrintingId(id);
-        try{
+        try {
             const blob = await generatePdf(id);
             const fileURL = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
             window.open(fileURL, '_blank');
-        }catch(error){
+        } catch (error) {
             console.log(error)
             Swal.fire({
                 title: "Attention",
                 text: "Une erreur s'est produite lors de la génération du pdf",
                 icon: "warning"
             });
-        }finally{
+        } finally {
             setPrintingId(null);
         }
     }
-    const titleTemplate = (deliveryForms) =>{
+    const titleTemplate = (deliveryForms) => {
         let title = '';
         let linkSee = `/formulaire/${deliveryForms.id_livraison}`;
         let titleClass = 'font-bold text-sm'
-        let typeLivraison = typesLivraison.find((item) =>{
+        let typeLivraison = typesLivraison.find((item) => {
             return item.id_type_livraison == deliveryForms.type_livraison_id
         })
-        if(typeLivraison){
+        if (typeLivraison) {
             title = typeLivraison.nom_type_livraison.toUpperCase()
         }
 
@@ -192,71 +192,71 @@ export default function AllDeliveriesList({ filterType }) {
                     to={linkSee} >
                     <span className={titleClass}>{title}</span>
                 </Link>
-              <span className="text-xs font-extralight">#{deliveryForms.id_livraison}</span>
+                <span className="text-xs font-extralight">#{deliveryForms.id_livraison}</span>
             </span>
-          );
+        );
     };
-    const deliveryDateTemplate = (deliveryForms) =>{
+    const deliveryDateTemplate = (deliveryForms) => {
         return (<span className="text-gray-500 text-theme-sm dark:text-gray-400">{formatDate(deliveryForms.date_livraison)}</span>)
     }
-    const receiveDateTemplate = (deliveryForms) =>{
-        if(deliveryForms.validations.length>0 && deliveryForms.statut_livraison != 'en_cours'){
-            let index = deliveryForms.validations.length-1
-            return (<span className="text-gray-500 text-theme-sm dark:text-gray-400">{formatDate(deliveryForms.validations[index].date_validation)}</span>) 
-        }else{
+    const receiveDateTemplate = (deliveryForms) => {
+        if (deliveryForms.validations.length > 0 && deliveryForms.statut_livraison != 'en_cours') {
+            let index = deliveryForms.validations.length - 1
+            return (<span className="text-gray-500 text-theme-sm dark:text-gray-400">{formatDate(deliveryForms.validations[index].date_validation)}</span>)
+        } else {
             return (<></>)
         }
     }
-    const statutTemplate = (deliveryForms) =>{
+    const statutTemplate = (deliveryForms) => {
         let statutClass = ''
-        let statut =''
-        if (deliveryForms.statut_livraison == 'en_cours'){
+        let statut = ''
+        if (deliveryForms.statut_livraison == 'en_cours') {
             statut = 'en cours';
             statutClass = 'grid grid-cols-1 text-center text-xs rounded-xl p-0.5 bg-orange-300'
-        } else if (deliveryForms.statut_livraison == 'livre'){
+        } else if (deliveryForms.statut_livraison == 'livre') {
             statut = 'Livré';
             statutClass = 'grid grid-cols-1 text-center text-xs rounded-xl p-0.5 bg-green-300'
-        } else if (deliveryForms.statut_livraison == 'en_attente'){
+        } else if (deliveryForms.statut_livraison == 'en_attente') {
             statut = 'retourné';
             statutClass = 'grid grid-cols-1 text-center text-xs rounded-xl p-0.5 bg-red-300'
         }
-        return(
+        return (
             <div>
                 <span className={statutClass}>{statut}</span>
             </div>
         )
     }
-    const actionTemplate = (deliveryForms) =>{
+    const actionTemplate = (deliveryForms) => {
         let linkSee = `/formulaire/${deliveryForms.id_livraison}`;
         let linkModify = `/form-modify-nouvelle-livraison/${deliveryForms.id_livraison}`
 
-        return(
+        return (
             <span className="flex items-center">
                 <Link to={linkSee}>
                     <button className="mx-1">
                         <i className="pi pi-eye"></i>
                     </button>
                 </Link>
-                {deliveryForms.statut_livraison == 'livre' ? 
-                (
-                    <>
-                        {printingId === deliveryForms.id_livraison ? (
-                            <span className='mx-1'>
-                                <ProgressSpinner style={{width: '15px', height: '15px'}} strokeWidth="8" animationDuration=".5s" />
-                            </span>
-                        ) : (
-                            <button onClick={() => handleGeneratePdf(deliveryForms.id_livraison)}><span className="mx-1 text-gray-500 text-theme-sm dark:text-gray-400"><i className="pi pi-print"></i></span></button>
-                        )}
-                    </>
-                ) : (
-                    <>
-                    </>                
-                )}
+                {deliveryForms.statut_livraison == 'livre' ?
+                    (
+                        <>
+                            {printingId === deliveryForms.id_livraison ? (
+                                <span className='mx-1'>
+                                    <ProgressSpinner style={{ width: '15px', height: '15px' }} strokeWidth="8" animationDuration=".5s" />
+                                </span>
+                            ) : (
+                                <button onClick={() => handleGeneratePdf(deliveryForms.id_livraison)}><span className="mx-1 text-gray-500 text-theme-sm dark:text-gray-400"><i className="pi pi-print"></i></span></button>
+                            )}
+                        </>
+                    ) : (
+                        <>
+                        </>
+                    )}
             </span>
         )
     }
 
-    const handleClearFilters = () =>{
+    const handleClearFilters = () => {
         setGlobalFilter("");
         setSelectedStatus([]);
         setselectedService([]);
@@ -269,8 +269,8 @@ export default function AllDeliveriesList({ filterType }) {
 
     const filteredDeliveryForms = deliveryForms.filter((item) => {
         let itemDate = new Date(item.date_livraison);
-        if(item.validations.length > 0){
-            let index = item.validations.length-1
+        if (item.validations.length > 0) {
+            let index = item.validations.length - 1
             itemDate = new Date(item.validations[index].date_validation)
         }
         const matchesStatus = selectedStatus.length > 0 ? selectedStatus.includes(item.statut_livraison) : true;
@@ -280,17 +280,17 @@ export default function AllDeliveriesList({ filterType }) {
         const matchesStartDate = startDate ? itemDate >= startDate : true;
         const matchesEndDate = endDate ? itemDate <= endDate : true;
         const matchesGlobalFilter = globalFilter
-          ? JSON.stringify(item).toLowerCase().includes(globalFilter.toLowerCase())
-          : true;
+            ? JSON.stringify(item).toLowerCase().includes(globalFilter.toLowerCase())
+            : true;
         return matchesStatus && matchesType && matchesService && matchesModel && matchesStartDate && matchesEndDate && matchesGlobalFilter;
     });
 
-    const handleGlobalDownload = async () =>{
+    const handleGlobalDownload = async () => {
         console.log(filteredDeliveryForms)
-        try{
+        try {
             setLoadingDownload(true)
             const listId = filteredDeliveryForms.map((f) => f.id_livraison);
-            if(listId.length == 0){
+            if (listId.length == 0) {
                 Swal.fire({
                     title: "Attention",
                     text: "Aucune livraison enregistrée",
@@ -309,24 +309,24 @@ export default function AllDeliveriesList({ filterType }) {
             a.click();
             window.URL.revokeObjectURL(url);
 
-        }catch(error){
+        } catch (error) {
             console.log(error)
             Swal.fire({
                 title: "Attention",
                 text: "Une erreur s'est produite lors du téléchargement",
                 icon: "warning"
             });
-        }finally{
+        } finally {
             setLoadingDownload(false);
         }
     }
 
-    const handleExtractXLSX = async () =>{
+    const handleExtractXLSX = async () => {
         console.log(filteredDeliveryForms)
-        try{
+        try {
             setLoadingExtract(true)
             const listId = filteredDeliveryForms.map((f) => f.id_livraison);
-            if(listId.length == 0){
+            if (listId.length == 0) {
                 Swal.fire({
                     title: "Attention",
                     text: "Aucune livraison enregistrée",
@@ -345,32 +345,31 @@ export default function AllDeliveriesList({ filterType }) {
             a.click();
             window.URL.revokeObjectURL(url);
 
-        }catch(error){
+        } catch (error) {
             console.log(error)
             Swal.fire({
                 title: "Attention",
                 text: "Une erreur s'est produite lors du téléchargement",
                 icon: "warning"
             });
-        }finally{
+        } finally {
             setLoadingExtract(false);
         }
     }
 
     const totalProduit = filteredDeliveryForms.reduce((sum, item) => sum + Number(item.qte_totale_livraison || 0), 0);
 
-    
-    return(
-        <>  
+    return (
+        <>
             <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
-                 <div className="px-6 pt-6 flex items-center">
+                <div className="px-6 pt-6 flex items-center">
                     <div className="relative w-full">
                         <Input
                             className="pl-10"
                             value={globalFilter}
                             onChange={(e) => setGlobalFilter(e.target.value)}
                             placeholder="Rechercher un formulaire..."
-                            />
+                        />
                         <span className="absolute top-1/4 left-3"><i className="pi pi-search"></i></span>
                     </div>
                     <span className="pl-4">
@@ -444,7 +443,7 @@ export default function AllDeliveriesList({ filterType }) {
                         showClear
                         className=""
                     /> */}
-                    
+
                 </div>
                 <div className="flex justify-normal flex-wrap gap-3 mb-3 p-6">
                     <div className="flex gap-2">
@@ -454,8 +453,9 @@ export default function AllDeliveriesList({ filterType }) {
                             placeholder="Date de début"
                             value={startDate}
                             onChange={(dates, currentDateString) => {
-                                setStartDate(dates[0])}}
-                            dateFormat="dd/mm/yy"/>
+                                setStartDate(dates[0])
+                            }}
+                            dateFormat="dd/mm/yy" />
                         <DatePicker
                             id="date-picker-fin"
                             label="Date de fin"
@@ -463,12 +463,13 @@ export default function AllDeliveriesList({ filterType }) {
                             value={endDate}
                             onChange={(dates, currentDateString) => {
                                 if (dates && dates[0]) {
-                                let selectedDate = new Date(dates[0]);
-                                let nextDay = new Date(selectedDate);
-                                nextDay.setDate(selectedDate.getDate() + 1);
-                                setEndDate(nextDay);
-                            }}}
-                            dateFormat="dd/mm/yy"/>
+                                    let selectedDate = new Date(dates[0]);
+                                    let nextDay = new Date(selectedDate);
+                                    nextDay.setDate(selectedDate.getDate() + 1);
+                                    setEndDate(nextDay);
+                                }
+                            }}
+                            dateFormat="dd/mm/yy" />
                     </div>
                 </div>
                 <div className="flex justify-between p-6 pt-0 items-center">
@@ -481,63 +482,63 @@ export default function AllDeliveriesList({ filterType }) {
                         </span>
                     </div>
                     <div className="flex space-x-3">
-                        {loadingDownload ? 
-                        (
-                            <span className='flex items-center justify-center'>
-                                <ProgressSpinner style={{width: '20px', height: '20px'}} strokeWidth="8" animationDuration=".5s" />
-                            </span>
-                        ) : (
-                            <>
-                                {filteredDeliveryForms.length > 0 ? 
-                                    (
-                                        <>
-                                            <button className="flex items-center justify-center border rounded-full h-5 w-5 p-5 hover:text-white hover:bg-gray-dark hover:border-black transition-colors"
-                                                onClick={handleGlobalDownload}
+                        {loadingDownload ?
+                            (
+                                <span className='flex items-center justify-center'>
+                                    <ProgressSpinner style={{ width: '20px', height: '20px' }} strokeWidth="8" animationDuration=".5s" />
+                                </span>
+                            ) : (
+                                <>
+                                    {filteredDeliveryForms.length > 0 ?
+                                        (
+                                            <>
+                                                <button className="flex items-center justify-center border rounded-full h-5 w-5 p-5 hover:text-white hover:bg-gray-dark hover:border-black transition-colors"
+                                                    onClick={handleGlobalDownload}
                                                 >
-                                                <span className="">
-                                                    <i className="pi pi-folder"></i>
-                                                </span>
-                                            </button>
-                                        </>
-                                    ) : (
-                                        <></>
-                                    )
-                                }
-                            </>
-                        )}
-                        {loadingExtract ? 
-                        (
-                            <span className='flex items-center justify-center'>
-                                <ProgressSpinner style={{width: '20px', height: '20px'}} strokeWidth="8" animationDuration=".5s" />
-                            </span>
-                        ) : (
-                            <>
-                                {filteredDeliveryForms.length > 0 ? 
-                                    (
-                                        <>
-                                            <button className="flex items-center justify-center border rounded-full h-5 w-5 p-5 hover:text-white hover:bg-gray-dark hover:border-black transition-colors"
-                                                onClick={handleExtractXLSX}
+                                                    <span className="">
+                                                        <i className="pi pi-folder"></i>
+                                                    </span>
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <></>
+                                        )
+                                    }
+                                </>
+                            )}
+                        {loadingExtract ?
+                            (
+                                <span className='flex items-center justify-center'>
+                                    <ProgressSpinner style={{ width: '20px', height: '20px' }} strokeWidth="8" animationDuration=".5s" />
+                                </span>
+                            ) : (
+                                <>
+                                    {filteredDeliveryForms.length > 0 ?
+                                        (
+                                            <>
+                                                <button className="flex items-center justify-center border rounded-full h-5 w-5 p-5 hover:text-white hover:bg-gray-dark hover:border-black transition-colors"
+                                                    onClick={handleExtractXLSX}
                                                 >
-                                                <span className="">
-                                                    <i className="pi pi-download"></i>
-                                                </span>
-                                            </button>
-                                        </>
-                                    ) : (
-                                        <></>
-                                    )
-                                }
-                            </>
-                        )}
+                                                    <span className="">
+                                                        <i className="pi pi-download"></i>
+                                                    </span>
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <></>
+                                        )
+                                    }
+                                </>
+                            )}
                     </div>
                 </div>
                 <div className="card">
                     <DataTable
                         value={filteredDeliveryForms}
                         loading={loading}
-                        removableSort 
-                        paginator 
-                        rows={rows} 
+                        removableSort
+                        paginator
+                        rows={rows}
                         first={first}
                         onPage={handlePageChange}
                         rowsPerPageOptions={[5, 10, 25, 50, 100, 200, 300, 500, 1000]}

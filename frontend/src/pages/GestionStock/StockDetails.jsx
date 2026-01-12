@@ -4,6 +4,7 @@ import { useParams, Link } from "react-router"
 import { Stock } from "../../backend/stock/Stock"
 import { Users } from "../../backend/users/Users"
 import { Demandes } from "../../backend/demandes/Demandes"
+import { ProductDeliveries } from "../../backend/livraisons/ProductDeliveries"
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { ProgressSpinner } from "primereact/progressspinner"
@@ -15,6 +16,7 @@ export default function StockDetails() {
     const stockData = new Stock()
     const userData = new Users()
     const demandeData = new Demandes()
+    const deliveryData = new ProductDeliveries()
     const { id } = useParams()
 
     const [loading, setLoading] = useState(false)
@@ -51,6 +53,8 @@ export default function StockDetails() {
 
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
+
+    const [livraisons, setLivraisons] = useState([])
 
     const formatDate = (isoDate) => {
         const date = new Date(isoDate);
@@ -164,6 +168,9 @@ export default function StockDetails() {
                 const demandes_data = await demandeData.getAllDemandes()
                 setDemandes(demandes_data)
 
+                const livraisons_data = await deliveryData.getAllLivraisons()
+                setLivraisons(livraisons_data)
+
             } catch (error) {
                 console.log('Error fetching the data ', error)
             } finally {
@@ -266,7 +273,7 @@ export default function StockDetails() {
         // })
         const nomDemandeur = demande ? demande.nom_demandeur : 'N/A'
 
-        return(
+        return (
             <>
                 <span>{nomDemandeur}</span>
             </>
@@ -276,15 +283,21 @@ export default function StockDetails() {
         const demande = demandes.find((item) => {
             return item.id == mouvement.demande_id
         })
+        const livraison = livraisons.find((item) => {
+            return item.id_livraison == mouvement.formulaire_id
+        })
         let nomRecepteur = 'N/A'
-        if(demande){
-            if(demande.demande_livree == true){
+        if (demande) {
+            if (demande.demande_livree == true) {
                 let index_reception = demande.reception_piece.length - 1
                 nomRecepteur = demande.reception_piece[index_reception].nom_recepteur
             }
+        } else if (livraison) {
+            let index_reception = livraison.validations.length - 1
+            nomRecepteur = livraison.validations[index_reception].nom_recepteur
         }
 
-        return(
+        return (
             <>
                 <span>{nomRecepteur}</span>
             </>
@@ -322,7 +335,7 @@ export default function StockDetails() {
     const dateTemplate = (mouvement) => {
         return (
             <>
-                <span className="text-theme-xs text-gray-700 font-medium">{formatDate(mouvement.date)}</span>
+                <span className="text-theme-xs text-gray-700 font-medium">{formatDate(mouvement.created_at)}</span>
             </>
         )
     }
@@ -380,7 +393,7 @@ export default function StockDetails() {
                                 </div>
                                 <div className="flex flex-col border-b py-3">
                                     <div>
-                                        <span className="font-bold text-red-800">Initialisation de stock le {formatDate(initialisation.date)} </span>
+                                        <span className="font-bold text-red-800">Initialisation de stock le {formatDate(initialisation.created_at)} </span>
                                     </div>
                                     <div className="flex flex-col text-sm">
                                         <span>Quantité initiale lot(s) :
@@ -457,7 +470,7 @@ export default function StockDetails() {
                                             <Column header="Receveur" body={receveurTemplate}></Column>
                                             {/* <Column field="service_origine" header="Origine" body={origineTemplate}></Column> */}
                                             {/* <Column field="service_destination" header="Destination" body={destinationTemplate}></Column> */}
-                                            <Column field="date" header="Date" body={dateTemplate} sortable></Column>
+                                            <Column field="created_at" header="Date" body={dateTemplate} sortable></Column>
                                             {/* <Column header="Actions" body={actionsTemplate}></Column> */}
                                             {/* <Column field="formulaire_id" header="ID Livraison" body={livraisonTemplate} sortable></Column> */}
                                             {/* <Column field="demande_id" header="ID Demande" body={demandeTemplate} sortable></Column> */}
@@ -465,7 +478,7 @@ export default function StockDetails() {
                                         </DataTable>
                                     </div>
                                 </div>
-                                 <div className="border-b">
+                                <div className="border-b">
                                     <div className="grid grid-cols-3">
                                         <div className="border-r">
                                             <div>

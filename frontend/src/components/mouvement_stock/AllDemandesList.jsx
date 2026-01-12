@@ -1,4 +1,4 @@
-import {useState, useEffect} from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router";
 
 import { Demandes } from "../../backend/demandes/Demandes";
@@ -27,8 +27,8 @@ export default function AllDemandesList() {
     const usersData = new Users()
     const livraisonsData = new ProductDeliveries()
 
-    const savedPagination = JSON.parse(sessionStorage.getItem("demandesP    aginationState"));
-    
+    const savedPagination = JSON.parse(sessionStorage.getItem("demandesPaginationState"));
+
     const [first, setFirst] = useState(savedPagination?.first || 0);
     const [rows, setRows] = useState(savedPagination?.rows || 5);
 
@@ -53,24 +53,26 @@ export default function AllDemandesList() {
     const statusOptions = [
         { label: 'En cours', value: 'en_cours' },
         { label: 'Validée', value: 'valide' },
-        { label: 'Retournée', value: 'retourne'},
-        { label : 'Refusée', value: 'refuse'},
+        { label: 'Retournée', value: 'retourne' },
+        { label: 'Refusée', value: 'refuse' },
     ];
-    const [selectedStatusLivraison, setSelectedStatusLivraison] = useState(savedFilters?.selectedStatusLivraison || [])
-    const statusLivraison = [
+    const [selectedStatusReception, setSelectedStatusReception] = useState(savedFilters?.selectedStatusReception || [])
+    const statusReception = [
         { label: 'En cours', value: 'en_cours' },
-        { label: 'Livré', value: 'livre' },
-        { label : 'Retourné', value: 'retourne'},
+        { label: 'Réceptionnée', value: 'réceptionnée' },
     ];
-    const [selectedTypes, setSelectedTypes] = useState(savedFilters?.selectedTypes || []);
+    const [selectedItems, setSelectedItems] = useState(savedFilters?.selectedItems || []);
     const [startDate, setStartDate] = useState(savedFilters?.startDate ? new Date(savedFilters.startDate) : null);
     const [endDate, setEndDate] = useState(savedFilters?.endDate ? new Date(savedFilters.endDate) : null);
-    
+
     const [optionsPieces, setOptionsPieces] = useState([])
     const [items, setItems] = useState([])
+
+    const [optionsServicesDemandeur, setOptionsServicesDemandeur] = useState([])
     const [serviceDemandeurs, setServiceDemandeurs] = useState(savedFilters?.serviceDemandeurs || []);
 
-    const [optionsServices, setOptionsServices] = useState([])
+    const [optionsServicesPiece, setOptionsServicesPiece] = useState([])
+    const [servicesPieces, setServicesPieces] = useState(savedFilters?.servicesPieces || []);
 
     const [livraisonsPieces, setLivraisonsPieces] = useState([])
     const [dateLivraison, setDateLivraison] = useState('')
@@ -87,44 +89,51 @@ export default function AllDemandesList() {
         saveFilters({
             globalFilter,
             selectedStatus,
-            selectedTypes,
+            selectedItems,
             startDate,
             endDate,
             serviceDemandeurs,
-            selectedModels
+            selectedModels,
+            servicesPieces
         });
-    }, [globalFilter, selectedStatus, selectedTypes, startDate, endDate, serviceDemandeurs, selectedModels]);
+    }, [globalFilter, selectedStatus, selectedItems, startDate, endDate, serviceDemandeurs, selectedModels, servicesPieces]);
 
-    useEffect( ()=>{
-        const fetchDemandeData = async () =>{
+    useEffect(() => {
+        const fetchDemandeData = async () => {
             setLoading(true);
-            try{
+            try {
                 let demande_data_all = await demandes.getAllDemandes();
-                const demande_data = demande_data_all.filter((item) =>{
+                const demande_data = demande_data_all.filter((item) => {
                     return item.is_deleted == false
                 })
                 setDemandeForms(demande_data)
 
                 const models_data = await stock.getAllModels()
-                const options_model = models_data.map((item) =>({
-                value: item.id_model,
-                label: item.nom_model.toUpperCase(),
+                const options_model = models_data.map((item) => ({
+                    value: item.id_model,
+                    label: item.nom_model.toUpperCase(),
                 }))
                 setOptionsModels(options_model)
-                
+
                 let items_data_all = await stock.getAllItems()
-                const items_data = items_data_all.filter((item) =>{
+                const items_data = items_data_all.filter((item) => {
                     return item.is_deleted == false
                 })
                 setItems(items_data)
+                const options_pieces = items_data.map((item) => ({
+                    value: item.id_piece,
+                    label: item.nom_piece,
+                }))
+                setOptionsPieces(options_pieces)
 
                 let services_data = await usersData.getAllServices()
                 const options_services = services_data.map((item) => ({
                     value: item.id,
                     label: item.nom_service.toUpperCase(),
                 }))
-                setOptionsServices(options_services)
-                
+                setOptionsServicesDemandeur(options_services)
+                setOptionsServicesPiece(options_services)
+
                 const typesMouvement_data = await stock.getAllTypeMouvementStock()
                 setTypesMouvement(typesMouvement_data)
 
@@ -134,44 +143,44 @@ export default function AllDemandesList() {
                 })
                 setStocks(stocks_data)
 
-            } catch(error){
-                console.log('Error fetching data ',error)
-            } finally{
+            } catch (error) {
+                console.log('Error fetching data ', error)
+            } finally {
                 setLoading(false);
             }
-        }; 
+        };
         fetchDemandeData();
-    },[])
+    }, [])
 
     const handlePageChange = (e) => {
         setFirst(e.first);
         setRows(e.rows);
         sessionStorage.setItem("demandesP   aginationState", JSON.stringify({ first: e.first, rows: e.rows }));
     };
-    
+
     const formatDate = (date) => {
         const d = new Date(date);
         return d.toLocaleDateString('fr-FR'); // or use any locale you want
     };
 
-    const ChangeModel = (value) => {
-        const pieces_model = stockDT.filter((item) => {
-        return item.model_id == value
-        })
-        const optionsPieces = pieces_model.map((item) => ({
-        value: item.id_piece,
-        label: item.nom_piece.toUpperCase(),
-        }));
-        setOptionsPieces(optionsPieces);
-    }
+    // const ChangeModel = (value) => {
+    //     const pieces_model = stockDT.filter((item) => {
+    //         return item.model_id == value
+    //     })
+    //     const optionsPieces = pieces_model.map((item) => ({
+    //         value: item.id_piece,
+    //         label: item.nom_piece.toUpperCase(),
+    //     }));
+    //     setOptionsPieces(optionsPieces);
+    // }
 
-    const handleGeneratePdf = async (id) =>{
+    const handleGeneratePdf = async (id) => {
         setPrintingId(id);
-        try{
+        try {
             const blob = await demandes.getPdf(id);
             const fileURL = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
             window.open(fileURL, '_blank');
-        }catch(error){
+        } catch (error) {
             console.log(error)
             setPrintingId(null)
             Swal.fire({
@@ -179,19 +188,19 @@ export default function AllDemandesList() {
                 text: "Une erreur s'est produite lors de la génération du formulaire",
                 icon: "warning"
             });
-        }finally{
+        } finally {
             setPrintingId(null);
         }
     }
-    
-    const idTemplate = (demandeForms) =>{
-        return(
+
+    const idTemplate = (demandeForms) => {
+        return (
             <>
                 <span className="text-theme-xs font-medium">{demandeForms.id}</span>
             </>
         )
     }
-    const titleTemplate = (demandeForms) =>{
+    const titleTemplate = (demandeForms) => {
         let linkSee = `/demande-details/${demandeForms.id}`;
         let titleClass = 'font-bold text-sm'
         let motif = `${demandeForms.motif_demande}`
@@ -214,80 +223,80 @@ export default function AllDemandesList() {
                     <span className="font-light">{motif}</span>
                 </Link>
             </span>
-          );
+        );
     };
-    const mouvementTemplate = (demandeForms) =>{
+    const mouvementTemplate = (demandeForms) => {
         const detailsDemande = JSON.parse(demandeForms.details_demande)
-        const type = typesMouvement.find((item) =>{
+        const type = typesMouvement.find((item) => {
             return detailsDemande.typeMouvement == item.id
         })
 
         const nomType = type ? type.titre : 'N/A'
 
-        return(
+        return (
             <>
                 <span className="text-theme-xs font-medium text-gray-800">{nomType}</span>
             </>
         )
     }
-    const demandeDateTemplate = (demandeForms) =>{
+    const demandeDateTemplate = (demandeForms) => {
         return (
             <span className="text-theme-xs text-gray-700 font-medium dark:text-gray-400">{formatDate(demandeForms.date_demande)}</span>
         )
     }
-    const dateValidationTemplate = (demandeForms) =>{
-        if(demandeForms.validation_demande.length>0 && demandeForms.statut_demande != 'en_cours'){
-            let index = demandeForms.validation_demande.length-1
-            return (<span className="text-theme-xs text-gray-700 font-medium dark:text-gray-400">{formatDate(demandeForms.validation_demande[index].date_validation_demande)}</span>) 
-        }else{
+    const dateValidationTemplate = (demandeForms) => {
+        if (demandeForms.validation_demande.length > 0 && demandeForms.statut_demande != 'en_cours') {
+            let index = demandeForms.validation_demande.length - 1
+            return (<span className="text-theme-xs text-gray-700 font-medium dark:text-gray-400">{formatDate(demandeForms.validation_demande[index].date_validation_demande)}</span>)
+        } else {
             return (<span className="text-xs">N/A</span>)
         }
     }
-    const statutTemplate = (demandeForms) =>{
+    const statutTemplate = (demandeForms) => {
         let statutClass = ''
-        let statut =''
-        if (demandeForms.statut_demande == 'en_cours'){
+        let statut = ''
+        if (demandeForms.statut_demande == 'en_cours') {
             statut = 'en cours';
             statutClass = 'grid text-center text-xs rounded-xl p-0.5 bg-orange-300'
-        } else if (demandeForms.statut_demande == 'valide'){
+        } else if (demandeForms.statut_demande == 'valide') {
             statut = 'validée';
             statutClass = 'grid grid-cols-1 text-center text-xs rounded-xl p-0.5 bg-green-300'
-        } else if (demandeForms.statut_demande == 'retourne'){
+        } else if (demandeForms.statut_demande == 'retourne') {
             statut = 'retournée';
             statutClass = 'grid grid-cols-1 text-center text-xs rounded-xl p-0.5 bg-red-300'
-        } else if (demandeForms.statut_demande == 'refuse'){
+        } else if (demandeForms.statut_demande == 'refuse') {
             statut = 'refusée';
             statutClass = 'grid grid-cols-1 text-center text-xs text-white rounded-xl p-0.5 bg-black'
         }
-        return(
+        return (
             <span className={statutClass}>{statut}</span>
         )
     }
-    const actionTemplate = (demandeForms) =>{
+    const actionTemplate = (demandeForms) => {
         let linkSee = `/demande-details/${demandeForms.id}`;
         let linkModify = `/modifier-demande/${demandeForms.id_demande}`
 
-        return(
+        return (
             <span className="flex items-center">
                 <Link to={linkSee}>
                     <button className="mx-1">
                         <i className="pi pi-eye"></i>
                     </button>
                 </Link>
-                {demandeForms.statut_demande == 'valide' ? 
-                (
-                    <>
-                        {printingId === demandeForms.id ? (
-                            <span className='mx-1'>
-                                <ProgressSpinner style={{width: '15px', height: '15px'}} strokeWidth="8" animationDuration=".5s" />
-                            </span>
-                        ) : (
-                            <button onClick={() => handleGeneratePdf(demandeForms.id)}><span className="mx-1 text-gray-500 text-theme-sm dark:text-gray-400"><i className="pi pi-print"></i></span></button>
-                        )}
-                    </>
-                ) : (
-                    <>
-                        {/* {demandeForms.statut_demande == 'refuse' ? 
+                {demandeForms.statut_demande == 'valide' ?
+                    (
+                        <>
+                            {printingId === demandeForms.id ? (
+                                <span className='mx-1'>
+                                    <ProgressSpinner style={{ width: '15px', height: '15px' }} strokeWidth="8" animationDuration=".5s" />
+                                </span>
+                            ) : (
+                                <button onClick={() => handleGeneratePdf(demandeForms.id)}><span className="mx-1 text-gray-500 text-theme-sm dark:text-gray-400"><i className="pi pi-print"></i></span></button>
+                            )}
+                        </>
+                    ) : (
+                        <>
+                            {/* {demandeForms.statut_demande == 'refuse' ? 
                             (
                                 <>
                                 </>
@@ -299,90 +308,98 @@ export default function AllDemandesList() {
                                 </Link>
                             )
                         } */}
-                    </>
-                    
-                )}
+                        </>
+
+                    )}
             </span>
         )
     }
-    const dateLivraisonTemplate = (demandeForms) =>{
+    const dateLivraisonTemplate = (demandeForms) => {
         let date = 'N/A'
         let livraison = livraisonsPieces.find((item) => {
             return item.demande_id == demandeForms.id
         })
-        if(livraison){
+        if (livraison) {
             date = formatDate(livraison.Livraisons.date_livraison)
         }
-         return (<span className="text-gray-500 text-theme-sm dark:text-gray-400">{date}</span>)
-        
+        return (<span className="text-gray-500 text-theme-sm dark:text-gray-400">{date}</span>)
+
 
     }
-    const statutReceptionTemplate = (demandeForms) =>{
+    const statutReceptionTemplate = (demandeForms) => {
         let statutClass = 'text-xs'
         let statut = 'N/A'
-        if(demandeForms.statut_demande == 'valide'){
-            if(demandeForms.demande_livree == false){
+        if (demandeForms.statut_demande == 'valide') {
+            if (demandeForms.demande_livree == false) {
                 statut = 'en cours'
-                statutClass = 'grid grid-cols-1 text-center text-xs rounded-xl p-0.5 bg-orange-300' 
-            } else if (demandeForms.demande_livree == true){
+                statutClass = 'grid grid-cols-1 text-center text-xs rounded-xl p-0.5 bg-orange-300'
+            } else if (demandeForms.demande_livree == true) {
                 statut = 'réceptionnée';
                 statutClass = 'grid grid-cols-1 text-center text-xs rounded-xl p-0.5 bg-green-300'
             }
         }
-        return(
+        return (
             <span className={statutClass}>{statut}</span>
         )
     }
-    const dateReceptionTemplate = (demandeForms) =>{
-        if(demandeForms.reception_piece.length>0 && demandeForms.demande_livree == true){
-            let index = demandeForms.reception_piece.length-1
-            return (<span className="text-theme-xs text-gray-700 font-medium dark:text-gray-400">{formatDate(demandeForms.reception_piece[index].date)}</span>) 
-        }else{
+    const dateReceptionTemplate = (demandeForms) => {
+        if (demandeForms.reception_piece.length > 0 && demandeForms.demande_livree == true) {
+            let index = demandeForms.reception_piece.length - 1
+            return (<span className="text-theme-xs text-gray-700 font-medium dark:text-gray-400">{formatDate(demandeForms.reception_piece[index].date)}</span>)
+        } else {
             return (<span className="text-xs">N/A</span>)
         }
     }
 
-    const handleClearFilters = () =>{
+    const handleClearFilters = () => {
         setGlobalFilter("");
         setSelectedStatus([]);
-        setSelectedTypes([]);
+        setSelectedItems([]);
         setServiceDemandeurs([]);
         setSelectedModels([]);
-        setSelectedStatusLivraison([]);
+        setSelectedStatusReception([]);
+        setServicesPieces([])
         setStartDate(null);
         setEndDate(null);
         sessionStorage.removeItem(FILTERS_KEY);
     }
     const filteredDemandeForms = demandeForms.filter((item) => {
         let itemDate = new Date(item.date_demande);
-        if(item.validation_demande.length > 0){
-            let index = item.validation_demande.length-1
+        let validation
+        if (item.validation_demande.length > 0) {
+            let index = item.validation_demande.length - 1
+            validation = item.validation_demande[index]
             itemDate = new Date(item.validation_demande[index].date_validation_demande)
         }
-        let livraison = livraisonsPieces.find((l) => {
-            return l.demande_id == item.id_demande
-        })
-        let matchesStatusLivraison = null
-        if(livraison){
-            matchesStatusLivraison = selectedStatusLivraison.length > 0 ? selectedStatusLivraison.includes(livraison.Livraisons.statut_livraison) : true
+        const detailsDemande = JSON.parse(item.details_demande)
+
+        let statutReception = null
+        if(validation.statut_validation_demande == 'valide'){
+            if (item.demande_livree){
+                statutReception = 'réceptionnée'
+            } else {
+                statutReception = 'en_cours'
+            }
         }
+
         const matchesStatus = selectedStatus.length > 0 ? selectedStatus.includes(item.statut_demande) : true;
-        const matchesType = selectedTypes.length > 0 ? selectedTypes.includes(item.type_demande_id) : true;
+        const matchesItems = selectedItems.length > 0 ? selectedItems.includes(item.item_id) : true;
         const matchesStartDate = startDate ? itemDate >= startDate : true;
         const matchesEndDate = endDate ? itemDate <= endDate : true;
-        const matchesService = serviceDemandeurs.length > 0 ? serviceDemandeurs.includes(item.service_demandeur) : true;
-        const matchesModel = selectedModels.length > 0 ? selectedModels.includes(item.model_id) : true;
+        const matchesServiceDemandeur = serviceDemandeurs.length > 0 ? serviceDemandeurs.includes(item.service_demandeur) : true;
+        const matchesModel = selectedModels.length > 0 ? selectedModels.includes(detailsDemande.model) : true;
+        const matchesServicesPieces = servicesPieces.length > 0 ? servicesPieces.includes(detailsDemande.service) : true;
+        const  matchesStatusReception = selectedStatusReception.length > 0 ? selectedStatusReception.includes(statutReception) : true
         const matchesGlobalFilter = globalFilter
-          ? JSON.stringify(item).toLowerCase().includes(globalFilter.toLowerCase())
-          : true;
-        return matchesStatus && matchesType && matchesStartDate && matchesEndDate && matchesService && matchesModel && matchesGlobalFilter;
+            ? JSON.stringify(item).toLowerCase().includes(globalFilter.toLowerCase())
+            : true;
+        return matchesStatus && matchesItems && matchesStartDate && matchesEndDate && matchesServiceDemandeur && matchesModel && matchesServicesPieces && matchesStatusReception && matchesGlobalFilter;
     });
 
-
-    return(
-        <>  
+    return (
+        <>
             <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
-                {/* <div className="px-6 pt-6 flex items-center">
+                <div className="px-6 pt-6 flex items-center">
                     <div className="relative w-full">
                         <Input
                             className="pl-10"
@@ -408,27 +425,17 @@ export default function AllDemandesList() {
                         maxSelectedLabels={2}
                         placeholder="Filtrer par statut demande"
                         className=""
-                    />
-                    <MultiSelect
-                        value={serviceDemandeurs}
-                        options={optionsServices}
-                        display="chip"
-                        optionLabel="label"
-                        maxSelectedLabels={2}
-                        onChange={(e) => setServiceDemandeurs(e.value)}
-                        placeholder="Filtrer par service demandeur"
-                        className=""
                     />                  
                     <MultiSelect
-                        label="Type de demande"
+                        label="Filtrer par pièces"
                         options={optionsPieces}
                         display="chip"
-                        value={selectedTypes}
+                        value={selectedItems}
                         optionLabel="label"
                         maxSelectedLabels={2}
-                        placeholder="Type de demande"
+                        placeholder="Filtrer par pièce"
                         className=""
-                        onChange={(e) => setSelectedTypes(e.value)}
+                        onChange={(e) => setSelectedItems(e.value)}
                     />
                     <MultiSelect
                         label="Model"
@@ -437,18 +444,38 @@ export default function AllDemandesList() {
                         value={selectedModels}
                         optionLabel="label"
                         maxSelectedLabels={2}
-                        placeholder="Model produit"
+                        placeholder="Filtrer par modèle"
                         className=""
                         onChange={(e) => setSelectedModels(e.value)}
                     />
                     <MultiSelect
-                        value={selectedStatusLivraison}
-                        onChange={(e) => setSelectedStatusLivraison(e.value)}
-                        options={statusLivraison}
+                        value={servicesPieces}
+                        options={optionsServicesPiece}
                         display="chip"
                         optionLabel="label"
                         maxSelectedLabels={2}
-                        placeholder="Filtrer par statut livraison"
+                        onChange={(e) => setServicesPieces(e.value)}
+                        placeholder="Filtrer par service pièce"
+                        className=""
+                    />
+                    <MultiSelect
+                        value={serviceDemandeurs}
+                        options={optionsServicesDemandeur}
+                        display="chip"
+                        optionLabel="label"
+                        maxSelectedLabels={2}
+                        onChange={(e) => setServiceDemandeurs(e.value)}
+                        placeholder="Filtrer par service demandeur"
+                        className=""
+                    />
+                    <MultiSelect
+                        value={selectedStatusReception}
+                        onChange={(e) => setSelectedStatusReception(e.value)}
+                        options={statusReception}
+                        display="chip"
+                        optionLabel="label"
+                        maxSelectedLabels={2}
+                        placeholder="Filtrer par statut réception"
                         className=""
                     />
                 </div>
@@ -479,17 +506,17 @@ export default function AllDemandesList() {
                     </div>
                 </div>
                 <div className="p-6 pt-0">
-                    <span className="text-md text-gray-600 dark:text-gray-300">
+                    <span className="text-sm text-gray-600 dark:text-gray-300">
                         {filteredDemandeForms.length} demande(s) trouvée(s)
                     </span>
-                </div> */}
+                </div>
                 <div className="card">
                     <DataTable
                         value={filteredDemandeForms}
                         loading={loading}
-                        removableSort 
-                        paginator 
-                        rows={rows} 
+                        removableSort
+                        paginator
+                        rows={rows}
                         first={first}
                         onPage={handlePageChange}
                         rowsPerPageOptions={[5, 10, 25, 50, 100, 200, 300, 500, 1000]}

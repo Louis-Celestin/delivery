@@ -395,14 +395,13 @@ const validateDemande = async (req, res) => {
     })
 
     if (typeMouvement == 5) {
-      initial = Number(detailsMouvement.stockInitial)
+      initial = Number(detailsMouvement.stockInitialPiece)
       stock = Number(detailsMouvement.quantiteMouvement)
-      final = Number(detailsMouvement.stockFinal)
+      final = Number(detailsMouvement.stockFinalPiece)
       dataMouvement = {
         type: 'sortie',
         mouvement: 5,
         demande_id: demande.id,
-        date: new Date(),
         stock_id: parseInt(stock_id),
         piece_id: pieceId,
         service_origine: servicePiece,
@@ -421,7 +420,8 @@ const validateDemande = async (req, res) => {
       })
 
       const dataStock = {
-        quantite_piece: final
+        quantite_piece: final,
+        last_update: new Date(),
       }
 
       const stockDonneur = await prisma.stocks.update({
@@ -466,9 +466,11 @@ const validateDemande = async (req, res) => {
               code_stock: stockDonneur.code_stock,
               piece_id: 1,
               service_id: 3,
+              last_update: new Date(),
             },
             data: {
               quantite_piece: finalDemandeur,
+              last_update: new Date(),
             },
           })
           idStock = updatedStockDemandeur.id
@@ -477,7 +479,6 @@ const validateDemande = async (req, res) => {
           type: 'entree',
           mouvement: 5,
           demande_id: demande.id,
-          date: new Date(),
           stock_id: idStock,
           piece_id: pieceId,
           service_origine: servicePiece,
@@ -489,7 +490,7 @@ const validateDemande = async (req, res) => {
           quantite_totale_piece: finalPieceDemandeur,
           motif: demande.motif_demande,
           commentaire,
-          details_mouvement: JSON.stringify(detailsMouvement),
+          details_mouvement: JSON.stringify(detailsEntree),
         }
 
         mouvement_stock_demandeur = await prisma.mouvement_stock.create({
@@ -518,7 +519,6 @@ const validateDemande = async (req, res) => {
         type: 'sortie',
         mouvement: 4,
         demande_id: demande.id,
-        date: new Date(),
         stock_id: parseInt(stock_id),
         piece_id: pieceId,
         service_origine: servicePiece,
@@ -538,16 +538,10 @@ const validateDemande = async (req, res) => {
 
       const dataStock = {
         quantite_carton: final,
-        quantite_piece: finalPiece
+        quantite_piece: finalPiece,
+        last_update: new Date(),
       }
-
-      await prisma.stocks.update({
-        where: {
-          id: parseInt(stock_id),
-        },
-        data: dataStock,
-      })
-
+      
       initialDemandeur = Number(detailsMouvement.stockInitialCartonDemandeur)
       finalDemandeur = Number(detailsMouvement.stockFinalCartonDemandeur)
 
@@ -594,6 +588,7 @@ const validateDemande = async (req, res) => {
               code_stock: stockDonneur.code_stock,
               piece_id: 1,
               service_id: 3,
+              last_update: new Date(),
             },
             data: {
               quantite_piece: finalPieceDemandeur,
@@ -606,7 +601,6 @@ const validateDemande = async (req, res) => {
           type: 'entree',
           mouvement: 4,
           demande_id: demande.id,
-          date: new Date(),
           stock_id: idStock,
           piece_id: pieceId,
           service_origine: servicePiece,
@@ -668,7 +662,6 @@ const validateDemande = async (req, res) => {
         type: 'sortie',
         mouvement: 3,
         demande_id: demande.id,
-        date: new Date(),
         stock_id: parseInt(stock_id),
         piece_id: pieceId,
         service_origine: servicePiece,
@@ -687,7 +680,8 @@ const validateDemande = async (req, res) => {
       })
 
       const dataStock = {
-        quantite_piece: finalPiece
+        quantite_piece: finalPiece,
+        last_update: new Date(),
       }
 
       await prisma.stocks.update({
@@ -751,6 +745,7 @@ const validateDemande = async (req, res) => {
             },
             data: {
               quantite_piece: finalPieceDemandeur,
+              last_update: new Date(),
             },
           })
           idStock = updatedStockDemandeur.id
@@ -760,7 +755,6 @@ const validateDemande = async (req, res) => {
           type: 'entree',
           mouvement: 5,
           demande_id: demande.id,
-          date: new Date(),
           stock_id: idStock,
           piece_id: pieceId,
           service_origine: servicePiece,
@@ -772,7 +766,7 @@ const validateDemande = async (req, res) => {
           quantite_totale_piece: finalPieceDemandeur,
           motif: demande.motif_demande,
           commentaire,
-          details_mouvement: JSON.stringify(detailsMouvement),
+          details_mouvement: JSON.stringify(detailsEntree),
         }
         mouvement_stock_demandeur = await prisma.mouvement_stock.create({
           data: dataEntree,
@@ -863,12 +857,10 @@ const validateDemande = async (req, res) => {
       }
       detailsMouvement.listeSn = serialNumbers ? serialNumbers : null
 
-
       dataMouvement = {
         type: 'sortie',
         mouvement: 2,
         demande_id: demande.id,
-        date: new Date(),
         stock_id: parseInt(stock_id),
         piece_id: pieceId,
         service_origine: servicePiece,
@@ -889,7 +881,8 @@ const validateDemande = async (req, res) => {
       const quantiteCartonStock = selectedStock.quantite_carton
       const dataStock = {
         quantite_carton: quantiteCartonStock - stock,
-        quantite_piece: finalPiece
+        quantite_piece: finalPiece,
+        last_update: new Date(),
       }
 
       await prisma.stocks.update({
@@ -980,6 +973,7 @@ const validateDemande = async (req, res) => {
             data: {
               quantite_carton: finalDemandeur,
               quantite_piece: finalPieceDemandeur,
+              last_update: new Date(),
             },
           })
           idStock = updatedStockDemandeur.id
@@ -1002,7 +996,6 @@ const validateDemande = async (req, res) => {
           type: 'entree',
           mouvement: 4,
           demande_id: demande.id,
-          date: new Date(),
           stock_id: idStock,
           piece_id: pieceId,
           service_origine: servicePiece,
@@ -1014,7 +1007,7 @@ const validateDemande = async (req, res) => {
           quantite_totale_piece: finalPieceDemandeur,
           motif: demande.motif_demande,
           commentaire,
-          details_mouvement: JSON.stringify(detailsMouvement),
+          details_mouvement: JSON.stringify(detailsEntree),
         }
         mouvement_stock_demandeur = await prisma.mouvement_stock.create({
           data: dataEntree,
@@ -1052,7 +1045,6 @@ const validateDemande = async (req, res) => {
         type: 'sortie',
         mouvement: 1,
         demande_id: demande.id,
-        date: new Date(),
         stock_id: parseInt(stock_id),
         piece_id: pieceId,
         service_origine: servicePiece,
@@ -1074,7 +1066,8 @@ const validateDemande = async (req, res) => {
       const dataStock = {
         quantite_lot: final,
         quantite_carton: quantiteCartonStock - Number(detailsMouvement.quantiteMouvementCarton),
-        quantite_piece: finalPiece
+        quantite_piece: finalPiece,
+        last_update: new Date(),
       }
 
       await prisma.stocks.update({
@@ -1135,6 +1128,7 @@ const validateDemande = async (req, res) => {
               quantite_lot: finalDemandeur,
               quantite_carton: finalCartonDemandeur,
               quantite_piece: finalPieceDemandeur,
+              last_update: new Date(),
             },
           })
           idStock = updatedStockDemandeur.id
@@ -1158,7 +1152,6 @@ const validateDemande = async (req, res) => {
           mouvement: 1,
           stock_id: idStock,
           demande_id: demande.id,
-          date: new Date(),
           piece_id: pieceId,
           service_origine: servicePiece,
           service_destination: parseInt(demande.service_demandeur),
@@ -1169,7 +1162,7 @@ const validateDemande = async (req, res) => {
           quantite_totale_piece: finalPieceDemandeur,
           motif: demande.motif_demande,
           commentaire,
-          details_mouvement: JSON.stringify(detailsMouvement),
+          details_mouvement: JSON.stringify(detailsEntree),
         }
         mouvement_stock_demandeur = await prisma.mouvement_stock.create({
           data: dataEntree,

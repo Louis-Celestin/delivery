@@ -163,7 +163,7 @@ const createStock = async (req, res) => {
 
     const typeMouvement = details.typeMouvement
     if (typeMouvement == 5) {
-      quantite_piece = details.stockFinal
+      quantite_piece = details.stockFinalPiece
 
       nouveauMouvement = await prisma.mouvement_stock.create({
         data: {
@@ -177,8 +177,8 @@ const createStock = async (req, res) => {
           model_id: itemModel,
           stock_initial: 0,
           quantite: details.quantiteMouvement,
-          stock_final: details.stockFinal,
-          quantite_totale_piece: details.stockFinal,
+          stock_final: details.stockFinalPiece,
+          quantite_totale_piece: details.stockFinalPiece,
           motif,
           commentaire,
           details_mouvement: JSON.stringify(details),
@@ -524,7 +524,6 @@ const setStockPiece = async (req, res) => {
       data: {
         type,
         mouvement: 5,
-        date: new Date(),
         piece_id: parseInt(item_id),
         service_origine: isEntree ? null : parseInt(service_id),
         service_destination: isEntree ? parseInt(service_id) : null,
@@ -635,7 +634,6 @@ const setStockCarton = async (req, res) => {
       data: {
         type,
         mouvement: 4,
-        date: new Date(),
         piece_id: parseInt(item_id),
         service_origine: isEntree ? null : parseInt(service_id),
         service_destination: isEntree ? parseInt(service_id) : null,
@@ -787,7 +785,6 @@ const setStockPieceCarton = async (req, res) => {
       data: {
         type,
         mouvement: 3,
-        date: new Date(),
         piece_id: parseInt(item_id),
         service_origine: isEntree ? null : parseInt(service_id),
         service_destination: isEntree ? parseInt(service_id) : null,
@@ -953,7 +950,6 @@ const setStockCartonLot = async (req, res) => {
       data: {
         type,
         mouvement: 2,
-        date: new Date(),
         piece_id: parseInt(item_id),
         service_origine: isEntree ? null : parseInt(service_id),
         service_destination: isEntree ? parseInt(service_id) : null,
@@ -1134,7 +1130,6 @@ const setStockLot = async (req, res) => {
       data: {
         type,
         mouvement: 1,
-        date: new Date(),
         piece_id: parseInt(item_id),
         service_origine: isEntree ? null : parseInt(service_id),
         service_destination: isEntree ? parseInt(service_id) : null,
@@ -1604,7 +1599,6 @@ const setStockSn = async (req, res) => {
       data: {
         type: "entree",
         mouvement: 6,
-        date: new Date(),
         stock_id: stock.id,
         piece_id: parseInt(item_id),
         origine,
@@ -1723,7 +1717,7 @@ const getOneStockMouvements = async (req, res) => {
         stock_id: parseInt(id)
       },
       orderBy: {
-        date: 'desc'
+        created_at: 'desc'
       },
     })
 

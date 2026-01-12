@@ -53,6 +53,7 @@ model demandes {
   champs_autre                       String?                 @db.LongText
   files                              String?                 @db.LongText
   is_deleted                         Int                     @default(0) @db.TinyInt
+  type_mouvement_stock               type_mouvement_stock?   @relation(fields: [type_demande], references: [id], onDelete: Restrict, map: "demandes_ibfk_10")
   users_demandes_user_idTousers      users?                  @relation("demandes_user_idTousers", fields: [user_id], references: [id_user], onDelete: Restrict, onUpdate: Restrict, map: "demandes_ibfk_2")
   roles                              roles?                  @relation(fields: [role_id_recepteur], references: [id_role], onDelete: Restrict, onUpdate: Restrict, map: "demandes_ibfk_3")
   items                              items?                  @relation(fields: [item_id], references: [id_piece], onDelete: Restrict, onUpdate: Restrict, map: "demandes_ibfk_6")
@@ -70,13 +71,14 @@ model demandes {
   @@index([item_id], map: "type_demande_id")
   @@index([user_id], map: "user_id")
   @@index([stock_id], map: "stock_id")
+  @@index([type_demande], map: "type_demande")
 }
 
 model items {
   id_piece        Int               @id @default(autoincrement())
   nom_piece       String            @db.VarChar(255)
   type            items_type?
-  created_at      DateTime?         @db.DateTime(0)
+  created_at      DateTime?         @default(now()) @db.DateTime(0)
   created_by      String?           @db.VarChar(255)
   user_id         Int?
   is_deleted      Boolean           @default(false)
@@ -130,11 +132,13 @@ model livraison {
   service_id                 Int?
   role_id                    Int?
   model_id                   Int?
+  stock_id                   Int?
   users                      users?                      @relation(fields: [user_id], references: [id_user], onDelete: Restrict, onUpdate: Restrict, map: "livraison_ibfk_1")
   type_livraison_commerciale type_livraison_commerciale? @relation(fields: [type_livraison_id], references: [id_type_livraison], onDelete: Restrict, onUpdate: Restrict, map: "livraison_ibfk_2")
   services                   services?                   @relation(fields: [service_id], references: [id], onDelete: NoAction, map: "livraison_ibfk_3")
   roles                      roles?                      @relation(fields: [role_id], references: [id_role], onDelete: NoAction, map: "livraison_ibfk_4")
   model_piece                model_piece?                @relation(fields: [model_id], references: [id_model], onDelete: Restrict, map: "livraison_ibfk_5")
+  stocks                     stocks?                     @relation(fields: [stock_id], references: [id], map: "livraison_ibfk_6")
   mouvement_stock            mouvement_stock[]
   validations                validations[]
 
@@ -143,6 +147,7 @@ model livraison {
   @@index([service_id], map: "service_id")
   @@index([type_livraison_id], map: "type_livraison_id")
   @@index([user_id], map: "user_id")
+  @@index([stock_id], map: "stock_id")
 }
 
 model livraison_piece {
@@ -178,7 +183,7 @@ model mouvement_stock {
   mouvement                                              Int?
   formulaire_id                                          Int?
   demande_id                                             Int?
-  date                                                   DateTime              @default(now()) @db.DateTime(0)
+  created_at                                             DateTime              @default(now()) @db.DateTime(0)
   stock_id                                               Int?
   piece_id                                               Int
   service_origine                                        Int?
@@ -377,6 +382,7 @@ model type_mouvement_stock {
   id              Int               @id @default(autoincrement())
   type            String            @db.VarChar(255)
   titre           String            @db.VarChar(255)
+  demandes        demandes[]
   mouvement_stock mouvement_stock[]
 }
 
@@ -492,6 +498,7 @@ model stocks {
   updated_by                     Int?
   is_deleted                     Boolean           @default(false)
   demandes                       demandes[]
+  livraison                      livraison[]
   mouvement_stock                mouvement_stock[]
   serial_numbers                 serial_numbers[]
   stock_carton                   stock_carton[]

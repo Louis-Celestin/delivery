@@ -9,27 +9,53 @@ import { Column } from 'primereact/column';
 
 import { PackagePlus } from 'lucide-react'
 
+import Input from "../form/input/InputField";
+
+import { MultiSelect } from "primereact/multiselect";
+
 export default function AllStocksList() {
 
     const stockData = new Stock()
     const userData = new Users()
 
-
-    const savedPagination = JSON.parse(sessionStorage.getItem("paginationState"));
-
+    const savedPagination = JSON.parse(sessionStorage.getItem("paginationStateStock"));
     const [first, setFirst] = useState(savedPagination?.first || 0);
-    const [rows, setRows] = useState(savedPagination?.rows || 10);
+    const [rows, setRows] = useState(savedPagination?.rows || 5);
+
+    const FILTERS_KEY = "allStocksFilters";
+    const saveFilters = (filters) => {
+        sessionStorage.setItem(FILTERS_KEY, JSON.stringify(filters));
+    };
+    const loadFilters = () => {
+        const stored = sessionStorage.getItem(FILTERS_KEY);
+        return stored ? JSON.parse(stored) : null;
+    };
+
+    const savedFilters = loadFilters();
+    const [globalFilter, setGlobalFilter] = useState(savedFilters?.globalFilter || "");
+    const [optionsItems, setOptionsItems] = useState([])
+    const [selectedPieces, setSelectedPieces] = useState(savedFilters?.selectedPieces || []);
+    const [optionsModels, setOptionsModels] = useState([]);
+    const [selectedModels, setSelectedModels] = useState(savedFilters?.selectedModels || []);
+    const [optionsServices, setOptionsServices] = useState([])
+    const [selectedServices, setSelectedServices] = useState(savedFilters?.selectedServices || []);
 
     const [loading, setLoading] = useState(false)
     const [stocks, setStocks] = useState([])
-
     const [items, setItems] = useState([])
-
     const [models, setModels] = useState([])
-
     const [services, setServices] = useState([])
-
     const [users, setUsers] = useState([])
+    
+
+    useEffect(() => {
+        saveFilters({
+            globalFilter,
+            selectedPieces,
+            selectedModels,
+            selectedServices,
+        });
+    }, [globalFilter, selectedPieces, selectedModels, selectedServices]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -46,18 +72,34 @@ export default function AllStocksList() {
                     return item.is_deleted == false
                 })
                 setItems(piece_data)
+                const options_pieces = piece_data.map((item) => ({
+                    value: item.id_piece,
+                    label: item.nom_piece,
+                }))
+                setOptionsItems(options_pieces)
 
                 const models_data = await stockData.getAllModels()
                 setModels(models_data)
+                const options_models = models_data.map((item) => ({
+                    value: item.id_model,
+                    label: item.nom_model,
+                }))
+                setOptionsModels(options_models)
 
                 const services_data = await userData.getAllServices()
                 setServices(services_data)
+                const options_services = services_data.map((item) => ({
+                    value: item.id,
+                    label: item.nom_service,
+                }))
+                setOptionsServices(options_services)
 
                 const users_data_all = await userData.getAllUsers()
-                const users_data = users_data_all.filter((item) =>{
+                const users_data = users_data_all.filter((item) => {
                     return item.is_deleted == false
                 })
                 setUsers(users_data)
+                
 
             } catch (error) {
                 console.log('Error fetching the data ', error)
@@ -72,6 +114,7 @@ export default function AllStocksList() {
     //     const d = new Date(date);
     //     return d.toLocaleDateString('fr-FR'); // or use any locale you want
     // };
+
     const formatDate = (isoDate) => {
         const date = new Date(isoDate);
         return date.toLocaleString("fr-FR", {
@@ -87,8 +130,16 @@ export default function AllStocksList() {
     const handlePageChange = (e) => {
         setFirst(e.first);
         setRows(e.rows);
-        sessionStorage.setItem("paginationState", JSON.stringify({ first: e.first, rows: e.rows }));
+        sessionStorage.setItem("paginationStateStock", JSON.stringify({ first: e.first, rows: e.rows }));
     };
+
+    const handleClearFilters = () => {
+        setGlobalFilter("");
+        setSelectedPieces([])
+        setSelectedModels([])
+        setSelectedServices([])
+        sessionStorage.removeItem(FILTERS_KEY);
+    }
 
     const idTemplate = (stock) => {
         return (
@@ -170,15 +221,15 @@ export default function AllStocksList() {
 
         const nomUser = user ? user.fullname : 'N/A'
 
-        return(
+        return (
             <>
                 <span className="font-semibold">{nomUser}</span>
             </>
         )
     }
-    const actionsTemplate = (stock) =>{
+    const actionsTemplate = (stock) => {
         const linkSee = `/details-stock/${stock.id}`
-        return(
+        return (
             <>
                 <div className="flex items-center justify-between">
                     <Link to={linkSee}>
@@ -196,36 +247,105 @@ export default function AllStocksList() {
         )
     }
 
+    const filteredStocks = stocks.filter((item) => {
+        const matchesPieces = selectedPieces.length > 0 ? selectedPieces.includes(item.piece_id) : true;
+        const matchesModels = selectedModels.length > 0 ? selectedModels.includes(item.model_id) : true;
+        const matchesServices = selectedServices.length > 0 ? selectedServices.includes(item.service_id) : true;
+        const matchesGlobalFilter = globalFilter
+            ? JSON.stringify(item).toLowerCase().includes(globalFilter.toLowerCase())
+            : true;
 
-
+        return matchesPieces && matchesModels && matchesServices && matchesGlobalFilter
+    })
     return (
         <>
             <div className="border rounded-2xl bg-white p-2">
-                <div className="card rounded-2xl">
-                    <DataTable
-                        value={stocks}
-                        loading={loading}
-                        removableSort
-                        paginator
-                        rows={rows}
-                        first={first}
-                        onPage={handlePageChange}
-                        rowsPerPageOptions={[5, 10, 25, 50, 100, 200, 300, 500, 1000]}
-                        tableStyle={{ minWidth: '50rem', fontSize: '11px' }}
-                        emptyMessage="Aucun stock trouvé"
-                        className="p-datatable-sm">
+                <div className="space-y-5">
+                    <div>
+                        <div className="px-6 pt-6 flex items-center">
+                            <div className="relative w-full">
+                                <Input
+                                    className="pl-10"
+                                    value={globalFilter}
+                                    onChange={(e) => setGlobalFilter(e.target.value)}
+                                    placeholder="Rechercher un stock..."
+                                />
+                                <span className="absolute top-1/4 left-3"><i className="pi pi-search"></i></span>
+                            </div>
+                            <span className="pl-4">
+                                <button onClick={handleClearFilters}>
+                                    <i className="pi pi-refresh"></i>
+                                </button>
+                            </span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-3 p-6 pb-0">
+                            <MultiSelect
+                                value={selectedPieces}
+                                options={optionsItems}
+                                display="chip"
+                                optionLabel="label"
+                                maxSelectedLabels={2}
+                                onChange={(e) => setSelectedPieces(e.value)}
+                                placeholder="Filtrer par pièce"
+                                className=""
+                            />
+                            <MultiSelect
+                                value={selectedModels}
+                                options={optionsModels}
+                                display="chip"
+                                optionLabel="label"
+                                maxSelectedLabels={2}
+                                onChange={(e) => setSelectedModels(e.value)}
+                                placeholder="Filtrer par modèles"
+                                className=""
+                            />
+                            <MultiSelect
+                                value={selectedServices}
+                                options={optionsServices}
+                                display="chip"
+                                optionLabel="label"
+                                maxSelectedLabels={2}
+                                onChange={(e) => setSelectedServices(e.value)}
+                                placeholder="Filtrer par services"
+                                className=""
+                            />
+                        </div>
+                    </div>
+                    <div>
+                        <div className="flex justify-between p-2 items-center">
+                            <div className="flex space-x-3 items-center">
+                                <span className="text-sm text-gray-600 dark:text-gray-300">
+                                    {filteredStocks.length} stock(s) trouvé(s)
+                                </span>
+                            </div>
+                        </div>
+                        <div className="card rounded-2xl">
+                            <DataTable
+                                value={filteredStocks}
+                                loading={loading}
+                                removableSort
+                                paginator
+                                rows={rows}
+                                first={first}
+                                onPage={handlePageChange}
+                                rowsPerPageOptions={[5, 10, 25, 50, 100, 200, 300, 500, 1000]}
+                                tableStyle={{ minWidth: '50rem', fontSize: '11px' }}
+                                emptyMessage="Aucun stock trouvé"
+                                className="p-datatable-sm">
 
-                        <Column field="id" header="ID" body={idTemplate} sortable></Column>
-                        <Column field="code_stock" body={codeTemplate} header="Code Stock"></Column>
-                        <Column field="piece_id" header="Pièce" body={pieceTemplate}></Column>
-                        <Column field="quantite_piece" header="Qte Pièce" body={quantitePieceTemplate} sortable></Column>
-                        <Column field="quantite_carton" header="Qte Carton" body={quantiteCartonTemplate} sortable></Column>
-                        <Column field="quantite_lot" header="Qte Lot" body={quantiteLotTemplate} sortable></Column>
-                        <Column field="last_update" header="Dernière Modification" body={dateTemplate} sortable></Column>
-                        <Column field="updated_by" header="Utilisateur" body={userTemplate}></Column>
-                        <Column header="Actions" body={actionsTemplate}></Column>
+                                <Column field="id" header="ID" body={idTemplate} sortable></Column>
+                                <Column field="code_stock" body={codeTemplate} header="Code Stock"></Column>
+                                <Column field="piece_id" header="Pièce" body={pieceTemplate}></Column>
+                                <Column field="quantite_piece" header="Qte Pièce" body={quantitePieceTemplate} sortable></Column>
+                                <Column field="quantite_carton" header="Qte Carton" body={quantiteCartonTemplate} sortable></Column>
+                                <Column field="quantite_lot" header="Qte Lot" body={quantiteLotTemplate} sortable></Column>
+                                <Column field="last_update" header="Dernière Modification" body={dateTemplate} sortable></Column>
+                                <Column field="updated_by" header="Utilisateur" body={userTemplate}></Column>
+                                <Column header="Actions" body={actionsTemplate}></Column>
 
-                    </DataTable>
+                            </DataTable>
+                        </div>
+                    </div>
                 </div>
             </div>
         </>

@@ -81,6 +81,11 @@ export default function LivraisonInputs() {
   const [selectedModel, setSelectedModel] = useState(1)
   const [nomModel, setNomModel] = useState('A920')
 
+  const [stockChargeurs, setStockChargeurs] = useState([])
+  const [selectedChargeur, setSelectedChargeur] = useState(false)
+  const [optionsStocks, setOptionsStocks] = useState([])
+  const [selectedStock, setSelectedStock] = useState(null)
+
   // useEffect(() => {
   //   const savedProduits = sessionStorage.getItem("produitsLivreTable");
   //   if (savedProduits) {
@@ -139,6 +144,17 @@ export default function LivraisonInputs() {
         }))
         setOptionsModels(option_models)
 
+        const stocks_data = await stockData.getAllStocks()
+        const stockChargeurs_data = stocks_data.filter((item) => {
+          return item.piece_id == 1 && item.service_id == 3 && item.quantite_piece > 0 && item.is_deleted == false
+        })
+        setStockChargeurs(stockChargeurs_data)
+        const options_stocks = stockChargeurs_data.map((item) => ({
+          value: item.id,
+          label: `${item.code_stock} : ${item.quantite_piece} pièces`
+        }))
+        setOptionsStocks(options_stocks)
+
       } catch (error) {
         console.log('Error fetching data ', error)
         setErrorForm('Erreur lors de la génération du formulaire')
@@ -185,7 +201,17 @@ export default function LivraisonInputs() {
     } else {
       setTypeLivraison('');
     }
+
+    if(value == 5 || value == 7 || value == 8){
+      setSelectedChargeur(true)
+    } else {
+      setSelectedChargeur(false)
+    }
   };
+
+  const handleSelectStock = (value) => {
+    setSelectedStock(value)
+  }
 
   const ChangeService = (value) => {
     console.log("Selected value:", value);
@@ -343,8 +369,6 @@ export default function LivraisonInputs() {
     const fd = new FormData();
 
     const commentaire = message;
-    const type_livraison_id = livraisonID
-    const user_id = userId;
     const isAncienne = false;
 
 
@@ -356,6 +380,7 @@ export default function LivraisonInputs() {
     fd.append('service_recepteur', serviceId)
     fd.append('role_recepteur', selectedRole)
     fd.append('selected_model', selectedModel)
+    fd.append('selectedStock', selectedStock)
     if (sign) {
       const blob = await fetch(sign).then(res => res.blob());
       fd.append('signature_expediteur', blob, 'signature.png');
@@ -447,9 +472,23 @@ export default function LivraisonInputs() {
                         placeholder="Choisir une option"
                         onChange={ChangeTypeLivraison}
                         className="dark:bg-dark-900"
-
                       />
                     </div>
+                    {selectedChargeur ? (
+                      <>
+                        <div>
+                          <Label>Stocks <span className="text-red-700">*</span></Label>
+                          <Select 
+                            options={optionsStocks}
+                            placeholder="Choisir une option"
+                            onChange={handleSelectStock}
+                            className="dark:bg-dark-900"
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <></>
+                    )}
                     <div>
                       <Label>Model TPE <span className="text-red-700">*</span></Label>
                       <Select

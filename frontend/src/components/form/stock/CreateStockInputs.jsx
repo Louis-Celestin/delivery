@@ -905,9 +905,9 @@ export default function CreateStockInputs() {
         }
         const details = {
             typeMouvement: 5,
-            stockInitial: 0,
+            stockInitialPiece: 0,
             quantiteMouvement: newStockPiece,
-            stockFinal: newStockPiece,
+            stockFinalPiece: newStockPiece,
         }
         setDetailsMouvement(details)
         setFinaleStockPiece(quantitePiece + newStockPiece)

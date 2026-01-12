@@ -218,7 +218,7 @@ export default function AllMouvementStockList() {
     const dateTemplate = (mouvement) =>{
         return(
             <>
-                <span className="text-theme-xs text-gray-700 font-medium">{formatDate(mouvement.date)}</span>
+                <span className="text-theme-xs text-gray-700 font-medium">{formatDate(mouvement.created_at)}</span>
             </>
         )
     }
@@ -284,7 +284,7 @@ export default function AllMouvementStockList() {
                         <Column field="quantite_totale_piece" header="Qte Totale" body={totalTemplate} sortable></Column>
                         <Column field="service_origine" header="Origine" body={origineTemplate}></Column>
                         <Column field="service_destination" header="Destination" body={destinationTemplate}></Column>
-                        <Column field="date" header="Date" body={dateTemplate} sortable></Column>
+                        <Column field="created_at" header="Date" body={dateTemplate} sortable></Column>
                         {/* <Column header="Actions" body={actionsTemplate}></Column> */}
                         {/* <Column field="formulaire_id" header="ID Livraison" body={livraisonTemplate} sortable></Column> */}
                         {/* <Column field="demande_id" header="ID Demande" body={demandeTemplate} sortable></Column> */}
