@@ -77,6 +77,7 @@ const faireDemande = async (req, res) => {
     })
 
     if (!piece) {
+      console.log("Erreur serveur 404: pièce introuvable ! ")
       return res.status(404).json({ message: "Pièce introuvable !" })
     }
 
@@ -87,6 +88,7 @@ const faireDemande = async (req, res) => {
     })
 
     if (!stock) {
+      console.log("Erreur serveur 404: stock introuvable ! ")
       return res.status(404).json({ message: "Stock introuvable !" })
     }
 
@@ -98,6 +100,7 @@ const faireDemande = async (req, res) => {
     });
 
     if (!utilisateur) {
+      console.log("Erreur serveur 404: utilisateur introuvable ! ")
       return res.status(404).json({ message: "Utilisateur non trouvé" });
     }
 
@@ -212,12 +215,14 @@ const faireDemande = async (req, res) => {
       }
     }
 
+    console.log("Succès ! ")
     res.status(201).json({
       message: "Demande enregistrée avec succès",
       demandes: nouvelleDemande
     });
 
   } catch (error) {
+    console.log("Erreur serveur: ",error)
     console.error("Erreur lors de la demande :", error);
     res.status(500).json({ message: "Erreur interne", error });
   }
@@ -235,6 +240,8 @@ const getAllDemandes = async (req, res) => {
 
     res.status(200).json(demandes);
   } catch (error) {
+    console.log("Erreur serveur: ", error)
+    console.error("Erreur :", error)
     res.status(500).json({ message: "Erreur lors de la récupération des demandes", error });
   }
 };
@@ -255,8 +262,11 @@ const getOneDemande = async (req, res) => {
       return res.status(404).json({ message: "demande introuvable" });
     }
 
+    console.log("Succès !")
     res.status(200).json(demandes);
   } catch (error) {
+    console.log('Error : ', error)
+    console.error('Error : ', error)
     res.status(500).json({ message: "Erreur serveur", error });
   }
 }
@@ -707,7 +717,6 @@ const validateDemande = async (req, res) => {
 
       initialDemandeur = Number(detailsMouvement.stockInitialPieceDemandeur)
       finalDemandeur = Number(detailsMouvement.stockFinalPieceDemandeur)
-
 
       if (pieceId == 1 && servicePiece == 5 && demande.service_demandeur == 3) {
         const stockDemandeur = await prisma.stocks.findFirst({

@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 // @ts-ignore
-import LivraisonsGenerales from "../../components/livraisons/LivraisonsGenerales"
+import LivraisonsGenerales from "../../components/dashboards/livraisons/LivraisonsGenerales"
 // @ts-ignore
 import LivraisonsPieStats from "../../components/livraisons/LivraisonsPieStats"
 // @ts-ignore
@@ -133,7 +133,7 @@ export default function Dashboard() {
       </div>
       {/* <div>
         <div className="grid grid-cols-1">
-          <LivraisonsBarChart startDate={startDate} endDate={endDate} />
+          <LivraisonsGenerales startDate={startDate} endDate={endDate} />
         </div>
       </div> */}
     </div>

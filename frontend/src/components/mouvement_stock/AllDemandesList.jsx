@@ -366,21 +366,21 @@ export default function AllDemandesList() {
     const filteredDemandeForms = demandeForms.filter((item) => {
         let itemDate = new Date(item.date_demande);
         let validation
+        let statutReception = null
         if (item.validation_demande.length > 0) {
             let index = item.validation_demande.length - 1
             validation = item.validation_demande[index]
             itemDate = new Date(item.validation_demande[index].date_validation_demande)
+            if(validation.statut_validation_demande == 'valide'){
+                if (item.demande_livree){
+                    statutReception = 'réceptionnée'
+                } else {
+                    statutReception = 'en_cours'
+                }
+            }
         }
         const detailsDemande = JSON.parse(item.details_demande)
 
-        let statutReception = null
-        if(validation.statut_validation_demande == 'valide'){
-            if (item.demande_livree){
-                statutReception = 'réceptionnée'
-            } else {
-                statutReception = 'en_cours'
-            }
-        }
 
         const matchesStatus = selectedStatus.length > 0 ? selectedStatus.includes(item.statut_demande) : true;
         const matchesItems = selectedItems.length > 0 ? selectedItems.includes(item.item_id) : true;
