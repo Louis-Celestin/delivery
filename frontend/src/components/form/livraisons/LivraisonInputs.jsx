@@ -5,6 +5,7 @@ import Input from "../input/InputField.tsx";
 import Checkbox from "../input/Checkbox.tsx";
 import Select from "../Select.tsx";
 import TextArea from "../input/TextArea.tsx";
+import FileInput from "../input/FileInput.tsx"
 import {
   Table,
   TableBody,
@@ -39,7 +40,9 @@ export default function LivraisonInputs() {
   const [isMOOVChecked, setMOOVChecked] = useState(false);
   const [terminals, setTerminals] = useState([]);
   const [terminalSN, setTerminalSN] = useState('');
+  const [terminalName, setTerminalName] = useState('');
   const [terminalBanque, setTerminalBanque] = useState('');
+  const [terminalCaisse, setTerminalCaisse] = useState('');
   const [loadingMerchant, setLoadingMerchant] = useState(false);
   const [loadingDelivery, setLoadingDelivery] = useState(false);
   const [typeLivraison, setTypeLivraison] = useState('');
@@ -85,6 +88,8 @@ export default function LivraisonInputs() {
   const [selectedChargeur, setSelectedChargeur] = useState(false)
   const [optionsStocks, setOptionsStocks] = useState([])
   const [selectedStock, setSelectedStock] = useState(null)
+
+  const [selectedFiles, setSelectedFiles] = useState([])
 
   // useEffect(() => {
   //   const savedProduits = sessionStorage.getItem("produitsLivreTable");
@@ -202,7 +207,7 @@ export default function LivraisonInputs() {
       setTypeLivraison('');
     }
 
-    if(value == 5 || value == 7 || value == 8){
+    if (value == 5 || value == 7 || value == 8) {
       setSelectedChargeur(true)
     } else {
       setSelectedChargeur(false)
@@ -231,11 +236,58 @@ export default function LivraisonInputs() {
     }
   }
 
-  const handleConfirm = () => {
+  const handleFileChange = (e) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const newFiles = Array.from(files);
 
-    let banque = ''
-    banque = filteredPointMarchand.map((terminal) => terminal.BANQUE).join("-");
-    console.log(banque)
+      // Avoid adding duplicate files (optional)
+      const updatedFiles = [...selectedFiles];
+
+      newFiles.forEach(file => {
+        if (!updatedFiles.find(f => f.name === file.name && f.size === file.size)) {
+          updatedFiles.push(file);
+        }
+      });
+
+      setSelectedFiles(updatedFiles);
+    }
+  };
+
+  const handleDeleteFile = (indexToRemove) => {
+    setSelectedFiles((prev) =>
+      prev.filter((_, index) => index !== indexToRemove)
+    );
+  }
+
+  const handleChangeSn = (value) => {
+    setTerminalName('')
+    setTerminalBanque('')
+    setTerminalCaisse('')
+    setOrangeChecked(false)
+    setMTNChecked(false)
+    setMOOVChecked(false)
+    setTerminalSN(value)
+    const pointMarchand = terminals.find((terminal) => {
+      return terminal.SERIAL_NUMBER == value
+    })
+    if (pointMarchand) {
+      setTerminalName(pointMarchand.POINT_MARCHAND)
+      setTerminalBanque(pointMarchand.BANQUE)
+      setTerminalCaisse(pointMarchand.TPE)
+      if (pointMarchand.NUM_ORANGE.startsWith("07")) {
+        setOrangeChecked(true)
+      }
+      if (pointMarchand.NUM_MTN.startsWith("05")) {
+        setMTNChecked(true)
+      }
+      if (pointMarchand.NUM_MOOV.startsWith("01")) {
+        setMOOVChecked(true)
+      }
+    }
+  }
+
+  const handleConfirm = () => {
 
     if (!livraisonID) {
       setErrorAjout("Vous devez choisir le type de livraison !");
@@ -249,7 +301,7 @@ export default function LivraisonInputs() {
       setErrorAjout("Vous devez choisir le service réceptionneur !");
       return;
     }
-    if (!filteredPointMarchand || filteredPointMarchand.length === 0 || terminalSN.length < 10) {
+    if (terminalSN.length < 10 || !terminalName || !terminalCaisse) {
       setErrorAjout("S/N invalide !");
       return;
     }
@@ -258,44 +310,44 @@ export default function LivraisonInputs() {
       setErrorAjout("Ce numéro de série a déjà été ajouté !");
       return;
     }
-    if (livraisonID == 1 && !banque) {
+    if (livraisonID == 1 && !terminalBanque) {
       setErrorAjout("Ce Terminal n'est pas bancaire !");
       return;
     }
-    if (livraisonID == 6 && !banque) {
+    if (livraisonID == 6 && !terminalBanque) {
       setErrorAjout("Ce Terminal n'est pas bancaire !");
       return;
     }
-    if (livraisonID == 3 && !banque) {
+    if (livraisonID == 3 && !terminalBanque) {
       setErrorAjout("Ce Terminal n'est pas bancaire !");
       return;
     }
-    if (livraisonID == 6 && !(banque === 'ECOBANK' || banque === 'ECOBANK ACI' || banque === 'ECOBANK CI')) {
+    if (livraisonID == 6 && !(terminalBanque === 'ECOBANK' || terminalBanque === 'ECOBANK ACI' || terminalBanque === 'ECOBANK CI')) {
       setErrorAjout("Ce Terminal n'est pas ecobank !");
       return;
     }
-    if (livraisonID == 1 && (banque === 'ECOBANK' || banque === 'ECOBANK ACI' || banque === 'ECOBANK CI')) {
+    if (livraisonID == 1 && (terminalBanque === 'ECOBANK' || terminalBanque === 'ECOBANK ACI' || terminalBanque === 'ECOBANK CI')) {
       setErrorAjout("Ce Terminal n'est pas GIM !");
       return;
     }
-    if (livraisonID == 3 && (banque === 'ECOBANK' || banque === 'ECOBANK ACI' || banque === 'ECOBANK CI')) {
+    if (livraisonID == 3 && (terminalBanque === 'ECOBANK' || terminalBanque === 'ECOBANK ACI' || terminalBanque === 'ECOBANK CI')) {
       setErrorAjout("Ce Terminal n'est pas GIM !");
       return;
     }
-    if (livraisonID == 4 && banque) {
+    if (livraisonID == 4 && terminalBanque) {
       setErrorAjout("Ce terminal est bancaire.");
       return;
     }
 
-    if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_ORANGE?.startsWith("07"))) {
-      setOrangeChecked(true)
-    };
-    if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_MTN?.startsWith("05"))) {
-      setMTNChecked(true)
-    };
-    if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_MOOV?.startsWith("01"))) {
-      setMOOVChecked(true)
-    };
+    // if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_ORANGE?.startsWith("07"))) {
+    //   setOrangeChecked(true)
+    // };
+    // if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_MTN?.startsWith("05"))) {
+    //   setMTNChecked(true)
+    // };
+    // if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_MOOV?.startsWith("01"))) {
+    //   setMOOVChecked(true)
+    // };
 
     // if (isOrangeChecked) localMobileMoney.push("OM");
     // if (isMTNChecked) localMobileMoney.push("MTN");
@@ -310,21 +362,21 @@ export default function LivraisonInputs() {
 
     console.log('Trying to ADD.....')
     const localMobileMoney = [];
-    if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_ORANGE?.startsWith("07"))) {
+    if (isOrangeChecked) {
       localMobileMoney.push("OM")
     };
-    if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_MTN?.startsWith("05"))) {
+    if (isMTNChecked) {
       localMobileMoney.push("MTN")
     };
-    if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_MOOV?.startsWith("01"))) {
+    if (isMOOVChecked) {
       localMobileMoney.push("MOOV")
     };
 
     const newProduit = {
-      pointMarchand: filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(","),
-      caisse: filteredPointMarchand.map((terminal) => terminal.TPE).join(","),
+      pointMarchand: terminalName,
+      caisse: terminalCaisse,
       serialNumber: terminalSN,
-      banque: filteredPointMarchand.map((terminal) => terminal.BANQUE).join(","),
+      banque: terminalBanque,
       mobile_money: localMobileMoney,
       commentaireTPE: messageTPE,
     };
@@ -335,7 +387,10 @@ export default function LivraisonInputs() {
 
     // Optional: Reset form fields
     setTerminalSN('');
-    setMessageTPE('')
+    setTerminalName('');
+    setTerminalBanque('')
+    setTerminalCaisse('')
+    setMessageTPE('');
     setOrangeChecked(false);
     setMTNChecked(false);
     setMOOVChecked(false);
@@ -369,18 +424,19 @@ export default function LivraisonInputs() {
     const fd = new FormData();
 
     const commentaire = message;
-    const isAncienne = false;
 
-
+    console.log(selectedFiles)
     fd.append('commentaire', commentaire);
     fd.append('type_livraison_id', livraisonID);
     fd.append('user_id', userId);
-    fd.append('isAncienne', isAncienne)
     fd.append('produitsLivre', JSON.stringify(produitsLivre))
     fd.append('service_recepteur', serviceId)
     fd.append('role_recepteur', selectedRole)
     fd.append('selected_model', selectedModel)
     fd.append('selectedStock', selectedStock)
+    // selectedFiles.forEach((file) => {
+    //   fd.append("files", file);
+    // });
     if (sign) {
       const blob = await fetch(sign).then(res => res.blob());
       fd.append('signature_expediteur', blob, 'signature.png');
@@ -460,7 +516,7 @@ export default function LivraisonInputs() {
               </div>
             ) : (
               <>
-                <ComponentCard className="md:w-1/2 w-full" title={`Livraison ${typeLivraison}`}>
+                <ComponentCard className="md:w-1/2 w-full" title={`${typeLivraison}`}>
                   <div className="pb-3 text-center">
                     <span className="text-sm font-semibold">Informations générales</span>
                   </div>
@@ -477,8 +533,8 @@ export default function LivraisonInputs() {
                     {selectedChargeur ? (
                       <>
                         <div>
-                          <Label>Stocks <span className="text-red-700">*</span></Label>
-                          <Select 
+                          <Label>Stocks</Label>
+                          <Select
                             options={optionsStocks}
                             placeholder="Choisir une option"
                             onChange={handleSelectStock}
@@ -528,6 +584,32 @@ export default function LivraisonInputs() {
                         placeholder="Ajoutez un commentaire"
                       />
                     </div>
+                    {/* <div>
+                      <Label>Importer des fichiers</Label>
+                      <FileInput className="curstom-class"
+                        onChange={handleFileChange}
+                        multiple
+                      />
+                      {selectedFiles.length > 0 ? (
+                        <div className="mt-3">
+                          {selectedFiles.map((selectedFile, index) => (
+                            <div key={index} className="bg-gray-100 px-1 flex justify-between items-center rounded-sm my-1">
+                              <span>
+                                <i className="pi pi-file-check"></i>
+                              </span>
+                              <span className=" text-gray-500" style={{fontSize: '9px'}}>
+                                {selectedFile.name}
+                              </span>
+                              <button onClick={() => handleDeleteFile(index)}>
+                                <span className="text-error-600"><i className="pi pi-times"></i></span>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <></>
+                      )}
+                    </div> */}
                     <div className="pb-3 text-center">
                       <span className="text-sm font-semibold">Informations sur produits</span>
                     </div>
@@ -539,8 +621,10 @@ export default function LivraisonInputs() {
                         if (/^\d*$/.test(value)) {
                           // Only allow up to 10 characters
                           if (value.length <= 10) {
-                            setTerminalSN(value);
+                            // setTerminalSN(value);
+                            handleChangeSn(value)
                           }
+                          // setTerminalName(filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(" - "))
                         }
                       }} />
                     </div>
@@ -556,61 +640,85 @@ export default function LivraisonInputs() {
                     <div>
                       <Label>Point Marchand</Label>
                       <Input type="text" id="input"
-                        className="cursor-default"
-                        value={filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(" - ")}
-                        readOnly
+                        className=""
+                        value={terminalName}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          setTerminalName(value)
+                        }}
                       />
                     </div>
                     <div>
                       <Label>Banque</Label>
                       <Input type="text" id="input"
-                        className="cursor-default"
-                        value={filteredPointMarchand.map((terminal) => terminal.BANQUE).join(" - ")}
-                        readOnly
+                        className=""
+                        value={terminalBanque}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          setTerminalBanque(value)
+                        }}
                       />
                     </div>
                     <div>
+                      <Label>Caisse</Label>
                       <Input type="text" id="input"
-                        value={filteredPointMarchand.map((terminal) => terminal.TPE).join(" - ")}
-                        className="hidden" />
+                        className=""
+                        value={terminalCaisse}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          setTerminalCaisse(value)
+                        }}
+                      />
                     </div>
                     <div className="flex flex-col">
                       <div className="flex items-center gap-3 my-2">
                         <Checkbox
-                          checked={
-                            filteredPointMarchand.length > 0 &&
-                            filteredPointMarchand.some((terminal) =>
-                              terminal.NUM_ORANGE?.startsWith("07")
-                            )
-                          }
-                          onChange={(e) => { }}
-                          readOnly
+                          checked={isOrangeChecked}
+                          onChange={(e) => {
+                            if (isOrangeChecked) {
+                              setOrangeChecked(false)
+                            } else {
+                              setOrangeChecked(true)
+                            }
+                          }}
                           label="Orange Money" />
                       </div>
                       <div className="flex items-center gap-3 my-2">
                         <Checkbox
-                          checked={
-                            filteredPointMarchand.length > 0 &&
-                            filteredPointMarchand.some((terminal) =>
-                              terminal.NUM_MTN?.startsWith("05")
-                            )
-                          }
-                          onChange={(e) => { }}
-                          readOnly
+                          checked={isMTNChecked}
+                          onChange={(e) => {
+                            if (isMTNChecked) {
+                              setMTNChecked(false)
+                            } else {
+                              setMTNChecked(true)
+                            }
+                          }}
                           label="MTN Money" />
                       </div>
                       <div className="flex items-center gap-3 my-2">
                         <Checkbox
-                          checked={
-                            filteredPointMarchand.length > 0 &&
-                            filteredPointMarchand.some((terminal) =>
-                              terminal.NUM_MOOV?.startsWith("01")
-                            )
-                          }
-                          onChange={(e) => { }}
-                          readOnly
+                          checked={isMOOVChecked}
+                          onChange={(e) => {
+                            if (isMOOVChecked) {
+                              setMOOVChecked(false)
+                            } else {
+                              setMOOVChecked(true)
+                            }
+                          }}
                           label="MOOV Money" />
                       </div>
+                      {/* <div className="flex items-center gap-3 my-2">
+                        <Checkbox
+                          checked={isMOOVChecked}
+                          onChange={(e) => {
+                            if (isMOOVChecked) {
+                              setMOOVChecked(false)
+                            } else {
+                              setMOOVChecked(true)
+                            }
+                          }}
+                          label="RNE" />
+                      </div> */}
                     </div>
                     <div>
                       <button onClick={handleConfirm} className="w-full bg-green-400 rounded-2xl h-10 flex items-center justify-center">
@@ -771,10 +879,10 @@ export default function LivraisonInputs() {
               <span>S/N terminal : <span className="font-bold text-red-700">{terminalSN}</span></span>
             </div>
             <div>
-              <span>Point Marchand : <span className="font-bold text-red-700">{filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join("%")}</span></span>
+              <span>Point Marchand : <span className="font-bold text-red-700">{terminalName}</span></span>
             </div>
             <div>
-              <span> Banque : <span className="font-bold text-red-700">{filteredPointMarchand.map((terminal) => terminal.BANQUE).join("%")}</span></span>
+              <span> Banque : <span className="font-bold text-red-700">{terminalBanque}</span></span>
             </div>
             <div className="flex flex-col">
               <span>Mobile Money : </span>

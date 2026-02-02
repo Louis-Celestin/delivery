@@ -42,20 +42,36 @@ const deliver = async (req, res) => {
       commentaire,
       user_id,
       type_livraison_id,
-      isAncienne,
       service_recepteur,
       role_recepteur,
       selected_model,
       selectedStock,
     } = req.body;
 
+    // const files = req.files?.files || [];
+    // const signatureFile = req.files?.signature_expediteur?.[0] || null;
+
+    // const files_content = files.length
+    //   ? files.map(file => ({
+    //     name: file.originalname,
+    //     path: file.path,
+    //     type: file.mimetype,
+    //     size: file.size
+    //   }))
+    //   : [];
+
+    // let signature_expediteur = null;
+    // if (!signatureFile) {
+    //   console.log('La signature est requise!')
+    //   return res.status(400).json({ message: "Signature requise" });
+    // } else {
+    //   signature_expediteur = signatureFile.path;
+    // }
+
     // Correction ici : gestion de produitsLivre (string JSON venant de form-data)
     const produits = typeof produitsLivre === "string"
       ? JSON.parse(produitsLivre)
       : produitsLivre;
-
-    // Correction ici : isAncienne arrive en string depuis form-data => on convertit en bool
-    const isAncienneBool = (isAncienne === 'true' || isAncienne === true);
 
     const typeLivraison = await prisma.type_livraison_commerciale.findUnique({
       where: {
@@ -68,23 +84,19 @@ const deliver = async (req, res) => {
     }
 
     let utilisateur = null;
-    if (!isAncienneBool) {
-      utilisateur = await prisma.users.findUnique({
-        where: {
-          id_user: parseInt(user_id)
-        }
-      });
-
-      if (!utilisateur) {
-        return res.status(404).json({ message: "Utilisateur non trouvé" });
+    utilisateur = await prisma.users.findUnique({
+      where: {
+        id_user: parseInt(user_id)
       }
+    });
+    if (!utilisateur) {
+      return res.status(404).json({ message: "Utilisateur non trouvé" });
     }
 
     // Gestion de l'upload Cloudinary
     const uploadResult = await cloudinary.uploader.upload(req.file.path, {
       folder: "greenpay/signatures",
     });
-
     const signature_expediteur = uploadResult.secure_url;
 
     if (!signature_expediteur) {
@@ -102,7 +114,7 @@ const deliver = async (req, res) => {
         deleted: false,
         type_livraison_id: parseInt(type_livraison_id),
         user_id: utilisateur ? utilisateur.id_user : null,
-        signature_expediteur: signature_expediteur || null,
+        signature_expediteur,
         service_id: parseInt(service_recepteur),
         role_id: role_recepteur ? parseInt(role_recepteur) : null,
         model_id: selected_model ? parseInt(selected_model) : null,
@@ -111,8 +123,6 @@ const deliver = async (req, res) => {
     });
 
     /******************************** GESTION DES MAILS  ***********************************/
-
-
 
     let livraisonTypeName = typeLivraison.nom_type_livraison.toUpperCase();
 
@@ -171,7 +181,6 @@ const deliver = async (req, res) => {
     const url = GENERAL_URL
     let deliveryLink = `${url}/formulaire/${nouvelleLivraison.id_livraison}`;
 
-
     const commentaire_mail = commentaire ? commentaire : '(sans commentaire)'
     if ((service_users && service_users.length > 0) || (recepteurs && recepteurs.length > 0)) {
       const subject = `NOUVELLE LIVRAISON (${livraisonTypeName})`;
@@ -196,13 +205,24 @@ const deliver = async (req, res) => {
         <p>Green - Pay vous remercie.</p>
       `;
 
-      for (const service_user of service_users) {
-        await sendMail({
-          to: service_user.email,
-          subject,
-          html,
-        });
-      }
+      // for (const service_user of service_users) {
+      //   await sendMail({
+      //     to: service_user.email,
+      //     subject,
+      //     html,
+      //   });
+      // }
+      // if (superviseurs) {
+      //   for (const superviseur of superviseurs) {
+      //     await sendMail({
+      //       to: superviseur.email,
+      //       subject,
+      //       html,
+      //     });
+      //   }
+      // }
+
+
       // for (const recepteur of recepteurs) {
       //   await sendMail({
       //     to: recepteur.email,
@@ -210,15 +230,6 @@ const deliver = async (req, res) => {
       //     html,
       //   });
       // }
-      if (superviseurs) {
-        for (const superviseur of superviseurs) {
-          await sendMail({
-            to: superviseur.email,
-            subject,
-            html,
-          });
-        }
-      }
     }
 
     res.status(201).json({

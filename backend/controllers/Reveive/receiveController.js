@@ -78,7 +78,7 @@ const createValidation = async (req, res) => {
     })
     let livraisonTypeName = typeLivraison.nom_type_livraison.toUpperCase();
 
-    if (livraison.type_livraison_id == 5 || livraison.type_livraison_id == 7 || livraison.type_livraison_id == 8) {
+    if (livraison.stock_id) {
       const stockChargeur = await prisma.stocks.findUnique({
         where: {
           id: livraison.stock_id,

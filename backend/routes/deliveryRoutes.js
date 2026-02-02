@@ -1,6 +1,7 @@
 const express = require("express")
 const router = express.Router();
 const upload = require("../middlewares/uploads");
+// const uploadDeliver = require("../middlewares/uploadDeliver");
 // const multer = require("multer")
 // const upload = multer({ storage: multer.memoryStorage() });
 const {deliver,getAllLivraisons, getOneLivraison,deleteLivraison,updateLivraison, generateLivraisonPDF,
@@ -11,6 +12,11 @@ const {deliver,getAllLivraisons, getOneLivraison,deleteLivraison,updateLivraison
     updateRemplacement, returnRemplacement, generateRemplacementPDF,
 } = require("../controllers/Delivery/deliveryController")
 
+// router.post('/deliver', uploadDeliver.fields([
+//     { name: "signature_expediteur", maxCount: 1 },
+//     { name: "files", maxCount: 10 }
+// ]), deliver
+// );
 router.post('/deliver', upload.single('signature_expediteur'), deliver);
 router.get("/getAllLivraisons", getAllLivraisons);
 router.get("/getOneLivraison/:id", getOneLivraison);

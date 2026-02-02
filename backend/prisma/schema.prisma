@@ -133,6 +133,7 @@ model livraison {
   role_id                    Int?
   model_id                   Int?
   stock_id                   Int?
+  files_content              String?                     @db.LongText
   users                      users?                      @relation(fields: [user_id], references: [id_user], onDelete: Restrict, onUpdate: Restrict, map: "livraison_ibfk_1")
   type_livraison_commerciale type_livraison_commerciale? @relation(fields: [type_livraison_id], references: [id_type_livraison], onDelete: Restrict, onUpdate: Restrict, map: "livraison_ibfk_2")
   services                   services?                   @relation(fields: [service_id], references: [id], onDelete: NoAction, map: "livraison_ibfk_3")
