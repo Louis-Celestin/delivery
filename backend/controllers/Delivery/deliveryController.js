@@ -1760,13 +1760,13 @@ const makeRemplacement = async (req, res) => {
           html,
         });
       }
-      // for (const recepteur of recepteurs) {
-      //   await sendMail({
-      //     to: recepteur.email,
-      //     subject,
-      //     html,
-      //   });
-      // }
+      for (const recepteur of recepteurs) {
+        await sendMail({
+          to: recepteur.email,
+          subject,
+          html,
+        });
+      }
       if (superviseurs) {
         for (const superviseur of superviseurs) {
           await sendMail({
