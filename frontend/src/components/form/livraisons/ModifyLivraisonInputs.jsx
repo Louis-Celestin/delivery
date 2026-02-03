@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "../../ui/table/index.tsx";
 import { PlusIcon, ListIcon, PencilIcon } from "../../../icons/index.ts";
-import 'primeicons/primeicons.css'; 
+import 'primeicons/primeicons.css';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { useNavigate, useParams } from "react-router";
 import { Merchants } from "../../../backend/livraisons/Merchants.js";
@@ -40,7 +40,9 @@ export default function ModifyLivraisonInputs() {
   const [isMOOVChecked, setMOOVChecked] = useState(false);
   const [terminals, setTerminals] = useState([]);
   const [terminalSN, setTerminalSN] = useState('');
-  const [loadingDeliveryInfos, setLoadingDeliveryInfos] = useState(false);
+  const [terminalName, setTerminalName] = useState('');
+  const [terminalBanque, setTerminalBanque] = useState('');
+  const [terminalCaisse, setTerminalCaisse] = useState('');
   const [loadingMerchant, setLoadingMerchant] = useState(false);
   const [loadingDelivery, setLoadingDelivery] = useState(false);
   const [typeLivraison, setTypeLivraison] = useState('');
@@ -53,9 +55,9 @@ export default function ModifyLivraisonInputs() {
   const [errorFrom, setErrorForm] = useState(null);
   const [errorAjout, setErrorAjout] = useState(null);
   const [errorDeliver, setErrorDeliver] = useState(null);
-  const [isConfirmModalOpen , setIsConfirmModalOpen] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [messageTPE, setMessageTPE] = useState('');
-  
+
   const [optionLivraisons, setOptionLivraisons] = useState([])
   const [listTypeLivraison, setListTypeLivraison] = useState([])
 
@@ -76,11 +78,12 @@ export default function ModifyLivraisonInputs() {
   const [listModels, setListModels] = useState([])
   const [selectedModel, setSelectedModel] = useState()
   const [nomModel, setNomModel] = useState('')
-  
-  useEffect( ()=>{
+
+  const [isRneChecked, setRneChecked] = useState(false)
+
+  useEffect(() => {
     const fetchDeliveryInfos = async () => {
-      setLoadingDeliveryInfos(true)
-      try{
+      try {
         let delivery_data;
         delivery_data = await productDeliveries.getOneLivraison(id);
         console.log(delivery_data)
@@ -92,52 +95,52 @@ export default function ModifyLivraisonInputs() {
 
         let type_delivery = await productDeliveries.getAllTypeLivraisonCommerciale()
         setListTypeLivraison(type_delivery)
-        const optionsType = type_delivery.map((item) =>({
+        const optionsType = type_delivery.map((item) => ({
           value: item.id_type_livraison,
           label: item.nom_type_livraison,
         }))
         setOptionLivraisons(optionsType);
-        let typeLivraison = type_delivery.find((item) =>{
+        let typeLivraison = type_delivery.find((item) => {
           return item.id_type_livraison === delivery_data.type_livraison_id
         })
-        if(typeLivraison){
+        if (typeLivraison) {
           setTypeLivraison(typeLivraison.nom_type_livraison.toUpperCase())
           setLivraisonID(typeLivraison.id_type_livraison)
         }
 
         let services_data = await usersData.getAllServices()
         setListService(services_data)
-        const optionsServices = services_data.map((item) =>({
+        const optionsServices = services_data.map((item) => ({
           value: item.id,
           label: item.nom_service,
         }))
         setOptionServices(optionsServices)
-        let service = services_data.find((item) =>{
+        let service = services_data.find((item) => {
           return item.id === delivery_data.service_id
         })
-        if(service){
+        if (service) {
           setServiceRecepteur(service.nom_service.toUpperCase())
           setServiceId(service.id)
         }
 
         let roles_data = await usersData.getAllRoles()
         setListRoles(roles_data)
-        const optionsRoles = roles_data.map((item) =>({
+        const optionsRoles = roles_data.map((item) => ({
           value: item.id_role,
           label: item.nom_role.split('_').join(' ').toLowerCase(),
         }))
         setOptionsRoles(optionsRoles)
-        let role = roles_data.find((item) =>{
+        let role = roles_data.find((item) => {
           return item.id_role === delivery_data.role_id
         })
-        if(role){
+        if (role) {
           setNomRole(role.nom_role.split('_').join(' ').toLowerCase())
           setSelectedRole(role.id_role)
         }
 
         let models_data = await stockData.getAllModels()
         setListModels(models_data)
-        const option_models = models_data.map((item) =>({
+        const option_models = models_data.map((item) => ({
           value: item.id_model,
           label: item.nom_model.toUpperCase(),
         }))
@@ -145,42 +148,42 @@ export default function ModifyLivraisonInputs() {
         const model = models_data.find((item) => {
           return item.id_model == parseInt(delivery_data.model_id)
         })
-        if(model){
+        if (model) {
           setNomModel(model.nom_model.toUpperCase())
           setSelectedModel(model.id_model)
         }
 
-      }catch(error){
-        console.log('Error fetching data ',error)
+      } catch (error) {
+        console.log('Error fetching data ', error)
         setErrorForm('Erreur lors de la génération du formulaire')
 
-      }finally{
+      } finally {
         setLoadingDeliveryInfos(false)
       }
     }
     const fetchTerminalInfos = async () => {
       setLoadingMerchant(true)
-      try{
+      try {
         let data;
         data = await merchants.findMerchant();
         console.log(data)
         setTerminals(data)
-      }catch(error){
-        console.log('Error fetching data ',error)
+      } catch (error) {
+        console.log('Error fetching data ', error)
         setErrorForm('Erreur lors de la génération du formulaire')
 
-      }finally{
+      } finally {
         setLoadingMerchant(false)
       }
-  };
-  fetchDeliveryInfos();
-  fetchTerminalInfos();
-  
-  },[id])
+    };
+    fetchDeliveryInfos();
+    fetchTerminalInfos();
 
-  const filteredPointMarchand = terminalSN ? 
-  terminals.filter((terminal) => 
-  terminal.SERIAL_NUMBER.includes(terminalSN)) : [];
+  }, [id])
+
+  const filteredPointMarchand = terminalSN ?
+    terminals.filter((terminal) =>
+      terminal.SERIAL_NUMBER.includes(terminalSN)) : [];
 
   const ChangeModel = (value) => {
     console.log("Selected value (model) : ", value)
@@ -188,70 +191,95 @@ export default function ModifyLivraisonInputs() {
     const model = listModels.find((item) => {
       return item.id_model == parseInt(value)
     })
-    if(model){
+    if (model) {
       setNomModel(model.nom_model.toUpperCase())
       setMessageTPE(model.nom_model.toUpperCase())
     }
   }
 
   const ChangeRole = (value) => {
-    console.log("Selected value : ",value)
+    console.log("Selected value : ", value)
     setSelectedRole(value);
   }
 
   const ChangeTypeLivraison = (value) => {
     console.log("Selected value:", value);
     setLivraisonID(value);
-    
+
     const selectedTypeLivraison = listTypeLivraison.find(
       (item) => {
         return item.id_type_livraison == parseInt(value)
       }
     );
 
-    if(selectedTypeLivraison){
+    if (selectedTypeLivraison) {
       const nomType = selectedTypeLivraison.nom_type_livraison.toUpperCase()
       setTypeLivraison(nomType)
-    } else{
+    } else {
       setTypeLivraison('');
-    }    
+    }
   };
 
   const ChangeService = (value) => {
     console.log("Selected value:", value);
     setServiceId(value);
-    
+
     const selectedService = listServices.find(
       (item) => {
         return item.id == parseInt(value)
       }
     );
 
-    if(selectedService){
+    if (selectedService) {
       const nomService = selectedService.nom_service.toUpperCase()
       setServiceRecepteur(nomService)
-    } else{
+    } else {
       setServiceRecepteur('');
-    }    
+    }
+  }
+
+  const handleChangeSn = (value) => {
+    setTerminalName('')
+    setTerminalBanque('')
+    setTerminalCaisse('')
+    setOrangeChecked(false)
+    setMTNChecked(false)
+    setMOOVChecked(false)
+    setTerminalSN(value)
+    const pointMarchand = terminals.find((terminal) => {
+      return terminal.SERIAL_NUMBER == value
+    })
+    if (pointMarchand) {
+      setTerminalName(pointMarchand.POINT_MARCHAND)
+      setTerminalBanque(pointMarchand.BANQUE)
+      setTerminalCaisse(pointMarchand.TPE)
+      if (pointMarchand.NUM_ORANGE.startsWith("07")) {
+        setOrangeChecked(true)
+      }
+      if (pointMarchand.NUM_MTN.startsWith("05")) {
+        setMTNChecked(true)
+      }
+      if (pointMarchand.NUM_MOOV.startsWith("01")) {
+        setMOOVChecked(true)
+      }
+    }
   }
 
   const handleConfirm = () => {
-    
-    let banque = ''
-    banque = filteredPointMarchand.map((terminal) => terminal.BANQUE).join("-");
 
-    if(!livraisonID){
+    if (!livraisonID) {
       setErrorAjout("Vous devez choisir le type de livraison !");
       return;
     }
-    if(!selectedModel){
+    if (!selectedModel) {
       setErrorAjout("Vous devez choisir le model du TPE !");
       return;
     }
-    if(!serviceId){
-      setErrorAjout("Vous devez choisir le service de réception !")
+    if (!serviceId) {
+      setErrorAjout("Vous devez choisir le service réceptionneur !");
+      return;
     }
-    if (!filteredPointMarchand || filteredPointMarchand.length === 0 || terminalSN.length < 10) {
+    if (terminalSN.length < 10 || !terminalName || !terminalCaisse) {
       setErrorAjout("S/N invalide !");
       return;
     }
@@ -260,38 +288,35 @@ export default function ModifyLivraisonInputs() {
       setErrorAjout("Ce numéro de série a déjà été ajouté !");
       return;
     }
-    if (livraisonID == 1 && !banque){
+    if (livraisonID == 1 && !terminalBanque) {
       setErrorAjout("Ce Terminal n'est pas bancaire !");
       return;
     }
-    if (livraisonID == 6 && !banque){
+    if (livraisonID == 6 && !terminalBanque) {
       setErrorAjout("Ce Terminal n'est pas bancaire !");
       return;
     }
-    if (livraisonID == 6 && !(banque === 'ECOBANK' || banque === 'ECOBANK CI')){
+    if (livraisonID == 3 && !terminalBanque) {
+      setErrorAjout("Ce Terminal n'est pas bancaire !");
+      return;
+    }
+    if (livraisonID == 6 && !(terminalBanque === 'ECOBANK' || terminalBanque === 'ECOBANK ACI' || terminalBanque === 'ECOBANK CI')) {
       setErrorAjout("Ce Terminal n'est pas ecobank !");
       return;
     }
-    if (livraisonID == 1 && (banque === 'ECOBANK' || banque === 'ECOBANK CI')){
+    if (livraisonID == 1 && (terminalBanque === 'ECOBANK' || terminalBanque === 'ECOBANK ACI' || terminalBanque === 'ECOBANK CI')) {
       setErrorAjout("Ce Terminal n'est pas GIM !");
       return;
     }
-    if(livraisonID == 4 && banque){
+    if (livraisonID == 3 && (terminalBanque === 'ECOBANK' || terminalBanque === 'ECOBANK ACI' || terminalBanque === 'ECOBANK CI')) {
+      setErrorAjout("Ce Terminal n'est pas GIM !");
+      return;
+    }
+    if (livraisonID == 4 && terminalBanque) {
       setErrorAjout("Ce terminal est bancaire.");
       return;
     }
-    const localMobileMoney = [];
-     if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_ORANGE?.startsWith("07"))){
-      setOrangeChecked(true)};
-    if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_MTN?.startsWith("05"))){
-      setMTNChecked(true)};
-    if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_MOOV?.startsWith("01"))){
-      setMOOVChecked(true)};
-    
-    // if (isOrangeChecked) localMobileMoney.push("OM");
-    // if (isMTNChecked) localMobileMoney.push("MTN");
-    // if (isMOOVChecked) localMobileMoney.push("MOOV");
-    
+
     setErrorAjout('')
     setIsConfirmModalOpen(true)
   }
@@ -304,45 +329,40 @@ export default function ModifyLivraisonInputs() {
     if (isOrangeChecked) localMobileMoney.push("OM");
     if (isMTNChecked) localMobileMoney.push("MTN");
     if (isMOOVChecked) localMobileMoney.push("MOOV");
-
-    if (!filteredPointMarchand || filteredPointMarchand.length === 0) {
-      setErrorAjout("S/N invalide");
-      return;
-    }
-    const isDuplicate = produitsLivre.some(prod => prod.serialNumber === terminalSN);
-    if (isDuplicate) {
-      setErrorAjout("Ce numéro de série a déjà été ajouté.");
-      return;
-    }
+    if (isRneChecked) localMobileMoney.push("RNE");
 
     const newProduit = {
-      pointMarchand: filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(", "),
-      caisse: filteredPointMarchand.map((terminal) => terminal.TPE).join(","),
+      pointMarchand: terminalName,
+      caisse: terminalCaisse,
       serialNumber: terminalSN,
-      banque: filteredPointMarchand.map((terminal) => terminal.BANQUE).join(", "),
+      banque: terminalBanque,
       mobile_money: localMobileMoney,
       commentaireTPE: messageTPE,
     };
-  
+
     setProduitsLivresTable((prev) => [...prev, newProduit]);
     setProduitsLivres((prev) => [...prev, newProduit]);
+    setQuantiteLivraison((prev) => prev + 1);
 
-    setQuantiteLivraison(quantiteLivraison + 1)
-  
     // Optional: Reset form fields
     setTerminalSN('');
+    setTerminalName('');
+    setTerminalBanque('')
+    setTerminalCaisse('')
     setMessageTPE('')
     setOrangeChecked(false);
     setMTNChecked(false);
     setMOOVChecked(false);
+    setRneChecked(false);
     setMobileMoney([]);
+    setErrorAjout('')
     setIsConfirmModalOpen(false)
   }
-    
+
   const handleDeliver = async (e) => {
     e.preventDefault();
 
-    if(produitsLivre.length == 0){
+    if (produitsLivre.length == 0) {
       Swal.fire({
         title: "Error",
         text: "Vous devez ajouter au moins un TPE",
@@ -350,7 +370,7 @@ export default function ModifyLivraisonInputs() {
       });
       return;
     }
-    if(!livraisonID){
+    if (!livraisonID) {
       Swal.fire({
         title: "Error",
         text: "Vous devez choisir un type de livraison",
@@ -369,9 +389,9 @@ export default function ModifyLivraisonInputs() {
       role_recepteur: selectedRole,
       selected_model: selectedModel,
     }
-    
-    try{
-      console.log('Executing : ',payload)
+
+    try {
+      console.log('Executing : ', payload)
       setLoadingDelivery(true);
       const response = await productDeliveries.updateLivraison(id, payload)
       console.log(response);
@@ -382,7 +402,7 @@ export default function ModifyLivraisonInputs() {
         icon: "success"
       });
       navigate('/toutes-les-livraisons');
-    }catch (error) {
+    } catch (error) {
       console.log(error)
       setError('Erreur lors de la génération du formulaire');
       Swal.fire({
@@ -392,12 +412,12 @@ export default function ModifyLivraisonInputs() {
       });
       navigate('/toutes-les-livraisons');
       setLoadingDelivery(false)
-    }finally{
+    } finally {
       setProduitsLivres([])
       setProduitsLivresTable([])
       setLoadingDelivery(false)
     }
-   
+
   }
 
   const handleDelete = (indexToRemove) => {
@@ -407,7 +427,7 @@ export default function ModifyLivraisonInputs() {
     setProduitsLivres((prev) =>
       prev.filter((_, index) => index !== indexToRemove)
     );
-    setQuantiteLivraison(quantiteLivraison - 1)
+    setQuantiteLivraison((prev) => prev - 1);
   };
 
   return (
@@ -420,166 +440,191 @@ export default function ModifyLivraisonInputs() {
                 {errorFrom}
               </div>
             ) : (
-                  <>
-                    <ComponentCard className="w-1/2" title={`Livraison ${typeLivraison}`}>
-                      <div className="space-y-6">
-                        <div className="flex items-center justify-between border-b pb-3">
-                            <span className="text-xs">Modifiez une livraison</span>
-                            <span className="text-3xl"><PencilIcon /></span> 
-                        </div>
-                        <div className="pb-3 text-center">
-                            <span className="text-sm font-semibold">Informations générales</span>
-                        </div>
-                        <div>
-                          <Label>Type de Livraison <span className="text-red-700">*</span></Label>
-                          <Select
-                            options={optionLivraisons}
-                            defaultValue={livraisonID}
-                            onChange={ChangeTypeLivraison}
-                            className="dark:bg-dark-900"
-                          />
-                        </div>
-                        <div>
-                          <Label>Model TPE <span className="text-red-700">*</span></Label>
-                          <Select
-                            options={optionsModels}
-                            onChange={ChangeModel}
-                            className="dark:bg-dark-900"
-                            defaultValue={selectedModel}
-                          />
-                        </div>
-                        <div>
-                          <Label>Service recepteur <span className="text-red-700">*</span></Label>
-                          <Select
-                            options={optionServices}
-                            defaultValue={serviceId}
-                            onChange={ChangeService}
-                            className="dark:bg-dark-900"       
-                          />
-                        </div>
-                        <div>
-                          <Label>Associer un rôle</Label>
-                          <Select
-                            options={optionsRoles}
-                            defaultValue={selectedRole}
-                            onChange={ChangeRole}
-                            className="dark:bg-dark-900"
-                          />
-                        </div>
-                        <div>
-                          <Label>Commentaire</Label>
-                          <TextArea
-                            value={message}
-                            onChange={(value) => setMessage(value)}
-                            rows={4}
-                            placeholder="Ajoutez un commentaire"
-                          />
-                        </div>
+              <>
+                <ComponentCard className="w-1/2" title={`Livraison ${typeLivraison}`}>
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between border-b pb-3">
+                      <span className="text-xs">Modifiez une livraison</span>
+                      <span className="text-3xl"><PencilIcon /></span>
+                    </div>
+                    <div className="pb-3 text-center">
+                      <span className="text-sm font-semibold">Informations générales</span>
+                    </div>
+                    <div>
+                      <Label>Type de Livraison <span className="text-red-700">*</span></Label>
+                      <Select
+                        options={optionLivraisons}
+                        defaultValue={livraisonID}
+                        onChange={ChangeTypeLivraison}
+                        className="dark:bg-dark-900"
+                      />
+                    </div>
+                    <div>
+                      <Label>Model TPE <span className="text-red-700">*</span></Label>
+                      <Select
+                        options={optionsModels}
+                        onChange={ChangeModel}
+                        className="dark:bg-dark-900"
+                        defaultValue={selectedModel}
+                      />
+                    </div>
+                    <div>
+                      <Label>Service recepteur <span className="text-red-700">*</span></Label>
+                      <Select
+                        options={optionServices}
+                        defaultValue={serviceId}
+                        onChange={ChangeService}
+                        className="dark:bg-dark-900"
+                      />
+                    </div>
+                    <div>
+                      <Label>Associer un rôle</Label>
+                      <Select
+                        options={optionsRoles}
+                        defaultValue={selectedRole}
+                        onChange={ChangeRole}
+                        className="dark:bg-dark-900"
+                      />
+                    </div>
+                    <div>
+                      <Label>Commentaire</Label>
+                      <TextArea
+                        value={message}
+                        onChange={(value) => setMessage(value)}
+                        rows={4}
+                        placeholder="Ajoutez un commentaire"
+                      />
+                    </div>
 
-                        <div className="pb-3 text-center">
-                            <span className="text-sm font-semibold">Informations sur produits</span>
-                        </div>
+                    <div className="pb-3 text-center">
+                      <span className="text-sm font-semibold">Informations sur produits</span>
+                    </div>
 
-                        <div>
-                          <Label htmlFor="input">Numéro de série <span className="text-red-700">*</span></Label>
-                          <Input type="text" id="input" value={terminalSN} onChange={(e) =>{
-                            const value = e.target.value
-                            // Allow only digits
-                            if (/^\d*$/.test(value)){
-                            // Only allow up to 10 characters
-                              if (value.length <= 10) {
-                                setTerminalSN(value);
-                              }} 
-                              }}
-                            />
-                        </div>
-                        <div>
-                          <Label>Commentaire pour terminal</Label>
-                          <TextArea
-                          value={messageTPE}
-                          onChange={(value) => setMessageTPE(value)}
-                          rows={2}
-                          placeholder="Ajoutez un commentaire"
-                          />
-                        </div>
-                        <div>
-                          <Label>Point Marchand</Label>
-                          <Input type="text" id="input"
-                                  className="cursor-default"
-                                  value={filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(" - ")}
-                                  readOnly
-                                  />
-                        </div>
-                          <div>
-                            <Label>Banque</Label>
-                            <Input type="text" id="input" 
-                                    className="cursor-default"
-                                    value={filteredPointMarchand.map((terminal) => terminal.BANQUE).join(" - ")}
-                                    readOnly
-                                    />
-                          </div>
-                          <div>
-                            <Input type="text" id="input" 
-                                    value={filteredPointMarchand.map((terminal) => terminal.TPE).join(" - ")}
-                                    className="hidden"/>
-                          </div>
-                          <div className="flex flex-col">
-                            <div className="flex items-center gap-3 my-2">
-                              <Checkbox
-                              checked={
-                                  filteredPointMarchand.length > 0 &&
-                                  filteredPointMarchand.some((terminal) =>
-                                    terminal.NUM_ORANGE?.startsWith("07")
-                                  )
-                                }
-                                onChange={(e)=>{}}
-                                readOnly
-                                label="Orange Money" />
-                            </div>
-                            <div className="flex items-center gap-3 my-2">
-                              <Checkbox 
-                              checked={
-                                  filteredPointMarchand.length > 0 &&
-                                  filteredPointMarchand.some((terminal) =>
-                                    terminal.NUM_MTN?.startsWith("05")
-                                  )
-                                }
-                                onChange={(e)=>{}}
-                                readOnly
-                              label="MTN Money" />
-                            </div>
-                            <div className="flex items-center gap-3 my-2">
-                              <Checkbox 
-                              checked={
-                                  filteredPointMarchand.length > 0 &&
-                                  filteredPointMarchand.some((terminal) =>
-                                    terminal.NUM_MOOV?.startsWith("01")
-                                  )
-                                }
-                                onChange={(e)=>{}}
-                                readOnly 
-                              label="MOOV Money" />
-                            </div>
-                          </div>
-                        <div>
-                          <button onClick={handleConfirm} className="w-full bg-green-400 rounded-2xl h-10 flex items-center justify-center">
-                            <span>Ajouter</span>
-                            <span className="text-2xl"><PlusIcon /></span>
-                          </button>
-                          <div>
-                            <span className="text-error-600 font-medium flex items-center justify-center text-sm p-1 mt-4">
-                              {errorAjout}
-                            </span>
-                          </div>
-                        </div>
+                    <div>
+                      <Label htmlFor="input">Numéro de série <span className="text-red-700">*</span></Label>
+                      <Input type="text" id="input" value={terminalSN} onChange={(e) => {
+                        const value = e.target.value
+                        // Allow only digits
+                        if (/^\d*$/.test(value)) {
+                          // Only allow up to 10 characters
+                          if (value.length <= 10) {
+                            handleChangeSn(value)
+                          }
+                        }
+                      }}
+                      />
+                    </div>
+                    <div>
+                      <Label>Commentaire pour terminal</Label>
+                      <TextArea
+                        value={messageTPE}
+                        onChange={(value) => setMessageTPE(value)}
+                        rows={2}
+                        placeholder="Ajoutez un commentaire"
+                      />
+                    </div>
+                    <div>
+                      <Label>Point Marchand</Label>
+                      <Input type="text" id="input"
+                        className=""
+                        value={terminalName}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          setTerminalName(value)
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <Label>Banque</Label>
+                      <Input type="text" id="input"
+                        className=""
+                        value={terminalBanque}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          setTerminalBanque(value)
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <Label>Caisse</Label>
+                      <Input type="text" id="input"
+                        className=""
+                        value={terminalCaisse}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          setTerminalCaisse(value)
+                        }}
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-3 my-2">
+                        <Checkbox
+                          checked={isOrangeChecked}
+                          onChange={(e) => {
+                            if (isOrangeChecked) {
+                              setOrangeChecked(false)
+                            } else {
+                              setOrangeChecked(true)
+                            }
+                          }}
+                          label="Orange Money" />
                       </div>
-                      <div className="text-right text-gray-500">
-                        <span className="text-xs font-medium">
-                          Les champs suivis par un <span className="text-red-700">*</span> sont obligatoires
+                      <div className="flex items-center gap-3 my-2">
+                        <Checkbox
+                          checked={isMTNChecked}
+                          onChange={(e) => {
+                            if (isMTNChecked) {
+                              setMTNChecked(false)
+                            } else {
+                              setMTNChecked(true)
+                            }
+                          }}
+                          label="MTN Money" />
+                      </div>
+                      <div className="flex items-center gap-3 my-2">
+                        <Checkbox
+                          checked={isMOOVChecked}
+                          onChange={(e) => {
+                            if (isMOOVChecked) {
+                              setMOOVChecked(false)
+                            } else {
+                              setMOOVChecked(true)
+                            }
+                          }}
+                          label="MOOV Money" />
+                      </div>
+                      <div className="flex items-center gap-3 my-2">
+                        <Checkbox
+                          checked={isRneChecked}
+                          onChange={(e) => {
+                            if (isRneChecked) {
+                              setRneChecked(false)
+                            } else {
+                              setRneChecked(true)
+                            }
+                          }}
+                          label="RNE" />
+                      </div>
+                    </div>
+                    <div>
+                      <button onClick={handleConfirm} className="w-full bg-green-400 rounded-2xl h-10 flex items-center justify-center">
+                        <span>Ajouter</span>
+                        <span className="text-2xl"><PlusIcon /></span>
+                      </button>
+                      <div>
+                        <span className="text-error-600 font-medium flex items-center justify-center text-sm p-1 mt-4">
+                          {errorAjout}
                         </span>
                       </div>
-                    </ComponentCard>
-                  </>
+                    </div>
+                  </div>
+                  <div className="text-right text-gray-500">
+                    <span className="text-xs font-medium">
+                      Les champs suivis par un <span className="text-red-700">*</span> sont obligatoires
+                    </span>
+                  </div>
+                </ComponentCard>
+              </>
             )
           )
         }
@@ -627,6 +672,11 @@ export default function ModifyLivraisonInputs() {
                   <TableCell
                     isHeader
                     className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    RNE
+                  </TableCell>
+                  <TableCell
+                    isHeader
+                    className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                     Supprimer
                   </TableCell>
                 </TableRow>
@@ -644,7 +694,7 @@ export default function ModifyLivraisonInputs() {
                       </span>
                       {item.commentaireTPE ? (
                         <span className="block text-gray-700 text-theme-xs dark:text-gray-400">
-                         « {item.commentaireTPE} » 
+                          « {item.commentaireTPE} »
                         </span>
                       ) : (
                         <></>
@@ -658,21 +708,25 @@ export default function ModifyLivraisonInputs() {
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       {item.mobile_money.includes("OM") ?
-                        ( <i className="pi pi-check" style={{ color: 'green' }}></i> ) : ""}
+                        (<i className="pi pi-check" style={{ color: 'green' }}></i>) : ""}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       {item.mobile_money.includes("MTN") ?
-                        ( <i className="pi pi-check" style={{ color: 'green' }}></i> ) : ""}
+                        (<i className="pi pi-check" style={{ color: 'green' }}></i>) : ""}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       {item.mobile_money.includes("MOOV") ?
-                        ( <i className="pi pi-check" style={{ color: 'green' }}></i> ) : ""}
+                        (<i className="pi pi-check" style={{ color: 'green' }}></i>) : ""}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                      {item.mobile_money.includes("RNE") ?
+                        (<i className="pi pi-check" style={{ color: 'green' }}></i>) : ""}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       <button
                         className="text-red-500 hover:text-red-700"
                         onClick={() => handleDelete(index)}
-                        >
+                      >
                         <i className="pi pi-trash" style={{ color: 'black' }}></i>
                       </button>
                     </TableCell>
@@ -684,25 +738,25 @@ export default function ModifyLivraisonInputs() {
           </div>
         </div>
         <div className="w-full flex flex-col justify-center items-center">
-          {loadingDelivery? 
+          {loadingDelivery ?
             <span className="mt-6">
-              <ProgressSpinner style={{width: '50px', height: '50px'}} strokeWidth="8" animationDuration=".5s" />
+              <ProgressSpinner style={{ width: '50px', height: '50px' }} strokeWidth="8" animationDuration=".5s" />
             </span>
-          : 
-            <div className="flex">
-                <button onClick={handleDeliver} className=" mt-6 w-50 mx-1 bg-green-400 rounded-2xl h-10 flex justify-center items-center">
-                    <span>Modifier formulaire</span>
-                    <span className="text-2xl"><ListIcon /></span>
-                </button> 
-            </div>
-            }
-            {errorDeliver?
-              <span className="text-error-600 font-medium flex items-center justify-center text-sm p-1 mt-4">
-                {errorDeliver}
-              </span>
             :
-              <></>
-            }
+            <div className="flex">
+              <button onClick={handleDeliver} className=" mt-6 w-50 mx-1 bg-green-400 rounded-2xl h-10 flex justify-center items-center">
+                <span>Modifier formulaire</span>
+                <span className="text-2xl"><ListIcon /></span>
+              </button>
+            </div>
+          }
+          {errorDeliver ?
+            <span className="text-error-600 font-medium flex items-center justify-center text-sm p-1 mt-4">
+              {errorDeliver}
+            </span>
+            :
+            <></>
+          }
         </div>
       </div>
       <Modal isOpen={isConfirmModalOpen} onClose={() => setIsConfirmModalOpen(false)} className="p-4 max-w-xl">
@@ -730,26 +784,30 @@ export default function ModifyLivraisonInputs() {
               <span>Mobile Money : </span>
               <ul>
                 <li className="font-bold text-red-700">
-                  {isOrangeChecked ? 
-                    (<> Orange Money </>):
+                  {isOrangeChecked ?
+                    (<> Orange Money </>) :
                     (<></>)
                   }
                 </li>
                 <li className="font-bold text-red-700">
-                  {isMTNChecked ? 
-                    (<> MTN Money </>):
+                  {isMTNChecked ?
+                    (<> MTN Money </>) :
                     (<></>)
                   }
                 </li>
                 <li className="font-bold text-red-700">
-                  {isMOOVChecked ? 
-                    (<> MOOV Money </>):
+                  {isMOOVChecked ?
+                    (<> MOOV Money </>) :
+                    (<></>)
+                  }
+                </li>
+                <li className="font-bold text-red-700">
+                  {isRneChecked ?
+                    (<> RNE </>) :
                     (<></>)
                   }
                 </li>
               </ul>
-              
-              
             </div>
           </div>
         </div>

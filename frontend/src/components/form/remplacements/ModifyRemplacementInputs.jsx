@@ -14,7 +14,7 @@ import {
 } from "../../ui/table/index.tsx";
 import { PlusIcon } from "../../../icons/index.ts";
 import { ListIcon } from "../../../icons/index.ts";
-import 'primeicons/primeicons.css'; 
+import 'primeicons/primeicons.css';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { useNavigate, useParams } from "react-router";
 import { Merchants } from "../../../backend/livraisons/Merchants.js";
@@ -43,7 +43,9 @@ export default function ModifyRemplacementInputs() {
   const [isMOOVChecked, setMOOVChecked] = useState(false);
   const [terminals, setTerminals] = useState([]);
   const [terminalSN, setTerminalSN] = useState('');
+  const [terminalName, setTerminalName] = useState('');
   const [terminalBanque, setTerminalBanque] = useState('');
+  const [terminalCaisse, setTerminalCaisse] = useState('');
   const [loadingMerchant, setLoadingMerchant] = useState(false);
   const [loadingDelivery, setLoadingDelivery] = useState(false);
   const [typeLivraison, setTypeLivraison] = useState('');
@@ -57,7 +59,7 @@ export default function ModifyRemplacementInputs() {
   const [errorAjout, setErrorAjout] = useState(null);
   const [errorDeliver, setErrorDeliver] = useState(null);
   const [messageTPE, setMessageTPE] = useState('');
-  const [isConfirmModalOpen , setIsConfirmModalOpen] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
   const [signature, setSignature] = useState();
   const [signUrl, setSignUrl] = useState();
@@ -92,10 +94,12 @@ export default function ModifyRemplacementInputs() {
   const [nomParametrage, setNomParametrage] = useState('')
   const [detailsParametrage, setDetailsParametrage] = useState([])
 
-  useEffect( ()=>{
+  const [isRneChecked, setRneChecked] = useState(false)
+
+  useEffect(() => {
     const fetchTerminalInfos = async () => {
       setLoadingMerchant(true)
-      try{
+      try {
         let data;
         data = await merchants.findMerchant();
         setTerminals(data)
@@ -112,11 +116,11 @@ export default function ModifyRemplacementInputs() {
         setNewModel(delivery_data.new_model_id)
 
         let type_delivery_data = await productDeliveries.getAllTypeLivraisonCommerciale()
-        let type_delivery = type_delivery_data.filter((type) =>{
+        let type_delivery = type_delivery_data.filter((type) => {
           return type.is_deleted == false
         })
         setListTypeLivraison(type_delivery)
-        const optionsType = type_delivery.map((item) =>({
+        const optionsType = type_delivery.map((item) => ({
           value: item.id_type_livraison,
           label: item.nom_type_livraison,
         }))
@@ -124,21 +128,21 @@ export default function ModifyRemplacementInputs() {
 
         let services_data = await usersData.getAllServices()
         setListService(services_data)
-        const optionsServices = services_data.map((item) =>({
+        const optionsServices = services_data.map((item) => ({
           value: item.id,
           label: item.nom_service,
         }))
         setOptionServices(optionsServices)
-        const selected_service = services_data.find((item) =>{
+        const selected_service = services_data.find((item) => {
           return item.id == delivery_data.service_id
         })
-        if(selected_service){
+        if (selected_service) {
           setServiceRecepteur(selected_service.nom_service.toUpperCase())
         }
-        
+
         let roles_data = await usersData.getAllRoles()
         setListRoles(roles_data)
-        const optionsRoles = roles_data.map((item) =>({
+        const optionsRoles = roles_data.map((item) => ({
           value: item.id_role,
           label: item.nom_role.split('_').join(' ').toLowerCase(),
         }))
@@ -146,21 +150,21 @@ export default function ModifyRemplacementInputs() {
 
         let models_data = await stockData.getAllModels()
         setListModels(models_data)
-        const option_models = models_data.map((item) =>({
+        const option_models = models_data.map((item) => ({
           value: item.id_model,
           label: item.nom_model.toUpperCase(),
         }))
         setOptionsModels(option_models)
-        const old_model = models_data.find((item) =>{
+        const old_model = models_data.find((item) => {
           return item.id_model == delivery_data.old_model_id
         })
-        if(old_model){
+        if (old_model) {
           setNomAncienModel(old_model.nom_model.toUpperCase())
         }
-        const new_model = models_data.find((item) =>{
+        const new_model = models_data.find((item) => {
           return item.id_model == delivery_data.new_model_id
         })
-        if(new_model){
+        if (new_model) {
           setNomNouveauModel(new_model.nom_model.toUpperCase())
         }
 
@@ -170,7 +174,7 @@ export default function ModifyRemplacementInputs() {
         let parametrages_data = await remplacements.getAllTypeParametrage()
 
         setListParametrages(parametrages_data)
-        const options_parametrage = parametrages_data.map((item) =>({
+        const options_parametrage = parametrages_data.map((item) => ({
           value: item.id,
           label: item.nom_parametrage,
         }))
@@ -191,19 +195,19 @@ export default function ModifyRemplacementInputs() {
 
         setDetailsParametrage(totals)
 
-      }catch(error){
-        console.log('Error fetching data ',error)
+      } catch (error) {
+        console.log('Error fetching data ', error)
         setErrorForm('Erreur lors de la génération du formulaire')
-        
-      }finally{
+
+      } finally {
         setLoadingMerchant(false)
       }
-    };fetchTerminalInfos();
-  },[])
-  
-  const filteredPointMarchand = terminalSN ? 
-  terminals.filter((terminal) => 
-  terminal.SERIAL_NUMBER.includes(terminalSN)) : [];
+    }; fetchTerminalInfos();
+  }, [])
+
+  const filteredPointMarchand = terminalSN ?
+    terminals.filter((terminal) =>
+      terminal.SERIAL_NUMBER.includes(terminalSN)) : [];
 
   const ChangeNewModel = (value) => {
     console.log("Selected new value (model) : ", value)
@@ -211,7 +215,7 @@ export default function ModifyRemplacementInputs() {
     const model = listModels.find((item) => {
       return item.id_model == parseInt(value)
     })
-    if(model){
+    if (model) {
       setNomNouveauModel(model.nom_model.toUpperCase())
     }
   }
@@ -222,50 +226,50 @@ export default function ModifyRemplacementInputs() {
     const model = listModels.find((item) => {
       return item.id_model == parseInt(value)
     })
-    if(model){
+    if (model) {
       setNomAncienModel(model.nom_model.toUpperCase())
     }
   }
 
   const ChangeRole = (value) => {
-    console.log("Selected value : ",value)
+    console.log("Selected value : ", value)
     setSelectedRole(value);
   }
-  
+
   const ChangeTypeLivraison = (value) => {
     console.log("Selected value:", value);
     setLivraisonID(value);
-    
+
     const selectedTypeLivraison = listTypeLivraison.find(
       (item) => {
         return item.id_type_livraison == parseInt(value)
       }
     );
 
-    if(selectedTypeLivraison){
+    if (selectedTypeLivraison) {
       const nomType = selectedTypeLivraison.nom_type_livraison.toUpperCase()
       setTypeLivraison(nomType)
-    } else{
+    } else {
       setTypeLivraison('');
-    }    
+    }
   };
-  
+
   const ChangeService = (value) => {
     console.log("Selected value:", value);
     setServiceId(value);
-    
+
     const selectedService = listServices.find(
       (item) => {
         return item.id == parseInt(value)
       }
     );
 
-    if(selectedService){
+    if (selectedService) {
       const nomService = selectedService.nom_service.toUpperCase()
       setServiceRecepteur(nomService)
-    } else{
+    } else {
       setServiceRecepteur('');
-    }    
+    }
   }
 
   const ChangeParametrage = (value) => {
@@ -274,38 +278,57 @@ export default function ModifyRemplacementInputs() {
     const param = listParametrages.find((item) => {
       return item.id == parseInt(value)
     })
-    if(param){
+    if (param) {
       setNomParametrage(param.nom_parametrage.toUpperCase())
     }
   }
 
-  const handleConfirm = () => {
-    
-    let banque = ''
-    banque = filteredPointMarchand.map((terminal) => terminal.BANQUE).join("-");
-    console.log(banque)
+  const handleChangeSn = (value) => {
+    setTerminalName('')
+    setTerminalBanque('')
+    setTerminalCaisse('')
+    setOrangeChecked(false)
+    setMTNChecked(false)
+    setMOOVChecked(false)
+    setTerminalSN(value)
+    const pointMarchand = terminals.find((terminal) => {
+      return terminal.SERIAL_NUMBER == value
+    })
+    if (pointMarchand) {
+      setTerminalName(pointMarchand.POINT_MARCHAND)
+      setTerminalBanque(pointMarchand.BANQUE)
+      setTerminalCaisse(pointMarchand.TPE)
+      if (pointMarchand.NUM_ORANGE.startsWith("07")) {
+        setOrangeChecked(true)
+      }
+      if (pointMarchand.NUM_MTN.startsWith("05")) {
+        setMTNChecked(true)
+      }
+      if (pointMarchand.NUM_MOOV.startsWith("01")) {
+        setMOOVChecked(true)
+      }
+    }
+  }
 
-    // if(!livraisonID){
-    //   setErrorAjout("Vous devez choisir le type de livraison !");
-    //   return;
-    // }
-    if(!serviceId){
+  const handleConfirm = () => {
+
+    if (!serviceId) {
       setErrorAjout("Vous devez choisir le service réceptionneur !");
       return;
     }
-    if(!oldModel){
+    if (!oldModel) {
       setErrorAjout("Vous devez choisir le model du TPE à remplacer !");
       return;
     }
-    if(!newModel){
+    if (!newModel) {
       setErrorAjout("Vous devez choisir le model du TPE remplaçant !");
       return;
     }
-    if (!filteredPointMarchand || filteredPointMarchand.length === 0 || terminalSN.length < 10) {
+    if (terminalSN.length < 10 || !terminalName || !terminalCaisse) {
       setErrorAjout("S/N du TPE remplaçant invalide !");
       return;
     }
-    if(ancienSN.length < 10){
+    if (ancienSN.length < 10) {
       setErrorAjout("S/N du TPE à remplacer invalide !")
       return
     }
@@ -318,24 +341,17 @@ export default function ModifyRemplacementInputs() {
     if (isDuplicateOld) {
       setErrorAjout("L'ancien SN a déjà été ajouté !");
       return;
-    } 
-    if(terminalSN == ancienSN){
+    }
+    if (terminalSN == ancienSN) {
       setErrorAjout("Les SN sont identiques !")
       return
     }
 
-    if(!parametrageTPE){
+    if (!parametrageTPE) {
       setErrorAjout("Vous devez choisir le paramétrage du TPE !")
       return
     }
 
-    if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_ORANGE?.startsWith("07"))){
-      setOrangeChecked(true)};
-    if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_MTN?.startsWith("05"))){
-      setMTNChecked(true)};
-    if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_MOOV?.startsWith("01"))){
-      setMOOVChecked(true)};
-    
     setErrorAjout('')
     setIsConfirmModalOpen(true)
   }
@@ -345,20 +361,26 @@ export default function ModifyRemplacementInputs() {
 
     console.log('Trying to ADD.....')
     const localMobileMoney = [];
-    if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_ORANGE?.startsWith("07"))){
-      localMobileMoney.push("OM")};
-    if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_MTN?.startsWith("05"))){
-      localMobileMoney.push("MTN")};
-    if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_MOOV?.startsWith("01"))){
-      localMobileMoney.push("MOOV")};
-    
+    if (isOrangeChecked) {
+      localMobileMoney.push("OM")
+    };
+    if (isMTNChecked) {
+      localMobileMoney.push("MTN")
+    };
+    if (isMOOVChecked) {
+      localMobileMoney.push("MOOV")
+    };
+    if (isRneChecked) {
+      localMobileMoney.push("RNE");
+    }
+
     const newProduit = {
-      pointMarchand: filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(","),
-      caisse: filteredPointMarchand.map((terminal) => terminal.TPE).join(","),
+      pointMarchand: terminalName,
+      caisse: terminalCaisse,
       parametrageTPE: nomParametrage,
-      nouvelSN: terminalSN, 
+      nouvelSN: terminalSN,
       ancienSN: ancienSN,
-      banque: filteredPointMarchand.map((terminal) => terminal.BANQUE).join(","),
+      banque: terminalBanque,
       mobile_money: localMobileMoney,
       commentaireTPE: messageTPE,
     };
@@ -366,32 +388,36 @@ export default function ModifyRemplacementInputs() {
     setDetailsParametrage((prev) =>
       prev.map((param) =>
         param.id === parseInt(parametrageTPE)
-        ? { ...param, quantite: param.quantite + 1 }
-        : param
+          ? { ...param, quantite: param.quantite + 1 }
+          : param
       )
     );
-  
+
     setProduitsLivresTable((prev) => [...prev, newProduit]);
     setProduitsLivres((prev) => [...prev, newProduit]);
     setQuantiteLivraison(quantiteLivraison + 1)
-  
+
     // Optional: Reset form fields
     setTerminalSN('');
+    setTerminalName('');
+    setTerminalBanque('')
+    setTerminalCaisse('')
     setAncienSN('')
     setMessageTPE('')
     setOrangeChecked(false);
     setMTNChecked(false);
     setMOOVChecked(false);
+    setRneChecked(false);
     setMobileMoney([]);
 
     setErrorAjout('')
     setIsConfirmModalOpen(false)
   }
-    
+
   const handleDeliver = async (e) => {
     e.preventDefault();
 
-    if(produitsLivre.length == 0){
+    if (produitsLivre.length == 0) {
       Swal.fire({
         title: "Error",
         text: "Vous devez ajouter au moins un TPE.",
@@ -434,8 +460,8 @@ export default function ModifyRemplacementInputs() {
       nouveau_model: newModel,
       detailsParametrage: JSON.stringify(detailsParametrage)
     }
-    
-    try{
+
+    try {
       const response = await remplacements.updateRemplacement(id, payload)
 
       console.log(response);
@@ -446,7 +472,7 @@ export default function ModifyRemplacementInputs() {
         icon: "success"
       });
       navigate('/tous-les-remplacements');
-    }catch (error) {
+    } catch (error) {
       setLoadingDelivery(false)
       console.log('error')
       setError('Erreur lors de la génération du formulaire');
@@ -456,11 +482,11 @@ export default function ModifyRemplacementInputs() {
         icon: "warning"
       });
       navigate('/tous-les-remplacements');
-    }finally{
+    } finally {
       setProduitsLivres([])
       setProduitsLivresTable([])
       setLoadingDelivery(false)
-    } 
+    }
   }
 
   const handleDelete = (indexToRemove) => {
@@ -483,19 +509,19 @@ export default function ModifyRemplacementInputs() {
     setQuantiteLivraison(quantiteLivraison - 1)
   };
 
-  const handleValidate = () =>{
-    if(produitsLivre.length == 0){
-       Swal.fire({
-      title: "Error",
-      text: "Vous devez ajouter au moins un TPE.",
-      icon: "error"
+  const handleValidate = () => {
+    if (produitsLivre.length == 0) {
+      Swal.fire({
+        title: "Error",
+        text: "Vous devez ajouter au moins un TPE.",
+        icon: "error"
       });
       return;
     }
     setIsSignatureModalOpen(true)
   }
 
-  const handleClear = () =>{
+  const handleClear = () => {
     console.log(signUrl)
     signature.clear()
   }
@@ -510,184 +536,210 @@ export default function ModifyRemplacementInputs() {
                 {errorFrom}
               </div>
             ) : (
-                  <>
-                    <ComponentCard className="md:w-1/2 w-full" title="Livraison TPE remplacés">
-                      <div className="pb-3 text-center">
-                          <span className="text-sm font-semibold">Informations générales</span>
+              <>
+                <ComponentCard className="md:w-1/2 w-full" title="Livraison TPE remplacés">
+                  <div className="pb-3 text-center">
+                    <span className="text-sm font-semibold">Informations générales</span>
+                  </div>
+                  <div className="space-y-6">
+                    <div>
+                      <Label>Service recepteur <span className="text-red-700">*</span></Label>
+                      <Select
+                        options={optionServices}
+                        placeholder="Choisir une option"
+                        onChange={ChangeService}
+                        className="dark:bg-dark-900"
+                        defaultValue={serviceId}
+                      />
+                    </div>
+                    <div>
+                      <Label>Associer un rôle</Label>
+                      <Select
+                        options={optionsRoles}
+                        placeholder="Choisir un rôle"
+                        onChange={ChangeRole}
+                        className="dark:bg-dark-900"
+                        defaultValue={selectedRole}
+                      />
+                    </div>
+                    <div>
+                      <Label>Ancien Model TPE <span className="text-red-700">*</span></Label>
+                      <Select
+                        options={optionsModels}
+                        placeholder="Choisir une option"
+                        defaultValue={oldModel}
+                        onChange={ChangeOldModel}
+                        className="dark:bg-dark-900"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="input">Ancien S/N <span className="text-red-700">*</span></Label>
+                      <Input type="text" id="input" value={ancienSN} onChange={(e) => {
+                        const value = e.target.value
+                        if (/^\d*$/.test(value)) {
+                          if (value.length <= 10) {
+                            setAncienSN(value);
+                          }
+                        }
+                      }} />
+                    </div>
+                    <div>
+                      <Label>Nouveau Model TPE <span className="text-red-700">*</span></Label>
+                      <Select
+                        options={optionsModels}
+                        defaultValue={newModel}
+                        placeholder="Choisir une option"
+                        onChange={ChangeNewModel}
+                        className="dark:bg-dark-900"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="input">Nouvel S/N <span className="text-red-700">*</span></Label>
+                      <Input type="text" id="input" value={terminalSN} onChange={(e) => {
+                        const value = e.target.value
+                        // Allow only digits
+                        if (/^\d*$/.test(value)) {
+                          // Only allow up to 10 characters
+                          if (value.length <= 10) {
+                            handleChangeSn(value)
+                          }
+                        }
+                      }} />
+                    </div>
+                    <div>
+                      <Label>Commentaire</Label>
+                      <TextArea
+                        value={message}
+                        onChange={(value) => setMessage(value)}
+                        rows={4}
+                        placeholder="Ajoutez un commentaire"
+                      />
+                    </div>
+                    <div className="pb-3 text-center">
+                      <span className="text-sm font-semibold">Informations sur produits</span>
+                    </div>
+                    <div>
+                      <Label>Commentaire pour terminal</Label>
+                      <TextArea
+                        value={messageTPE}
+                        onChange={(value) => setMessageTPE(value)}
+                        rows={2}
+                        placeholder="Ajoutez un commentaire"
+                      />
+                    </div>
+                    <div>
+                      <Label>Point Marchand</Label>
+                      <Input type="text" id="input"
+                        className=""
+                        value={terminalName}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          setTerminalName(value)
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <Label>Banque</Label>
+                      <Input type="text" id="input"
+                        className=""
+                        value={terminalBanque}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          setTerminalBanque(value)
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <Label>Caisse <span className="text-red-700">*</span></Label>
+                      <Input type="text" id="input"
+                        className=""
+                        value={terminalCaisse}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          setTerminalCaisse(value)
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="input">Parametrage <span className="text-red-700">*</span></Label>
+                      <Select
+                        options={optionsParametrages}
+                        value={parametrageTPE}
+                        placeholder="Choisir une option"
+                        onChange={ChangeParametrage}
+                        className="dark:bg-dark-900"
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-3 my-2">
+                        <Checkbox
+                          checked={isOrangeChecked}
+                          onChange={(e) => {
+                            if (isOrangeChecked) {
+                              setOrangeChecked(false)
+                            } else {
+                              setOrangeChecked(true)
+                            }
+                          }}
+                          label="Orange Money" />
                       </div>
-                      <div className="space-y-6">
-                        <div>
-                          <Label>Service recepteur <span className="text-red-700">*</span></Label>
-                          <Select
-                            options={optionServices}
-                            placeholder="Choisir une option"
-                            onChange={ChangeService}
-                            className="dark:bg-dark-900"
-                            defaultValue={serviceId}
-                          />
-                        </div>
-                        <div>
-                          <Label>Associer un rôle</Label>
-                          <Select
-                            options={optionsRoles}
-                            placeholder="Choisir un rôle"
-                            onChange={ChangeRole}
-                            className="dark:bg-dark-900"
-                            defaultValue={selectedRole}
-                          />
-                        </div>
-                        <div>
-                          <Label>Ancien Model TPE <span className="text-red-700">*</span></Label>
-                          <Select
-                            options={optionsModels}
-                            placeholder="Choisir une option"
-                            defaultValue={oldModel}
-                            onChange={ChangeOldModel}
-                            className="dark:bg-dark-900"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="input">Ancien S/N <span className="text-red-700">*</span></Label>
-                          <Input type="text" id="input" value={ancienSN} onChange={(e) =>{
-                            const value = e.target.value
-                            if (/^\d*$/.test(value)){
-                                if (value.length <= 10) {
-                                    setAncienSN(value);
-                                }} 
-                            }}/>
-                        </div>
-                        <div>
-                          <Label>Nouveau Model TPE <span className="text-red-700">*</span></Label>
-                          <Select
-                            options={optionsModels}
-                            defaultValue={newModel}
-                            placeholder="Choisir une option"
-                            onChange={ChangeNewModel}
-                            className="dark:bg-dark-900"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="input">Nouvel S/N <span className="text-red-700">*</span></Label>
-                          <Input type="text" id="input" value={terminalSN} onChange={(e) =>{
-                            const value = e.target.value
-                            // Allow only digits
-                            if (/^\d*$/.test(value)){
-                            // Only allow up to 10 characters
-                              if (value.length <= 10) {
-                                setTerminalSN(value);
-                              }} 
-                            }}/>
-                        </div>
-                        <div>
-                          <Label>Commentaire</Label>
-                          <TextArea
-                            value={message}
-                            onChange={(value) => setMessage(value)}
-                            rows={4}
-                            placeholder="Ajoutez un commentaire"
-                          />
-                        </div>
-                        <div className="pb-3 text-center">
-                            <span className="text-sm font-semibold">Informations sur produits</span>
-                        </div>
-                        <div>
-                          <Label>Commentaire pour terminal</Label>
-                          <TextArea
-                          value={messageTPE}
-                          onChange={(value) => setMessageTPE(value)}
-                          rows={2}
-                          placeholder="Ajoutez un commentaire"
-                          />
-                        </div>
-                        <div>
-                          <Label>Point Marchand</Label>
-                          <Input type="text" id="input"
-                            className="cursor-default"
-                            value={filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join(" - ")}
-                            readOnly
-                          />
-                        </div>
-                        <div>
-                          <Label>Banque</Label>
-                          <Input type="text" id="input" 
-                                className="cursor-default"
-                                value={filteredPointMarchand.map((terminal) => terminal.BANQUE).join(" - ")}
-                                readOnly
-                            />
-                        </div>
-                        <div>
-                          <Label htmlFor="input">Parametrage <span className="text-red-700">*</span></Label>
-                          <Select 
-                            options={optionsParametrages}
-                            value={parametrageTPE}
-                            placeholder="Choisir une option"
-                            onChange={ChangeParametrage}
-                            className="dark:bg-dark-900"  
-                          />
-                        </div>
-                        <div>
-                          <Input type="text" id="input" 
-                                value={filteredPointMarchand.map((terminal) => terminal.TPE).join(" - ")}
-                                className="hidden"
-                            />
-                        </div>
-                        <div className="flex flex-col">
-                          <div className="flex items-center gap-3 my-2">
-                            <Checkbox
-                            checked={
-                                filteredPointMarchand.length > 0 &&
-                                filteredPointMarchand.some((terminal) =>
-                                  terminal.NUM_ORANGE?.startsWith("07")
-                                )
-                              }
-                              onChange={(e)=>{}}
-                              readOnly
-                              label="Orange Money" />
-                          </div>
-                          <div className="flex items-center gap-3 my-2">
-                            <Checkbox 
-                            checked={
-                                filteredPointMarchand.length > 0 &&
-                                filteredPointMarchand.some((terminal) =>
-                                  terminal.NUM_MTN?.startsWith("05")
-                                )
-                              }
-                              onChange={(e)=>{}}
-                              readOnly
-                            label="MTN Money" />
-                          </div>
-                          <div className="flex items-center gap-3 my-2">
-                            <Checkbox 
-                            checked={
-                                filteredPointMarchand.length > 0 &&
-                                filteredPointMarchand.some((terminal) =>
-                                  terminal.NUM_MOOV?.startsWith("01")
-                                )
-                              }
-                              onChange={(e)=>{}}
-                              readOnly 
-                            label="MOOV Money" />
-                          </div>
-                        </div>
-                        <div>
-                          <button onClick={handleConfirm} className="w-full bg-green-400 rounded-2xl h-10 flex items-center justify-center">
-                            <span>Ajouter</span>
-                            <span className="text-2xl"><PlusIcon /></span>
-                          </button>
-                          <div>
-                            <span className="text-error-600 font-medium flex items-center justify-center text-sm p-1 mt-4">
-                              {errorAjout}
-                            </span>
-                          </div>
-                        </div>
+                      <div className="flex items-center gap-3 my-2">
+                        <Checkbox
+                          checked={isMTNChecked}
+                          onChange={(e) => {
+                            if (isMTNChecked) {
+                              setMTNChecked(false)
+                            } else {
+                              setMTNChecked(true)
+                            }
+                          }}
+                          label="MTN Money" />
                       </div>
-                      <div className="text-right text-gray-500">
-                        <span className="text-xs font-medium">
-                          Les champs suivis par un <span className="text-red-700">*</span> sont obligatoires
+                      <div className="flex items-center gap-3 my-2">
+                        <Checkbox
+                          checked={
+                            filteredPointMarchand.length > 0 &&
+                            filteredPointMarchand.some((terminal) =>
+                              terminal.NUM_MOOV?.startsWith("01")
+                            )
+                          }
+                          onChange={(e) => { }}
+                          readOnly
+                          label="MOOV Money" />
+                      </div>
+                      <div className="flex items-center gap-3 my-2">
+                        <Checkbox
+                          checked={isRneChecked}
+                          onChange={(e) => {
+                            if (isRneChecked) {
+                              setRneChecked(false)
+                            } else {
+                              setRneChecked(true)
+                            }
+                          }}
+                          label="RNE" 
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <button onClick={handleConfirm} className="w-full bg-green-400 rounded-2xl h-10 flex items-center justify-center">
+                        <span>Ajouter</span>
+                        <span className="text-2xl"><PlusIcon /></span>
+                      </button>
+                      <div>
+                        <span className="text-error-600 font-medium flex items-center justify-center text-sm p-1 mt-4">
+                          {errorAjout}
                         </span>
                       </div>
-                    </ComponentCard>
-                  </>
+                    </div>
+                  </div>
+                  <div className="text-right text-gray-500">
+                    <span className="text-xs font-medium">
+                      Les champs suivis par un <span className="text-red-700">*</span> sont obligatoires
+                    </span>
+                  </div>
+                </ComponentCard>
+              </>
             )
           )
         }
@@ -697,11 +749,11 @@ export default function ModifyRemplacementInputs() {
           <div className='p-4 text-xs text-gray-600 flex'>
             <span>Quantité : {quantiteLivraison}</span>
             <div className="ms-6 flex">
-              {detailsParametrage.map((param) =>{
+              {detailsParametrage.map((param) => {
 
                 let classQuantite = param.quantite > 0 ? "text-blue-700 font-medium" : "text-gray-600 font-medium"
 
-                return(
+                return (
                   <>
                     <div key={param.id} className="mx-6">
                       <span className="text-xs text-gray-600">{param.nom} : <span className={classQuantite}>{param.quantite}</span></span>
@@ -726,7 +778,7 @@ export default function ModifyRemplacementInputs() {
                     className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                     Remplacement S/N
                   </TableCell>
-                  <TableCell 
+                  <TableCell
                     isHeader
                     className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                     Parametrage
@@ -754,6 +806,11 @@ export default function ModifyRemplacementInputs() {
                   <TableCell
                     isHeader
                     className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    RNE
+                  </TableCell>
+                  <TableCell
+                    isHeader
+                    className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                     Supprimer
                   </TableCell>
                 </TableRow>
@@ -771,7 +828,7 @@ export default function ModifyRemplacementInputs() {
                       </span>
                       {item.commentaireTPE ? (
                         <span className="block text-gray-700 text-theme-xs dark:text-gray-400">
-                         « {item.commentaireTPE} » 
+                          « {item.commentaireTPE} »
                         </span>
                       ) : (
                         <></>
@@ -797,21 +854,25 @@ export default function ModifyRemplacementInputs() {
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       {item.mobile_money.includes("OM") ?
-                        ( <i className="pi pi-check" style={{ color: 'green' }}></i> ) : ""}
+                        (<i className="pi pi-check" style={{ color: 'green' }}></i>) : ""}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       {item.mobile_money.includes("MTN") ?
-                        ( <i className="pi pi-check" style={{ color: 'green' }}></i> ) : ""}
+                        (<i className="pi pi-check" style={{ color: 'green' }}></i>) : ""}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       {item.mobile_money.includes("MOOV") ?
-                        ( <i className="pi pi-check" style={{ color: 'green' }}></i> ) : ""}
+                        (<i className="pi pi-check" style={{ color: 'green' }}></i>) : ""}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                      {item.mobile_money.includes("RNE") ?
+                        (<i className="pi pi-check" style={{ color: 'green' }}></i>) : ""}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       <button
                         className="text-red-500 hover:text-red-700"
                         onClick={() => handleDelete(index)}
-                        >
+                      >
                         <i className="pi pi-trash" style={{ color: 'black' }}></i>
                       </button>
                     </TableCell>
@@ -823,23 +884,23 @@ export default function ModifyRemplacementInputs() {
           </div>
         </div>
         <div className="w-full flex flex-col justify-center items-center mt-6">
-          {loadingDelivery? 
+          {loadingDelivery ?
             <span className="">
-              <ProgressSpinner style={{width: '50px', height: '50px'}} strokeWidth="8" animationDuration=".5s" />
+              <ProgressSpinner style={{ width: '50px', height: '50px' }} strokeWidth="8" animationDuration=".5s" />
             </span>
-          :
+            :
             <button onClick={handleDeliver} className="w-1/4 bg-green-400 rounded-2xl h-10 flex justify-center items-center">
               <span>Valider formulaire</span>
               <span className="text-2xl"><ListIcon /></span>
-            </button> 
-            }
-            {errorDeliver?
-              <span className="text-error-600 font-medium flex items-center justify-center text-sm p-1">
-                {errorDeliver}
-              </span>
+            </button>
+          }
+          {errorDeliver ?
+            <span className="text-error-600 font-medium flex items-center justify-center text-sm p-1">
+              {errorDeliver}
+            </span>
             :
-              <></>
-            }
+            <></>
+          }
         </div>
       </div>
       <Modal isOpen={isConfirmModalOpen} onClose={() => setIsConfirmModalOpen(false)} className="p-4 max-w-xl">
@@ -864,32 +925,38 @@ export default function ModifyRemplacementInputs() {
               <span>S/N terminal remplaçant : <span className="font-bold text-red-700">{terminalSN}</span></span>
             </div>
             <div>
-              <span>Point Marchand : <span className="font-bold text-red-700">{filteredPointMarchand.map((terminal) => terminal.POINT_MARCHAND).join("%")}</span></span>
+              <span>Point Marchand : <span className="font-bold text-red-700">{terminalName}</span></span>
             </div>
             <div>
               <span>Parametrage : <span className="font-bold text-red-700">{nomParametrage}</span></span>
             </div>
             <div>
-              <span> Banque : <span className="font-bold text-red-700">{filteredPointMarchand.map((terminal) => terminal.BANQUE).join("%")}</span></span>
+              <span> Banque : <span className="font-bold text-red-700">{terminalBanque}</span></span>
             </div>
             <div className="flex flex-col">
               <span>Mobile Money : </span>
               <ul>
                 <li className="font-bold text-red-700">
-                  {isOrangeChecked ? 
-                    (<> Orange Money </>):
+                  {isOrangeChecked ?
+                    (<> Orange Money </>) :
                     (<></>)
                   }
                 </li>
                 <li className="font-bold text-red-700">
-                  {isMTNChecked ? 
-                    (<> MTN Money </>):
+                  {isMTNChecked ?
+                    (<> MTN Money </>) :
                     (<></>)
                   }
                 </li>
                 <li className="font-bold text-red-700">
-                  {isMOOVChecked ? 
-                    (<> MOOV Money </>):
+                  {isMOOVChecked ?
+                    (<> MOOV Money </>) :
+                    (<></>)
+                  }
+                </li>
+                <li className="font-bold text-red-700">
+                  {isRneChecked ?
+                    (<> RNE </>) :
                     (<></>)
                   }
                 </li>
@@ -908,25 +975,25 @@ export default function ModifyRemplacementInputs() {
       <Modal isOpen={isSignatureModalOpen} onClose={() => setIsSignatureModalOpen(false)} className="p-4 max-w-md">
         <div className='p-1'>
           <div className='text-center mb-3 text-sm'>
-              <span>Signez manuellement pour valider la livraison</span>
+            <span>Signez manuellement pour valider la livraison</span>
           </div>
           <div className='flex flex-col justify-center items-center'>
-              <SignatureCanvas
-                  ref={data=>setSignature(data)}
-                  canvasProps={{ width: 300, height: 250, className: 'sigCanvas border border-gray-300 rounded' }}
-              />
-              <div className='w-full mt-6 flex justify-center items-center'>
-                  <button
-                    onClick={handleClear}
-                    className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
-                    Clear
-                  </button>
-                  <button
-                    onClick={handleDeliver}
-                    className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
-                    Valider
-                  </button>
-              </div>  
+            <SignatureCanvas
+              ref={data => setSignature(data)}
+              canvasProps={{ width: 300, height: 250, className: 'sigCanvas border border-gray-300 rounded' }}
+            />
+            <div className='w-full mt-6 flex justify-center items-center'>
+              <button
+                onClick={handleClear}
+                className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
+                Clear
+              </button>
+              <button
+                onClick={handleDeliver}
+                className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
+                Valider
+              </button>
+            </div>
           </div>
           <div className="text-center">
             <span className="text-error-500 text-xs">
@@ -934,7 +1001,7 @@ export default function ModifyRemplacementInputs() {
             </span>
           </div>
         </div>
-    </Modal>
+      </Modal>
     </>
   );
 }
