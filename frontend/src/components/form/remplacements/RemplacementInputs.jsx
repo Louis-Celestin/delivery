@@ -96,6 +96,8 @@ export default function RemplacementInputs() {
 
   const [selectedFiles, setSelectedFiles] = useState([])
 
+  const [isRneChecked, setRneChecked] = useState(false)
+
   useEffect(() => {
     const fetchTerminalInfos = async () => {
       setLoadingMerchant(true)
@@ -334,16 +336,6 @@ export default function RemplacementInputs() {
       return
     }
 
-    if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_ORANGE?.startsWith("07"))) {
-      setOrangeChecked(true)
-    };
-    if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_MTN?.startsWith("05"))) {
-      setMTNChecked(true)
-    };
-    if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_MOOV?.startsWith("01"))) {
-      setMOOVChecked(true)
-    };
-
     setErrorAjout('')
     setIsConfirmModalOpen(true)
   }
@@ -362,6 +354,9 @@ export default function RemplacementInputs() {
     if (isMOOVChecked) {
       localMobileMoney.push("MOOV")
     };
+    if (isRneChecked) {
+      localMobileMoney.push("RNE");
+    }
 
     const newProduit = {
       pointMarchand: terminalName,
@@ -396,6 +391,7 @@ export default function RemplacementInputs() {
     setOrangeChecked(false);
     setMTNChecked(false);
     setMOOVChecked(false);
+    setRneChecked(false);
     setMobileMoney([]);
 
     setErrorAjout('')
@@ -709,6 +705,18 @@ export default function RemplacementInputs() {
                           }}
                           label="MOOV Money" />
                       </div>
+                      <div className="flex items-center gap-3 my-2">
+                        <Checkbox
+                          checked={isRneChecked}
+                          onChange={(e) => {
+                            if (isRneChecked) {
+                              setRneChecked(false)
+                            } else {
+                              setRneChecked(true)
+                            }
+                          }}
+                          label="RNE" />
+                      </div>
                       {/* <div className="flex items-center gap-3 my-2">
                         <Checkbox
                           checked={isMOOVChecked}
@@ -807,6 +815,11 @@ export default function RemplacementInputs() {
                   <TableCell
                     isHeader
                     className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    RNE
+                  </TableCell>
+                  <TableCell
+                    isHeader
+                    className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                     Supprimer
                   </TableCell>
                 </TableRow>
@@ -861,6 +874,10 @@ export default function RemplacementInputs() {
                         (<i className="pi pi-check" style={{ color: 'green' }}></i>) : ""}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                      {item.mobile_money.includes("RNE") ?
+                        (<i className="pi pi-check" style={{ color: 'green' }}></i>) : ""}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       <button
                         className="text-red-500 hover:text-red-700"
                         onClick={() => handleDelete(index)}
@@ -871,7 +888,6 @@ export default function RemplacementInputs() {
                   </TableRow>
                 ))}
               </TableBody>
-
             </Table>
           </div>
         </div>
@@ -943,6 +959,12 @@ export default function RemplacementInputs() {
                 <li className="font-bold text-red-700">
                   {isMOOVChecked ?
                     (<> MOOV Money </>) :
+                    (<></>)
+                  }
+                </li>
+                <li className="font-bold text-red-700">
+                  {isRneChecked ?
+                    (<> RNE </>) :
                     (<></>)
                   }
                 </li>

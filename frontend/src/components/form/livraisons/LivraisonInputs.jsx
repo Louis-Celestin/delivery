@@ -91,6 +91,8 @@ export default function LivraisonInputs() {
 
   const [selectedFiles, setSelectedFiles] = useState([])
 
+  const [isRneChecked, setRneChecked] = useState(false)
+
   // useEffect(() => {
   //   const savedProduits = sessionStorage.getItem("produitsLivreTable");
   //   if (savedProduits) {
@@ -115,6 +117,7 @@ export default function LivraisonInputs() {
         setTerminals(data)
 
         let type_delivery_data = await productDeliveries.getAllTypeLivraisonCommerciale()
+        console.log(type_delivery_data)
         let type_delivery = type_delivery_data.filter((type) => {
           return type.is_deleted == false
         })
@@ -339,20 +342,6 @@ export default function LivraisonInputs() {
       return;
     }
 
-    // if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_ORANGE?.startsWith("07"))) {
-    //   setOrangeChecked(true)
-    // };
-    // if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_MTN?.startsWith("05"))) {
-    //   setMTNChecked(true)
-    // };
-    // if (filteredPointMarchand.length > 0 && filteredPointMarchand.some((terminal) => terminal.NUM_MOOV?.startsWith("01"))) {
-    //   setMOOVChecked(true)
-    // };
-
-    // if (isOrangeChecked) localMobileMoney.push("OM");
-    // if (isMTNChecked) localMobileMoney.push("MTN");
-    // if (isMOOVChecked) localMobileMoney.push("MOOV");
-
     setErrorAjout('')
     setIsConfirmModalOpen(true)
   }
@@ -371,6 +360,9 @@ export default function LivraisonInputs() {
     if (isMOOVChecked) {
       localMobileMoney.push("MOOV")
     };
+    if(isRneChecked) {
+      localMobileMoney.push("RNE")
+    }
 
     const newProduit = {
       pointMarchand: terminalName,
@@ -394,8 +386,8 @@ export default function LivraisonInputs() {
     setOrangeChecked(false);
     setMTNChecked(false);
     setMOOVChecked(false);
+    setRneChecked(false)
     setMobileMoney([]);
-
     setErrorAjout('')
     setIsConfirmModalOpen(false)
   }
@@ -707,18 +699,18 @@ export default function LivraisonInputs() {
                           }}
                           label="MOOV Money" />
                       </div>
-                      {/* <div className="flex items-center gap-3 my-2">
+                      <div className="flex items-center gap-3 my-2">
                         <Checkbox
-                          checked={isMOOVChecked}
+                          checked={isRneChecked}
                           onChange={(e) => {
-                            if (isMOOVChecked) {
-                              setMOOVChecked(false)
+                            if (isRneChecked) {
+                              setRneChecked(false)
                             } else {
-                              setMOOVChecked(true)
+                              setRneChecked(true)
                             }
                           }}
                           label="RNE" />
-                      </div> */}
+                      </div>
                     </div>
                     <div>
                       <button onClick={handleConfirm} className="w-full bg-green-400 rounded-2xl h-10 flex items-center justify-center">
@@ -786,6 +778,11 @@ export default function LivraisonInputs() {
                   <TableCell
                     isHeader
                     className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    RNE
+                  </TableCell>
+                  <TableCell
+                    isHeader
+                    className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                     Supprimer
                   </TableCell>
                 </TableRow>
@@ -826,6 +823,10 @@ export default function LivraisonInputs() {
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       {item.mobile_money.includes("MOOV") ?
+                        (<i className="pi pi-check" style={{ color: 'green' }}></i>) : ""}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                      {item.mobile_money.includes("RNE") ?
                         (<i className="pi pi-check" style={{ color: 'green' }}></i>) : ""}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
@@ -905,9 +906,13 @@ export default function LivraisonInputs() {
                     (<></>)
                   }
                 </li>
+                <li className="font-bold text-red-700">
+                  {isRneChecked ?
+                    (<> RNE </>) :
+                    (<></>)
+                  }
+                </li>
               </ul>
-
-
             </div>
           </div>
         </div>

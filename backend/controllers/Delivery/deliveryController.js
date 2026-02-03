@@ -205,23 +205,22 @@ const deliver = async (req, res) => {
         <p>Green - Pay vous remercie.</p>
       `;
 
-      // for (const service_user of service_users) {
-      //   await sendMail({
-      //     to: service_user.email,
-      //     subject,
-      //     html,
-      //   });
-      // }
-      // if (superviseurs) {
-      //   for (const superviseur of superviseurs) {
-      //     await sendMail({
-      //       to: superviseur.email,
-      //       subject,
-      //       html,
-      //     });
-      //   }
-      // }
-
+      for (const service_user of service_users) {
+        await sendMail({
+          to: service_user.email,
+          subject,
+          html,
+        });
+      }
+      if (superviseurs) {
+        for (const superviseur of superviseurs) {
+          await sendMail({
+            to: superviseur.email,
+            subject,
+            html,
+          });
+        }
+      }
 
       // for (const recepteur of recepteurs) {
       //   await sendMail({
@@ -1351,36 +1350,7 @@ const generateLivraisonPDF = async (req, res) => {
     const produitsRows = livraison.produitsLivre.map((p, index) => {
       let row = "";
       const has = (m) => p.mobile_money?.includes(m) ? "✔" : "";
-      row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${p.banque}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
-      // switch (livraison.type_livraison_id) {
-      //   case 1:
-      //     row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${p.banque}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
-      //     break;
-      //   case 2:
-      //     row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td></tr>`;
-      //     break;
-      //   case 3:
-      //     row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${p.banque}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
-      //     break;
-      //   case 4:
-      //     row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
-      //     break;
-      //   case 5:
-      //     row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td></tr>`;
-      //     break;
-      //   case 6:
-      //     row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${p.banque}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
-      //     break;
-      //   case 7:
-      //     row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td></tr>`;
-      //     break;
-      //   case 8:
-      //     row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td></tr>`;
-      //     break;
-      //   default:
-      //     row = "";
-      // }
-
+      row = `<tr><td>${p.pointMarchand || p.marchand}</td><td>${p.serialNumber || p.sn}</td><td>${p.caisse}</td><td>${p.banque}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td><td>${has("RNE")}</td></tr>`;
       // ➕ Ajout du saut de page toutes les 20 lignes
       if ((index + 1) % 20 === 0) {
         row += `<tr class="page-break"></tr>`;
@@ -2016,6 +1986,7 @@ const generateDeliveriesXLSX = async (req, res) => {
       "OM",
       "MTN",
       "MOOV",
+      "RNE",
       "Commentaire TPE",
       "Model",
       "Type livraison",
@@ -2107,6 +2078,7 @@ const generateDeliveriesXLSX = async (req, res) => {
           has("OM"),
           has("MTN"),
           has("MOOV"),
+          has("RNE"),
           p.commentaireTPE,
           typeModel ? typeModel.nom_model.toUpperCase() : 'N/A',
           typeLivraison.nom_type_livraison.toUpperCase(),
@@ -2133,6 +2105,7 @@ const generateDeliveriesXLSX = async (req, res) => {
         "OM",
         "MTN",
         "MOOV",
+        "RNE",
         "Commentaire TPE",
       ]
 
@@ -2158,6 +2131,7 @@ const generateDeliveriesXLSX = async (req, res) => {
           has("OM"),
           has("MTN"),
           has("MOOV"),
+          has("RNE"),
           p.commentaireTPE,
         ])
       })
@@ -2235,6 +2209,7 @@ const generateRemplacementsXLSX = async (req, res) => {
       "OM",
       "MTN",
       "MOOV",
+      "RNE",
       "Commentaire TPE",
       "Date Livraison",
       "Livraison",
@@ -2328,6 +2303,7 @@ const generateRemplacementsXLSX = async (req, res) => {
           has("OM"),
           has("MTN"),
           has("MOOV"),
+          has("RNE"),
           p.commentaireTPE,
           livraison.validation_remplacement[index]?.date_validation,
           livraison.nom_livreur,
@@ -2354,6 +2330,7 @@ const generateRemplacementsXLSX = async (req, res) => {
         "OM",
         "MTN",
         "MOOV",
+        "RNE",
         "Commentaire TPE",
       ]
 
@@ -2381,6 +2358,7 @@ const generateRemplacementsXLSX = async (req, res) => {
           has("OM"),
           has("MTN"),
           has("MOOV"),
+          has("RNE"),
           p.commentaireTPE,
         ])
       })
@@ -2768,7 +2746,7 @@ const generateRemplacementPDF = async (req, res) => {
     const produitsRows = livraison.details_remplacement.map((p, index) => {
       let row = "";
       const has = (m) => p.mobile_money?.includes(m) ? "✔" : "";
-      row = `<tr><td>${p.pointMarchand}</td><td>${p.ancienSN}</td><td>${p.nouvelSN}</td><td>${p.caisse}</td><td>${p.banque}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td></tr>`;
+      row = `<tr><td>${p.pointMarchand}</td><td>${p.ancienSN}</td><td>${p.nouvelSN}</td><td>${p.caisse}</td><td>${p.banque}</td><td>${has("OM")}</td><td>${has("MTN")}</td><td>${has("MOOV")}</td><td>${has("RNE")}</td></tr>`;
 
       // ➕ Ajout du saut de page toutes les 20 lignes
       if ((index + 1) % 20 === 0) {
