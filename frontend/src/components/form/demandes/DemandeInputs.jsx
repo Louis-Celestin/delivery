@@ -134,6 +134,10 @@ export default function DemandeInputs() {
   const [hasLot, setHasLot] = useState(false)
   const [hasCarton, setHasCarton] = useState(false)
 
+  const [selectedType, setSelectedType] = useState(false)
+
+  const [validationModalOpen, setValidationModalOpen] = useState(false)
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
@@ -173,12 +177,12 @@ export default function DemandeInputs() {
             return s.id == item.service_id
           })
           const nomService = serviceStock ? serviceStock.nom_service : ''
-          return({
+          return ({
             value: item.id,
             label: `${item.code_stock} - ${nomService}`
           })
         })
-          
+
         setOptionsStocks(options_stocks)
 
         const models_data = await stockData.getAllModels()
@@ -858,53 +862,57 @@ export default function DemandeInputs() {
     setDetailsDemandeur(details_demandeur)
   }
 
-  const handleValidate = async () => {
-    setSortieParPieceModalOpen(false)
-    setSortieParCartonModalOpen(false)
-    setSortieParPieceCartonModalOpen(false)
-    setSortieParCartonLotModalOpen(false)
-    setSortieParLotModalOpen(false)
+  // const handleValidate = async () => {
+  //   setSortieParPieceModalOpen(false)
+  //   setSortieParCartonModalOpen(false)
+  //   setSortieParPieceCartonModalOpen(false)
+  //   setSortieParCartonLotModalOpen(false)
+  //   setSortieParLotModalOpen(false)
 
-    const payload = {
-      nomDemandeur: nomUser,
-      commentaire,
-      selectedStock,
-      quantite_demande: quantite,
-      nomenclature,
-      detailsDemande,
-      detailsDemandeur,
-      userId,
-      itemId: selectedPiece,
-      idDemandeur: selectedUser,
-      motif,
-      serviceDemandeur: serviceUser,
-      champsAutre: otherFields,
-    }
+  //   const payload = {
+  //     nomDemandeur: nomUser,
+  //     commentaire,
+  //     selectedStock,
+  //     quantite_demande: quantite,
+  //     nomenclature,
+  //     detailsDemande,
+  //     detailsDemandeur,
+  //     userId,
+  //     itemId: selectedPiece,
+  //     idDemandeur: selectedUser,
+  //     motif,
+  //     serviceDemandeur: serviceUser,
+  //     champsAutre: otherFields,
+  //   }
 
-    try {
-      setLoadingValidation(true)
-      console.log('Sendind payload...')
+  //   try {
+  //     setLoadingValidation(true)
+  //     console.log('Sendind payload...')
 
-      const response = await demandeData.faireDemande(payload)
+  //     const response = await demandeData.faireDemande(payload)
 
-      console.log(response)
-      Swal.fire({
-        title: "Succès",
-        text: "Demande effectuée avec succès !",
-        icon: "success"
-      })
-      navigate('/toutes-les-demandes')
+  //     console.log(response)
+  //     Swal.fire({
+  //       title: "Succès",
+  //       text: "Demande effectuée avec succès !",
+  //       icon: "success"
+  //     })
+  //     navigate('/toutes-les-demandes')
 
-    } catch (error) {
-      Swal.fire({
-        title: "Attention",
-        text: "Une erreur est survenue lors de la demande !",
-        icon: "warning"
-      })
-      navigate('/toutes-les-demandes')
-    } finally {
-      setLoadingValidation(false)
-    }
+  //   } catch (error) {
+  //     Swal.fire({
+  //       title: "Attention",
+  //       text: "Une erreur est survenue lors de la demande !",
+  //       icon: "warning"
+  //     })
+  //     navigate('/toutes-les-demandes')
+  //   } finally {
+  //     setLoadingValidation(false)
+  //   }
+  // }
+
+  const handleValidate = async() => {
+
   }
 
   return (
@@ -929,6 +937,26 @@ export default function DemandeInputs() {
                     <div className="space-y-5">
                       <div className="text-center">
                         <span className="text-sm font-semibold">Informations générales</span>
+                      </div>
+                      <div>
+                        <Label>Pièce <span className="text-red-700">*</span></Label>
+                        <Select
+                          options={optionsItems}
+                          placeholder="Choisir une option"
+                          onChange={""}
+                          className="dark:bg-dark-900"
+                        />
+                      </div>
+                      <div>
+                        <Label>Nomenclature</Label>
+                        <Input
+                          type="text"
+                          value={nomenclature}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            setNomenclature(value)
+                          }}
+                        />
                       </div>
                       <div>
                         <Label>Service Demandeur <span className="text-red-700">*</span></Label>
@@ -1000,7 +1028,7 @@ export default function DemandeInputs() {
                           className="dark:bg-dark-900"
                         />
                       </div> */}
-                      <div>
+                      {/* <div>
                         <Label>Stock <span className="text-red-700">*</span></Label>
                         <Dropdown
                           options={optionsStocks}
@@ -1014,8 +1042,8 @@ export default function DemandeInputs() {
                           value={selectedStock}
                           valueTemplate={selectedStockTemplate}
                         />
-                      </div>
-                      <div className="flex justify-between items-center">
+                      </div> */}
+                      {/* <div className="flex justify-between items-center">
                         <div className="flex flex-col  border-b pb-2 border-black">
                           <span className="text-xs text-gray-700 font-normal">{nomPiece} {nomModel}</span>
                           <span className="font-medium">QUANTITE ACTUELLE</span>
@@ -1026,123 +1054,91 @@ export default function DemandeInputs() {
                         <div>
                           <span><i className="pi pi-box" style={{ fontSize: '3rem' }}></i></span>
                         </div>
-                      </div>
+                      </div> */}
                       <div>
                         <span>Faire une demande  : </span>
                         <div>
-                          {hasLot ? (
+                          <div>
+                            <div className="flex items-center gap-3 my-2">
+                              {/* Demande par lot */}
+                              <Checkbox
+                                checked={parLot}
+                                onChange={() => {
+                                  if (parLot) {
+                                    setParLot(false)
+                                    setSelectedType(false)
+                                  } else {
+                                    setParLot(true)
+                                    setParCarton(false)
+                                    setParCartonLot(false)
+                                    setParPiece(false)
+                                    setParPieceCarton(false)
+                                    setSelectedType(true)
+                                  }
+                                }}
+                                readOnly
+                                label="Par Lot"
+                              />
+                            </div>
+                            <div className="flex items-center gap-3 my-2">
+                              {/* Demande par carton */}
+                              <Checkbox
+                                checked={parCarton}
+                                onChange={() => {
+                                  if (parCarton) {
+                                    setParCarton(false)
+                                    setSelectedType(false)
+                                  } else {
+                                    setParLot(false)
+                                    setParCarton(true)
+                                    setParCartonLot(false)
+                                    setParPiece(false)
+                                    setParPieceCarton(false)
+                                    setSelectedType(true)
+                                  }
+                                }}
+                                readOnly
+                                label="Par carton"
+                              />
+                            </div>
+                            <div className="flex items-center gap-3 my-2">
+                              {/* Demande par pièce */}
+                              <Checkbox
+                                checked={parPiece}
+                                onChange={() => {
+                                  if (parPiece) {
+                                    setParPiece(false)
+                                    setSelectedType(false)
+                                  } else {
+                                    setParLot(false)
+                                    setParCarton(false)
+                                    setParCartonLot(false)
+                                    setParPiece(true)
+                                    setParPieceCarton(false)
+                                    setSelectedType(true)
+                                  }
+                                }}
+                                readOnly
+                                label="Par pièce"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        <div>
+                          {selectedType ? (
                             <>
-                              <div className="flex items-center gap-3 my-2">
-                                {/* Demande par lot */}
-                                <Checkbox
-                                  checked={parLot}
-                                  onChange={() => {
-                                    if (parLot) {
-                                      setParLot(false)
-                                    } else {
-                                      setParLot(true)
-                                      setParCarton(false)
-                                      setParCartonLot(false)
-                                      setParPiece(false)
-                                      setParPieceCarton(false)
+                              <div>
+                                <Label>Quantité</Label>
+                                <Input
+                                  type="number"
+                                  id="input"
+                                  value={quantite}
+                                  onChange={(e) => {
+                                    const value = Number(e.target.value)
+                                    if (value >= 0) {
+                                      setQuantite(value)
                                     }
                                   }}
-                                  readOnly
-                                  label="Par Lot"
-                                />
-                              </div>
-                              <div className="flex items-center gap-3 my-2">
-                                {/* Par carton lot */}
-                                <Checkbox
-                                  checked={parCartonLot}
-                                  onChange={() => {
-                                    if (parCartonLot) {
-                                      setParCartonLot(false)
-                                    } else {
-                                      setParLot(false)
-                                      setParCarton(false)
-                                      setParCartonLot(true)
-                                      setParPiece(false)
-                                      setParPieceCarton(false)
-                                    }
-                                  }}
-                                  readOnly
-                                  label="Par Carton"
-                                />
-                              </div>
-                            </>
-                          ) : (
-                            <></>
-                          )}
-                          {hasCarton || hasLot ? (
-                            <>
-                              <div className="flex items-center gap-3 my-2">
-                                {/* Par piece carton */}
-                                <Checkbox
-                                  checked={parPieceCarton}
-                                  onChange={() => {
-                                    if (parPieceCarton) {
-                                      setParCartonLot(false)
-                                    } else {
-                                      setParLot(false)
-                                      setParCarton(false)
-                                      setParCartonLot(false)
-                                      setParPiece(false)
-                                      setParPieceCarton(true)
-                                    }
-                                  }}
-                                  readOnly
-                                  label="Par Pièce"
-                                />
-                              </div>
-                            </>
-                          ) : (
-                            <></>
-                          )}
-                          {hasCarton && !hasLot ? (
-                            <>
-                              <div className="flex items-center gap-3 my-2">
-                                {/* Par carton */}
-                                <Checkbox
-                                  checked={parCarton}
-                                  onChange={() => {
-                                    if (parCarton) {
-                                      setParCarton(false)
-                                    } else {
-                                      setParLot(false)
-                                      setParCarton(true)
-                                      setParCartonLot(false)
-                                      setParPiece(false)
-                                      setParPieceCarton(false)
-                                    }
-                                  }}
-                                  readOnly
-                                  label="Par Carton"
-                                />
-                              </div>
-                            </>
-                          ) : (
-                            <></>
-                          )}
-                          {(!hasCarton && !hasLot) ? (
-                            <>
-                              <div className="flex items-center gap-3 my-2">
-                                {/* Par piece */}
-                                <Checkbox
-                                  checked={parPiece}
-                                  onChange={() => {
-                                    if (parPiece) {
-                                      setParPiece(false)
-                                    } else {
-                                      setParLot(false)
-                                      setParCarton(false)
-                                      setParCartonLot(false)
-                                      setParPiece(true)
-                                      setParPieceCarton(false)
-                                    }
-                                  }}
-                                  readOnly
-                                  label="Par Pièce"
                                 />
                               </div>
                             </>
@@ -1150,183 +1146,6 @@ export default function DemandeInputs() {
                             <></>
                           )}
                         </div>
-                      </div>
-                      <div>
-                        {parLot ? (
-                          <>
-                            <div className="">
-                              <div className="space-y-5">
-                                <div className="py-3 text-center">
-                                  <span className="text-sm font-semibold">Demande par lots</span>
-                                </div>
-                                <div>
-                                  <div>
-                                    <MultiSelect
-                                      value={selectedLots}
-                                      options={optionsLot}
-                                      display="chip"
-                                      optionLabel="label"
-                                      maxSelectedLabels={3}
-                                      onChange={(e) => setSelectedLots(e.value)}
-                                      placeholder="Choisir le(s) lot(s)"
-                                      className="w-full"
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </>
-                        ) : (
-                          <></>
-                        )}
-                        {parCartonLot ? (
-                          <>
-                            <div>
-                              <div className="space-y-5">
-                                <div className="py-3 text-center">
-                                  <span className="text-sm font-semibold">Demande par cartons-lot</span>
-                                </div>
-                                <div className="space-y-5">
-                                  <div>
-                                    <Label>Choisir le lot</Label>
-                                    <Select
-                                      options={optionsLot}
-                                      placeholder="Choisir une option"
-                                      className="dark:bg-dark-900"
-                                      onChange={handleSelectLotCarton}
-                                    />
-                                  </div>
-                                  {selectedLot ? (
-                                    <>
-                                      <div>
-                                        <MultiSelect
-                                          value={selectedCartons}
-                                          options={optionsCartons}
-                                          display="chip"
-                                          optionLabel="label"
-                                          maxSelectedLabels={4}
-                                          onChange={(e) => setSelectedCartons(e.value)}
-                                          placeholder="Choisir le(s) carton(s)"
-                                          className="w-full"
-                                        />
-                                      </div>
-                                    </>
-                                  ) : (
-                                    <></>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </>
-                        ) : (
-                          <></>
-                        )}
-                        {parPieceCarton ? (
-                          <>
-                            <div className="space-y-5">
-                              <div>
-                                <div className="py-3 text-center">
-                                  <span className="text-sm font-semibold">Demande par pièce-carton</span>
-                                </div>
-                                <div className="space-y-5">
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <div>
-                                      <Label>Choisir le lot</Label>
-                                      <Select
-                                        options={optionsLot}
-                                        placeholder="Choisir une option"
-                                        className="dark:bg-dark-900"
-                                        onChange={handleSelectLotCarton}
-                                      />
-                                    </div>
-                                    <div>
-                                      <Label>Choisir le carton</Label>
-                                      <Select
-                                        options={optionsCartons}
-                                        placeholder="Choisir une option"
-                                        className="dark:bg-dark-900"
-                                        onChange={handleSelectCarton}
-                                      />
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <Label>Quantité pièce</Label>
-                                    <Input type="number" id="input" value={newStockPiece}
-                                      onChange={(e) => {
-                                        const value = Number(e.target.value)
-                                        if (value >= 0) {
-                                          setNewStockPiece(value)
-                                        }
-                                      }}
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </>
-                        ) : (
-                          <></>
-                        )}
-                        {parCarton ? (
-                          <>
-                            <div className="">
-                              <div className="space-y-5">
-                                <div className="text-center">
-                                  <span className="text-sm font-semibold">Demande par cartons</span>
-                                </div>
-                                <div>
-                                  <MultiSelect
-                                    value={selectedCartons}
-                                    options={optionsCartons}
-                                    display="chip"
-                                    optionLabel="label"
-                                    maxSelectedLabels={3}
-                                    onChange={(e) => setSelectedCartons(e.value)}
-                                    placeholder="Choisir le(s) carton(s)"
-                                    className="w-full"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          </>
-                        ) : (
-                          <></>
-                        )}
-                        {parPiece ? (
-                          <>
-                            <div className="space-y-5">
-                              <div>
-                                <div className="py-3 text-center">
-                                  <span className="text-sm font-semibold">Demande par pièce</span>
-                                </div>
-                                <div>
-                                  <Label>Quantité</Label>
-                                  <Input type="number" id="input" value={newStockPiece}
-                                    onChange={(e) => {
-                                      const value = Number(e.target.value)
-                                      if (value >= 0) {
-                                        setNewStockPiece(value)
-                                      }
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          </>
-                        ) : (
-                          <></>
-                        )}
-                      </div>
-                      <div>
-                        <Label>Nomenclature</Label>
-                        <Input
-                          type="text"
-                          value={nomenclature}
-                          onChange={(e) => {
-                            const value = e.target.value
-                            setNomenclature(value)
-                          }}
-                        />
                       </div>
                       <div>
                         {fields.map((field, index) => (
@@ -1528,247 +1347,12 @@ export default function DemandeInputs() {
           </>
         )}
       </div>
-      {/* DEMANDE PAR LOT */}
-      <Modal isOpen={sortieParLotModalOpen} onClose={() => setSortieParLotModalOpen(false)} className="p-4 max-w-md">
-        <div className="space-y-5">
-          <div className="w-full text-center">
-            <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium">Sortie stock</span>
-          </div>
-          <div className="text-center flex flex-col">
-            <span className="font-bold text-sm">
-              {nomStock}
-            </span>
-            <span>
-              <span className="text-sm text-gray-800 font-medium">{nomPiece} </span>
-              -
-              <span className="font-semibold"> {nomModel}</span> |
-              <span className="font-medium text-gray-700"> {nomServicePiece}</span>
-            </span>
-          </div>
-          <div className="ms-5 text-center">
-            <span className="text-sm text-gray-800 underline">Motif: {motif}</span>
-          </div>
-          <div className="space-y-2">
-            <div className="space-y-1 ms-5 border-b pb-2 text-sm">
-              <div>
-                <span>Quantité lot initiale : {quantiteLot ? quantiteLot : '0'}</span>
-              </div>
-              <div>
-                <span>Mouvement : <span className="text-red-600 font-bold">-{selectedLots.length}</span></span>
-              </div>
-              <div>
-                <span>Stock final lot : {finalStockLot}</span>
-              </div>
-            </div>
-            <div className="space-y-1 ms-5 border-b pb-2 text-sm">
-              <div>
-                <span>Quantité carton initiale : {quantiteCarton ? quantiteCarton : '0'}</span>
-              </div>
-              <div>
-                <span>Mouvement : <span className="text-red-600 font-bold">-{newStockCarton}</span></span>
-              </div>
-              <div>
-                <span>Stock final carton : {finalStockCarton}</span>
-              </div>
-            </div>
-            <div className="space-y-1 ms-5 text-sm">
-              <div>
-                <span>Quantité pièce initiale : {quantitePiece ? quantitePiece : '0'}</span>
-              </div>
-              <div>
-                <span>Mouvement : <span className="text-red-600 font-bold">-{newStockPiece}</span></span>
-              </div>
-              <div>
-                <span>Stock final pièce : {finalStockPiece}</span>
-              </div>
-            </div>
-          </div>
-          <div className='w-full mt-6 flex justify-center items-center'>
-            <button
-              onClick={handleValidate}
-              className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
-              Valider
-            </button>
-          </div>
-        </div>
-      </Modal>
-      {/* DEMANDE PAR CARTON LOT */}
-      <Modal isOpen={sortieParCartonLotModalOpen} onClose={() => setSortieParCartonLotModalOpen(false)} className="p-4 max-w-md">
-        <div className="space-y-5">
-          <div className="w-full text-center">
-            <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium">Sortie stock</span>
-          </div>
-          <div className="text-center flex flex-col">
-            <span className="font-bold text-sm">
-              {nomStock}
-            </span>
-            <span>
-              <span className="text-sm text-gray-800 font-medium">{nomPiece} </span>
-              -
-              <span className="font-semibold"> {nomModel}</span> |
-              <span className="font-medium text-gray-700"> {nomServicePiece}</span>
-            </span>
-          </div>
-          <div className="ms-5 text-center">
-            <span className="text-sm text-gray-800 underline">Motif: {motif}</span>
-          </div>
-          <div className="space-y-2">
-            <div className="space-y-1 ms-5 border-b pb-2 text-sm">
-              <div>
-                <span>Lot sélectionné : {nomLot}</span>
-              </div>
-              <div>
-                <span>Quantité initiale : {stockCartonLot}</span>
-              </div>
-              <div>
-                <span>Mouvement : <span className="text-red-600 font-bold">-{newStockCarton}</span></span>
-              </div>
-              <div>
-                <span>Stock final : {finalStockCartonLot}</span>
-              </div>
-            </div>
-            <div className="space-y-1 ms-5 border-b pb-2 text-sm">
-              <div>
-                <span>Quantité carton initiale : {quantiteCarton ? quantiteCarton : '0'}</span>
-              </div>
-              <div>
-                <span>Stock final carton : {finalStockCarton}</span>
-              </div>
-            </div>
-            <div className="space-y-1 ms-5 text-sm">
-              <div>
-                <span>Quantité pièce initiale : {quantitePiece ? quantitePiece : '0'}</span>
-              </div>
-              <div>
-                <span>Stock final pièce : {finalStockPiece}</span>
-              </div>
-            </div>
-          </div>
-          <div className='w-full mt-6 flex justify-center items-center'>
-            <button
-              onClick={handleValidate}
-              className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
-              Valider
-            </button>
-          </div>
-        </div>
-      </Modal>
-      {/* DEMANDE PAR PIECE CARTON */}
-      <Modal isOpen={sortieParPieceCartonModalOpen} onClose={() => setSortieParPieceCartonModalOpen(false)} className="p-4 max-w-md">
-        <div className="space-y-5">
-          <div className="w-full text-center">
-            <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium">Sortie stock</span>
-          </div>
-          <div className="text-center flex flex-col">
-            <span className="font-bold text-sm">
-              {nomStock}
-            </span>
-            <span>
-              <span className="text-sm text-gray-800 font-medium">{nomPiece} </span>
-              -
-              <span className="font-semibold"> {nomModel}</span> |
-              <span className="font-medium text-gray-700"> {nomServicePiece}</span>
-            </span>
-          </div>
-          <div className="ms-5 text-center">
-            <span className="text-sm text-gray-800 underline">Motif: {motif}</span>
-          </div>
-          <div className="space-y-2">
-            <div className="space-y-1 ms-5 border-b pb-2 text-sm">
-              <div>
-                <span>Carton sélectionné : {nomCarton}</span>
-              </div>
-              <div>
-                <span>Quantité initiale : {stockPieceCarton}</span>
-              </div>
-              <div>
-                <span>Mouvement : <span className="text-red-600 font-bold">-{newStockPiece}</span></span>
-              </div>
-              <div>
-                <span>Stock final : {finalStockPieceCarton}</span>
-              </div>
-            </div>
-            <div className="space-y-1 ms-5 text-sm">
-              <div>
-                <span>Quantité pièce initiale : {quantitePiece ? quantitePiece : '0'}</span>
-              </div>
-              <div>
-                <span>Stock final pièce : {finalStockPiece}</span>
-              </div>
-            </div>
-          </div>
-          <div className='w-full mt-6 flex justify-center items-center'>
-            <button
-              onClick={handleValidate}
-              className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
-              Valider
-            </button>
-          </div>
-        </div>
-      </Modal>
-      {/* DEMANDE PAR CARTON */}
-      <Modal isOpen={sortieParCartonModalOpen} onClose={() => setSortieParCartonModalOpen(false)} className="p-4 max-w-md">
-        <div className="space-y-5">
-          <div className="w-full text-center">
-            <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium">Sortie stock</span>
-          </div>
-          <div className="text-center flex flex-col">
-            <span className="font-bold text-sm">
-              {nomStock}
-            </span>
-            <span>
-              <span className="text-sm text-gray-800 font-medium">{nomPiece} </span>
-              -
-              <span className="font-semibold"> {nomModel}</span> |
-              <span className="font-medium text-gray-700"> {nomServicePiece}</span>
-            </span>
-          </div>
-          <div className="ms-5 text-center">
-            <span className="text-sm text-gray-800 underline">Motif: {motif}</span>
-          </div>
-          <div className="space-y-2">
-            <div className="space-y-1 ms-5 border-b pb-2 text-sm">
-              <div>
-                <span>Quantité carton initiale : {quantiteCarton ? quantiteCarton : '0'}</span>
-              </div>
-              <div>
-                <span>Mouvement : <span className="text-red-600 font-bold">-{selectedCartons.length}</span></span>
-              </div>
-              <div>
-                <span>Stock final carton : {finalStockCarton}</span>
-              </div>
-            </div>
-            <div className="space-y-1 ms-5 text-sm">
-              <div>
-                <span>Quantité pièce initiale : {quantitePiece ? quantitePiece : '0'}</span>
-              </div>
-              <div>
-                <span>Mouvement : <span className="text-red-600 font-bold">-{newStockPiece}</span></span>
-              </div>
-              <div>
-                <span>Stock final pièce : {finalStockPiece}</span>
-              </div>
-            </div>
-          </div>
-          <div className='w-full mt-6 flex justify-center items-center'>
-            <button
-              onClick={handleValidate}
-              className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
-              Valider
-            </button>
-          </div>
-        </div>
-      </Modal>
-      {/* DEMANDE PAR PIECE */}
-      <Modal isOpen={sortieParPieceModalOpen} onClose={() => setSortieParPieceModalOpen(false)} className="p-4 max-w-md">
+      <Modal isOpen={validationModalOpen} onClose={() => setValidationModalOpen(false)} className="p-4 max-w-md">
         <div className="space-y-5">
           <div className="w-full text-center">
             <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium">Demande</span>
           </div>
           <div className="text-center flex flex-col">
-            <span className="font-bold text-sm">
-              {nomStock}
-            </span>
             <span>
               <span className="text-sm text-gray-800 font-medium">{nomPiece} </span>
               -
@@ -1781,13 +1365,10 @@ export default function DemandeInputs() {
           </div>
           <div className="space-y-1 ms-5">
             <div>
-              <span>Quantité initiale : {quantitePiece ? quantitePiece : '0'}</span>
+              <span>Demande : {parPiece? 'par pièce' : parCarton ? 'par carton' : parLot ? 'par lot' : '?'}</span>
             </div>
             <div>
-              <span>Demande : <span className="text-red-600 font-bold">-{newStockPiece}</span></span>
-            </div>
-            <div>
-              <span>Stock final : {finalStockPiece}</span>
+              <span>Quantité demandée : {quantite}</span>
             </div>
           </div>
           <div className='w-full mt-6 flex justify-center items-center'>
