@@ -219,7 +219,7 @@ export default function AllDemandesList() {
                 <Link key={demandeForms.id_demande} className="flex flex-col"
                     to={linkSee} >
                     <span className={titleClass}>{nomPiece}</span>
-                    <span className="text-xs font-medium">{nomStock}</span>
+                    {/* <span className="text-xs font-medium">{nomStock}</span> */}
                     <span className="font-light">{motif}</span>
                 </Link>
             </span>

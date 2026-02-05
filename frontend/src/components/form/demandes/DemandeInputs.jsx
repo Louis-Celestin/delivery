@@ -138,6 +138,9 @@ export default function DemandeInputs() {
 
   const [validationModalOpen, setValidationModalOpen] = useState(false)
 
+  const [pieceLoading, setPieceLoading] = useState(false)
+  const [stockInitial, setStockInitial] = useState(0)
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
@@ -152,7 +155,7 @@ export default function DemandeInputs() {
 
         const services_data = await userData.getAllServices()
         setServicesUsers(services_data)
-        setServicesPiece(services_data)
+        // setServicesPiece(services_data)
         const options_services = services_data.map((item) => ({
           value: item.id,
           label: item.nom_service.toUpperCase()
@@ -185,8 +188,8 @@ export default function DemandeInputs() {
 
         setOptionsStocks(options_stocks)
 
-        const models_data = await stockData.getAllModels()
-        setModels(models_data)
+        // const models_data = await stockData.getAllModels()
+        // setModels(models_data)
 
 
       } catch (error) {
@@ -224,29 +227,58 @@ export default function DemandeInputs() {
   }
 
   const handleSelectPiece = async (value) => {
+    setPieceLoading(true)
+    setSelectedModel(null)
+    setSelectedServicePiece(null)
     setSelectedPiece(value)
     const piece = items.find((item) => {
       return item.id_piece == value
     })
-
-    const nom = piece ? piece.nom_piece.toUpperCase() : ''
+    const nom = piece ? piece.nom_piece : ''
     setNomPiece(nom)
+    try {
+      const itemModels_data = await stockData.getItemModels(value)
+      const options_models = itemModels_data.model_piece.map((item) => ({
+        value: item.id_model,
+        label: item.nom_model.toUpperCase()
+      }))
+      setOptionsModels(options_models)
+      setModels(itemModels_data.model_piece)
+      const listModels = itemModels_data.model_piece.map((item) => {
+        return item.id_model
+      })
+      if (listModels.length == 1) {
+        setSelectedModel(listModels[0])
+        const model = itemModels_data.model_piece.find((item) => {
+          return item.id_model == listModels[0]
+        })
+        const nomModel = model ? model.nom_model : ''
+        setNomModel(nomModel)
+      }
 
-    const itemModels_data = await stockData.getItemModels(value)
-    const options_models = itemModels_data.model_piece.map((item) => ({
-      value: item.id_model,
-      label: item.nom_model.toUpperCase()
-    }))
-    setOptionsModels(options_models)
-    setModels(itemModels_data.model_piece)
-
-    const itemService_data = await stockData.getItemServices(value)
-    const options_services = itemService_data.services.map((item) => ({
-      value: item.id,
-      label: item.nom_service.toUpperCase()
-    }))
-    setOptionsServicesPieces(options_services)
-    setServicesPiece(itemService_data.services)
+      const itemService_data = await stockData.getItemServices(value)
+      const options_services = itemService_data.services.map((item) => ({
+        value: item.id,
+        label: item.nom_service.toUpperCase()
+      }))
+      setOptionsServicesPieces(options_services)
+      setServicesPiece(itemService_data.services)
+      const listServices = itemService_data.services.map((item) => {
+        return item.id
+      })
+      if (listServices.length == 1) {
+        setSelectedServicePiece(listServices[0])
+        const service = itemService_data.services.find((item) => {
+          return item.id == listServices[0]
+        })
+        const nomService = service ? service.nom_service : ''
+        setNomServicePiece(nomService)
+      }
+    } catch (error) {
+      console.log('Erreur avec la pièce : ', error)
+    } finally {
+      setPieceLoading(false)
+    }
   }
 
   const handleSelectModel = (value) => {
@@ -259,7 +291,7 @@ export default function DemandeInputs() {
     setSelectedModel(value)
   }
 
-  const handleSelectServicePiece = (value) => {
+  const handleSelectService = (value) => {
     console.log('Selected service value: ', value)
     const service = servicesPiece.find((item) => {
       return item.id == value
@@ -911,9 +943,69 @@ export default function DemandeInputs() {
   //   }
   // }
 
-  const handleValidate = async() => {
+  const handleSortie = () => {
+    if (!checkValidate()) {
+      return
+    }
 
+    if (stockInitial <= 0) {
+      setError("Quantité initiale invalide !")
+    }
+
+    if (quantite <= 0) {
+      setError("Quantité demandée invalide !")
+    }
+
+    setValidationModalOpen(true)
+    setError('')
   }
+
+  const handleValidate = async () => {
+    setValidationModalOpen(false)
+
+    const typeDemande = parPiece ? 'Par pièce' : parCarton ? 'Par carton' : parLot ? 'Par lot' : ''
+    const details = {
+      selectedPiece,
+      selectedModel,
+      selectedServicePiece,
+      typeDemande,
+      stockInitial,
+      quantite,
+    }
+    const payload = {
+      detailsDemande: details,
+      userId,
+      quantite,
+      serviceUser,
+      selectedUser,
+      nomUser,
+      motif,
+      commentaire,
+      otherFields,
+    }
+
+    try {
+      setLoadingValidation(true)
+      const response = await demandeData.faireDemande(payload)
+      Swal.fire({
+        title: "Succès",
+        text: "Demande effectuée avec succès !",
+        icon: "success"
+      })
+      navigate('/toutes-les-demandes')
+
+    } catch (error) {
+      Swal.fire({
+        title: "Attention",
+        text: "Une erreur est survenue lors de la demande !",
+        icon: "warning"
+      })
+      navigate('/toutes-les-demandes')
+    } finally {
+      setLoadingValidation(false)
+    }
+  }
+
 
   return (
     <>
@@ -943,11 +1035,58 @@ export default function DemandeInputs() {
                         <Select
                           options={optionsItems}
                           placeholder="Choisir une option"
-                          onChange={""}
+                          onChange={handleSelectPiece}
                           className="dark:bg-dark-900"
                         />
                       </div>
                       <div>
+                        {pieceLoading ? (
+                          <>
+                            <div>
+                              <ProgressSpinner style={{ width: '20px', height: '20px' }} strokeWidth="8" animationDuration=".5s" />
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="space-y-5">
+                              <div>
+                                {models.length > 1 ? (
+                                  <>
+                                    <div>
+                                      <Label>Choisir le model <span className="text-red-700">*</span></Label>
+                                      <Select
+                                        options={optionsModels}
+                                        onChange={handleSelectModel}
+                                        className="dark:bg-dark-900"
+                                      />
+                                    </div>
+                                  </>
+                                ) : (
+                                  <></>
+                                )}
+                              </div>
+                              <div>
+                                {servicesPiece.length > 1 ? (
+                                  <>
+                                    <div>
+                                      <Label>Choisir le service <span className="text-red-700">*</span></Label>
+                                      <Select
+                                        options={optionsServicesPiece}
+                                        placeholder="Choisir une option"
+                                        onChange={handleSelectService}
+                                        className="dark:bg-dark-900"
+                                      />
+                                    </div>
+                                  </>
+                                ) : (
+                                  <></>
+                                )}
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                      {/* <div>
                         <Label>Nomenclature</Label>
                         <Input
                           type="text"
@@ -957,7 +1096,7 @@ export default function DemandeInputs() {
                             setNomenclature(value)
                           }}
                         />
-                      </div>
+                      </div> */}
                       <div>
                         <Label>Service Demandeur <span className="text-red-700">*</span></Label>
                         <Select
@@ -1127,19 +1266,35 @@ export default function DemandeInputs() {
                         <div>
                           {selectedType ? (
                             <>
-                              <div>
-                                <Label>Quantité</Label>
-                                <Input
-                                  type="number"
-                                  id="input"
-                                  value={quantite}
-                                  onChange={(e) => {
-                                    const value = Number(e.target.value)
-                                    if (value >= 0) {
-                                      setQuantite(value)
-                                    }
-                                  }}
-                                />
+                              <div className="space-y-3 mt-3">
+                                {/* <div>
+                                  <Label>Quantité Initiale</Label>
+                                  <Input
+                                    type="number"
+                                    id="input"
+                                    value={stockInitial}
+                                    onChange={(e) => {
+                                      const value = Number(e.target.value)
+                                      if (value >= 0) {
+                                        setStockInitial(value)
+                                      }
+                                    }}
+                                  />
+                                </div> */}
+                                <div>
+                                  <Label>Quantité demandée</Label>
+                                  <Input
+                                    type="number"
+                                    id="input"
+                                    value={quantite}
+                                    onChange={(e) => {
+                                      const value = Number(e.target.value)
+                                      if (value >= 0) {
+                                        setQuantite(value)
+                                      }
+                                    }}
+                                  />
+                                </div>
                               </div>
                             </>
                           ) : (
@@ -1205,7 +1360,7 @@ export default function DemandeInputs() {
                         </button>
                       </div>
                     </div>
-                    {parLot ? (
+                    {selectedType ? (
                       <>
                         <div className="text-center">
                           {loadingValidation ? (
@@ -1218,107 +1373,7 @@ export default function DemandeInputs() {
                             <>
                               <div className="w-full flex justify-center items-center">
                                 <button className="w-1/2 flex items-center justify-center bg-green-400 p-2 rounded-2xl"
-                                  onClick={handleSortieParLot}
-                                >
-                                  Faire demande
-                                </button>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <></>
-                    )}
-                    {parCartonLot ? (
-                      <>
-                        <div className="text-center">
-                          {loadingValidation ? (
-                            <>
-                              <div>
-                                <ProgressSpinner style={{ width: '50px', height: '50px' }} strokeWidth="8" animationDuration=".5s" />
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              <div className="w-full flex justify-center items-center">
-                                <button className="w-1/2 flex items-center justify-center bg-green-400 p-2 rounded-2xl"
-                                  onClick={handleSortieParCartonLot}
-                                >
-                                  Faire demande
-                                </button>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <></>
-                    )}
-                    {parPieceCarton ? (
-                      <>
-                        <div className="text-center">
-                          {loadingValidation ? (
-                            <>
-                              <div>
-                                <ProgressSpinner style={{ width: '50px', height: '50px' }} strokeWidth="8" animationDuration=".5s" />
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              <div className="w-full flex justify-center items-center">
-                                <button className="w-1/2 flex items-center justify-center bg-green-400 p-2 rounded-2xl"
-                                  onClick={handleSortieParPieceCarton}
-                                >
-                                  Faire demande
-                                </button>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <></>
-                    )}
-                    {parCarton ? (
-                      <>
-                        <div className="text-center">
-                          {loadingValidation ? (
-                            <>
-                              <div>
-                                <ProgressSpinner style={{ width: '50px', height: '50px' }} strokeWidth="8" animationDuration=".5s" />
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              <div className="w-full flex justify-center items-center">
-                                <button className="w-1/2 flex items-center justify-center bg-green-400 p-2 rounded-2xl"
-                                  onClick={handleSortieParCarton}
-                                >
-                                  Faire demande
-                                </button>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <></>
-                    )}
-                    {parPiece ? (
-                      <>
-                        <div className="text-center">
-                          {loadingValidation ? (
-                            <>
-                              <div>
-                                <ProgressSpinner style={{ width: '50px', height: '50px' }} strokeWidth="8" animationDuration=".5s" />
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              <div className="w-full flex justify-center items-center">
-                                <button className="w-1/2 flex items-center justify-center bg-green-400 p-2 rounded-2xl"
-                                  onClick={handleSortieParPiece}
+                                  onClick={handleSortie}
                                 >
                                   Faire demande
                                 </button>
@@ -1365,7 +1420,7 @@ export default function DemandeInputs() {
           </div>
           <div className="space-y-1 ms-5">
             <div>
-              <span>Demande : {parPiece? 'par pièce' : parCarton ? 'par carton' : parLot ? 'par lot' : '?'}</span>
+              <span>Demande : {parPiece ? 'par pièce' : parCarton ? 'par carton' : parLot ? 'par lot' : '?'}</span>
             </div>
             <div>
               <span>Quantité demandée : {quantite}</span>

@@ -171,6 +171,9 @@ import UserDetails from "./pages/Accounts/UserDetails"
 // @ts-ignore
 import ItemDetails from "./pages/GestionStock/ItemDetails"
 
+// @ts-ignore
+import ValidateDemandeForm from "./pages/Forms/DemandesForms/ValidateDemandeForm"
+
 export default function App() {
   return (
     <>
@@ -221,6 +224,7 @@ export default function App() {
               <Route path="/toutes-les-demandes" element={<AllDemandes />} />
               <Route path="/demande-details/:id" element={<DemandeDetails />} />
               <Route path="/modifier-demande/:id" element={<ModifyDemandeForm />} />
+              <Route path="/valider-demande/:id" element={<ValidateDemandeForm />} />
 
               {/* Remplacement */}
               <Route path="/nouveau-remplacement" element={<RemplacementForm />} />

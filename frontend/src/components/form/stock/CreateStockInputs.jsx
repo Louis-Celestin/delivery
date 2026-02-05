@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react"
-import { useParams, useNavigate } from "react-router"
+import { useParams, useNavigate, useLocation } from "react-router"
 import ComponentCard from "../../common/ComponentCard"
 import { Stock } from "../../../backend/stock/Stock"
 import { Users } from "../../../backend/users/Users"
@@ -23,6 +23,19 @@ export default function CreateStockInputs() {
 
     const navigate = useNavigate();
     const userId = localStorage.getItem('id');
+
+    // const idDemande = sessionStorage.getItem('id_demande')
+    const location = useLocation();
+    const { from, idDemande } = location.state || {};
+    const fromSuccess =
+        from === "demande-details" && idDemande
+            ? `/valider-demande/${idDemande}`
+            : "/voir-stocks";
+
+    const fromFail =
+        from === "demande-details" && idDemande
+            ? `/demande-details/${idDemande}`
+            : "/voir-stocks";
 
     const [loading, setLoading] = useState(false)
 
@@ -124,6 +137,7 @@ export default function CreateStockInputs() {
         const fetchPieces = async () => {
             setLoading(true)
             try {
+                console.log(idDemande)
                 const pieces_data_all = await stockData.getAllItems()
                 const pieces_data = pieces_data_all.filter((item) => {
                     return item.is_deleted == false
@@ -1015,14 +1029,16 @@ export default function CreateStockInputs() {
                 text: "Stock créé avec succès !",
                 icon: "success"
             })
-            navigate('/voir-stocks')
+            // navigate('/voir-stocks')
+            navigate(fromSuccess, { replace: true });
         } catch (error) {
             Swal.fire({
                 title: "Attention",
                 text: "Une erreur est survenue lors de la création !",
                 icon: "warning"
             })
-            navigate('/voir-stocks')
+            // navigate('/voir-stocks')
+            navigate(fromFail, { replace: true });
         } finally {
             setLoadingValidation(false)
         }

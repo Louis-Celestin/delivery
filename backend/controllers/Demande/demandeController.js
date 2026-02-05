@@ -44,35 +44,215 @@ if (test_env) {
 // DEMANDE TPE ORNELLA -> DT
 
 
+// const faireDemande = async (req, res) => {
+//   try {
+//     const {
+//       nomDemandeur,
+//       commentaire,
+//       selectedStock,
+//       quantite_demande,
+//       nomenclature,
+//       detailsDemande,
+//       detailsDemandeur,
+//       userId,
+//       itemId,
+//       idDemandeur,
+//       motif,
+//       serviceDemandeur,
+//       champsAutre,
+//     } = req.body;
+
+//     const details = typeof detailsDemande === "string"
+//       ? JSON.parse(detailsDemande)
+//       : detailsDemande;
+
+//     const autres = typeof champsAutre === "string"
+//       ? JSON.parse(champsAutre)
+//       : champsAutre
+
+//     const piece = await prisma.items.findUnique({
+//       where: {
+//         id_piece: parseInt(itemId)
+//       }
+//     })
+
+//     if (!piece) {
+//       console.log("Erreur serveur 404: pièce introuvable ! ")
+//       return res.status(404).json({ message: "Pièce introuvable !" })
+//     }
+
+//     const stock = await prisma.stocks.findUnique({
+//       where: {
+//         id: parseInt(selectedStock)
+//       }
+//     })
+
+//     if (!stock) {
+//       console.log("Erreur serveur 404: stock introuvable ! ")
+//       return res.status(404).json({ message: "Stock introuvable !" })
+//     }
+
+//     let utilisateur = null;
+//     utilisateur = await prisma.users.findUnique({
+//       where: {
+//         id_user: parseInt(userId)
+//       }
+//     });
+
+//     if (!utilisateur) {
+//       console.log("Erreur serveur 404: utilisateur introuvable ! ")
+//       return res.status(404).json({ message: "Utilisateur non trouvé" });
+//     }
+
+//     const nouvelleDemande = await prisma.demandes.create({
+//       data: {
+//         nom_demandeur: nomDemandeur,
+//         date_demande: new Date(),
+//         commentaire,
+//         qte_total_demande: quantite_demande,
+//         nomenclature,
+//         details_demande: JSON.stringify(detailsDemande),
+//         details_demandeur: JSON.stringify(detailsDemandeur),
+//         statut_demande: 'en_cours',
+//         user_id: parseInt(userId),
+//         stock_id: parseInt(selectedStock),
+//         item_id: parseInt(itemId),
+//         type_demande: parseInt(details.typeMouvement),
+//         id_demandeur: parseInt(idDemandeur),
+//         motif_demande: motif,
+//         service_demandeur: parseInt(serviceDemandeur),
+//         champs_autre: JSON.stringify(autres)
+//       }
+//     });
+
+
+//     /************************** GESTION DES MAILS ********************************/
+//     const service = await prisma.services.findUnique({
+//       where: {
+//         id: parseInt(serviceDemandeur)
+//       }
+//     })
+
+//     const nomService = service.nom_service.toUpperCase()
+
+//     const userService = await prisma.user_services.findMany({
+//       where: {
+//         service_id: parseInt(serviceDemandeur)
+//       },
+//       include: {
+//         users: true
+//       }
+//     })
+
+//     const userRole = await prisma.user_roles.findMany({
+//       where: {
+//         role_id: 4,
+//       },
+//       include: {
+//         users: true
+//       }
+//     })
+//     const mouvement = await prisma.type_mouvement_stock.findUnique({
+//       where: {
+//         id: details.typeMouvement
+//       }
+//     })
+
+//     const service_users = userService.map(us => us.users)
+//     const validateurs = userRole.map(us => us.users)
+
+//     let nomPiece = piece.nom_piece.toUpperCase()
+
+//     let quantiteDemande = quantite_demande;
+
+//     let commentaire_mail = commentaire ? commentaire : '(sans commentaire)';
+
+//     const url = GENERAL_URL
+//     let demandeLink = `${url}/demande-details/${nouvelleDemande.id}`;
+
+//     const sendMail = require("../../utils/emailSender");
+
+//     if ((service_users && service_users.length > 0) || (validateurs && validateurs.length > 0)) {
+//       const subject = `NOUVELLE DEMANDE POUR ${motif}`;
+//       let html = `
+//         <p>Bonjour,</p>
+//         <p>Une nouvelle demande a été enregistrée.</p>
+//         <ul>
+//           <li><strong>Demande de :</strong> ${nomPiece}</li>
+//           <li><strong>${mouvement.titre}</strong></li>
+//           <li><strong>Nombre de produits:</strong> ${quantiteDemande}</li>
+//         </ul>
+//         <ul>
+//           <li><strong>Service demandeur:</strong> ${nomService}</li>
+//           <li><strong>Nom demandeur:</strong> ${nomDemandeur}</li>
+//         </ul>
+//         <br>
+//         <p>Commentaire : ${commentaire_mail}<p>
+//         <br>
+//         <p>Retrouvez la demande à ce lien : 
+//           <span>
+//           <a href="${demandeLink}" target="_blank" style="background-color: #73dced; color: white; padding: 7px 12px; text-decoration: none; border-radius: 5px;">
+//             Cliquez ici !
+//           </a>
+//           </span>
+//         </p>
+//         <br><br>
+//         <p>Green - Pay vous remercie.</p>
+//         `;
+//       for (const service_user of service_users) {
+//         await sendMail({
+//           to: service_user.email,
+//           subject,
+//           html,
+//         });
+//       }
+//       for (const validateur of validateurs) {
+//         await sendMail({
+//           to: validateur.email,
+//           subject,
+//           html,
+//         });
+//       }
+//     }
+
+//     console.log("Succès ! ")
+//     res.status(201).json({
+//       message: "Demande enregistrée avec succès",
+//       demandes: nouvelleDemande
+//     });
+
+//   } catch (error) {
+//     console.log("Erreur serveur: ",error)
+//     console.error("Erreur lors de la demande :", error);
+//     res.status(500).json({ message: "Erreur interne", error });
+//   }
+// };
+
 const faireDemande = async (req, res) => {
   try {
     const {
-      nomDemandeur,
-      commentaire,
-      selectedStock,
-      quantite_demande,
-      nomenclature,
       detailsDemande,
-      detailsDemandeur,
       userId,
-      itemId,
-      idDemandeur,
+      quantite,
+      serviceUser,
+      selectedUser,
+      nomUser,
       motif,
-      serviceDemandeur,
-      champsAutre,
+      commentaire,
+      otherFields,
     } = req.body;
 
     const details = typeof detailsDemande === "string"
       ? JSON.parse(detailsDemande)
       : detailsDemande;
 
-    const autres = typeof champsAutre === "string"
-      ? JSON.parse(champsAutre)
-      : champsAutre
+    const autres = typeof otherFields === "string"
+      ? JSON.parse(otherFields)
+      : otherFields
 
     const piece = await prisma.items.findUnique({
       where: {
-        id_piece: parseInt(itemId)
+        id_piece: parseInt(details.selectedPiece)
       }
     })
 
@@ -81,16 +261,16 @@ const faireDemande = async (req, res) => {
       return res.status(404).json({ message: "Pièce introuvable !" })
     }
 
-    const stock = await prisma.stocks.findUnique({
-      where: {
-        id: parseInt(selectedStock)
-      }
-    })
+    // const stock = await prisma.stocks.findUnique({
+    //   where: {
+    //     id: parseInt(selectedStock)
+    //   }
+    // })
 
-    if (!stock) {
-      console.log("Erreur serveur 404: stock introuvable ! ")
-      return res.status(404).json({ message: "Stock introuvable !" })
-    }
+    // if (!stock) {
+    //   console.log("Erreur serveur 404: stock introuvable ! ")
+    //   return res.status(404).json({ message: "Stock introuvable !" })
+    // }
 
     let utilisateur = null;
     utilisateur = await prisma.users.findUnique({
@@ -106,21 +286,20 @@ const faireDemande = async (req, res) => {
 
     const nouvelleDemande = await prisma.demandes.create({
       data: {
-        nom_demandeur: nomDemandeur,
+        nom_demandeur: nomUser,
         date_demande: new Date(),
         commentaire,
-        qte_total_demande: quantite_demande,
-        nomenclature,
+        qte_total_demande: parseInt(quantite),
         details_demande: JSON.stringify(detailsDemande),
-        details_demandeur: JSON.stringify(detailsDemandeur),
+        // details_demandeur: JSON.stringify(detailsDemandeur),
         statut_demande: 'en_cours',
         user_id: parseInt(userId),
-        stock_id: parseInt(selectedStock),
-        item_id: parseInt(itemId),
-        type_demande: parseInt(details.typeMouvement),
-        id_demandeur: parseInt(idDemandeur),
+        // stock_id: parseInt(selectedStock),
+        item_id: parseInt(details.selectedPiece),
+        // type_demande: parseInt(details.typeMouvement),
+        id_demandeur: parseInt(selectedUser),
         motif_demande: motif,
-        service_demandeur: parseInt(serviceDemandeur),
+        service_demandeur: parseInt(serviceUser),
         champs_autre: JSON.stringify(autres)
       }
     });
@@ -129,7 +308,7 @@ const faireDemande = async (req, res) => {
     /************************** GESTION DES MAILS ********************************/
     const service = await prisma.services.findUnique({
       where: {
-        id: parseInt(serviceDemandeur)
+        id: parseInt(serviceUser)
       }
     })
 
@@ -137,7 +316,7 @@ const faireDemande = async (req, res) => {
 
     const userService = await prisma.user_services.findMany({
       where: {
-        service_id: parseInt(serviceDemandeur)
+        service_id: parseInt(serviceUser)
       },
       include: {
         users: true
@@ -152,18 +331,18 @@ const faireDemande = async (req, res) => {
         users: true
       }
     })
-    const mouvement = await prisma.type_mouvement_stock.findUnique({
-      where: {
-        id: details.typeMouvement
-      }
-    })
+    // const mouvement = await prisma.type_mouvement_stock.findUnique({
+    //   where: {
+    //     id: details.typeMouvement
+    //   }
+    // })
 
     const service_users = userService.map(us => us.users)
     const validateurs = userRole.map(us => us.users)
 
     let nomPiece = piece.nom_piece.toUpperCase()
 
-    let quantiteDemande = quantite_demande;
+    let quantiteDemande = quantite;
 
     let commentaire_mail = commentaire ? commentaire : '(sans commentaire)';
 
@@ -199,20 +378,20 @@ const faireDemande = async (req, res) => {
         <br><br>
         <p>Green - Pay vous remercie.</p>
         `;
-      for (const service_user of service_users) {
-        await sendMail({
-          to: service_user.email,
-          subject,
-          html,
-        });
-      }
-      for (const validateur of validateurs) {
-        await sendMail({
-          to: validateur.email,
-          subject,
-          html,
-        });
-      }
+      // for (const service_user of service_users) {
+      //   await sendMail({
+      //     to: service_user.email,
+      //     subject,
+      //     html,
+      //   });
+      // }
+      // for (const validateur of validateurs) {
+      //   await sendMail({
+      //     to: validateur.email,
+      //     subject,
+      //     html,
+      //   });
+      // }
     }
 
     console.log("Succès ! ")

@@ -38,19 +38,7 @@ export default function SignInForm() {
       localStorage.setItem('id', response.user.id_user);
       localStorage.setItem('email', response.user.email);
       localStorage.setItem('username', response.user.username)
-      // localStorage.setItem('fonction', response.user.agents.fonction);
-      // localStorage.setItem('role', response.user.roles.designation_role );
-      // localStorage.setItem('role_id',response.user.roles.id_role);
-      // localStorage.setItem('name', response.user.agents.nom);
-      // localStorage.setItem('user_id', response.user.agent_id);
-      // const name = localStorage.getItem('name');
       const user_id = localStorage.getItem('id');
-      // const user_fonction = localStorage.getItem('fonction');
-      // const user_role = localStorage.getItem('role');
-      // console.log(name)
-      // console.log('fonction : ', user_fonction)
-      // console.log('USER ID : ', user_id)
-      // console.log('ROLE :', user_role)
       console.log(connectMessage)
       console.log("USER ID CONNECTED : ", user_id)
       refreshUser();

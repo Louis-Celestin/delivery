@@ -118,6 +118,13 @@ export default function DemandeDetails() {
     const [nomStock, setNomStock] = useState('')
     const [stockId, setStockId] = useState(null)
 
+    const [stocksPiece, setStocksPiece] = useState([])
+
+    const [isModalAlerteStockOpen, setIsModalAlerterStockOpen] = useState(false)
+
+    const [nomModel, setNomModel] = useState('')
+    const [servicePiece, setServicePiece] = useState('')
+
     const formatDate = (date) => {
         const d = new Date(date);
         return d.toLocaleDateString('fr-FR'); // or use any locale you want
@@ -214,12 +221,11 @@ export default function DemandeDetails() {
                         // setCommentaireValidation(demandeData.validations[0].commentaire)
                     }
 
-                    
                     const stock_data = await stock.getAllStocks()
                     const selectedStock = stock_data.find((item) => {
                         return item.id == demandeData.stock_id
                     })
-                    const nom_stock = selectedStock ? selectedStock.code_stock : 'N/A'
+                    const nom_stock = selectedStock ? selectedStock.code_stock : ''
                     setNomStock(nom_stock)
                     const stock_id = selectedStock ? selectedStock.id : null
                     setStockId(stock_id)
@@ -232,7 +238,7 @@ export default function DemandeDetails() {
                     const piece = items_data.find((item) => {
                         return item.id_piece == demandeData.item_id
                     })
-                    if(piece){
+                    if (piece) {
                         setNomPiece(piece.nom_piece)
                         setPieceId(piece.id_piece)
                     }
@@ -247,7 +253,7 @@ export default function DemandeDetails() {
                         details.stockInitialCartonLot : type_demande == 3 ?
                             details.stockInitialPieceCarton : type_demande == 4 ?
                                 details.stockInitialCarton : type_demande == 5 ?
-                                    details.stockInitialPiece : 0
+                                    details.stockInitialPiece : NaN
 
                     setStockDepart(stock_depart)
 
@@ -255,7 +261,7 @@ export default function DemandeDetails() {
                         details.stockFinalCartonLot : type_demande == 3 ?
                             details.stockFinalPieceCarton : type_demande == 4 ?
                                 details.stockFinalCarton : type_demande == 5 ?
-                                    details.stockFinalPiece : 0
+                                    details.stockFinalPiece : NaN
 
                     setStockFinal(stock_final)
 
@@ -271,7 +277,29 @@ export default function DemandeDetails() {
                     })
 
                     const nomType = typeMouvement ? typeMouvement.titre : ''
-                    setTypeDemande(nomType)
+                    setTypeDemande(details.typeDemande)
+
+                    const models_data = await stock.getAllModels()
+                    const model = models_data.find((item) => {
+                        return item.id_model == details.selectedModel
+                    })
+                    if (model) {
+                        setNomModel(model.nom_model)
+                    }
+                    const serviceItem = services_data.find((item) => {
+                        return item.id == details.selectedServicePiece
+                    })
+                    if (serviceItem) {
+                        setServicePiece(serviceItem.nom_service)
+                    }
+
+                    const stocks = stock_data.filter((item) => {
+                        return item.piece_id == demandeData.item_id &&
+                            item.is_deleted == false &&
+                            item.model_id == details.selectedModel &&
+                            item.service_id == details.selectedServicePiece
+                    })
+                    setStocksPiece(stocks)
 
                 } catch (error) {
                     console.log("Error fetchind data ", error)
@@ -592,13 +620,41 @@ export default function DemandeDetails() {
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <button className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'
+                                                        {/* <button className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'
                                                             onClick={() => {
-                                                                setIsModalOpen(true)
+                                                                if (stocksPiece.length == 0) {
+                                                                    setIsModalAlerterStockOpen(true)
+                                                                } else {
+                                                                    navigate(`/valider-demande/${id}`);
+                                                                }
                                                             }}>
                                                             <span className='mr-4'><i className="pi pi-check"></i></span>
                                                             <span className='text-sm text-gray-700 font-medium'>Valider demande</span>
-                                                        </button>
+                                                        </button> */}
+                                                        {stocksPiece.length == 0 ? (
+                                                            <>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        navigate(`/creer-stock`, {
+                                                                            state: {
+                                                                                from: 'demande-details',
+                                                                                idDemande: id
+                                                                            }
+                                                                        })
+                                                                    }}
+                                                                    className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200' >
+                                                                    <span className='mr-4'><i className="pi pi-plus"></i></span>
+                                                                    <span className='text-sm text-gray-700 font-medium'>Créer nouveau stock</span>
+                                                                </button>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <Link to={`/valider-demande/${id}`} className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'>
+                                                                    <span className='mr-4'><i className="pi pi-check"></i></span>
+                                                                    <span className='text-sm text-gray-700 font-medium'>Valider demande</span>
+                                                                </Link>
+                                                            </>
+                                                        )}
                                                         <button className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'
                                                             onClick={() => {
                                                                 setIsModalReturnOpen(true)
@@ -697,7 +753,7 @@ export default function DemandeDetails() {
                                                 <div className='mb-6 pb-2 w-full border-b text-right'>
                                                     <span className='text-sm mr-2'>Commentaire réception</span>
                                                     <span className='text-sm'><i className="pi pi-comment"></i></span>
-                                                </div>      
+                                                </div>
                                                 {commentaireReception ? (
                                                     <p className='text-sm text-orange-500 text-right'>{commentaireReception}</p>
                                                 ) : (
@@ -715,7 +771,7 @@ export default function DemandeDetails() {
                         }
 
                         <div className='flex justify-center items-center'>
-                            <div className='w-9/12 px-20 py-6 bg-white rounded-2xl border'>
+                            <div className='w-full px-20 py-6 bg-white rounded-2xl border'>
                                 <div className='w-full text-center mb-4'>
                                     <span className='text-md underline'>
                                         Mouvement de stock
@@ -730,12 +786,22 @@ export default function DemandeDetails() {
                                     <tbody>
                                         <tr className='border h-15'>
                                             <th className='border w-1/2'>Pièce demandée</th>
-                                            <th className='border w-1/2'>{nomPiece}</th>
+                                            <th className='border w-1/2 flex-col'>
+                                                <div className='text-sm'>{nomPiece}</div>
+                                                <div className='font-medium'>{nomModel}</div>
+                                                <div className='font-medium'>{servicePiece}</div>
+                                            </th>
                                         </tr>
-                                        <tr className='border h-15'>
-                                            <th className='border w-1/2'>Code Stock</th>
-                                            <th className='border w-1/2'>{nomStock}</th>
-                                        </tr>
+                                        {nomStock ? (
+                                            <>
+                                                <tr className='border h-15'>
+                                                    <th className='border w-1/2'>Code Stock</th>
+                                                    <th className='border w-1/2'>{nomStock}</th>
+                                                </tr>
+                                            </>
+                                        ) : (
+                                            <></>
+                                        )}
                                         <tr className='border h-15'>
                                             <th className='border w-1/2'>Service demandeur</th>
                                             <th className='border w-1/2'>{serviceDemandeur}</th>
@@ -748,26 +814,38 @@ export default function DemandeDetails() {
                                             <th className='border w-1/2'>Type demande</th>
                                             <th className='border w-1/2'>{typeDemande}</th>
                                         </tr>
-                                        <tr className='border h-15'>
-                                            <th className='border w-1/2'>Quantité initiale</th>
-                                            <th className='border w-1/2'>{stockDepart}</th>
-                                        </tr>
+                                        {valide ? (
+                                            <>
+                                                <tr className='border h-15'>
+                                                    <th className='border w-1/2'>Quantité initiale</th>
+                                                    <th className='border w-1/2'>{stockDepart}</th>
+                                                </tr>
+                                            </>
+                                        ) : (
+                                            <></>
+                                        )}
                                         <tr className='border h-15'>
                                             <th className='border w-1/2'>Quantité demandée</th>
                                             <th className='border w-1/2'>{quantiteDemande}</th>
                                         </tr>
-                                        <tr className='border h-15'>
-                                            <th className='border w-1/2'>Quantité finale</th>
-                                            <th className='border w-1/2'>{stockFinal}</th>
-                                        </tr>
-                                        <tr className='border h-15'>
+                                        {valide ? (
+                                            <>
+                                                <tr className='border h-15'>
+                                                    <th className='border w-1/2'>Quantité finale</th>
+                                                    <th className='border w-1/2'>{stockFinal}</th>
+                                                </tr>
+                                            </>
+                                        ) : (
+                                            <></>
+                                        )}
+                                        {/* <tr className='border h-15'>
                                             <th className='border w-1/2'>Stock initial pièce</th>
                                             <th className='border w-1/2'>{stockDepartPiece}</th>
                                         </tr>
                                         <tr className='border h-15'>
                                             <th className='border w-1/2'>Stock final pièce</th>
                                             <th className='border w-1/2'>{stockFinalPiece}</th>
-                                        </tr>
+                                        </tr> */}
                                         {nomenclature ? (
                                             <tr className='border h-15'>
                                                 <th className='border w-1/2'>Nomenclature</th>
@@ -988,7 +1066,21 @@ export default function DemandeDetails() {
                     </div>
                 </div>
             </Modal>
-
+            <Modal isOpen={isModalAlerteStockOpen} onClose={() => setIsModalAlerterStockOpen(false)} className="p-4 max-w-md">
+                <div className='p-1 space-y-9'>
+                    <div className="w-full text-center">
+                        <span className="p-3 rounded bg-warning-200 text-warning-500 font-medium">Attention</span>
+                    </div>
+                    <div className='text-center text-sm font-normal'>
+                        <span>Aucun stock n'existe pour cette pièce !</span>
+                    </div>
+                    <div>
+                        <Link to={'/creer-stock'} className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center justify-center hover:bg-gray-200'>
+                            <span className='text-sm text-gray-700 font-medium'>Créer nouveau stock</span>
+                        </Link>
+                    </div>
+                </div>
+            </Modal>
         </>
     )
 }

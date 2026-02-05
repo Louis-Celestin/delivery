@@ -42,7 +42,7 @@ model demandes {
   details_demandeur                  String?                 @db.LongText
   statut_demande                     demandes_statut_demande
   user_id                            Int?
-  stock_id                           Int
+  stock_id                           Int?
   item_id                            Int?
   type_demande                       Int?
   role_id_recepteur                  Int?
@@ -59,7 +59,7 @@ model demandes {
   items                              items?                  @relation(fields: [item_id], references: [id_piece], onDelete: Restrict, onUpdate: Restrict, map: "demandes_ibfk_6")
   users_demandes_id_demandeurTousers users?                  @relation("demandes_id_demandeurTousers", fields: [id_demandeur], references: [id_user], onDelete: Restrict, onUpdate: Restrict, map: "demandes_ibfk_7")
   services                           services?               @relation(fields: [service_demandeur], references: [id], onDelete: NoAction, map: "demandes_ibfk_8")
-  stocks                             stocks                  @relation(fields: [stock_id], references: [id], onDelete: NoAction, map: "demandes_ibfk_9")
+  stocks                             stocks?                 @relation(fields: [stock_id], references: [id], onDelete: NoAction, map: "demandes_ibfk_9")
   livraison_piece                    livraison_piece?
   mouvement_stock                    mouvement_stock[]
   reception_piece                    reception_piece[]
