@@ -125,6 +125,8 @@ export default function DemandeDetails() {
     const [nomModel, setNomModel] = useState('')
     const [servicePiece, setServicePiece] = useState('')
 
+    const [quantiteLivree, setQuantiteLivree] = useState(0)
+
     const formatDate = (date) => {
         const d = new Date(date);
         return d.toLocaleDateString('fr-FR'); // or use any locale you want
@@ -150,6 +152,7 @@ export default function DemandeDetails() {
                     setDemandeDetails(demandeData);
                     setMotifDemande(demandeData.motif_demande)
                     setCommentaire(demandeData.commentaire)
+                    const details = JSON.parse(demandeData.details_demande)
 
                     const services_data = await usersData.getAllServices()
                     const service = services_data.find((item) => {
@@ -179,6 +182,7 @@ export default function DemandeDetails() {
                         index = demandeData.validation_demande.length - 1
                         setCommentaireValidation(demandeData.validation_demande[index].commentaire)
                         setIsCompleted(true)
+                        
                         if (demandeData.demande_livree) {
                             let index_reception
                             setIsDelivered(true);
@@ -245,7 +249,7 @@ export default function DemandeDetails() {
                     setNomDemandeur(demandeData.nom_demandeur)
                     setNomenclature(demandeData.nomenclature)
                     const autres = JSON.parse(demandeData.champs_autre)
-                    const details = JSON.parse(demandeData.details_demande)
+                   
                     setOtherFields(autres)
                     setQuantiteDemande(demandeData.qte_total_demande)
                     const type_demande = details.typeMouvement
@@ -253,7 +257,7 @@ export default function DemandeDetails() {
                         details.stockInitialCartonLot : type_demande == 3 ?
                             details.stockInitialPieceCarton : type_demande == 4 ?
                                 details.stockInitialCarton : type_demande == 5 ?
-                                    details.stockInitialPiece : NaN
+                                    details.stockInitialPiece : 0
 
                     setStockDepart(stock_depart)
 
@@ -261,9 +265,17 @@ export default function DemandeDetails() {
                         details.stockFinalCartonLot : type_demande == 3 ?
                             details.stockFinalPieceCarton : type_demande == 4 ?
                                 details.stockFinalCarton : type_demande == 5 ?
-                                    details.stockFinalPiece : NaN
+                                    details.stockFinalPiece : 0
 
                     setStockFinal(stock_final)
+
+                    const stock_livre = type_demande == 1 ? details.quantiteMouvementLot : type_demande == 2 ?
+                        details.quantiteMouvementCartonLot : type_demande == 3 ?
+                            details.quantiteMouvementPieceCarton : type_demande == 4 ?
+                                details.quantiteMouvementCarton : type_demande == 5 ?
+                                    details.quantiteMouvement : 0
+
+                    setQuantiteLivree(stock_livre)
 
                     const intial_piece = type_demande == 5 ? details.stockInitialPiece : details.stockInitialPiece
                     setStockDepartPiece(intial_piece)
@@ -277,7 +289,11 @@ export default function DemandeDetails() {
                     })
 
                     const nomType = typeMouvement ? typeMouvement.titre : ''
-                    setTypeDemande(details.typeDemande)
+                    if (typeMouvement) {
+                        setTypeDemande(nomType)
+                    } else {
+                        setTypeDemande(details.typeDemande)
+                    }
 
                     const models_data = await stock.getAllModels()
                     const model = models_data.find((item) => {
@@ -297,7 +313,8 @@ export default function DemandeDetails() {
                         return item.piece_id == demandeData.item_id &&
                             item.is_deleted == false &&
                             item.model_id == details.selectedModel &&
-                            item.service_id == details.selectedServicePiece
+                            item.service_id == details.selectedServicePiece &&
+                            item.quantite_piece > 0
                     })
                     setStocksPiece(stocks)
 
@@ -549,7 +566,7 @@ export default function DemandeDetails() {
             {loading ?
                 (<>Loading...</>) :
                 (<>
-                    <PageBreadcrumb pageTitle="Demande de stock" />
+                    <PageBreadcrumb pageTitle="Mouvement de stock" />
                     <div>
                         <div className='grid grid-cols-2 justify-between items-center mb-6'>
                             <div>
@@ -811,19 +828,9 @@ export default function DemandeDetails() {
                                             <th className='border w-1/2'>{nomDemandeur}</th>
                                         </tr>
                                         <tr className='border h-15'>
-                                            <th className='border w-1/2'>Type demande</th>
+                                            <th className='border w-1/2'>Mouvement stock</th>
                                             <th className='border w-1/2'>{typeDemande}</th>
                                         </tr>
-                                        {valide ? (
-                                            <>
-                                                <tr className='border h-15'>
-                                                    <th className='border w-1/2'>Quantité initiale</th>
-                                                    <th className='border w-1/2'>{stockDepart}</th>
-                                                </tr>
-                                            </>
-                                        ) : (
-                                            <></>
-                                        )}
                                         <tr className='border h-15'>
                                             <th className='border w-1/2'>Quantité demandée</th>
                                             <th className='border w-1/2'>{quantiteDemande}</th>
@@ -831,12 +838,21 @@ export default function DemandeDetails() {
                                         {valide ? (
                                             <>
                                                 <tr className='border h-15'>
+                                                    <th className='border w-1/2'>Quantité initiale</th>
+                                                    <th className='border w-1/2'>{stockDepart}</th>
+                                                </tr>
+                                                <tr className='border h-15'>
+                                                    <th className='border w-1/2'>Quantité livrée</th>
+                                                    <th className='border w-1/2'>{quantiteLivree}</th>
+                                                </tr>
+                                                <tr className='border h-15'>
                                                     <th className='border w-1/2'>Quantité finale</th>
                                                     <th className='border w-1/2'>{stockFinal}</th>
                                                 </tr>
                                             </>
                                         ) : (
-                                            <></>
+                                            <>
+                                            </>
                                         )}
                                         {/* <tr className='border h-15'>
                                             <th className='border w-1/2'>Stock initial pièce</th>

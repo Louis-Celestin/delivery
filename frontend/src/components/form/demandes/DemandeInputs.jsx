@@ -969,7 +969,6 @@ export default function DemandeInputs() {
       selectedModel,
       selectedServicePiece,
       typeDemande,
-      stockInitial,
       quantite,
     }
     const payload = {

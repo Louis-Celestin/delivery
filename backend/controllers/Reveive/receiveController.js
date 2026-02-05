@@ -154,7 +154,7 @@ const createValidation = async (req, res) => {
     const sendMail = require("../../utils/emailSender");
 
     if ((livreurs && livreurs.length > 0) || (superviseurs && superviseurs.length)) {
-      const subject = `NOUVELLE LIVRAISON (${livraisonTypeName})`;
+      const subject = `RECEPTION LIVRAISON (${livraisonTypeName})`;
       const html = `
         <p>Bonjour,</p>
         <p>La livraison ${livraison.id_livraison} a été réceptionnée.</p>

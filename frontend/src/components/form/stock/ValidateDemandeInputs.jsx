@@ -17,6 +17,8 @@ import { Demandes } from "../../../backend/demandes/Demandes.js";
 
 import { Dropdown } from "primereact/dropdown";
 
+import SignatureCanvas from 'react-signature-canvas'
+
 export default function ValidateDemandeInputs() {
 
     const stockData = new Stock()
@@ -134,9 +136,14 @@ export default function ValidateDemandeInputs() {
 
     const [hasLot, setHasLot] = useState(false)
     const [hasCarton, setHasCarton] = useState(false)
-    
+
     const [quantiteDemande, setQuantiteDemande] = useState(0)
     const [typeDemande, setTypeDemande] = useState('')
+
+    const [signature, setSignature] = useState();
+    const [message, setMessage] = useState("");
+    const [isSignModalOpen, setIsSignModalOpen] = useState(false)
+    const [errorSign, setErrorSign] = useState('');
 
     useEffect(() => {
         const fetchData = async () => {
@@ -157,7 +164,7 @@ export default function ValidateDemandeInputs() {
                 const pieceDemande = items_data.find((item) => {
                     return item.id_piece == demande_data.item_id
                 })
-                if(pieceDemande) {
+                if (pieceDemande) {
                     setNomPiece(pieceDemande.nom_piece)
                 }
 
@@ -172,8 +179,8 @@ export default function ValidateDemandeInputs() {
                 const serviceDemandeur = services_data.find((item) => {
                     return item.id == demande_data.service_demandeur
                 })
-                if (serviceDemandeur) { 
-                    setNomServiceUser(serviceDemandeur.nom_service) 
+                if (serviceDemandeur) {
+                    setNomServiceUser(serviceDemandeur.nom_service)
                 }
                 setServiceUser(demande_data.service_demandeur)
 
@@ -200,7 +207,7 @@ export default function ValidateDemandeInputs() {
 
                 const stocks_data_all = await stockData.getAllStocks()
                 const stocks_data = stocks_data_all.filter((item) => {
-                    return item.is_deleted == false && item.piece_id == demande_data.item_id
+                    return item.is_deleted == false && item.piece_id == demande_data.item_id && item.quantite_piece > 0
                 })
                 setStocks(stocks_data)
                 const options_stocks = stocks_data.map((item) => {
@@ -893,16 +900,54 @@ export default function ValidateDemandeInputs() {
         setDetailsDemandeur(details_demandeur)
     }
 
-    const handleValidate = async () => {
+    const handleClear = () => {
+        signature.clear()
+    }
+
+    const handleConfirmSign = () => {
         setSortieParPieceModalOpen(false)
         setSortieParCartonModalOpen(false)
         setSortieParPieceCartonModalOpen(false)
         setSortieParCartonLotModalOpen(false)
         setSortieParLotModalOpen(false)
 
+        setIsSignModalOpen(true)
+    }
+
+    const handleValidate = async () => {
+
+        setIsSignModalOpen(false)
+
+        if (signature.isEmpty()) {
+            setErrorSign('Vous devez signer pour valider !')
+            return;
+        }
+
+        const sign = signature.toDataURL('image/png')
+        const fd = new FormData();
+
+        if (sign) {
+            const blob = await fetch(sign).then(res => res.blob());
+            fd.append('signature', blob, 'signature.png');
+        }
+        fd.append('demande_id', idDemande)
+        fd.append('user_id', userId)
+        fd.append('commentaire', message)
+        fd.append('stock_id', selectedStock)
+        fd.append('nomDemandeur', nomUser)
+        fd.append('quantite_demande', quantite)
+        fd.append('nomenclature', nomenclature)
+        fd.append('detailsDemande', JSON.stringify(detailsDemande))
+        fd.append('detailsDemandeur', JSON.stringify(detailsDemandeur))
+        fd.append('itemId', selectedPiece)
+        fd.append('idDemandeur', selectedUser)
+        fd.append('motif', motif)
+        fd.append('serviceDemandeur', serviceUser)
+        fd.append('champsAutre', otherFields)
         const payload = {
+            idDemande,
             nomDemandeur: nomUser,
-            commentaire,
+            commentaire: message,
             selectedStock,
             quantite_demande: quantite,
             nomenclature,
@@ -920,12 +965,13 @@ export default function ValidateDemandeInputs() {
             setLoadingValidation(true)
             console.log('Sendind payload...')
 
-            const response = await demandeData.faireDemande(payload)
+            // const response = await demandeData.faireDemande(payload)
+            const response = await demandeData.validateDemande(fd)
 
             console.log(response)
             Swal.fire({
                 title: "Succès",
-                text: "Demande effectuée avec succès !",
+                text: "Demande validée avec succès !",
                 icon: "success"
             })
             navigate('/toutes-les-demandes')
@@ -933,7 +979,7 @@ export default function ValidateDemandeInputs() {
         } catch (error) {
             Swal.fire({
                 title: "Attention",
-                text: "Une erreur est survenue lors de la demande !",
+                text: "Une erreur est survenue lors de la validation !",
                 icon: "warning"
             })
             navigate('/toutes-les-demandes')
@@ -959,7 +1005,7 @@ export default function ValidateDemandeInputs() {
                             </>
                         ) : (
                             <>
-                                <ComponentCard className="md:w-1/2 w-full" title={`Demande ${nomPiece.toLocaleLowerCase()}`}>
+                                <ComponentCard className="md:w-1/2 w-full" title={`Demande ${nomPiece}`}>
                                     <div className="space-y-6">
                                         <div className="space-y-5">
                                             <div className="text-center">
@@ -1218,7 +1264,7 @@ export default function ValidateDemandeInputs() {
                                                         <div className="">
                                                             <div className="space-y-5">
                                                                 <div className="py-3 text-center">
-                                                                    <span className="text-sm font-semibold">Demande par lots</span>
+                                                                    <span className="text-sm font-semibold">Livraison par lots</span>
                                                                 </div>
                                                                 <div>
                                                                     <div>
@@ -1245,7 +1291,7 @@ export default function ValidateDemandeInputs() {
                                                         <div>
                                                             <div className="space-y-5">
                                                                 <div className="py-3 text-center">
-                                                                    <span className="text-sm font-semibold">Demande par cartons-lot</span>
+                                                                    <span className="text-sm font-semibold">Livraison par cartons-lot</span>
                                                                 </div>
                                                                 <div className="space-y-5">
                                                                     <div>
@@ -1287,29 +1333,45 @@ export default function ValidateDemandeInputs() {
                                                         <div className="space-y-5">
                                                             <div>
                                                                 <div className="py-3 text-center">
-                                                                    <span className="text-sm font-semibold">Demande par pièce-carton</span>
+                                                                    <span className="text-sm font-semibold">Livraison par pièce-carton</span>
                                                                 </div>
                                                                 <div className="space-y-5">
-                                                                    <div className="grid grid-cols-2 gap-2">
-                                                                        <div>
-                                                                            <Label>Choisir le lot</Label>
-                                                                            <Select
-                                                                                options={optionsLot}
-                                                                                placeholder="Choisir une option"
-                                                                                className="dark:bg-dark-900"
-                                                                                onChange={handleSelectLotCarton}
-                                                                            />
-                                                                        </div>
-                                                                        <div>
-                                                                            <Label>Choisir le carton</Label>
-                                                                            <Select
-                                                                                options={optionsCartons}
-                                                                                placeholder="Choisir une option"
-                                                                                className="dark:bg-dark-900"
-                                                                                onChange={handleSelectCarton}
-                                                                            />
-                                                                        </div>
-                                                                    </div>
+                                                                    {hasLot ? (
+                                                                        <>
+                                                                            <div className="grid grid-cols-2 gap-2">
+                                                                                <div>
+                                                                                    <Label>Choisir le lot</Label>
+                                                                                    <Select
+                                                                                        options={optionsLot}
+                                                                                        placeholder="Choisir une option"
+                                                                                        className="dark:bg-dark-900"
+                                                                                        onChange={handleSelectLotCarton}
+                                                                                    />
+                                                                                </div>
+                                                                                <div>
+                                                                                    <Label>Choisir le carton</Label>
+                                                                                    <Select
+                                                                                        options={optionsCartons}
+                                                                                        placeholder="Choisir une option"
+                                                                                        className="dark:bg-dark-900"
+                                                                                        onChange={handleSelectCarton}
+                                                                                    />
+                                                                                </div>
+                                                                            </div>
+                                                                        </>
+                                                                    ) : (
+                                                                        <>
+                                                                            <div>
+                                                                                <Label>Choisir le carton</Label>
+                                                                                <Select
+                                                                                    options={optionsCartons}
+                                                                                    placeholder="Choisir une option"
+                                                                                    className="dark:bg-dark-900"
+                                                                                    onChange={handleSelectCarton}
+                                                                                />
+                                                                            </div>
+                                                                        </>
+                                                                    )}
                                                                     <div>
                                                                         <Label>Quantité pièce</Label>
                                                                         <Input type="number" id="input" value={newStockPiece}
@@ -1333,7 +1395,7 @@ export default function ValidateDemandeInputs() {
                                                         <div className="">
                                                             <div className="space-y-5">
                                                                 <div className="text-center">
-                                                                    <span className="text-sm font-semibold">Demande par cartons</span>
+                                                                    <span className="text-sm font-semibold">Livraison par cartons</span>
                                                                 </div>
                                                                 <div>
                                                                     <MultiSelect
@@ -1358,7 +1420,7 @@ export default function ValidateDemandeInputs() {
                                                         <div className="space-y-5">
                                                             <div>
                                                                 <div className="py-3 text-center">
-                                                                    <span className="text-sm font-semibold">Demande par pièce</span>
+                                                                    <span className="text-sm font-semibold">Livraison par pièce</span>
                                                                 </div>
                                                                 <div>
                                                                     <Label>Quantité</Label>
@@ -1462,7 +1524,7 @@ export default function ValidateDemandeInputs() {
                                                                 <button className="w-1/2 flex items-center justify-center bg-green-400 p-2 rounded-2xl"
                                                                     onClick={handleSortieParLot}
                                                                 >
-                                                                    Faire demande
+                                                                    Valider
                                                                 </button>
                                                             </div>
                                                         </>
@@ -1487,7 +1549,7 @@ export default function ValidateDemandeInputs() {
                                                                 <button className="w-1/2 flex items-center justify-center bg-green-400 p-2 rounded-2xl"
                                                                     onClick={handleSortieParCartonLot}
                                                                 >
-                                                                    Faire demande
+                                                                    Valider
                                                                 </button>
                                                             </div>
                                                         </>
@@ -1512,7 +1574,7 @@ export default function ValidateDemandeInputs() {
                                                                 <button className="w-1/2 flex items-center justify-center bg-green-400 p-2 rounded-2xl"
                                                                     onClick={handleSortieParPieceCarton}
                                                                 >
-                                                                    Faire demande
+                                                                    Valider
                                                                 </button>
                                                             </div>
                                                         </>
@@ -1537,7 +1599,7 @@ export default function ValidateDemandeInputs() {
                                                                 <button className="w-1/2 flex items-center justify-center bg-green-400 p-2 rounded-2xl"
                                                                     onClick={handleSortieParCarton}
                                                                 >
-                                                                    Faire demande
+                                                                    Valider
                                                                 </button>
                                                             </div>
                                                         </>
@@ -1562,7 +1624,7 @@ export default function ValidateDemandeInputs() {
                                                                 <button className="w-1/2 flex items-center justify-center bg-green-400 p-2 rounded-2xl"
                                                                     onClick={handleSortieParPiece}
                                                                 >
-                                                                    Faire demande
+                                                                    Valider
                                                                 </button>
                                                             </div>
                                                         </>
@@ -1646,9 +1708,9 @@ export default function ValidateDemandeInputs() {
                     </div>
                     <div className='w-full mt-6 flex justify-center items-center'>
                         <button
-                            onClick={handleValidate}
+                            onClick={handleConfirmSign}
                             className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
-                            Valider
+                            Confirmer
                         </button>
                     </div>
                 </div>
@@ -1707,9 +1769,9 @@ export default function ValidateDemandeInputs() {
                     </div>
                     <div className='w-full mt-6 flex justify-center items-center'>
                         <button
-                            onClick={handleValidate}
+                            onClick={handleConfirmSign}
                             className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
-                            Valider
+                            Confirmer
                         </button>
                     </div>
                 </div>
@@ -1760,9 +1822,9 @@ export default function ValidateDemandeInputs() {
                     </div>
                     <div className='w-full mt-6 flex justify-center items-center'>
                         <button
-                            onClick={handleValidate}
+                            onClick={handleConfirmSign}
                             className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
-                            Valider
+                            Confirmer
                         </button>
                     </div>
                 </div>
@@ -1813,9 +1875,9 @@ export default function ValidateDemandeInputs() {
                     </div>
                     <div className='w-full mt-6 flex justify-center items-center'>
                         <button
-                            onClick={handleValidate}
+                            onClick={handleConfirmSign}
                             className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
-                            Valider
+                            Confirmer
                         </button>
                     </div>
                 </div>
@@ -1853,10 +1915,53 @@ export default function ValidateDemandeInputs() {
                     </div>
                     <div className='w-full mt-6 flex justify-center items-center'>
                         <button
-                            onClick={handleValidate}
+                            onClick={handleConfirmSign}
                             className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
-                            Valider
+                            Confirmer
                         </button>
+                    </div>
+                </div>
+            </Modal>
+
+            <Modal isOpen={isSignModalOpen} onClose={() => setIsSignModalOpen(false)} className="p-4 max-w-md">
+                <div className='p-1'>
+                    <div className="w-full text-center mb-3">
+                        <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium text-sm">Validation</span>
+                    </div>
+                    <div className='text-center mb-3 text-xs'>
+                        <span>Signez manuellement pour valider la demande</span>
+                    </div>
+                    <div className='flex flex-col justify-center items-center'>
+                        <SignatureCanvas
+                            ref={data => setSignature(data)}
+                            canvasProps={{ width: 300, height: 150, className: 'sigCanvas border border-gray-300 rounded' }}
+                        />
+                        <div className='w-full mt-3'>
+                            <Label>Commentaire</Label>
+                            <TextArea
+                                value={message}
+                                onChange={(value) => setMessage(value)}
+                                rows={4}
+                                placeholder="Ajoutez un commentaire"
+                            />
+                        </div>
+                        <div className='w-full mt-6 flex justify-center items-center'>
+                            <button
+                                onClick={handleClear}
+                                className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
+                                Clear
+                            </button>
+                            <button
+                                onClick={handleValidate}
+                                className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
+                                Valider
+                            </button>
+                        </div>
+                    </div>
+                    <div className="text-center">
+                        <span className="text-error-500 text-xs">
+                            {errorSign}
+                        </span>
                     </div>
                 </div>
             </Modal>

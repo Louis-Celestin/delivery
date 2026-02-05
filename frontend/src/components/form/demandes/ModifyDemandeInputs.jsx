@@ -22,10 +22,11 @@ export default function ModifyDemandeInputs() {
   const stockData = new Stock()
   const userData = new Users()
   const demandeData = new Demandes()
-  const { id } = useParams()
   const userId = localStorage.getItem('id');
   const role = localStorage.getItem("role_id")
   const navigate = useNavigate()
+
+  const { id } = useParams()
 
   const [loading, setLoading] = useState(false)
   const [errorForm, setErrorForm] = useState('')
@@ -47,53 +48,8 @@ export default function ModifyDemandeInputs() {
   const [nomPiece, setNomPiece] = useState('')
 
   const [parLot, setParLot] = useState(false)
-  const [parCartonLot, setParCartonLot] = useState(false)
-  const [parPieceCarton, setParPieceCarton] = useState(false)
   const [parCarton, setParCarton] = useState(false)
   const [parPiece, setParPiece] = useState(false)
-
-  const [quantitePiece, setQuantitePiece] = useState(null)
-  const [newStockPiece, setNewStockPiece] = useState(0)
-  const [finalStockPiece, setFinaleStockPiece] = useState(0)
-  const [entreeParPieceModalOpen, setEntreeParPieceModalOpen] = useState(false)
-  const [sortieParPieceModalOpen, setSortieParPieceModalOpen] = useState(false)
-
-  const [quantiteCarton, setQuantiteCarton] = useState(null)
-  const [newStockCarton, setNewStockCarton] = useState(0)
-  const [finalStockCarton, setFinalStockCarton] = useState(0)
-  const [quantitePieceCarton, setQuantitePieceCarton] = useState(0)
-  const [entreeParCartonModalOpen, setEntreeParCartonModalOpen] = useState(false)
-  const [sortieParCartonModalOpen, setSortieParCartonModalOpen] = useState(false)
-  const [selectedCartons, setSelectedCartons] = useState([])
-  const [listeCartons, setListeCartons] = useState([])
-
-  const [stockPieceCarton, setStockPieceCarton] = useState(0)
-  const [finalStockPieceCarton, setFinalStockPieceCarton] = useState(0)
-  const [selectedCarton, setSelectedCarton] = useState(null)
-  const [entreeParPieceCartonModalOpen, setEntreeParPieceCartonModalOpen] = useState(false)
-  const [sortieParPieceCartonModalOpen, setSortieParPieceCartonModalOpen] = useState(false)
-  const [nomCarton, setNomCarton] = useState('')
-
-  const [stockCartonLot, setStockCartonLot] = useState(0)
-  const [finalStockCartonLot, setFinalStockCartonLot] = useState(0)
-  const [selectedLot, setSelectedLot] = useState(null)
-  const [nomLot, setNomLot] = useState('')
-  const [entreeParCartonLotModalOpen, setEntreeParCartonLotModalOpen] = useState(false)
-  const [sortieParCartonLotModalOpen, setSortieParCartonLotModalOpen] = useState(false)
-  const [stockPieceLot, setStockPieceLot] = useState(0)
-  const [finalStockPieceLot, setFinalStockPieceLot] = useState(0)
-
-  const [quantiteLot, setQuantiteLot] = useState(null)
-  const [newStockLot, setNewStockLot] = useState(0)
-  const [finalStockLot, setFinalStockLot] = useState(0)
-  const [quantiteCartonLot, setQuantiteCartonLot] = useState(0)
-  const [selectedLots, setSelectedLots] = useState([])
-  const [listeLots, setListeLots] = useState([])
-  const [entreeParLotModalOpen, setEntreeParLotModalOpen] = useState(false)
-  const [sortieParLotModalOpen, setSortieParLotModalOpen] = useState(false)
-
-  const [optionsLot, setOptionsLot] = useState([])
-  const [optionsCartons, setOptionsCartons] = useState([])
 
   const [servicesUsers, setServicesUsers] = useState([])
   const [serviceUser, setServiceUser] = useState(null)
@@ -109,8 +65,6 @@ export default function ModifyDemandeInputs() {
 
   const [commentaire, setCommentaire] = useState('')
 
-  const [nomenclature, setNomenclature] = useState('')
-
   const [fields, setFields] = useState([])
   const [otherFields, setOtherFields] = useState([])
 
@@ -118,29 +72,35 @@ export default function ModifyDemandeInputs() {
 
   const [loadingValidation, setLoadingValidation] = useState(false)
 
-  const [detailsDemande, setDetailsDemande] = useState([])
-  const [detailsDemandeur, setDetailsDemandeur] = useState([])
-
   const [quantite, setQuantite] = useState(0)
-
-  const [quantitePieceDemandeur, setQuantitePieceDemandeur] = useState(0)
-  const [quantiteCartonDemandeur, setQuantiteCartonDemandeur] = useState(0)
-  const [quantiteLotDemandeur, setQuantiteLotDemandeur] = useState(0)
 
   const [stocks, setStocks] = useState([])
   const [optionsStocks, setOptionsStocks] = useState([])
-  const [selectedStock, setSelectedStock] = useState([])
-  const [nomStock, setNomStock] = useState('')
 
-  const [hasLot, setHasLot] = useState(false)
-  const [hasCarton, setHasCarton] = useState(false)
+  const [selectedType, setSelectedType] = useState(false)
 
+  const [validationModalOpen, setValidationModalOpen] = useState(false)
 
+  const [pieceLoading, setPieceLoading] = useState(false)
+  const [stockInitial, setStockInitial] = useState(0)
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
       try {
+
+        const demande_data = await demandeData.getOneDemande(id)
+        const detailsDemande = JSON.parse(demande_data.details_demande)
+
+        setSelectedPiece(demande_data.item_id)
+        setSelectedUser(demande_data.user_id)
+        setServiceUser(demande_data.service_demandeur)
+        setMotif(demande_data.motif_demande)
+        setCommentaire(demande_data.commentaire)
+        setQuantite(demande_data.qte_total_demande)
+        setSelectedServicePiece(detailsDemande.selectedServicePiece)
+        setSelectedModel(detailsDemande.selectedModel)
+
         const items_data = await stockData.getAllItems()
         setItems(items_data)
         const options_items = items_data.map((item) => ({
@@ -151,12 +111,25 @@ export default function ModifyDemandeInputs() {
 
         const services_data = await userData.getAllServices()
         setServicesUsers(services_data)
-        setServicesPiece(services_data)
+        // setServicesPiece(services_data)
         const options_services = services_data.map((item) => ({
           value: item.id,
           label: item.nom_service.toUpperCase()
         }))
         setOptionsServicesUsers(options_services)
+        const servicePiece = services_data.find((item) => {
+          return item.id == detailsDemande.selectedServicePiece
+        })
+        const nomService = servicePiece ? servicePiece.nom_service : ''
+        setNomServicePiece(nomService)
+
+        const models_data = await stockData.getAllModels()
+        const model = models_data.find((item) => {
+          return item.id_model == detailsDemande.selectedModel
+        })
+        if (model) {
+          setNomModel(model.nom_model)
+        }
 
         const users_data = await userData.getAllUsers()
         setUserList(users_data)
@@ -166,144 +139,67 @@ export default function ModifyDemandeInputs() {
         }))
         setOptionsUsers(options_users)
 
-        const stocks_data_all = await stockData.getAllStocks()
-        const stocks_data = stocks_data_all.filter((item) => {
-          return item.is_deleted == false
-        })
-        setStocks(stocks_data)
-        const options_stocks = stocks_data.map((item) => {
-          const serviceStock = services_data.find((s) => {
-            return s.id == item.service_id
-          })
-          const nomService = serviceStock ? serviceStock.nom_service : ''
-          return ({
-            value: item.id,
-            label: `${item.code_stock} - ${nomService}`
-          })
-        })
 
-        setOptionsStocks(options_stocks)
-
-        const models_data = await stockData.getAllModels()
-        setModels(models_data)
-
-        const demande_data = await demandeData.getOneDemande(id)
-
-        setServiceUser(demande_data.service_demandeur)
-        const serviceUserId = demande_data.service_demandeur
-        const userService = services_data.find(
-          (item) => {
-            return item.id == serviceUserId
-          }
-        )
-        const nomServiceUser = userService ? userService.nom_service.toUpperCase() : ''
-        setNomServiceUser(nomServiceUser)
-
-        setSelectedUser(demande_data.user_id)
-        const selectedUserId = demande_data.user_id
-        const user = users_data.find(
-          (item) => {
-            return item.id_user == selectedUserId
-          }
-        )
-        const nomUser = user ? user.fullname : ''
-        setNomUser(nomUser)
-
-        setMotif(demande_data.motif_demande)
-        setCommentaire(demande_data.commentaire)
-
-        setSelectedStock(demande_data.stock_id)
-        const stockId = demande_data.stock_id
-        const stock = stocks_data.find((item) => {
-          return item.id == stockId
-        })
-        if (stock) {
-          setNomStock(stock.code_stock)
-          setQuantitePiece(stock.quantite_piece)
-          // setQuantiteCarton(stock.quantite_carton)
-          // setQuantiteLot(stock.quantite_lot)
-
-          const stock_carton_all = await stockData.getCartonStock(stockId)
-          const stock_carton = stock_carton_all.filter((item) => {
-            return item.is_deleted == false
-          })
-          setQuantiteCarton(stock_carton.length)
-          if (stock_carton.length > 0) {
-            setHasCarton(true)
-          } else {
-            setHasCarton(false)
-          }
-          const carton_simple = stock_carton.filter((item) => {
-            return item.lot_id == null
-          })
-          const options_carton = carton_simple.map((item) => ({
-            value: item.id,
-            label: `Carton ${item.numero_carton} - ${item.quantite_totale_piece} pièces`
-          }))
-          setOptionsCartons(options_carton)
-          setListeCartons(stock_carton)
-
-          const stock_lot_all = await stockData.getLotStock(stockId)
-          const stock_lot = stock_lot_all.filter((item) => {
-            return item.is_deleted == false
-          })
-          setQuantiteLot(stock_lot.length)
-          setListeLots(stock_lot)
-          const options_lot = stock_lot.map((item) => ({
-            value: item.id,
-            label: `Lot ${item.numero_lot} - ${item.quantite_carton} cartons - ${item.quantite_piece} pièces`
-          }))
-          setOptionsLot(options_lot)
-          if (stock_lot.length > 0) {
-            setHasLot(true)
-          } else {
-            setHasLot(false)
-          }
-
-          if (stock && stock.piece_id == 1 && stock.service_id == 5) {
-            const stock_demandeur = stocks.find((item) => {
-              return item.service_id == 3
-            })
-            if (stock_demandeur) {
-              setQuantitePieceDemandeur(stock_demandeur.quantite_piece)
-
-              const stock_carton_all = await stockData.getCartonStock(stock_demandeur.id)
-              const stock_carton = stock_carton_all.filter((item) => {
-                return item.is_deleted == false
-              })
-              setQuantiteCartonDemandeur(stock_carton.length)
-
-              const stock_lot_all = await stockData.getLotStock(stock_demandeur.id)
-              const stock_lot = stock_lot_all.filter((item) => {
-                return item.is_deleted == false
-              })
-              setQuantiteLotDemandeur(stock_lot.length)
-            }
-          }
+        const type = detailsDemande.typeDemande
+        switch (type) {
+          case 'Par pièce':
+            setParPiece(true)
+            break
+          case 'Par carton':
+            setParCarton(true)
+            break
+          case 'Par lot':
+            setParLot(true)
+            break
         }
-        const pieceId = stock ? stock.piece_id : null
-        setSelectedPiece(pieceId)
+        setSelectedType(true)
+        // const models_data = await stockData.getAllModels()
+        // setModels(models_data)
+
+        const idPiece = demande_data.item_id
+
         const piece = items_data.find((item) => {
-          return item.id_piece == pieceId
+          return item.id_piece == idPiece
         })
-        const nomPiece = piece ? piece.nom_piece : 'N/A'
-        setNomPiece(nomPiece)
+        const nom = piece ? piece.nom_piece : ''
+        setNomPiece(nom)
+        const itemModels_data = await stockData.getItemModels(idPiece)
+        const options_models = itemModels_data.model_piece.map((item) => ({
+          value: item.id_model,
+          label: item.nom_model.toUpperCase()
+        }))
+        setOptionsModels(options_models)
+        setModels(itemModels_data.model_piece)
+        const listModels = itemModels_data.model_piece.map((item) => {
+          return item.id_model
+        })
+        if (listModels.length == 1) {
+          setSelectedModel(listModels[0])
+          const model = itemModels_data.model_piece.find((item) => {
+            return item.id_model == listModels[0]
+          })
+          const nomModel = model ? model.nom_model : ''
+          setNomModel(nomModel)
+        }
 
-        const modelId = stock ? stock.model_id : null
-        setSelectedModel(modelId)
-        const model = models_data.find((item) => {
-          return item.id_model == modelId
+        const itemService_data = await stockData.getItemServices(idPiece)
+        const options_servicesPiece = itemService_data.services.map((item) => ({
+          value: item.id,
+          label: item.nom_service.toUpperCase()
+        }))
+        setOptionsServicesPieces(options_servicesPiece)
+        setServicesPiece(itemService_data.services)
+        const listServices = itemService_data.services.map((item) => {
+          return item.id
         })
-        const nomModel = model ? model.nom_model : 'N/A'
-        setNomModel(nomModel)
-
-        const servicePieceId = stock ? stock.service_id : null
-        setSelectedServicePiece(servicePieceId)
-        const serviceStock = services_data.find((item) => {
-          return item.id == servicePieceId
-        })
-        const nomServiceStock = serviceStock ? serviceStock.nom_service : 'N/A'
-        setNomServicePiece(nomServiceStock)
+        if (listServices.length == 1) {
+          setSelectedServicePiece(listServices[0])
+          const service = itemService_data.services.find((item) => {
+            return item.id == listServices[0]
+          })
+          const nomService = service ? service.nom_service : ''
+          setNomServicePiece(nomService)
+        }
 
       } catch (error) {
         console.log(error)
@@ -340,29 +236,58 @@ export default function ModifyDemandeInputs() {
   }
 
   const handleSelectPiece = async (value) => {
+    setPieceLoading(true)
+    setSelectedModel(null)
+    setSelectedServicePiece(null)
     setSelectedPiece(value)
     const piece = items.find((item) => {
       return item.id_piece == value
     })
-
-    const nom = piece ? piece.nom_piece.toUpperCase() : ''
+    const nom = piece ? piece.nom_piece : ''
     setNomPiece(nom)
+    try {
+      const itemModels_data = await stockData.getItemModels(value)
+      const options_models = itemModels_data.model_piece.map((item) => ({
+        value: item.id_model,
+        label: item.nom_model.toUpperCase()
+      }))
+      setOptionsModels(options_models)
+      setModels(itemModels_data.model_piece)
+      const listModels = itemModels_data.model_piece.map((item) => {
+        return item.id_model
+      })
+      if (listModels.length == 1) {
+        setSelectedModel(listModels[0])
+        const model = itemModels_data.model_piece.find((item) => {
+          return item.id_model == listModels[0]
+        })
+        const nomModel = model ? model.nom_model : ''
+        setNomModel(nomModel)
+      }
 
-    const itemModels_data = await stockData.getItemModels(value)
-    const options_models = itemModels_data.model_piece.map((item) => ({
-      value: item.id_model,
-      label: item.nom_model.toUpperCase()
-    }))
-    setOptionsModels(options_models)
-    setModels(itemModels_data.model_piece)
-
-    const itemService_data = await stockData.getItemServices(value)
-    const options_services = itemService_data.services.map((item) => ({
-      value: item.id,
-      label: item.nom_service.toUpperCase()
-    }))
-    setOptionsServicesPieces(options_services)
-    setServicesPiece(itemService_data.services)
+      const itemService_data = await stockData.getItemServices(value)
+      const options_services = itemService_data.services.map((item) => ({
+        value: item.id,
+        label: item.nom_service.toUpperCase()
+      }))
+      setOptionsServicesPieces(options_services)
+      setServicesPiece(itemService_data.services)
+      const listServices = itemService_data.services.map((item) => {
+        return item.id
+      })
+      if (listServices.length == 1) {
+        setSelectedServicePiece(listServices[0])
+        const service = itemService_data.services.find((item) => {
+          return item.id == listServices[0]
+        })
+        const nomService = service ? service.nom_service : ''
+        setNomServicePiece(nomService)
+      }
+    } catch (error) {
+      console.log('Erreur avec la pièce : ', error)
+    } finally {
+      setPieceLoading(false)
+    }
   }
 
   const handleSelectModel = (value) => {
@@ -375,7 +300,7 @@ export default function ModifyDemandeInputs() {
     setSelectedModel(value)
   }
 
-  const handleSelectServicePiece = (value) => {
+  const handleSelectService = (value) => {
     console.log('Selected service value: ', value)
     const service = servicesPiece.find((item) => {
       return item.id == value
@@ -383,228 +308,6 @@ export default function ModifyDemandeInputs() {
     const nomService = service ? service.nom_service : ''
     setNomServicePiece(nomService)
     setSelectedServicePiece(value)
-  }
-
-  const stocksTemplate = (stock) => {
-    return (
-      <>
-        <span className="text-sm font-semibold">{stock.label}</span>
-      </>
-    )
-  }
-
-  const selectedStockTemplate = (option, props) => {
-    if (option) {
-      return (
-        <>
-          <span className="text-sm font-semibold">{option.label}</span>
-        </>
-      )
-    }
-    return <span>{props.placeholder}</span>;
-  }
-
-  const handleSelectStock = async (e) => {
-    const value = e.value
-    console.log(value)
-    setSelectedStock(value)
-    const stock = stocks.find((item) => {
-      return item.id == value
-    })
-    if (stock) {
-      setNomStock(stock.code_stock)
-      setQuantitePiece(stock.quantite_piece)
-      // setQuantiteCarton(stock.quantite_carton)
-      // setQuantiteLot(stock.quantite_lot)
-
-      const stock_carton_all = await stockData.getCartonStock(value)
-      const stock_carton = stock_carton_all.filter((item) => {
-        return item.is_deleted == false
-      })
-      setQuantiteCarton(stock_carton.length)
-      if (stock_carton.length > 0) {
-        setHasCarton(true)
-      } else {
-        setHasCarton(false)
-      }
-      const carton_simple = stock_carton.filter((item) => {
-        return item.lot_id == null
-      })
-      const options_carton = carton_simple.map((item) => ({
-        value: item.id,
-        label: `Carton ${item.numero_carton} - ${item.quantite_totale_piece} pièces`
-      }))
-      setOptionsCartons(options_carton)
-      setListeCartons(stock_carton)
-
-      const stock_lot_all = await stockData.getLotStock(value)
-      const stock_lot = stock_lot_all.filter((item) => {
-        return item.is_deleted == false
-      })
-      setQuantiteLot(stock_lot.length)
-      setListeLots(stock_lot)
-      const options_lot = stock_lot.map((item) => ({
-        value: item.id,
-        label: `Lot ${item.numero_lot} - ${item.quantite_carton} cartons - ${item.quantite_piece} pièces`
-      }))
-      setOptionsLot(options_lot)
-      if (stock_lot.length > 0) {
-        setHasLot(true)
-      } else {
-        setHasLot(false)
-      }
-
-      if (stock && stock.piece_id == 1 && stock.service_id == 5) {
-        const stock_demandeur = stocks.find((item) => {
-          return item.service_id == 3
-        })
-        if (stock_demandeur) {
-          setQuantitePieceDemandeur(stock_demandeur.quantite_piece)
-
-          const stock_carton_all = await stockData.getCartonStock(stock_demandeur.id)
-          const stock_carton = stock_carton_all.filter((item) => {
-            return item.is_deleted == false
-          })
-          setQuantiteCartonDemandeur(stock_carton.length)
-
-          const stock_lot_all = await stockData.getLotStock(stock_demandeur.id)
-          const stock_lot = stock_lot_all.filter((item) => {
-            return item.is_deleted == false
-          })
-          setQuantiteLotDemandeur(stock_lot.length)
-        }
-      }
-    }
-
-    const pieceId = stock ? stock.piece_id : null
-    setSelectedPiece(pieceId)
-    const piece = items.find((item) => {
-      return item.id_piece == pieceId
-    })
-    const nomPiece = piece ? piece.nom_piece : 'N/A'
-    setNomPiece(nomPiece)
-
-    const modelId = stock ? stock.model_id : null
-    setSelectedModel(modelId)
-    const model = models.find((item) => {
-      return item.id_model == modelId
-    })
-    const nomModel = model ? model.nom_model : 'N/A'
-    setNomModel(nomModel)
-
-    const serviceId = stock ? stock.service_id : null
-    setSelectedServicePiece(serviceId)
-    const service = servicesPiece.find((item) => {
-      return item.id == serviceId
-    })
-    const nomService = service ? service.nom_service : 'N/A'
-    setNomServicePiece(nomService)
-  }
-
-  // useEffect(() => {
-  //   const fetchQuantite = async () => {
-  //     if (!selectedModel || !selectedServicePiece) return // wait until both are chosen
-  //     try {
-  //       const quantite_piece = await stockData.getStockPiece(selectedPiece, selectedModel, selectedServicePiece)
-  //       setQuantitePiece(quantite_piece)
-
-  //       const stock_carton_all = await stockData.getCartonPiece(selectedPiece, selectedModel, selectedServicePiece)
-  //       const stock_carton = stock_carton_all.filter((item) => {
-  //         return item.is_deleted == false
-  //       })
-  //       setQuantiteCarton(stock_carton.length)
-  //       const carton_simple = stock_carton.filter((item) => {
-  //         return item.lot_id == null
-  //       })
-  //       const options_carton = carton_simple.map((item) => ({
-  //         value: item.id,
-  //         label: `Carton ${item.numero_carton} - ${item.quantite_totale_piece} pièces`
-  //       }))
-  //       setOptionsCartons(options_carton)
-  //       setListeCartons(stock_carton)
-
-  //       const stock_lot_all = await stockData.getLotPiece(selectedPiece, selectedModel, selectedServicePiece)
-  //       const stock_lot = stock_lot_all.filter((item) => {
-  //         return item.is_deleted == false
-  //       })
-  //       setQuantiteLot(stock_lot.length)
-  //       setListeLots(stock_lot)
-  //       const options_lot = stock_lot.map((item) => ({
-  //         value: item.id,
-  //         label: `Lot ${item.numero_lot} - ${item.quantite_carton} cartons - ${item.quantite_piece} pièces`
-  //       }))
-  //       setOptionsLot(options_lot)
-  //     } catch (error) {
-  //       console.log("Error fetching quantity", error)
-  //     }
-  //   }
-
-  //   fetchQuantite()
-  // }, [selectedPiece, selectedModel, selectedServicePiece])
-
-  // useEffect(() => {
-  //   const fetchQuantite = async () => {
-  //     if (!selectedModel || !serviceUser) return // wait until both are chosen
-  //     try {
-  //       const quantite_piece_demandeur = await stockData.getStockPiece(selectedPiece, selectedModel, serviceUser)
-  //       setQuantitePieceDemandeur(quantite_piece_demandeur)
-
-  //       const stock_carton_all_demandeur = await stockData.getCartonPiece(selectedPiece, selectedModel, serviceUser)
-  //       const stock_carton_demandeur = stock_carton_all_demandeur.filter((item) => {
-  //         return item.is_deleted == false
-  //       })
-  //       setQuantiteCartonDemandeur(stock_carton_demandeur.length)
-
-  //       const stock_lot_demandeur_all = await stockData.getLotPiece(selectedPiece, selectedModel, serviceUser)
-  //       const stock_lot_demandeur = stock_lot_demandeur_all.filter((item) => {
-  //         return item.is_deleted == false
-  //       })
-  //       setQuantiteLotDemandeur(stock_lot_demandeur.length)
-
-  //     } catch (error) {
-  //       console.log("Error fetching quantity", error)
-  //     }
-  //   }
-
-  //   fetchQuantite()
-  // }, [selectedPiece, selectedModel, serviceUser])
-
-  const handleSelectLotCarton = async (id) => {
-    setSelectedLot(id)
-    const cartons_data_all = await stockData.getCartonLot(id)
-    const cartons_data = cartons_data_all.filter((item) => {
-      return item.is_deleted == false
-    })
-    const options_cartons = cartons_data.map((item) => ({
-      value: item.id,
-      label: `Carton ${item.numero_carton} - ${item.quantite_totale_piece} pièces`
-    }))
-    setOptionsCartons(options_cartons)
-
-    const lot = listeLots.find((item) => {
-      return item.id == id
-    })
-    const nom = lot ? `Lot ${lot.numero_lot}` : ''
-    setNomLot(nom)
-    const totalCarton = lot ? lot.quantite_carton_lot : 0
-    setQuantiteCartonLot(totalCarton)
-    const stockCarton = lot ? lot.quantite_carton : 0
-    setStockCartonLot(stockCarton)
-    const stockPiece = lot ? lot.quantite_piece : 0
-    setStockPieceLot(stockPiece)
-  }
-
-  const handleSelectCarton = (value) => {
-    setSelectedCarton(value)
-    const carton = listeCartons.find((item) => {
-      return item.id == value
-    })
-    const nom = carton ? (carton.lot_id ? `Lot ${carton.numero_lot} - Carton ${carton.numero_carton}` : `Carton ${carton.numero_carton}`) : ('')
-    setNomCarton(nom)
-    const totalPiece = carton ? carton.quantite_piece_carton : 0
-    setQuantitePieceCarton(totalPiece)
-    const stock = carton ? carton.quantite_totale_piece : 0
-    setStockPieceCarton(stock)
   }
 
   const handleAddField = () => {
@@ -655,358 +358,49 @@ export default function ModifyDemandeInputs() {
     return true
   }
 
-  // FONCTIONS POUR MOUVEMENT PAR LOT
-  const handleSortieParLot = () => {
+  const handleSortie = () => {
     if (!checkValidate()) {
       return
     }
-    if (selectedLots.length == 0) {
-      setError("Vous devez selectionner des lots !")
-      return
+
+    if (stockInitial <= 0) {
+      setError("Quantité initiale invalide !")
     }
 
-    let destockPiece = 0
-    let destockCarton = 0
-
-    for (let id of selectedLots) {
-      const cartons = listeCartons.filter((item) => {
-        return item.lot_id == id
-      })
-      destockCarton += cartons.length
-      for (let carton of cartons) {
-        destockPiece += carton.quantite_totale_piece
-      }
+    if (quantite <= 0) {
+      setError("Quantité demandée invalide !")
     }
-    setNewStockPiece(destockPiece)
-    setNewStockCarton(destockCarton)
-    setFinalStockCarton(quantiteCarton - destockCarton)
-    setFinaleStockPiece(quantitePiece - destockPiece)
-    setNewStockLot(selectedLots.length)
-    setFinalStockLot(quantiteLot - selectedLots.length)
-    setSortieParLotModalOpen(true)
+
+    setValidationModalOpen(true)
     setError('')
-
-    const finalStockLotDemandeur = quantiteLotDemandeur + selectedLots.length
-    const finalStockPieceDemandeur = quantitePieceDemandeur + destockPiece
-    const finalStockCartonDemandeur = quantiteCartonDemandeur + destockCarton
-
-    const listeLots = selectedLots ? selectedLots : []
-    setQuantite(selectedLots.length)
-    const details = {
-      model: selectedModel,
-      service: selectedServicePiece,
-      typeMouvement: 1,
-      stockInitialLot: quantiteLot ? quantiteLot : 0,
-      quantiteMouvementLot: selectedLots.length,
-      stockFinalLot: quantiteLot - selectedLots.length,
-      stockInitialPiece: quantitePiece ? quantitePiece : 0,
-      quantiteMouvementPiece: destockPiece,
-      stockFinalPiece: quantitePiece - destockPiece,
-      quantitePieceCarton: quantitePieceCarton ? quantitePieceCarton : 0,
-      stockInitialCarton: quantiteCarton ? quantiteCarton : 0,
-      quantiteMouvementCarton: destockCarton,
-      stockFinalCarton: quantiteCarton - destockCarton,
-      quantiteCartonLot: quantiteCartonLot ? quantiteCartonLot : 0,
-      listeLots,
-      stockFinalPieceDemandeur: finalStockPieceDemandeur,
-      stockInitialLotDemandeur: quantiteLotDemandeur ? quantiteLotDemandeur : 0,
-      stockFinalLotDemandeur: finalStockLotDemandeur,
-    }
-    setDetailsDemande(details)
-    const details_demandeur = {
-      model: selectedModel,
-      service: serviceUser,
-      typeMouvement: 1,
-      stockInitialLot: quantiteLotDemandeur ? quantiteLotDemandeur : 0,
-      quantiteMouvementLot: selectedLots.length,
-      stockFinalLot: finalStockLotDemandeur,
-      stockInitialCarton: quantiteCartonDemandeur ? quantiteCartonDemandeur : 0,
-      quantiteMouvementCarton: destockCarton,
-      stockFinalCarton: finalStockCartonDemandeur,
-      quantiteCartonLot: quantiteCartonLot ? quantiteCartonLot : 0,
-      stockInitialPiece: quantitePieceDemandeur ? quantitePieceDemandeur : 0,
-      quantiteMouvementPiece: destockPiece,
-      stockFinalPiece: finalStockPieceDemandeur,
-      quantitePieceCarton: quantitePieceCarton ? quantitePieceCarton : 0,
-      listeLots,
-    }
-    setDetailsDemandeur(details_demandeur)
-  }
-
-  // FONCTIONS POUR MOUVEMENT PAR CARTONS LOT
-  const handleSortieParCartonLot = () => {
-    if (!checkValidate()) {
-      return
-    }
-    if (!selectedLot) {
-      setError('Vous devez choisir le lot !')
-      return
-    }
-    if (selectedCartons.length == 0) {
-      setError("Vous devez selectionner des cartons !")
-      return
-    }
-
-    let destockPiece = 0
-
-    for (let id of selectedCartons) {
-      const carton = listeCartons.find((item) => {
-        return item.id == id
-      })
-      destockPiece += carton ? carton.quantite_totale_piece : 0
-    }
-
-    setNewStockPiece(destockPiece)
-    setNewStockCarton(selectedCartons.length)
-    setFinalStockCarton(quantiteCarton - selectedCartons.length)
-    setFinaleStockPiece(quantitePiece - destockPiece)
-    setFinalStockCartonLot(stockCartonLot - selectedCartons.length)
-    setFinalStockPieceLot(stockPieceLot - destockPiece)
-    setSortieParCartonLotModalOpen(true)
-    setError('')
-
-    const finalStockPieceDemandeur = quantitePieceDemandeur + destockPiece
-    const finalStockCartonDemandeur = quantiteCartonDemandeur + selectedCartons.length
-
-    const cartons = selectedCartons ? selectedCartons : []
-    setQuantite(selectedCartons.length)
-    const details = {
-      model: selectedModel,
-      service: selectedServicePiece,
-      typeMouvement: 2,
-      stockInitialCartonLot: stockCartonLot ? stockCartonLot : 0,
-      quantiteMouvementCartonLot: selectedCartons.length,
-      stockFinalCartonLot: stockCartonLot - selectedCartons.length,
-      stockInitialPiece: quantitePiece ? quantitePiece : 0,
-      quantiteMouvementPiece: destockPiece,
-      stockFinalPiece: quantitePiece - destockPiece,
-      stockInitialCarton: quantiteCarton ? quantiteCarton : 0,
-      quantiteMouvementCarton: selectedCartons.length,
-      stockFinalCarton: quantiteCarton - selectedCartons.length,
-      quantitePieceCarton: quantitePieceCarton ? quantitePieceCarton : 0,
-      stockInitialPieceLot: stockPieceLot,
-      stockFinalPieceLot: stockPieceLot - destockPiece,
-      cartons,
-      selectedLot,
-      stockFinalPieceDemandeur: finalStockPieceDemandeur,
-      stockInitialCartonDemandeur: quantiteCartonDemandeur ? quantiteCartonDemandeur : 0,
-      stockFinalCartonDemandeur: finalStockCartonDemandeur,
-    }
-    setDetailsDemande(details)
-    const details_demandeur = {
-      model: selectedModel,
-      service: serviceUser,
-      typeMouvement: 4,
-      stockInitialCarton: quantiteCartonDemandeur ? quantiteCartonDemandeur : 0,
-      quantiteMouvementCarton: selectedCartons.length,
-      stockFinalCarton: finalStockCartonDemandeur,
-      stockInitialPiece: quantitePieceDemandeur ? quantitePieceDemandeur : 0,
-      quantiteMouvementPiece: destockPiece,
-      stockFinalPiece: finalStockPieceDemandeur,
-      quantitePieceCarton: quantitePieceCarton ? quantitePieceCarton : 0,
-      cartons,
-    }
-    setDetailsDemandeur(details_demandeur)
-  }
-
-  // FONCTIONS POUR MOUVEMENT PAR PIECES CARTON
-  const handleSortieParPieceCarton = () => {
-    if (!checkValidate()) {
-      return
-    }
-    if (!selectedCarton) {
-      setError('Vous devez choisir le carton !')
-      return
-    }
-    if (newStockPiece == 0) {
-      setError('Quantité invalide !')
-      return
-    }
-    if (newStockPiece > stockPieceCarton) {
-      setError('Stock insuffisant !')
-      return
-    }
-
-    setFinalStockPieceCarton(stockPieceCarton - newStockPiece)
-    setFinaleStockPiece(quantitePiece - newStockPiece)
-    if (selectedLot) { setFinalStockPieceLot(stockPieceLot - newStockPiece) }
-    setSortieParPieceCartonModalOpen(true)
-    setError('')
-
-    const finalPieceLot = stockPieceLot - newStockPiece
-
-    const finalStockPieceDemandeur = quantitePieceDemandeur + newStockPiece
-
-    setQuantite(newStockPiece)
-    const details = {
-      model: selectedModel,
-      service: selectedServicePiece,
-      typeMouvement: 3,
-      stockInitialPieceCarton: stockPieceCarton,
-      quantiteMouvementPieceCarton: newStockPiece,
-      stockFinalPieceCarton: stockPieceCarton - newStockPiece,
-      stockInitialPiece: quantitePiece ? quantitePiece : 0,
-      quantiteMouvementPiece: newStockPiece,
-      stockFinalPiece: quantitePiece - newStockPiece,
-      quantitePieceCarton,
-      selectedCarton,
-      stockInitialPieceLot: stockPieceLot ? stockPieceLot : null,
-      stockFinalPieceLot: finalPieceLot ? finalPieceLot : null,
-      selectedLot: selectedLot ? selectedLot : null,
-      stockInitialPieceDemandeur: quantitePieceDemandeur ? quantitePieceDemandeur : 0,
-      stockFinalPieceDemandeur: finalStockPieceDemandeur,
-    }
-    setDetailsDemande(details)
-    const details_demandeur = {
-      model: selectedModel,
-      service: selectedServicePiece,
-      typeMouvement: 5,
-      stockInitial: quantitePiece ? quantitePiece : 0,
-      quantiteMouvement: newStockPiece,
-      stockFinal: final,
-      stockInitialPieceDemandeur: quantitePieceDemandeur ? quantitePieceDemandeur : 0,
-      stockFinalPieceDemandeur: finalStockPieceDemandeur,
-    }
-    setDetailsDemandeur(details_demandeur)
-  }
-
-  // FONCTIONS POUR MOUVEMENT PAR CARTON
-  const handleSortieParCarton = () => {
-
-    if (!checkValidate()) {
-      return
-    }
-    if (selectedCartons.length == 0) {
-      setError("Vous devez selectionner des cartons !")
-      return
-    }
-
-    let destockPiece = 0
-
-    for (let id of selectedCartons) {
-      const carton = listeCartons.find((item) => {
-        return item.id == id
-      })
-      destockPiece += carton ? carton.quantite_totale_piece : 0
-    }
-    setNewStockPiece(destockPiece)
-    setNewStockCarton(selectedCartons.length)
-    setFinalStockCarton(quantiteCarton - selectedCartons.length)
-    setFinaleStockPiece(quantitePiece - destockPiece)
-    setSortieParCartonModalOpen(true)
-    setError('')
-
-    const finalStockPieceDemandeur = quantitePieceDemandeur + destockPiece
-    const finalStockCartonDemandeur = quantiteCartonDemandeur + selectedCartons.length
-
-    const cartons = selectedCartons ? selectedCartons : []
-    setQuantite(selectedCartons.length)
-    const details = {
-      model: selectedModel,
-      service: selectedServicePiece,
-      typeMouvement: 4,
-      stockInitialCarton: quantiteCarton ? quantiteCarton : 0,
-      quantiteMouvementCarton: selectedCartons.length,
-      stockFinalCarton: quantiteCarton - selectedCartons.length,
-      stockInitialPiece: quantitePiece ? quantitePiece : 0,
-      quantiteMouvementPiece: destockPiece,
-      stockFinalPiece: quantitePiece - destockPiece,
-      quantitePieceCarton: quantitePieceCarton ? quantitePieceCarton : 0,
-      cartons,
-      stockFinalPieceDemandeur: finalStockPieceDemandeur,
-      stockInitialCartonDemandeur: quantiteCartonDemandeur ? quantiteCartonDemandeur : 0,
-      stockFinalCartonDemandeur: finalStockCartonDemandeur,
-    }
-    setDetailsDemande(details)
-    const details_demandeur = {
-      model: selectedModel,
-      service: serviceUser,
-      typeMouvement: 4,
-      stockInitialCarton: quantiteCartonDemandeur ? quantiteCartonDemandeur : 0,
-      quantiteMouvementCarton: selectedCartons.length,
-      stockFinalCarton: finalStockCartonDemandeur,
-      stockInitialPiece: quantitePieceDemandeur ? quantitePieceDemandeur : 0,
-      quantiteMouvementPiece: destockPiece,
-      stockFinalPiece: finalStockPieceDemandeur,
-      quantitePieceCarton: quantitePieceCarton ? quantitePieceCarton : 0,
-      cartons,
-    }
-    setDetailsDemandeur(details_demandeur)
-  }
-
-  // FONCTIONS POUR MOUVEMENT STOCK PAR PIECE
-  const handleSortieParPiece = () => {
-    if (!checkValidate()) {
-      return
-    }
-    if (newStockPiece == 0) {
-      setError("Quantité invalide !")
-      return
-    }
-    if (newStockPiece > quantitePiece) {
-      setError("Stock insuffisant !")
-      return
-    }
-    setSortieParPieceModalOpen(true)
-    const final = quantitePiece - newStockPiece
-    setFinaleStockPiece(final)
-    setError('')
-
-    const finalStockPieceDemandeur = quantitePieceDemandeur + newStockPiece
-
-    setQuantite(newStockPiece)
-    const details = {
-      model: selectedModel,
-      service: selectedServicePiece,
-      typeMouvement: 5,
-      stockInitial: quantitePiece ? quantitePiece : 0,
-      quantiteMouvement: newStockPiece,
-      stockFinal: final,
-      stockInitialPieceDemandeur: quantitePieceDemandeur ? quantitePieceDemandeur : 0,
-      stockFinalPieceDemandeur: finalStockPieceDemandeur,
-    }
-    setDetailsDemande(details)
-    const details_demandeur = {
-      model: selectedModel,
-      service: serviceUser,
-      typeMouvement: 5,
-      stockInitial: quantitePieceDemandeur ? quantitePieceDemandeur : 0,
-      quantiteMouvement: newStockPiece,
-      stockFinal: finalStockPieceDemandeur,
-    }
-    setDetailsDemandeur(details_demandeur)
   }
 
   const handleValidate = async () => {
-    setSortieParPieceModalOpen(false)
-    setSortieParCartonModalOpen(false)
-    setSortieParPieceCartonModalOpen(false)
-    setSortieParCartonLotModalOpen(false)
-    setSortieParLotModalOpen(false)
+    setValidationModalOpen(false)
 
+    const typeDemande = parPiece ? 'Par pièce' : parCarton ? 'Par carton' : parLot ? 'Par lot' : ''
+    const details = {
+      selectedPiece,
+      selectedModel,
+      selectedServicePiece,
+      typeDemande,
+      quantite,
+    }
     const payload = {
-      nomDemandeur: nomUser,
-      commentaire,
-      selectedStock,
-      quantite_demande: quantite,
-      nomenclature,
-      detailsDemande,
-      detailsDemandeur,
+      detailsDemande: details,
       userId,
-      itemId: selectedPiece,
-      idDemandeur: selectedUser,
+      quantite,
+      serviceUser,
+      selectedUser,
+      nomUser,
       motif,
-      serviceDemandeur: serviceUser,
-      champsAutre: otherFields,
+      commentaire,
+      otherFields,
     }
 
     try {
       setLoadingValidation(true)
-      console.log('Sendind payload...')
-
       const response = await demandeData.updateDemande(id, payload)
-
-      console.log(response)
       Swal.fire({
         title: "Succès",
         text: "Demande modifiée avec succès !",
@@ -1043,18 +437,74 @@ export default function ModifyDemandeInputs() {
               </>
             ) : (
               <>
-                <ComponentCard className="md:w-1/2 w-full" title={`Demande`}>
+                <ComponentCard className="md:w-1/2 w-full" title={`Modifier Demande`}>
                   <div className="space-y-6">
                     <div className="space-y-5">
                       <div className="text-center">
                         <span className="text-sm font-semibold">Informations générales</span>
                       </div>
                       <div>
+                        <Label>Pièce <span className="text-red-700">*</span></Label>
+                        <Select
+                          options={optionsItems}
+                          defaultValue={selectedPiece}
+                          onChange={handleSelectPiece}
+                          className="dark:bg-dark-900"
+                        />
+                      </div>
+                      <div>
+                        {pieceLoading ? (
+                          <>
+                            <div>
+                              <ProgressSpinner style={{ width: '20px', height: '20px' }} strokeWidth="8" animationDuration=".5s" />
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="space-y-5">
+                              <div>
+                                {models.length > 1 ? (
+                                  <>
+                                    <div>
+                                      <Label>Choisir le model <span className="text-red-700">*</span></Label>
+                                      <Select
+                                        options={optionsModels}
+                                        defaultValue={selectedModel}
+                                        onChange={handleSelectModel}
+                                        className="dark:bg-dark-900"
+                                      />
+                                    </div>
+                                  </>
+                                ) : (
+                                  <></>
+                                )}
+                              </div>
+                              <div>
+                                {servicesPiece.length > 1 ? (
+                                  <>
+                                    <div>
+                                      <Label>Choisir le service <span className="text-red-700">*</span></Label>
+                                      <Select
+                                        options={optionsServicesPiece}
+                                        defaultValue={selectedServicePiece}
+                                        onChange={handleSelectService}
+                                        className="dark:bg-dark-900"
+                                      />
+                                    </div>
+                                  </>
+                                ) : (
+                                  <></>
+                                )}
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                      <div>
                         <Label>Service Demandeur <span className="text-red-700">*</span></Label>
                         <Select
                           options={optionsServicesUsers}
                           defaultValue={serviceUser}
-                          placeholder="Choisir une option"
                           onChange={handleSelectServiceUser}
                           className="dark:bg-dark-900"
                         />
@@ -1064,7 +514,6 @@ export default function ModifyDemandeInputs() {
                         <Select
                           options={optionsUsers}
                           defaultValue={selectedUser}
-                          placeholder="Choisir une option"
                           onChange={handleSelectUser}
                           className="dark:bg-dark-900"
                         />
@@ -1094,360 +543,93 @@ export default function ModifyDemandeInputs() {
                       <div className="text-center">
                         <span className="text-sm font-semibold">Informations sur stock</span>
                       </div>
-                      {/* <div>
-                        <Label>Pièce <span className="text-red-700">*</span></Label>
-                        <Select
-                          options={optionsItems}
-                          placeholder="Choisir une option"
-                          onChange={handleSelectPiece}
-                          className="dark:bg-dark-900"
-                        />
-                      </div> */}
-                      {/* <div>
-                        <Label>Service <span className="text-red-700">*</span></Label>
-                        <Select
-                          options={optionsServicesPiece}
-                          placeholder="Choisir une option"
-                          onChange={handleSelectServicePiece}
-                          className="dark:bg-dark-900"
-                        />
-                      </div> */}
-                      {/* <div>
-                        <Label>Modèle <span className="text-red-700">*</span></Label>
-                        <Select
-                          options={optionsModels}
-                          placeholder="Choisir une option"
-                          onChange={handleSelectModel}
-                          className="dark:bg-dark-900"
-                        />
-                      </div> */}
-                      <div>
-                        <Label>Stock <span className="text-red-700">*</span></Label>
-                        <Dropdown
-                          options={optionsStocks}
-                          optionLabel="Label"
-                          placeholder="Choisir Stock"
-                          filter
-                          filterBy="label"
-                          itemTemplate={stocksTemplate}
-                          className="w-full"
-                          onChange={handleSelectStock}
-                          value={selectedStock}
-                          valueTemplate={selectedStockTemplate}
-                        />
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <div className="flex flex-col  border-b pb-2 border-black">
-                          <span className="text-xs text-gray-700 font-normal">{nomPiece} {nomModel}</span>
-                          <span className="font-medium">QUANTITE ACTUELLE</span>
-                          <span className="text-title-md font-bold">{quantitePiece ? quantitePiece : '0'}</span>
-                          <span className="text-sm">Stock carton - {quantiteCarton ? quantiteCarton : 'N/A'}</span>
-                          <span className="text-sm">Stock lot - {quantiteLot ? quantiteLot : 'N/A'}</span>
-                        </div>
-                        <div>
-                          <span><i className="pi pi-box" style={{ fontSize: '3rem' }}></i></span>
-                        </div>
-                      </div>
                       <div>
                         <span>Faire une demande  : </span>
                         <div>
-                          {hasLot ? (
-                            <>
-                              <div className="flex items-center gap-3 my-2">
-                                {/* Demande par lot */}
-                                <Checkbox
-                                  checked={parLot}
-                                  onChange={() => {
-                                    if (parLot) {
-                                      setParLot(false)
-                                    } else {
-                                      setParLot(true)
-                                      setParCarton(false)
-                                      setParCartonLot(false)
-                                      setParPiece(false)
-                                      setParPieceCarton(false)
-                                    }
-                                  }}
-                                  readOnly
-                                  label="Par Lot"
-                                />
-                              </div>
-                              <div className="flex items-center gap-3 my-2">
-                                {/* Par carton lot */}
-                                <Checkbox
-                                  checked={parCartonLot}
-                                  onChange={() => {
-                                    if (parCartonLot) {
-                                      setParCartonLot(false)
-                                    } else {
-                                      setParLot(false)
-                                      setParCarton(false)
-                                      setParCartonLot(true)
-                                      setParPiece(false)
-                                      setParPieceCarton(false)
-                                    }
-                                  }}
-                                  readOnly
-                                  label="Par Carton"
-                                />
-                              </div>
-                            </>
-                          ) : (
-                            <></>
-                          )}
-                          {hasCarton || hasLot ? (
-                            <>
-                              <div className="flex items-center gap-3 my-2">
-                                {/* Par piece carton */}
-                                <Checkbox
-                                  checked={parPieceCarton}
-                                  onChange={() => {
-                                    if (parPieceCarton) {
-                                      setParCartonLot(false)
-                                    } else {
-                                      setParLot(false)
-                                      setParCarton(false)
-                                      setParCartonLot(false)
-                                      setParPiece(false)
-                                      setParPieceCarton(true)
-                                    }
-                                  }}
-                                  readOnly
-                                  label="Par Pièce"
-                                />
-                              </div>
-                            </>
-                          ) : (
-                            <></>
-                          )}
-                          {hasCarton && !hasLot ? (
-                            <>
-                              <div className="flex items-center gap-3 my-2">
-                                {/* Par carton */}
-                                <Checkbox
-                                  checked={parCarton}
-                                  onChange={() => {
-                                    if (parCarton) {
-                                      setParCarton(false)
-                                    } else {
-                                      setParLot(false)
-                                      setParCarton(true)
-                                      setParCartonLot(false)
-                                      setParPiece(false)
-                                      setParPieceCarton(false)
-                                    }
-                                  }}
-                                  readOnly
-                                  label="Par Carton"
-                                />
-                              </div>
-                            </>
-                          ) : (
-                            <></>
-                          )}
-                          {(!hasCarton && !hasLot) ? (
-                            <>
-                              <div className="flex items-center gap-3 my-2">
-                                {/* Par piece */}
-                                <Checkbox
-                                  checked={parPiece}
-                                  onChange={() => {
-                                    if (parPiece) {
-                                      setParPiece(false)
-                                    } else {
-                                      setParLot(false)
-                                      setParCarton(false)
-                                      setParCartonLot(false)
-                                      setParPiece(true)
-                                      setParPieceCarton(false)
-                                    }
-                                  }}
-                                  readOnly
-                                  label="Par Pièce"
-                                />
-                              </div>
-                            </>
-                          ) : (
-                            <></>
-                          )}
+                          <div>
+                            <div className="flex items-center gap-3 my-2">
+                              {/* Demande par lot */}
+                              <Checkbox
+                                checked={parLot}
+                                onChange={() => {
+                                  if (parLot) {
+                                    setParLot(false)
+                                    setSelectedType(false)
+                                  } else {
+                                    setParLot(true)
+                                    setParCarton(false)
+                                    setParPiece(false)
+                                    setSelectedType(true)
+                                  }
+                                }}
+                                readOnly
+                                label="Par Lot"
+                              />
+                            </div>
+                            <div className="flex items-center gap-3 my-2">
+                              {/* Demande par carton */}
+                              <Checkbox
+                                checked={parCarton}
+                                onChange={() => {
+                                  if (parCarton) {
+                                    setParCarton(false)
+                                    setSelectedType(false)
+                                  } else {
+                                    setParLot(false)
+                                    setParCarton(true)
+                                    setParPiece(false)
+                                    setSelectedType(true)
+                                  }
+                                }}
+                                readOnly
+                                label="Par carton"
+                              />
+                            </div>
+                            <div className="flex items-center gap-3 my-2">
+                              {/* Demande par pièce */}
+                              <Checkbox
+                                checked={parPiece}
+                                onChange={() => {
+                                  if (parPiece) {
+                                    setParPiece(false)
+                                    setSelectedType(false)
+                                  } else {
+                                    setParLot(false)
+                                    setParCarton(false)
+                                    setParPiece(true)
+                                    setSelectedType(true)
+                                  }
+                                }}
+                                readOnly
+                                label="Par pièce"
+                              />
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                      <div>
-                        {parLot ? (
-                          <>
-                            <div className="">
-                              <div className="space-y-5">
-                                <div className="py-3 text-center">
-                                  <span className="text-sm font-semibold">Demande par lots</span>
-                                </div>
+                        <div>
+                          {selectedType ? (
+                            <>
+                              <div className="space-y-3 mt-3">
                                 <div>
-                                  <div>
-                                    <MultiSelect
-                                      value={selectedLots}
-                                      options={optionsLot}
-                                      display="chip"
-                                      optionLabel="label"
-                                      maxSelectedLabels={3}
-                                      onChange={(e) => setSelectedLots(e.value)}
-                                      placeholder="Choisir le(s) lot(s)"
-                                      className="w-full"
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </>
-                        ) : (
-                          <></>
-                        )}
-                        {parCartonLot ? (
-                          <>
-                            <div>
-                              <div className="space-y-5">
-                                <div className="py-3 text-center">
-                                  <span className="text-sm font-semibold">Demande par cartons-lot</span>
-                                </div>
-                                <div className="space-y-5">
-                                  <div>
-                                    <Label>Choisir le lot</Label>
-                                    <Select
-                                      options={optionsLot}
-                                      placeholder="Choisir une option"
-                                      className="dark:bg-dark-900"
-                                      onChange={handleSelectLotCarton}
-                                    />
-                                  </div>
-                                  {selectedLot ? (
-                                    <>
-                                      <div>
-                                        <MultiSelect
-                                          value={selectedCartons}
-                                          options={optionsCartons}
-                                          display="chip"
-                                          optionLabel="label"
-                                          maxSelectedLabels={4}
-                                          onChange={(e) => setSelectedCartons(e.value)}
-                                          placeholder="Choisir le(s) carton(s)"
-                                          className="w-full"
-                                        />
-                                      </div>
-                                    </>
-                                  ) : (
-                                    <></>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </>
-                        ) : (
-                          <></>
-                        )}
-                        {parPieceCarton ? (
-                          <>
-                            <div className="space-y-5">
-                              <div>
-                                <div className="py-3 text-center">
-                                  <span className="text-sm font-semibold">Demande par pièce-carton</span>
-                                </div>
-                                <div className="space-y-5">
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <div>
-                                      <Label>Choisir le lot</Label>
-                                      <Select
-                                        options={optionsLot}
-                                        placeholder="Choisir une option"
-                                        className="dark:bg-dark-900"
-                                        onChange={handleSelectLotCarton}
-                                      />
-                                    </div>
-                                    <div>
-                                      <Label>Choisir le carton</Label>
-                                      <Select
-                                        options={optionsCartons}
-                                        placeholder="Choisir une option"
-                                        className="dark:bg-dark-900"
-                                        onChange={handleSelectCarton}
-                                      />
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <Label>Quantité pièce</Label>
-                                    <Input type="number" id="input" value={newStockPiece}
-                                      onChange={(e) => {
-                                        const value = Number(e.target.value)
-                                        if (value >= 0) {
-                                          setNewStockPiece(value)
-                                        }
-                                      }}
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </>
-                        ) : (
-                          <></>
-                        )}
-                        {parCarton ? (
-                          <>
-                            <div className="">
-                              <div className="space-y-5">
-                                <div className="text-center">
-                                  <span className="text-sm font-semibold">Demande par cartons</span>
-                                </div>
-                                <div>
-                                  <MultiSelect
-                                    value={selectedCartons}
-                                    options={optionsCartons}
-                                    display="chip"
-                                    optionLabel="label"
-                                    maxSelectedLabels={3}
-                                    onChange={(e) => setSelectedCartons(e.value)}
-                                    placeholder="Choisir le(s) carton(s)"
-                                    className="w-full"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          </>
-                        ) : (
-                          <></>
-                        )}
-                        {parPiece ? (
-                          <>
-                            <div className="space-y-5">
-                              <div>
-                                <div className="py-3 text-center">
-                                  <span className="text-sm font-semibold">Demande par pièce</span>
-                                </div>
-                                <div>
-                                  <Label>Quantité</Label>
-                                  <Input type="number" id="input" value={newStockPiece}
+                                  <Label>Quantité demandée</Label>
+                                  <Input
+                                    type="number"
+                                    id="input"
+                                    value={quantite}
                                     onChange={(e) => {
                                       const value = Number(e.target.value)
                                       if (value >= 0) {
-                                        setNewStockPiece(value)
+                                        setQuantite(value)
                                       }
                                     }}
                                   />
                                 </div>
                               </div>
-                            </div>
-                          </>
-                        ) : (
-                          <></>
-                        )}
-                      </div>
-                      <div>
-                        <Label>Nomenclature</Label>
-                        <Input
-                          type="text"
-                          value={nomenclature}
-                          onChange={(e) => {
-                            const value = e.target.value
-                            setNomenclature(value)
-                          }}
-                        />
+                            </>
+                          ) : (
+                            <></>
+                          )}
+                        </div>
                       </div>
                       <div>
                         {fields.map((field, index) => (
@@ -1507,7 +689,7 @@ export default function ModifyDemandeInputs() {
                         </button>
                       </div>
                     </div>
-                    {parLot ? (
+                    {selectedType ? (
                       <>
                         <div className="text-center">
                           {loadingValidation ? (
@@ -1520,109 +702,9 @@ export default function ModifyDemandeInputs() {
                             <>
                               <div className="w-full flex justify-center items-center">
                                 <button className="w-1/2 flex items-center justify-center bg-green-400 p-2 rounded-2xl"
-                                  onClick={handleSortieParLot}
+                                  onClick={handleSortie}
                                 >
-                                  Faire demande
-                                </button>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <></>
-                    )}
-                    {parCartonLot ? (
-                      <>
-                        <div className="text-center">
-                          {loadingValidation ? (
-                            <>
-                              <div>
-                                <ProgressSpinner style={{ width: '50px', height: '50px' }} strokeWidth="8" animationDuration=".5s" />
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              <div className="w-full flex justify-center items-center">
-                                <button className="w-1/2 flex items-center justify-center bg-green-400 p-2 rounded-2xl"
-                                  onClick={handleSortieParCartonLot}
-                                >
-                                  Faire demande
-                                </button>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <></>
-                    )}
-                    {parPieceCarton ? (
-                      <>
-                        <div className="text-center">
-                          {loadingValidation ? (
-                            <>
-                              <div>
-                                <ProgressSpinner style={{ width: '50px', height: '50px' }} strokeWidth="8" animationDuration=".5s" />
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              <div className="w-full flex justify-center items-center">
-                                <button className="w-1/2 flex items-center justify-center bg-green-400 p-2 rounded-2xl"
-                                  onClick={handleSortieParPieceCarton}
-                                >
-                                  Faire demande
-                                </button>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <></>
-                    )}
-                    {parCarton ? (
-                      <>
-                        <div className="text-center">
-                          {loadingValidation ? (
-                            <>
-                              <div>
-                                <ProgressSpinner style={{ width: '50px', height: '50px' }} strokeWidth="8" animationDuration=".5s" />
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              <div className="w-full flex justify-center items-center">
-                                <button className="w-1/2 flex items-center justify-center bg-green-400 p-2 rounded-2xl"
-                                  onClick={handleSortieParCarton}
-                                >
-                                  Faire demande
-                                </button>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <></>
-                    )}
-                    {parPiece ? (
-                      <>
-                        <div className="text-center">
-                          {loadingValidation ? (
-                            <>
-                              <div>
-                                <ProgressSpinner style={{ width: '50px', height: '50px' }} strokeWidth="8" animationDuration=".5s" />
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              <div className="w-full flex justify-center items-center">
-                                <button className="w-1/2 flex items-center justify-center bg-green-400 p-2 rounded-2xl"
-                                  onClick={handleSortieParPiece}
-                                >
-                                  Faire demande
+                                  Modifier demande
                                 </button>
                               </div>
                             </>
@@ -1649,247 +731,12 @@ export default function ModifyDemandeInputs() {
           </>
         )}
       </div>
-      {/* DEMANDE PAR LOT */}
-      <Modal isOpen={sortieParLotModalOpen} onClose={() => setSortieParLotModalOpen(false)} className="p-4 max-w-md">
-        <div className="space-y-5">
-          <div className="w-full text-center">
-            <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium">Sortie stock</span>
-          </div>
-          <div className="text-center flex flex-col">
-            <span className="font-bold text-sm">
-              {nomStock}
-            </span>
-            <span>
-              <span className="text-sm text-gray-800 font-medium">{nomPiece} </span>
-              -
-              <span className="font-semibold"> {nomModel}</span> |
-              <span className="font-medium text-gray-700"> {nomServicePiece}</span>
-            </span>
-          </div>
-          <div className="ms-5 text-center">
-            <span className="text-sm text-gray-800 underline">Motif: {motif}</span>
-          </div>
-          <div className="space-y-2">
-            <div className="space-y-1 ms-5 border-b pb-2 text-sm">
-              <div>
-                <span>Quantité lot initiale : {quantiteLot ? quantiteLot : '0'}</span>
-              </div>
-              <div>
-                <span>Mouvement : <span className="text-red-600 font-bold">-{selectedLots.length}</span></span>
-              </div>
-              <div>
-                <span>Stock final lot : {finalStockLot}</span>
-              </div>
-            </div>
-            <div className="space-y-1 ms-5 border-b pb-2 text-sm">
-              <div>
-                <span>Quantité carton initiale : {quantiteCarton ? quantiteCarton : '0'}</span>
-              </div>
-              <div>
-                <span>Mouvement : <span className="text-red-600 font-bold">-{newStockCarton}</span></span>
-              </div>
-              <div>
-                <span>Stock final carton : {finalStockCarton}</span>
-              </div>
-            </div>
-            <div className="space-y-1 ms-5 text-sm">
-              <div>
-                <span>Quantité pièce initiale : {quantitePiece ? quantitePiece : '0'}</span>
-              </div>
-              <div>
-                <span>Mouvement : <span className="text-red-600 font-bold">-{newStockPiece}</span></span>
-              </div>
-              <div>
-                <span>Stock final pièce : {finalStockPiece}</span>
-              </div>
-            </div>
-          </div>
-          <div className='w-full mt-6 flex justify-center items-center'>
-            <button
-              onClick={handleValidate}
-              className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
-              Valider
-            </button>
-          </div>
-        </div>
-      </Modal>
-      {/* DEMANDE PAR CARTON LOT */}
-      <Modal isOpen={sortieParCartonLotModalOpen} onClose={() => setSortieParCartonLotModalOpen(false)} className="p-4 max-w-md">
-        <div className="space-y-5">
-          <div className="w-full text-center">
-            <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium">Sortie stock</span>
-          </div>
-          <div className="text-center flex flex-col">
-            <span className="font-bold text-sm">
-              {nomStock}
-            </span>
-            <span>
-              <span className="text-sm text-gray-800 font-medium">{nomPiece} </span>
-              -
-              <span className="font-semibold"> {nomModel}</span> |
-              <span className="font-medium text-gray-700"> {nomServicePiece}</span>
-            </span>
-          </div>
-          <div className="ms-5 text-center">
-            <span className="text-sm text-gray-800 underline">Motif: {motif}</span>
-          </div>
-          <div className="space-y-2">
-            <div className="space-y-1 ms-5 border-b pb-2 text-sm">
-              <div>
-                <span>Lot sélectionné : {nomLot}</span>
-              </div>
-              <div>
-                <span>Quantité initiale : {stockCartonLot}</span>
-              </div>
-              <div>
-                <span>Mouvement : <span className="text-red-600 font-bold">-{newStockCarton}</span></span>
-              </div>
-              <div>
-                <span>Stock final : {finalStockCartonLot}</span>
-              </div>
-            </div>
-            <div className="space-y-1 ms-5 border-b pb-2 text-sm">
-              <div>
-                <span>Quantité carton initiale : {quantiteCarton ? quantiteCarton : '0'}</span>
-              </div>
-              <div>
-                <span>Stock final carton : {finalStockCarton}</span>
-              </div>
-            </div>
-            <div className="space-y-1 ms-5 text-sm">
-              <div>
-                <span>Quantité pièce initiale : {quantitePiece ? quantitePiece : '0'}</span>
-              </div>
-              <div>
-                <span>Stock final pièce : {finalStockPiece}</span>
-              </div>
-            </div>
-          </div>
-          <div className='w-full mt-6 flex justify-center items-center'>
-            <button
-              onClick={handleValidate}
-              className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
-              Valider
-            </button>
-          </div>
-        </div>
-      </Modal>
-      {/* DEMANDE PAR PIECE CARTON */}
-      <Modal isOpen={sortieParPieceCartonModalOpen} onClose={() => setSortieParPieceCartonModalOpen(false)} className="p-4 max-w-md">
-        <div className="space-y-5">
-          <div className="w-full text-center">
-            <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium">Sortie stock</span>
-          </div>
-          <div className="text-center flex flex-col">
-            <span className="font-bold text-sm">
-              {nomStock}
-            </span>
-            <span>
-              <span className="text-sm text-gray-800 font-medium">{nomPiece} </span>
-              -
-              <span className="font-semibold"> {nomModel}</span> |
-              <span className="font-medium text-gray-700"> {nomServicePiece}</span>
-            </span>
-          </div>
-          <div className="ms-5 text-center">
-            <span className="text-sm text-gray-800 underline">Motif: {motif}</span>
-          </div>
-          <div className="space-y-2">
-            <div className="space-y-1 ms-5 border-b pb-2 text-sm">
-              <div>
-                <span>Carton sélectionné : {nomCarton}</span>
-              </div>
-              <div>
-                <span>Quantité initiale : {stockPieceCarton}</span>
-              </div>
-              <div>
-                <span>Mouvement : <span className="text-red-600 font-bold">-{newStockPiece}</span></span>
-              </div>
-              <div>
-                <span>Stock final : {finalStockPieceCarton}</span>
-              </div>
-            </div>
-            <div className="space-y-1 ms-5 text-sm">
-              <div>
-                <span>Quantité pièce initiale : {quantitePiece ? quantitePiece : '0'}</span>
-              </div>
-              <div>
-                <span>Stock final pièce : {finalStockPiece}</span>
-              </div>
-            </div>
-          </div>
-          <div className='w-full mt-6 flex justify-center items-center'>
-            <button
-              onClick={handleValidate}
-              className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
-              Valider
-            </button>
-          </div>
-        </div>
-      </Modal>
-      {/* DEMANDE PAR CARTON */}
-      <Modal isOpen={sortieParCartonModalOpen} onClose={() => setSortieParCartonModalOpen(false)} className="p-4 max-w-md">
-        <div className="space-y-5">
-          <div className="w-full text-center">
-            <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium">Sortie stock</span>
-          </div>
-          <div className="text-center flex flex-col">
-            <span className="font-bold text-sm">
-              {nomStock}
-            </span>
-            <span>
-              <span className="text-sm text-gray-800 font-medium">{nomPiece} </span>
-              -
-              <span className="font-semibold"> {nomModel}</span> |
-              <span className="font-medium text-gray-700"> {nomServicePiece}</span>
-            </span>
-          </div>
-          <div className="ms-5 text-center">
-            <span className="text-sm text-gray-800 underline">Motif: {motif}</span>
-          </div>
-          <div className="space-y-2">
-            <div className="space-y-1 ms-5 border-b pb-2 text-sm">
-              <div>
-                <span>Quantité carton initiale : {quantiteCarton ? quantiteCarton : '0'}</span>
-              </div>
-              <div>
-                <span>Mouvement : <span className="text-red-600 font-bold">-{selectedCartons.length}</span></span>
-              </div>
-              <div>
-                <span>Stock final carton : {finalStockCarton}</span>
-              </div>
-            </div>
-            <div className="space-y-1 ms-5 text-sm">
-              <div>
-                <span>Quantité pièce initiale : {quantitePiece ? quantitePiece : '0'}</span>
-              </div>
-              <div>
-                <span>Mouvement : <span className="text-red-600 font-bold">-{newStockPiece}</span></span>
-              </div>
-              <div>
-                <span>Stock final pièce : {finalStockPiece}</span>
-              </div>
-            </div>
-          </div>
-          <div className='w-full mt-6 flex justify-center items-center'>
-            <button
-              onClick={handleValidate}
-              className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
-              Valider
-            </button>
-          </div>
-        </div>
-      </Modal>
-      {/* DEMANDE PAR PIECE */}
-      <Modal isOpen={sortieParPieceModalOpen} onClose={() => setSortieParPieceModalOpen(false)} className="p-4 max-w-md">
+      <Modal isOpen={validationModalOpen} onClose={() => setValidationModalOpen(false)} className="p-4 max-w-md">
         <div className="space-y-5">
           <div className="w-full text-center">
             <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium">Demande</span>
           </div>
           <div className="text-center flex flex-col">
-            <span className="font-bold text-sm">
-              {nomStock}
-            </span>
             <span>
               <span className="text-sm text-gray-800 font-medium">{nomPiece} </span>
               -
@@ -1902,13 +749,10 @@ export default function ModifyDemandeInputs() {
           </div>
           <div className="space-y-1 ms-5">
             <div>
-              <span>Quantité initiale : {quantitePiece ? quantitePiece : '0'}</span>
+              <span>Demande : {parPiece ? 'par pièce' : parCarton ? 'par carton' : parLot ? 'par lot' : '?'}</span>
             </div>
             <div>
-              <span>Demande : <span className="text-red-600 font-bold">-{newStockPiece}</span></span>
-            </div>
-            <div>
-              <span>Stock final : {finalStockPiece}</span>
+              <span>Quantité demandée : {quantite}</span>
             </div>
           </div>
           <div className='w-full mt-6 flex justify-center items-center'>
