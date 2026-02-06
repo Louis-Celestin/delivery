@@ -7,7 +7,7 @@ export default function LoadingPage() {
         <>
             <div className="bg-white z-999999 w-full h-screen flex justify-center items-center absolute top-0 right-0">
                 <div className="flex flex-col justify-center items-center">
-                    <img src="./images/logo/greenpay.jpeg" alt="" className="w-40"/>
+                    <img src="./images/logo/A8900_PAX.png" alt="" className="w-25"/>
                     {loading ? (
                         <ProgressSpinner style={{width: '50px', height: '50px'}} />
                     ) : (<></>)}
