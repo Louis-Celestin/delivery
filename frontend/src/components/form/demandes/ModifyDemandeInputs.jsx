@@ -91,6 +91,7 @@ export default function ModifyDemandeInputs() {
 
         const demande_data = await demandeData.getOneDemande(id)
         const detailsDemande = JSON.parse(demande_data.details_demande)
+        const autres = JSON.parse(demande_data.champs_autre)
 
         setSelectedPiece(demande_data.item_id)
         setSelectedUser(demande_data.user_id)
@@ -100,6 +101,7 @@ export default function ModifyDemandeInputs() {
         setQuantite(demande_data.qte_total_demande)
         setSelectedServicePiece(detailsDemande.selectedServicePiece)
         setSelectedModel(detailsDemande.selectedModel)
+        setFields(autres)
 
         const items_data = await stockData.getAllItems()
         setItems(items_data)
@@ -138,7 +140,13 @@ export default function ModifyDemandeInputs() {
           label: item.fullname,
         }))
         setOptionsUsers(options_users)
-
+        const user = users_data.find(
+          (item) => {
+            return item.id_user == parseInt(demande_data.user_id)
+          }
+        )
+        const userNom = user ? user.fullname : ''
+        setNomUser(userNom)
 
         const type = detailsDemande.typeDemande
         switch (type) {
@@ -395,7 +403,7 @@ export default function ModifyDemandeInputs() {
       nomUser,
       motif,
       commentaire,
-      otherFields,
+      otherFields: fields,
     }
 
     try {

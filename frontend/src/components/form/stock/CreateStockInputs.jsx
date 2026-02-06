@@ -15,11 +15,13 @@ import { MultiSelect } from "primereact/multiselect"
 // import FileInput from "../input/FileInput"
 import { FileUpload } from "primereact/fileupload"
 import ExcelJS from "exceljs"
+import { Demandes } from "../../../backend/demandes/Demandes"
 
 export default function CreateStockInputs() {
 
     const stockData = new Stock()
     const userData = new Users()
+    const demandeData = new Demandes()
 
     const navigate = useNavigate();
     const userId = localStorage.getItem('id');
@@ -133,11 +135,12 @@ export default function CreateStockInputs() {
     const [analysis, setAnalysis] = useState(null);
     const [entreeParSnModalOpen, setEntreeParSnModalOpen] = useState(false)
 
+    const [isDemande, setIsDemande] = useState(false)
+
     useEffect(() => {
         const fetchPieces = async () => {
             setLoading(true)
             try {
-                console.log(idDemande)
                 const pieces_data_all = await stockData.getAllItems()
                 const pieces_data = pieces_data_all.filter((item) => {
                     return item.is_deleted == false
@@ -154,6 +157,38 @@ export default function CreateStockInputs() {
                     return item.is_deleted == false
                 })
                 setStocks(stocks_data)
+
+                if (idDemande) {
+                    const demande_data = await demandeData.getOneDemande(idDemande)
+                    const details = JSON.parse(demande_data.details_demande)
+
+                    setSelectedPiece(demande_data.item_id)
+                    setIsDemande(true)
+                    const piece = pieces_data.find((item) => {
+                        return item.id_piece == demande_data.item_id
+                    })
+                    const nom = piece ? piece.nom_piece : ''
+                    setNomPiece(nom)
+                    setSelectedModel(details.selectedModel)
+                    setSelectedService(details.selectedServicePiece)
+                    console.log(details)
+
+                    const models_data = await stockData.getAllModels()
+                    const model = models_data.find((item) => {
+                        return item.id_model == details.selectedModel
+                    })
+                    console.log(details.selectedModel)
+                    if (model) {
+                        setNomModel(model.nom_model)
+                    }
+
+                    const services_data = await userData.getAllServices()
+                    const service = services_data.find((item) => {
+                        return item.id == details.selectedServicePiece
+                    })
+                    const nomService = service ? service.nom_service : ''
+                    setNomService(nomService)
+                }
 
             } catch (error) {
                 console.log('Error fetching the data ', error)
@@ -1091,15 +1126,46 @@ export default function CreateStockInputs() {
                 ) : (
                     <ComponentCard className="md:w-1/2 w-full" title="Nouveau Stock">
                         <div className="space-y-5">
-                            <div>
-                                <Label>Choisir la pièce <span className="text-red-700">*</span></Label>
-                                <Select
-                                    options={optionsPieces}
-                                    placeholder="Choisir une option"
-                                    onChange={handleSelectPiece}
-                                    className="dark:bg-dark-900"
-                                />
-                            </div>
+                            {isDemande ? (
+                                <>
+                                    <div>
+                                        <Label className="text-gray-400">Choisir la pièce <span className="text-gray-700">*</span></Label>
+                                        <Input
+                                            type="text"
+                                            value={nomPiece}
+                                            disabled
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label className="text-gray-400">Choisir le modèle <span className="text-gray-700">*</span></Label>
+                                        <Input
+                                            type="text"
+                                            value={nomModel}
+                                            disabled
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label className="text-gray-400">Choisir le service <span className="text-gray-700">*</span></Label>
+                                        <Input
+                                            type="text"
+                                            value={nomService}
+                                            disabled
+                                        />
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div>
+                                        <Label>Choisir la pièce <span className="text-red-700">*</span></Label>
+                                        <Select
+                                            options={optionsPieces}
+                                            placeholder="Choisir une option"
+                                            onChange={handleSelectPiece}
+                                            className="dark:bg-dark-900"
+                                        />
+                                    </div>
+                                </>
+                            )}
                             <div>
                                 {pieceLoading ? (
                                     <>

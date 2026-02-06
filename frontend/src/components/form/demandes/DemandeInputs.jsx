@@ -980,7 +980,7 @@ export default function DemandeInputs() {
       nomUser,
       motif,
       commentaire,
-      otherFields,
+      otherFields: fields,
     }
 
     try {

@@ -550,6 +550,10 @@ export default function ValidateDemandeInputs() {
     };
 
     const checkValidate = () => {
+        if (!selectedStock) {
+            setError("Vous devez choisir la stock !")
+            return false
+        }
         if (!serviceUser) {
             setError("Vous devez choisir le service demandeur")
             return false
@@ -560,10 +564,6 @@ export default function ValidateDemandeInputs() {
         }
         if (!motif) {
             setError("Vous devez précisier le motif !")
-            return false
-        }
-        if (!selectedPiece) {
-            setError("Vous devez choisir la pièce !")
             return false
         }
         if (!selectedServicePiece) {

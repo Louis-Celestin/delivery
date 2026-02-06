@@ -349,23 +349,28 @@ const AppSidebar: React.FC = () => {
           !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
         }`}
       >
-        <Link to="/">
+        <Link to="/" className="flex justify-center items-center w-full">
           {isExpanded || isHovered || isMobileOpen ? (
             <>
-              <img
-                className="dark:hidden"
-                src="/images/logo/greenpay.jpeg"
-                alt="Logo"
-                width={150}
-                height={40}
-              />
-              <img
-                className="hidden dark:block"
-                src="/images/logo/greenpay.jpeg"
-                alt="Logo"
-                width={150}
-                height={40}
-              />
+            <div className="flex flex-col text-center">
+              <span className="font-semibold text-gray-700 tracking-widest text-xl mb-2">SYSLIS</span>
+              <div>
+                <img
+                  className="dark:hidden"
+                  src="/images/logo/greenpay.jpeg"
+                  alt="Logo"
+                  width={90}
+                  height={40}
+                />
+                <img
+                  className="hidden dark:block"
+                  src="/images/logo/greenpay.jpeg"
+                  alt="Logo"
+                  width={150}
+                  height={40}
+                />
+              </div>
+            </div>
             </>
           ) : (
             <img
