@@ -2,9 +2,13 @@ import axios from "axios";
 import urlBase from '../const';
 
 export class Demandes {
-  async faireDemande(payload) {
+  async faireDemande(formData) {
     try {
-      const response = await axios.post(`${urlBase}/api/demandes/faireDemande`, payload);
+      const response = await axios.post(`${urlBase}/api/demandes/faireDemande`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
       return response.data
     } catch (error) {
       throw error.response.data;
