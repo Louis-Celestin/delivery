@@ -18,8 +18,9 @@ import { Demandes } from "../../../backend/demandes/Demandes.js";
 import { Dropdown } from "primereact/dropdown";
 
 import SignatureCanvas from 'react-signature-canvas'
+import { useSyncExternalStore } from "react";
 
-export default function ValidateDemandeInputs() {
+export default function LivraisonDemandeInputs() {
 
     const stockData = new Stock()
     const userData = new Users()
@@ -145,6 +146,11 @@ export default function ValidateDemandeInputs() {
     const [isSignModalOpen, setIsSignModalOpen] = useState(false)
     const [errorSign, setErrorSign] = useState('');
 
+    const [commentaire, setCommentaire] = useState('')
+
+    const [commentaireValidation, setCommentaireValidation] = useState('')
+    const [quantiteValidee, setQuantiteValidee] = useState(0)
+
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true)
@@ -152,6 +158,11 @@ export default function ValidateDemandeInputs() {
 
                 const demande_data = await demandeData.getOneDemande(idDemande)
                 const detailsDemande = JSON.parse(demande_data.details_demande)
+
+                const index = demande_data.validation_demande.length - 1
+                const validation = demande_data.validation_demande[index]
+                setCommentaireValidation(validation.commentaire)
+                setQuantiteValidee(validation.quantite_validee)
 
                 const items_data = await stockData.getAllItems()
                 setItems(items_data)
@@ -199,7 +210,6 @@ export default function ValidateDemandeInputs() {
 
                 setMotif(demande_data.motif_demande)
 
-
                 setCommentaireDemande(demande_data.commentaire)
 
                 setQuantiteDemande(demande_data.qte_total_demande)
@@ -220,12 +230,95 @@ export default function ValidateDemandeInputs() {
                         label: `${item.code_stock} - ${nomService}`
                     })
                 })
+                setSelectedStock(validation.stock_id)
+                const stock = stocks_data.find((item) => {
+                    return item.id == validation.stock_id
+                })
+                if (stock) {
+                    setNomStock(stock.code_stock)
+                    setQuantitePiece(stock.quantite_piece)
+                    // setQuantiteCarton(stock.quantite_carton)
+                    // setQuantiteLot(stock.quantite_lot)
 
-                setOptionsStocks(options_stocks)
+                    const stock_carton_all = await stockData.getCartonStock(validation.stock_id)
+                    const stock_carton = stock_carton_all.filter((item) => {
+                        return item.is_deleted == false
+                    })
+                    setQuantiteCarton(stock_carton.length)
+                    if (stock_carton.length > 0) {
+                        setHasCarton(true)
+                    } else {
+                        setHasCarton(false)
+                    }
+                    const carton_simple = stock_carton.filter((item) => {
+                        return item.lot_id == null
+                    })
+                    const options_carton = carton_simple.map((item) => ({
+                        value: item.id,
+                        label: `Carton ${item.numero_carton} - ${item.quantite_totale_piece} pièces`
+                    }))
+                    setOptionsCartons(options_carton)
+                    setListeCartons(stock_carton)
+
+                    const stock_lot_all = await stockData.getLotStock(validation.stock_id)
+                    const stock_lot = stock_lot_all.filter((item) => {
+                        return item.is_deleted == false
+                    })
+                    setQuantiteLot(stock_lot.length)
+                    setListeLots(stock_lot)
+                    const options_lot = stock_lot.map((item) => ({
+                        value: item.id,
+                        label: `Lot ${item.numero_lot} - ${item.quantite_carton} cartons - ${item.quantite_piece} pièces`
+                    }))
+                    setOptionsLot(options_lot)
+                    if (stock_lot.length > 0) {
+                        setHasLot(true)
+                    } else {
+                        setHasLot(false)
+                    }
+
+                    if (stock && stock.piece_id == 1 && stock.service_id == 5) {
+                        const stock_demandeur = stocks.find((item) => {
+                            return item.service_id == 3 && item.piece_id == 1 && item.code_stock == stock.code_stock
+                        })
+                        if (stock_demandeur) {
+                            setQuantitePieceDemandeur(stock_demandeur.quantite_piece)
+
+                            const stock_carton_all = await stockData.getCartonStock(stock_demandeur.id)
+                            const stock_carton = stock_carton_all.filter((item) => {
+                                return item.is_deleted == false
+                            })
+                            setQuantiteCartonDemandeur(stock_carton.length)
+
+                            const stock_lot_all = await stockData.getLotStock(stock_demandeur.id)
+                            const stock_lot = stock_lot_all.filter((item) => {
+                                return item.is_deleted == false
+                            })
+                            setQuantiteLotDemandeur(stock_lot.length)
+                        }
+                    }
+                }
 
                 const models_data = await stockData.getAllModels()
                 setModels(models_data)
 
+                const modelId = stock ? stock.model_id : null
+                setSelectedModel(modelId)
+                const model = models_data.find((item) => {
+                    return item.id_model == modelId
+                })
+                const nomModel = model ? model.nom_model : 'N/A'
+                setNomModel(nomModel)
+
+                const serviceId = stock ? stock.service_id : null
+                setSelectedServicePiece(serviceId)
+                const service = servicesPiece.find((item) => {
+                    return item.id == serviceId
+                })
+                const nomService = service ? service.nom_service : 'N/A'
+                setNomServicePiece(nomService)
+
+                setOptionsStocks(options_stocks)
 
             } catch (error) {
                 console.log(error)
@@ -551,7 +644,7 @@ export default function ValidateDemandeInputs() {
 
     const checkValidate = () => {
         if (!selectedStock) {
-            setError("Vous devez choisir la stock !")
+            setError("Vous devez choisir le stock !")
             return false
         }
         if (!serviceUser) {
@@ -917,43 +1010,42 @@ export default function ValidateDemandeInputs() {
     const handleValidate = async () => {
 
         setIsSignModalOpen(false)
+        setSortieParPieceModalOpen(false)
+        setSortieParCartonModalOpen(false)
+        setSortieParPieceCartonModalOpen(false)
+        setSortieParCartonLotModalOpen(false)
+        setSortieParLotModalOpen(false)
 
-        if (signature.isEmpty()) {
-            setErrorSign('Vous devez signer pour valider !')
-            return;
-        }
-
-        const sign = signature.toDataURL('image/png')
-        const fd = new FormData();
-
-        if (sign) {
-            const blob = await fetch(sign).then(res => res.blob());
-            fd.append('signature', blob, 'signature.png');
-        }
-        fd.append('demande_id', idDemande)
-        fd.append('user_id', userId)
-        fd.append('commentaire', message)
-        fd.append('stock_id', selectedStock)
-        fd.append('nomDemandeur', nomUser)
-        fd.append('quantite_demande', quantite)
-        fd.append('nomenclature', nomenclature)
-        fd.append('detailsDemande', JSON.stringify(detailsDemande))
-        fd.append('detailsDemandeur', JSON.stringify(detailsDemandeur))
-        fd.append('itemId', selectedPiece)
-        fd.append('idDemandeur', selectedUser)
-        fd.append('motif', motif)
-        fd.append('serviceDemandeur', serviceUser)
-        fd.append('champsAutre', otherFields)
+        // const sign = signature.toDataURL('image/png')
+        // const fd = new FormData();
+        // if (sign) {
+        //     const blob = await fetch(sign).then(res => res.blob());
+        //     fd.append('signature', blob, 'signature.png');
+        // }
+        // fd.append('demande_id', idDemande)
+        // fd.append('user_id', userId)
+        // fd.append('commentaire', message)
+        // fd.append('stock_id', selectedStock)
+        // fd.append('nomDemandeur', nomUser)
+        // fd.append('quantite_demande', quantite)
+        // fd.append('nomenclature', nomenclature)
+        // fd.append('detailsDemande', JSON.stringify(detailsDemande))
+        // fd.append('detailsDemandeur', JSON.stringify(detailsDemandeur))
+        // fd.append('itemId', selectedPiece)
+        // fd.append('idDemandeur', selectedUser)
+        // fd.append('motif', motif)
+        // fd.append('serviceDemandeur', serviceUser)
+        // fd.append('champsAutre', otherFields)
         const payload = {
-            idDemande,
-            nomDemandeur: nomUser,
+            demande_id: idDemande,
+            user_id: userId,
             commentaire: message,
-            selectedStock,
+            stock_id: selectedStock,
+            nomDemandeur: nomUser,
             quantite_demande: quantite,
             nomenclature,
-            detailsDemande,
-            detailsDemandeur,
-            userId,
+            detailsDemande: JSON.stringify(detailsDemande),
+            detailsDemandeur: JSON.stringify(detailsDemandeur),
             itemId: selectedPiece,
             idDemandeur: selectedUser,
             motif,
@@ -965,8 +1057,8 @@ export default function ValidateDemandeInputs() {
             setLoadingValidation(true)
             console.log('Sendind payload...')
 
-            // const response = await demandeData.faireDemande(payload)
-            const response = await demandeData.validateDemande(fd)
+            const response = await demandeData.validateDemande(payload)
+            // const response = await demandeData.validateDemande(fd)
 
             console.log(response)
             Swal.fire({
@@ -982,7 +1074,7 @@ export default function ValidateDemandeInputs() {
                 text: "Une erreur est survenue lors de la validation !",
                 icon: "warning"
             })
-            navigate('/toutes-les-demandes')
+            navigate(`/demande-details/${idDemande}`)
         } finally {
             setLoadingValidation(false)
         }
@@ -1009,7 +1101,7 @@ export default function ValidateDemandeInputs() {
                                     <div className="space-y-6">
                                         <div className="space-y-5">
                                             <div className="text-center">
-                                                <span className="text-sm font-semibold">Informations générales</span>
+                                                <span className="text-sm font-semibold">Informations demande</span>
                                             </div>
                                             <div className="text-xs space-y-4">
                                                 <div className="grid grid-cols-2">
@@ -1045,74 +1137,37 @@ export default function ValidateDemandeInputs() {
                                                     )}
                                                 </div>
                                             </div>
-                                            {/* <div>
-                                                <Label className="text-gray-400">Service Demandeur</Label>
-                                                <Input
-                                                    type="text"
-                                                    value={nomServiceUser}
-                                                    className="text-gray-400 border-gray-300 opacity-50 bg-gray-100 cursor-not-allowed dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700"
-                                                />
+                                        </div>
+                                        <div className="space-y-5">
+                                            <div className="text-center">
+                                                <span className="text-sm font-semibold">Validation</span>
                                             </div>
-                                            <div>
-                                                <Label className="text-gray-400">Demandeur</Label>
-                                                <Input
-                                                    type="text"
-                                                    value={nomUser}
-                                                    className="text-gray-400 border-gray-300 opacity-50 bg-gray-100 cursor-not-allowed dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700"
-                                                />
-                                            </div>
-                                            <div>
-                                                <Label className="text-gray-400">Motif</Label>
-                                                <Input
-                                                    type="text"
-                                                    value={motif}
-                                                    className="text-gray-400 border-gray-300 opacity-50 bg-gray-100 cursor-not-allowed dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700"
-                                                />
-                                            </div>
-                                            <div className='overflow-hidden mb-6 pt-2 p-6 rounded-xl border text-gray-400 border-gray-300 opacity-60 bg-gray-25 cursor-not-allowed dark:border-white/[0.05] dark:bg-white/[0.03]'>
-                                                <div className='mb-6 pb-2 w-full border-b'>
-                                                    <span className='text-sm mr-2'>Commentaire demandeur</span>
-                                                    <span className='text-sm'><i className="pi pi-comment"></i></span>
+                                            <div className="text-xs space-y-4">
+                                                <div className="grid grid-cols-2">
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold">Stock sélectionné</span>
+                                                        <span className="">{nomStock}</span>
+                                                    </div>
+                                                    <div className="flex flex-col text-right">
+                                                        <span className="font-bold text-green-700">Quantité validée</span>
+                                                        <span className="text-green-600">{quantiteValidee}</span>
+                                                    </div>
                                                 </div>
-                                                {commentaireDemande ? (
-                                                    <p className='text-sm text-gray-500'>{commentaireDemande}</p>
-                                                ) : (
-                                                    <p className='text-xs text-gray-500'>Sans commentaire</p>
-                                                )}
-                                            </div> */}
+                                                <div className="flex flex-col">
+                                                    <span className="font-bold">Commentaire</span>
+                                                    {commentaireValidation ? (
+                                                        <span className="font-light">{commentaireValidation}</span>
+                                                    ) : (
+                                                        <span className="text-gray-400 font-light">sans commentaire</span>
+                                                    )}
+                                                </div>
+                                            </div>
                                         </div>
                                         <div className="space-y-5">
                                             <div className="text-center">
                                                 <span className="text-sm font-semibold">Informations sur stock</span>
                                             </div>
                                             {/* <div>
-                        <Label>Pièce <span className="text-red-700">*</span></Label>
-                        <Select
-                          options={optionsItems}
-                          placeholder="Choisir une option"
-                          onChange={handleSelectPiece}
-                          className="dark:bg-dark-900"
-                        />
-                      </div> */}
-                                            {/* <div>
-                        <Label>Service <span className="text-red-700">*</span></Label>
-                        <Select
-                          options={optionsServicesPiece}
-                          placeholder="Choisir une option"
-                          onChange={handleSelectServicePiece}
-                          className="dark:bg-dark-900"
-                        />
-                      </div> */}
-                                            {/* <div>
-                        <Label>Modèle <span className="text-red-700">*</span></Label>
-                        <Select
-                          options={optionsModels}
-                          placeholder="Choisir une option"
-                          onChange={handleSelectModel}
-                          className="dark:bg-dark-900"
-                        />
-                      </div> */}
-                                            <div>
                                                 <Label>Stock <span className="text-red-700">*</span></Label>
                                                 <Dropdown
                                                     options={optionsStocks}
@@ -1126,7 +1181,7 @@ export default function ValidateDemandeInputs() {
                                                     value={selectedStock}
                                                     valueTemplate={selectedStockTemplate}
                                                 />
-                                            </div>
+                                            </div> */}
                                             <div className="flex justify-between items-center">
                                                 <div className="flex flex-col  border-b pb-2 border-black">
                                                     <span className="text-xs text-gray-700 font-normal">{nomPiece} {nomModel}</span>
@@ -1708,7 +1763,7 @@ export default function ValidateDemandeInputs() {
                     </div>
                     <div className='w-full mt-6 flex justify-center items-center'>
                         <button
-                            onClick={handleConfirmSign}
+                            onClick={handleValidate}
                             className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
                             Confirmer
                         </button>
@@ -1769,7 +1824,7 @@ export default function ValidateDemandeInputs() {
                     </div>
                     <div className='w-full mt-6 flex justify-center items-center'>
                         <button
-                            onClick={handleConfirmSign}
+                            onClick={handleValidate}
                             className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
                             Confirmer
                         </button>
@@ -1822,7 +1877,7 @@ export default function ValidateDemandeInputs() {
                     </div>
                     <div className='w-full mt-6 flex justify-center items-center'>
                         <button
-                            onClick={handleConfirmSign}
+                            onClick={handleValidate}
                             className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
                             Confirmer
                         </button>
@@ -1875,7 +1930,7 @@ export default function ValidateDemandeInputs() {
                     </div>
                     <div className='w-full mt-6 flex justify-center items-center'>
                         <button
-                            onClick={handleConfirmSign}
+                            onClick={handleValidate}
                             className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
                             Confirmer
                         </button>
@@ -1915,7 +1970,7 @@ export default function ValidateDemandeInputs() {
                     </div>
                     <div className='w-full mt-6 flex justify-center items-center'>
                         <button
-                            onClick={handleConfirmSign}
+                            onClick={handleValidate}
                             className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
                             Confirmer
                         </button>
