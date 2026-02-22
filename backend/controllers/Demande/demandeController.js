@@ -455,8 +455,8 @@ const preValidateDemande = async (req, res) => {
     demande_id,
     user_id,
     commentaire,
-    stockId,
-    quantiteValidee
+    quantiteValidee,
+    owners,
   } = req.body;
 
   try {
@@ -493,7 +493,6 @@ const preValidateDemande = async (req, res) => {
       where: { id: parseInt(demande_id) },
       data: {
         statut_demande: "valide",
-        stock_id: +stockId,
       },
     });
 
@@ -507,7 +506,6 @@ const preValidateDemande = async (req, res) => {
         signature,
         statut_validation_demande: "valide",
         quantite_validee: +quantiteValidee,
-        stock_id: +stockId,
       },
     });
 
@@ -535,17 +533,16 @@ const preValidateDemande = async (req, res) => {
       }
     })
 
-    const stock = await prisma.stocks.findUnique({
-      where: {
-        id: +stockId
-      }
-    })
-
-    const stockOwner = await prisma.users.findUnique({
-      where: {
-        id_user: stock.created_by
-      }
-    })
+    let stockOwners = []
+    if(owners && Array.isArray(owners)) {
+      stockOwners = await prisma.users.findMany({
+        where: {
+          id_user : {
+            in: owners,
+          }
+        }
+      })
+    }
 
     const service_users = userService.map(us => us.users)
     const demandeur = await prisma.users.findUnique({
@@ -590,11 +587,13 @@ const preValidateDemande = async (req, res) => {
         <br><br>
         <p>Green - Pay vous remercie.</p>
         `;
-      await sendMail({
-        to: stockOwner.email,
-        subject,
-        html,
-      });
+      for (const stockOwner of stockOwners) {
+        await sendMail({
+          to: stockOwner.email,
+          subject,
+          html,
+        });
+      }
       for (const service_user of service_users) {
         await sendMail({
           to: service_user.email,
@@ -614,8 +613,8 @@ const preValidateDemande = async (req, res) => {
 const validateDemande = async (req, res) => {
   const {
     demande_id,
-    commentaire,
     user_id,
+    commentaire,
     stock_id,
     nomenclature,
     detailsDemande,
@@ -1584,6 +1583,7 @@ const validateDemande = async (req, res) => {
     await prisma.demandes.update({
       where: { id: parseInt(demande_id) },
       data: {
+        stock_id: +stock_id,
         demande_livree: true,
         nomenclature,
         type_demande: typeMouvement,
@@ -1678,7 +1678,7 @@ const validateDemande = async (req, res) => {
         });
       }
     }
-    return res.status(201).json(newValidation, mouvement_stock, updatedQuantiteDemandeur);
+    return res.status(201).json(mouvement_stock, updatedQuantiteDemandeur);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Erreur serveur." });
@@ -3223,12 +3223,15 @@ const receivePiece = async (req, res) => {
     })
 
     if (!demande) {
+      console.log("Demande introuvable.")
       return res.status(404).json({ message: "Demande introuvable." });
     }
-    if (demande.demande_livree == true) {
+    if (demande.demande_recue == true) {
+      console.log("Demande déjà réceptionnée")
       return res.status(400).json({ message: "Demande déjà réceptionnée." });
     }
     if (!req.file) {
+      console.log("Signature du récepteur requise.")
       return res.status(400).json({ message: "Signature du récepteur requise." });
     }
 
@@ -3263,7 +3266,7 @@ const receivePiece = async (req, res) => {
 
     await prisma.demandes.update({
       where: { id: demande.id },
-      data: { demande_livree: true },
+      data: { demande_recue: true },
     })
 
     // *********** GESTION DES MAILS ************
@@ -3304,7 +3307,7 @@ const receivePiece = async (req, res) => {
     const deliveryLink = `${url}/demande-details/${demande.id}`;
 
     if ((demandeurs && demandeurs.length > 0)) {
-      const subject = `DEMANDE RECEPTIONNEE`;
+      const subject = `STOCK RECEPTIONNE`;
       const html = `
         <p>Bonjour,</p>
         <p>La demande de stock ${demande.id} a été réceptionnée.</p>
@@ -3401,7 +3404,6 @@ const generateDemandePDF = async (req, res) => {
     }
 
     let details = JSON.parse(demande_data.details_demande)
-    console.log(details)
 
     let service_demandeur = "N/A"
     let service_donneur = "N/A"
@@ -3470,12 +3472,13 @@ const generateDemandePDF = async (req, res) => {
           details.stockFinalCarton : type_demande == 5 ?
             details.stockFinalPiece : 0
 
-    console.log(stock_depart)
+    const validation = demande.validation_demande[index]
 
-    let nomValidateur = demande.validation_demande[index].nom_validateur
-    let signature_validation = demande.validation_demande[index].signature
-    let date_validation = demande.validation_demande[index].date_validation_demande
-    let commentaire_validation = demande.validation_demande[index].commentaire
+    let nomValidateur = validation.nom_validateur
+    let signature_validation = validation.signature
+    let date_validation = validation.date_validation_demande
+    let commentaire_validation = validation.commentaire
+    const quantite_validee = validation.quantite_validee
 
     let signature_livraison = 'N/A'
     let date_livraison = 'N/A'
@@ -3515,6 +3518,7 @@ const generateDemandePDF = async (req, res) => {
       .replaceAll("{{nom_demandeur}}", nomDemandeur)
       .replaceAll("{{service_demandeur}}", service_demandeur)
       .replaceAll("{{quantite}}", quantite)
+      .replaceAll("{{quantite_validee}}", quantite_validee)
       .replaceAll("{{quantite_livree}}", quantite_livree)
       .replaceAll("{{quantite_livraison}}", quantite_livraison)
       .replaceAll("{{stock_initial}}", stock_depart)

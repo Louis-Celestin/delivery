@@ -151,6 +151,8 @@ export default function LivraisonDemandeInputs() {
     const [commentaireValidation, setCommentaireValidation] = useState('')
     const [quantiteValidee, setQuantiteValidee] = useState(0)
 
+    const [validateur, setValidateur] = useState('')
+
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true)
@@ -175,6 +177,7 @@ export default function LivraisonDemandeInputs() {
                 const pieceDemande = items_data.find((item) => {
                     return item.id_piece == demande_data.item_id
                 })
+                setSelectedPiece(demande_data.item_id)
                 if (pieceDemande) {
                     setNomPiece(pieceDemande.nom_piece)
                 }
@@ -208,6 +211,8 @@ export default function LivraisonDemandeInputs() {
                 setNomUser(demande_data.nom_demandeur)
                 setSelectedUser(demande_data.id_demandeur)
 
+                setValidateur(validation.nom_validateur)
+
                 setMotif(demande_data.motif_demande)
 
                 setCommentaireDemande(demande_data.commentaire)
@@ -217,7 +222,10 @@ export default function LivraisonDemandeInputs() {
 
                 const stocks_data_all = await stockData.getAllStocks()
                 const stocks_data = stocks_data_all.filter((item) => {
-                    return item.is_deleted == false && item.piece_id == demande_data.item_id && item.quantite_piece > 0
+                    return item.is_deleted == false && 
+                        item.piece_id == demande_data.item_id && 
+                        item.quantite_piece > 0 &&
+                        item.created_by == +userId
                 })
                 setStocks(stocks_data)
                 const options_stocks = stocks_data.map((item) => {
@@ -230,94 +238,9 @@ export default function LivraisonDemandeInputs() {
                         label: `${item.code_stock} - ${nomService}`
                     })
                 })
-                setSelectedStock(validation.stock_id)
-                const stock = stocks_data.find((item) => {
-                    return item.id == validation.stock_id
-                })
-                if (stock) {
-                    setNomStock(stock.code_stock)
-                    setQuantitePiece(stock.quantite_piece)
-                    // setQuantiteCarton(stock.quantite_carton)
-                    // setQuantiteLot(stock.quantite_lot)
-
-                    const stock_carton_all = await stockData.getCartonStock(validation.stock_id)
-                    const stock_carton = stock_carton_all.filter((item) => {
-                        return item.is_deleted == false
-                    })
-                    setQuantiteCarton(stock_carton.length)
-                    if (stock_carton.length > 0) {
-                        setHasCarton(true)
-                    } else {
-                        setHasCarton(false)
-                    }
-                    const carton_simple = stock_carton.filter((item) => {
-                        return item.lot_id == null
-                    })
-                    const options_carton = carton_simple.map((item) => ({
-                        value: item.id,
-                        label: `Carton ${item.numero_carton} - ${item.quantite_totale_piece} pièces`
-                    }))
-                    setOptionsCartons(options_carton)
-                    setListeCartons(stock_carton)
-
-                    const stock_lot_all = await stockData.getLotStock(validation.stock_id)
-                    const stock_lot = stock_lot_all.filter((item) => {
-                        return item.is_deleted == false
-                    })
-                    setQuantiteLot(stock_lot.length)
-                    setListeLots(stock_lot)
-                    const options_lot = stock_lot.map((item) => ({
-                        value: item.id,
-                        label: `Lot ${item.numero_lot} - ${item.quantite_carton} cartons - ${item.quantite_piece} pièces`
-                    }))
-                    setOptionsLot(options_lot)
-                    if (stock_lot.length > 0) {
-                        setHasLot(true)
-                    } else {
-                        setHasLot(false)
-                    }
-
-                    if (stock && stock.piece_id == 1 && stock.service_id == 5) {
-                        const stock_demandeur = stocks.find((item) => {
-                            return item.service_id == 3 && item.piece_id == 1 && item.code_stock == stock.code_stock
-                        })
-                        if (stock_demandeur) {
-                            setQuantitePieceDemandeur(stock_demandeur.quantite_piece)
-
-                            const stock_carton_all = await stockData.getCartonStock(stock_demandeur.id)
-                            const stock_carton = stock_carton_all.filter((item) => {
-                                return item.is_deleted == false
-                            })
-                            setQuantiteCartonDemandeur(stock_carton.length)
-
-                            const stock_lot_all = await stockData.getLotStock(stock_demandeur.id)
-                            const stock_lot = stock_lot_all.filter((item) => {
-                                return item.is_deleted == false
-                            })
-                            setQuantiteLotDemandeur(stock_lot.length)
-                        }
-                    }
-                }
 
                 const models_data = await stockData.getAllModels()
                 setModels(models_data)
-
-                const modelId = stock ? stock.model_id : null
-                setSelectedModel(modelId)
-                const model = models_data.find((item) => {
-                    return item.id_model == modelId
-                })
-                const nomModel = model ? model.nom_model : 'N/A'
-                setNomModel(nomModel)
-
-                const serviceId = stock ? stock.service_id : null
-                setSelectedServicePiece(serviceId)
-                const service = servicesPiece.find((item) => {
-                    return item.id == serviceId
-                })
-                const nomService = service ? service.nom_service : 'N/A'
-                setNomServicePiece(nomService)
-
                 setOptionsStocks(options_stocks)
 
             } catch (error) {
@@ -643,30 +566,30 @@ export default function LivraisonDemandeInputs() {
     };
 
     const checkValidate = () => {
-        if (!selectedStock) {
+        if (selectedStock.length == 0) {
             setError("Vous devez choisir le stock !")
             return false
         }
-        if (!serviceUser) {
-            setError("Vous devez choisir le service demandeur")
-            return false
-        }
-        if (!selectedUser) {
-            setError("Vous devez choisir le demandeur")
-            return false
-        }
-        if (!motif) {
-            setError("Vous devez précisier le motif !")
-            return false
-        }
-        if (!selectedServicePiece) {
-            setError("Vous devez choisir le service !")
-            return false
-        }
-        if (!selectedModel) {
-            setError("Vous devez choisir le modèle !")
-            return false
-        }
+        // if (!serviceUser) {
+        //     setError("Vous devez choisir le service demandeur")
+        //     return false
+        // }
+        // if (!selectedUser) {
+        //     setError("Vous devez choisir le demandeur")
+        //     return false
+        // }
+        // if (!motif) {
+        //     setError("Vous devez précisier le motif !")
+        //     return false
+        // }
+        // if (!selectedServicePiece) {
+        //     setError("Vous devez choisir le service !")
+        //     return false
+        // }
+        // if (!selectedModel) {
+        //     setError("Vous devez choisir le modèle !")
+        //     return false
+        // }
         setError('')
         return true
     }
@@ -1041,16 +964,10 @@ export default function LivraisonDemandeInputs() {
             user_id: userId,
             commentaire: message,
             stock_id: selectedStock,
-            nomDemandeur: nomUser,
-            quantite_demande: quantite,
             nomenclature,
             detailsDemande: JSON.stringify(detailsDemande),
             detailsDemandeur: JSON.stringify(detailsDemandeur),
             itemId: selectedPiece,
-            idDemandeur: selectedUser,
-            motif,
-            serviceDemandeur: serviceUser,
-            champsAutre: otherFields,
         }
 
         try {
@@ -1063,7 +980,7 @@ export default function LivraisonDemandeInputs() {
             console.log(response)
             Swal.fire({
                 title: "Succès",
-                text: "Demande validée avec succès !",
+                text: "Stock livré avec succès !",
                 icon: "success"
             })
             navigate('/toutes-les-demandes')
@@ -1071,7 +988,7 @@ export default function LivraisonDemandeInputs() {
         } catch (error) {
             Swal.fire({
                 title: "Attention",
-                text: "Une erreur est survenue lors de la validation !",
+                text: "Une erreur est survenue lors de la livraison !",
                 icon: "warning"
             })
             navigate(`/demande-details/${idDemande}`)
@@ -1120,7 +1037,7 @@ export default function LivraisonDemandeInputs() {
                                                         <span className="text-sm">{typeDemande}</span>
                                                     </div>
                                                     <div className="flex flex-col text-right">
-                                                        <span className="font-bold">Quantité</span>
+                                                        <span className="font-bold">Quantité demandée</span>
                                                         <span className="text-sm">{quantiteDemande}</span>
                                                     </div>
                                                 </div>
@@ -1145,8 +1062,8 @@ export default function LivraisonDemandeInputs() {
                                             <div className="text-xs space-y-4">
                                                 <div className="grid grid-cols-2">
                                                     <div className="flex flex-col">
-                                                        <span className="font-bold">Stock sélectionné</span>
-                                                        <span className="">{nomStock}</span>
+                                                        <span className="font-bold">Validateur</span>
+                                                        <span className="">{validateur}</span>
                                                     </div>
                                                     <div className="flex flex-col text-right">
                                                         <span className="font-bold text-green-700">Quantité validée</span>
@@ -1167,7 +1084,7 @@ export default function LivraisonDemandeInputs() {
                                             <div className="text-center">
                                                 <span className="text-sm font-semibold">Informations sur stock</span>
                                             </div>
-                                            {/* <div>
+                                            <div>
                                                 <Label>Stock <span className="text-red-700">*</span></Label>
                                                 <Dropdown
                                                     options={optionsStocks}
@@ -1181,7 +1098,7 @@ export default function LivraisonDemandeInputs() {
                                                     value={selectedStock}
                                                     valueTemplate={selectedStockTemplate}
                                                 />
-                                            </div> */}
+                                            </div>
                                             <div className="flex justify-between items-center">
                                                 <div className="flex flex-col  border-b pb-2 border-black">
                                                     <span className="text-xs text-gray-700 font-normal">{nomPiece} {nomModel}</span>
@@ -1555,14 +1472,14 @@ export default function LivraisonDemandeInputs() {
                                                     </div>
                                                 ))}
                                             </div>
-                                            <div>
+                                            {/* <div>
                                                 <button
                                                     type="button"
                                                     onClick={handleAddField}
                                                 >
                                                     <span className="text-xs text-gray-500 font-medium"> <span className="underline">Ajouter un champ </span><span className="text-xl">+</span></span>
                                                 </button>
-                                            </div>
+                                            </div> */}
                                         </div>
                                         {parLot ? (
                                             <>

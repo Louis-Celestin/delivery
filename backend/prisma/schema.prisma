@@ -47,7 +47,7 @@ model demandes {
   type_demande                       Int?
   role_id_recepteur                  Int?
   demande_livree                     Boolean?                @default(false)
-  demande_re_ue                      Boolean                 @default(false) @map("demande_reçue")
+  demande_recue                      Boolean                 @default(false)
   id_demandeur                       Int?
   motif_demande                      String?                 @db.VarChar(255)
   service_demandeur                  Int?

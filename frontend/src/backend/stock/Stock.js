@@ -280,4 +280,13 @@ export class Stock {
             throw error.response.data;
         }
     }
+
+    async getAllUserTypeStocks(itemId, modelId, serviceId) {
+    try {
+      const response = await axios.get(`${urlBase}/api/stock/getAllUserTypeStocks/${itemId}/${modelId}/${serviceId}`)
+      return response.data;
+    } catch (error) {
+      throw error.response.data
+    }
+  };
 }

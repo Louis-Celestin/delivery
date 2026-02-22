@@ -148,8 +148,9 @@ export default function ValidateDemandeInputs() {
     const [errorSign, setErrorSign] = useState('');
 
     const [commentaire, setCommentaire] = useState('')
-    const [stockOwner, setStockOwner] = useState(null)
+    const [stockOwners, setStockOwners] = useState([])
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
+
 
     useEffect(() => {
         const fetchData = async () => {
@@ -158,6 +159,12 @@ export default function ValidateDemandeInputs() {
 
                 const demande_data = await demandeData.getOneDemande(idDemande)
                 const detailsDemande = JSON.parse(demande_data.details_demande)
+
+                const ownersData = await stockData.getAllUserTypeStocks(demande_data.item_id, detailsDemande.selectedModel, detailsDemande.selectedServicePiece)
+                const ownersId = ownersData.map((item) => {
+                    return item.id_user
+                })
+                setStockOwners(ownersId)
 
                 const items_data = await stockData.getAllItems()
                 setItems(items_data)
@@ -173,6 +180,7 @@ export default function ValidateDemandeInputs() {
                 if (pieceDemande) {
                     setNomPiece(pieceDemande.nom_piece)
                 }
+
 
                 const services_data = await userData.getAllServices()
                 setServicesUsers(services_data)
@@ -232,6 +240,21 @@ export default function ValidateDemandeInputs() {
                 const models_data = await stockData.getAllModels()
                 setModels(models_data)
 
+                const modelId = detailsDemande.selectedModel
+                setSelectedModel(modelId)
+                const model = models_data.find((item) => {
+                    return item.id_model == modelId
+                })
+                const nomModel = model ? model.nom_model : 'N/A'
+                setNomModel(nomModel)
+
+                const serviceId = detailsDemande.selectedServicePiece
+                setSelectedServicePiece(serviceId)
+                const service = services_data.find((item) => {
+                    return item.id == serviceId
+                })
+                const nomService = service ? service.nom_service : 'N/A'
+                setNomServicePiece(nomService)
 
             } catch (error) {
                 console.log(error)
@@ -557,21 +580,21 @@ export default function ValidateDemandeInputs() {
     };
 
     const checkValidate = () => {
-        if (selectedStock.length == 0) {
-            setError("Vous devez choisir le stock !")
-            return false
-        }
         if (quantite == 0) {
             setError("Quantité validée invalide !")
             return false
         }
-        if (quantite > quantitePiece) {
-            setError("Quantité validée insuffisante pour stock !")
-            return false
-        }
+        // if (quantite > quantitePiece) {
+        //     setError("Quantité validée insuffisante pour stock !")
+        //     return false
+        // }
 
         setError('')
         return true
+        // if (selectedStock.length == 0) {
+        //     setError("Vous devez choisir le stock !")
+        //     return false
+        // }
         // if (!serviceUser) {
         //     setError("Vous devez choisir le service demandeur")
         //     return false
@@ -1024,7 +1047,7 @@ export default function ValidateDemandeInputs() {
         //     `/livraison-demande/${idDemande}` :
         //     `/demande-details/${idDemande}`
 
-        const successPath = stockOwner == parseInt(userId) ?
+        const successPath = stockOwners.includes(+userId) ?
             `/livraison-demande/${idDemande}` :
             `/toutes-les-demandes`
         const sign = signature.toDataURL('image/png')
@@ -1037,8 +1060,9 @@ export default function ValidateDemandeInputs() {
         fd.append('demande_id', idDemande)
         fd.append('user_id', userId)
         fd.append('commentaire', commentaire)
-        fd.append('stockId', selectedStock)
+        // fd.append('stockId', selectedStock)
         fd.append('quantiteValidee', quantite)
+        fd.append('owners', stockOwners)
         try {
             const response = await demandeData.preValidateDemande(fd)
             console.log(response)
@@ -1123,7 +1147,7 @@ export default function ValidateDemandeInputs() {
                                             <div className="text-center">
                                                 <span className="text-sm font-semibold">Validation</span>
                                             </div>
-                                            <div>
+                                            {/* <div>
                                                 <Label>Stock <span className="text-red-700">*</span></Label>
                                                 <Dropdown
                                                     options={optionsStocks}
@@ -1137,8 +1161,8 @@ export default function ValidateDemandeInputs() {
                                                     value={selectedStock}
                                                     valueTemplate={selectedStockTemplate}
                                                 />
-                                            </div>
-                                            <div className="flex justify-between items-center">
+                                            </div> */}
+                                            {/* <div className="flex justify-between items-center">
                                                 <div className="flex flex-col  border-b pb-2 border-black">
                                                     <span className="text-xs text-gray-700 font-normal">{nomPiece} {nomModel}</span>
                                                     <span className="font-medium">QUANTITE ACTUELLE</span>
@@ -1149,7 +1173,7 @@ export default function ValidateDemandeInputs() {
                                                 <div>
                                                     <span><i className="pi pi-box" style={{ fontSize: '3rem' }}></i></span>
                                                 </div>
-                                            </div>
+                                            </div> */}
                                             <div>
                                                 <Label>Quantitée <span className="text-red-700">*</span></Label>
                                                 <Input type="number"

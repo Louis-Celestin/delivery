@@ -288,7 +288,7 @@ export default function StockDetails() {
         })
         let nomRecepteur = 'N/A'
         if (demande) {
-            if (demande.demande_livree == true) {
+            if (demande.demande_reçue == true) {
                 let index_reception = demande.reception_piece.length - 1
                 nomRecepteur = demande.reception_piece[index_reception].nom_recepteur
             }

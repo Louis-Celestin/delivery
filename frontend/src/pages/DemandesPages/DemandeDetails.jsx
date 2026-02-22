@@ -132,6 +132,8 @@ export default function DemandeDetails() {
 
     const [isLivre, setIslivree] = useState(false)
 
+    const [quantiteValidee, setQuantiteValidee] = useState(0)
+
     const formatDate = (date) => {
         const d = new Date(date);
         return d.toLocaleDateString('fr-FR'); // or use any locale you want
@@ -153,11 +155,20 @@ export default function DemandeDetails() {
                     }
 
                     let demandeData = await demandes.getOneDemande(id);
+                    console.log(demandeData)
                     let index;
                     setDemandeDetails(demandeData);
                     setMotifDemande(demandeData.motif_demande)
                     setCommentaire(demandeData.commentaire)
                     const details = JSON.parse(demandeData.details_demande)
+
+                    const modelId = details.selectedModel ? details.selectedModel : details.model
+                    const servicePieceId = details.selectedServicePiece ? details.selectedServicePiece : details.service
+
+                    const ownersData = await stock.getAllUserTypeStocks(demandeData.item_id, modelId, servicePieceId)
+                    const ownersId = ownersData.map((item) => {
+                        return item.id_user
+                    })
 
                     const services_data = await usersData.getAllServices()
                     const service = services_data.find((item) => {
@@ -195,14 +206,16 @@ export default function DemandeDetails() {
                         index = demandeData.validation_demande.length - 1
                         setCommentaireValidation(demandeData.validation_demande[index].commentaire)
                         setIsCompleted(true)
+                        const validation = demandeData.validation_demande[index]
+                        setQuantiteValidee(validation.quantite_validee)
                         if (!demandeData.demande_livree) {
-                            if (selectedStock.created_by == parseInt(user_id)) {
+                            if (ownersId.includes(+user_id)) {
                                 setIsLivreur(true)
                             }
                         } else {
-                            if (demandeData.demande_reçue) {
+                            setIsDelivered(true);
+                            if (demandeData.demande_recue) {
                                 let index_reception
-                                setIsDelivered(true);
                                 setIsReceived(true)
                                 index_reception = demandeData.reception_piece.length - 1
                                 setCommentaireReception(demandeData.reception_piece[index_reception].commentaire)
@@ -213,7 +226,7 @@ export default function DemandeDetails() {
                                 if (roles_id.includes(12)) {
                                     setIsReception(true)
                                 }
-    
+
                             }
                         }
 
@@ -943,6 +956,16 @@ export default function DemandeDetails() {
                                             <th className='border w-1/2'>{quantiteDemande}</th>
                                         </tr>
                                         {valide ? (
+                                            <>
+                                                <tr className='border h-15'>
+                                                    <th className='border w-1/2'>Quantité validée</th>
+                                                    <th className='border w-1/2'>{quantiteValidee}</th>
+                                                </tr>
+                                            </>
+                                        ) : (
+                                            <></>
+                                        )}
+                                        {isDelivered ? (
                                             <>
                                                 <tr className='border h-15'>
                                                     <th className='border w-1/2'>Quantité initiale</th>
