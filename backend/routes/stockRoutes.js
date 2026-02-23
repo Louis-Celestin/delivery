@@ -8,7 +8,7 @@ const {getAllItems, setStockPiece, getAllModels, addPiece, getAllMouvementStock,
     getLotPiece, getCartonLot, getCartonPiece, getItemModels, getItemServices, getQuantitePiece, getAllTypeMouvementStock,
     setStockCarton, setStockPieceCarton, setStockLot, setStockCartonLot, getOneMouvement, createStock,
     getAllStocks, getAllItemModels, getAllItemServices, getOneStock, getCartonStock, getLotStock, getOneStockMouvements,
-    getStockParPiece, getAllOneQuantitePiece, setStockSn,
+    getStockParPiece, getAllOneQuantitePiece, setStockSn, getAllUserTypeStocks,
 } = require("../controllers/Stock/stockController")
 
 router.get('/getAllItems', getAllItems);
@@ -40,6 +40,7 @@ router.get('/getLotStock/:id', getLotStock);
 router.get('/getOneStockMouvements/:id', getOneStockMouvements);
 router.get('/getStockParPiece/:id', getStockParPiece);
 router.get('/getAllOneQuantitePiece/:id', getAllOneQuantitePiece);
-router.post('/setStockSn', uploadExcel.single("file"), setStockSn)
+router.post('/setStockSn', uploadExcel.single("file"), setStockSn);
+router.get('/getAllUserTypeStocks/:itemId/:modelId/:serviceId', getAllUserTypeStocks);
 
 module.exports = router

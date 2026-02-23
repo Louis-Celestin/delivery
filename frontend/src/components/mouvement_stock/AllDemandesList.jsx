@@ -107,7 +107,7 @@ export default function AllDemandesList() {
                     return item.is_deleted == false
                 })
                 setDemandeForms(demande_data)
-
+                console.log(demande_data)
                 const models_data = await stock.getAllModels()
                 const options_model = models_data.map((item) => ({
                     value: item.id_model,
@@ -329,11 +329,11 @@ export default function AllDemandesList() {
     const statutReceptionTemplate = (demandeForms) => {
         let statutClass = 'text-xs'
         let statut = 'N/A'
-        if (demandeForms.statut_demande == 'valide') {
-            if (demandeForms.demande_livree == false) {
+        if (demandeForms.demande_livree == true) {
+            if (demandeForms.demande_recue == false) {
                 statut = 'en cours'
                 statutClass = 'grid grid-cols-1 text-center text-xs rounded-xl p-0.5 bg-orange-300'
-            } else if (demandeForms.demande_livree == true) {
+            } else if (demandeForms.demande_recue == true) {
                 statut = 'réceptionnée';
                 statutClass = 'grid grid-cols-1 text-center text-xs rounded-xl p-0.5 bg-green-300'
             }

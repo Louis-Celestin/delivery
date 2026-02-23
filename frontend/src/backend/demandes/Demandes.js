@@ -34,9 +34,18 @@ export class Demandes {
     }
   };
 
-  async validateDemande(formData) {
+  async validateDemande(payload) {
     try {
-      const response = await axios.post(`${urlBase}/api/demandes/validateDemande`, formData, {
+      const response = await axios.post(`${urlBase}/api/demandes/validateDemande`, payload)
+      return response.data;
+    } catch (error) {
+      throw error.response.data;
+    }
+  }
+
+  async preValidateDemande(formData) {
+    try {
+      const response = await axios.post(`${urlBase}/api/demandes/preValidateDemande`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

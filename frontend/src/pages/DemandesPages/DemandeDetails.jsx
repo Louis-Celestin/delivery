@@ -93,7 +93,6 @@ export default function DemandeDetails() {
     const [nomLivreur, setNomLivreur] = useState('')
     const [modifyLivraison, setModifyLivraison] = useState(false)
 
-
     const [loadingReception, setLoadingReception] = useState(false);
     const [isModalReceptionOpen, setIsModalReceptionOpen] = useState(false);
     const [isModalReturnLivraisonOpen, setIsModalReturnLivraisonOpen] = useState(false)
@@ -127,6 +126,14 @@ export default function DemandeDetails() {
 
     const [quantiteLivree, setQuantiteLivree] = useState(0)
 
+    const [isGestionStock, setIsGestionStock] = useState(false)
+
+    const [loadingLivraison, setLoadingLivraison] = useState(false)
+
+    const [isLivre, setIslivree] = useState(false)
+
+    const [quantiteValidee, setQuantiteValidee] = useState(0)
+
     const formatDate = (date) => {
         const d = new Date(date);
         return d.toLocaleDateString('fr-FR'); // or use any locale you want
@@ -148,11 +155,20 @@ export default function DemandeDetails() {
                     }
 
                     let demandeData = await demandes.getOneDemande(id);
+                    console.log(demandeData)
                     let index;
                     setDemandeDetails(demandeData);
                     setMotifDemande(demandeData.motif_demande)
                     setCommentaire(demandeData.commentaire)
                     const details = JSON.parse(demandeData.details_demande)
+
+                    const modelId = details.selectedModel ? details.selectedModel : details.model
+                    const servicePieceId = details.selectedServicePiece ? details.selectedServicePiece : details.service
+
+                    const ownersData = await stock.getAllUserTypeStocks(demandeData.item_id, modelId, servicePieceId)
+                    const ownersId = ownersData.map((item) => {
+                        return item.id_user
+                    })
 
                     const services_data = await usersData.getAllServices()
                     const service = services_data.find((item) => {
@@ -163,12 +179,20 @@ export default function DemandeDetails() {
 
                     setDateDemande(formatDate(demandeData.date_demande))
 
+                    const stock_data = await stock.getAllStocks()
+                    const selectedStock = stock_data.find((item) => {
+                        return item.id == demandeData.stock_id
+                    })
+
                     if (demandeData.statut_demande == 'en_cours') {
                         if (roles_id.includes(4)) {
                             setIsValidateur(true)
                         }
                         if (roles_id.includes(3)) {
                             setIsDemandeur(true)
+                        }
+                        if (roles_id.includes(7)) {
+                            setIsGestionStock(true)
                         }
                         setAttente(true)
                     }
@@ -182,22 +206,30 @@ export default function DemandeDetails() {
                         index = demandeData.validation_demande.length - 1
                         setCommentaireValidation(demandeData.validation_demande[index].commentaire)
                         setIsCompleted(true)
-                        
-                        if (demandeData.demande_livree) {
-                            let index_reception
-                            setIsDelivered(true);
-                            setIsReceived(true)
-                            index_reception = demandeData.reception_piece.length - 1
-                            setCommentaireReception(demandeData.reception_piece[index_reception].commentaire)
-                            setNomRecepteur(demandeData.reception_piece[index_reception].nom_recepteur)
-                            setStatutLivraison('Reçu')
-                            setStatutClassLivraison('text-sm rounded-xl p-1 bg-green-100 text-green-500 font-bold')
-                        } else {
-                            if (roles_id.includes(12)) {
-                                setIsReception(true)
+                        const validation = demandeData.validation_demande[index]
+                        setQuantiteValidee(validation.quantite_validee)
+                        if (!demandeData.demande_livree) {
+                            if (ownersId.includes(+user_id)) {
+                                setIsLivreur(true)
                             }
+                        } else {
+                            setIsDelivered(true);
+                            if (demandeData.demande_recue) {
+                                let index_reception
+                                setIsReceived(true)
+                                index_reception = demandeData.reception_piece.length - 1
+                                setCommentaireReception(demandeData.reception_piece[index_reception].commentaire)
+                                setNomRecepteur(demandeData.reception_piece[index_reception].nom_recepteur)
+                                setStatutLivraison('Reçu')
+                                setStatutClassLivraison('text-sm rounded-xl p-1 bg-green-100 text-green-500 font-bold')
+                            } else {
+                                if (roles_id.includes(12)) {
+                                    setIsReception(true)
+                                }
 
+                            }
                         }
+
                     }
                     else if (demandeData.statut_demande == 'retourne') {
                         if (roles_id.includes(3)) {
@@ -225,10 +257,6 @@ export default function DemandeDetails() {
                         // setCommentaireValidation(demandeData.validations[0].commentaire)
                     }
 
-                    const stock_data = await stock.getAllStocks()
-                    const selectedStock = stock_data.find((item) => {
-                        return item.id == demandeData.stock_id
-                    })
                     const nom_stock = selectedStock ? selectedStock.code_stock : ''
                     setNomStock(nom_stock)
                     const stock_id = selectedStock ? selectedStock.id : null
@@ -249,7 +277,7 @@ export default function DemandeDetails() {
                     setNomDemandeur(demandeData.nom_demandeur)
                     setNomenclature(demandeData.nomenclature)
                     const autres = JSON.parse(demandeData.champs_autre)
-                   
+
                     setOtherFields(autres)
                     setQuantiteDemande(demandeData.qte_total_demande)
                     const type_demande = details.typeMouvement
@@ -625,7 +653,110 @@ export default function DemandeDetails() {
                                         ) : (
                                             <></>
                                         )}
-                                        {isValidateur ? (
+                                        {loadingDemande ? (
+                                            <>
+                                                <div className='text-center'>
+                                                    <span className=''>
+                                                        <ProgressSpinner style={{ width: '20px', height: '20px' }} strokeWidth="8" animationDuration=".5s" />
+                                                    </span>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                {stocksPiece.length == 0 ? (
+                                                    <>
+                                                        {isValidateur && !isGestionStock ? (
+                                                            <>
+                                                                <button className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'
+                                                                    onClick={() => {
+                                                                        Swal.fire({
+                                                                            title: "Attention",
+                                                                            text: "Aucun stock n'existe pour cette pièce",
+                                                                            icon: "warning"
+                                                                        });
+                                                                    }}>
+                                                                    <span className='mr-4'><i className="pi pi-check"></i></span>
+                                                                    <span className='text-sm text-gray-700 font-medium'>Valider demande</span>
+                                                                </button>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                {isGestionStock ? (
+                                                                    <>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                navigate(`/creer-stock`, {
+                                                                                    state: {
+                                                                                        from: 'demande-details',
+                                                                                        idDemande: id
+                                                                                    }
+                                                                                })
+                                                                            }}
+                                                                            className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200' >
+                                                                            <span className='mr-4'><i className="pi pi-plus"></i></span>
+                                                                            <span className='text-sm text-gray-700 font-medium'>Créer nouveau stock</span>
+                                                                        </button>
+                                                                    </>
+                                                                ) : (
+                                                                    <></>
+                                                                )}
+                                                            </>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        {isValidateur ? (
+                                                            <>
+                                                                {loadingDemande ? (
+                                                                    <>
+                                                                        <div className='text-center'>
+                                                                            <span className=''>
+                                                                                <ProgressSpinner style={{ width: '20px', height: '20px' }} strokeWidth="8" animationDuration=".5s" />
+                                                                            </span>
+                                                                        </div>
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <Link to={`/valider-demande/${id}`} className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'>
+                                                                            <span className='mr-4'><i className="pi pi-check"></i></span>
+                                                                            <span className='text-sm text-gray-700 font-medium'>Valider demande</span>
+                                                                        </Link>
+                                                                        <button className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'
+                                                                            onClick={() => {
+                                                                                setIsModalReturnOpen(true)
+                                                                            }}>
+                                                                            <span className='mr-4'><i className="pi pi-arrow-left"></i></span>
+                                                                            <span className='text-sm text-gray-700 font-medium'>Retourner demande</span>
+                                                                        </button>
+                                                                        <button className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'
+                                                                            onClick={() => {
+                                                                                setIsModalCancelOpen(true)
+                                                                            }}>
+                                                                            <span className='mr-4'><i className="pi pi-times"></i></span>
+                                                                            <span className='text-sm text-gray-700 font-medium'>Refuser demande</span>
+                                                                        </button>
+                                                                    </>
+                                                                )}
+                                                            </>
+                                                        ) : (
+                                                            <></>
+                                                        )}
+                                                    </>
+                                                )
+                                                }
+                                            </>
+                                        )}
+                                        {isLivreur ? (
+                                            <>
+                                                <Link to={`/livraison-demande/${demandeDetails.id}`} className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'>
+                                                    <span className='mr-4'><i className="pi pi-truck"></i></span>
+                                                    <span className='text-sm text-gray-700 font-medium'>Livraison Stock</span>
+                                                </Link>
+                                            </>
+                                        ) : (
+                                            <></>
+                                        )}
+                                        {/* {isValidateur ? (
                                             <>
                                                 {loadingDemande ? (
                                                     <>
@@ -637,17 +768,6 @@ export default function DemandeDetails() {
                                                     </>
                                                 ) : (
                                                     <>
-                                                        {/* <button className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'
-                                                            onClick={() => {
-                                                                if (stocksPiece.length == 0) {
-                                                                    setIsModalAlerterStockOpen(true)
-                                                                } else {
-                                                                    navigate(`/valider-demande/${id}`);
-                                                                }
-                                                            }}>
-                                                            <span className='mr-4'><i className="pi pi-check"></i></span>
-                                                            <span className='text-sm text-gray-700 font-medium'>Valider demande</span>
-                                                        </button> */}
                                                         {stocksPiece.length == 0 ? (
                                                             <>
                                                                 <button
@@ -691,7 +811,7 @@ export default function DemandeDetails() {
                                             </>
                                         ) : (
                                             <></>
-                                        )}
+                                        )} */}
                                         {isReception ? (
                                             <>
                                                 {loadingReception ? (
@@ -750,7 +870,7 @@ export default function DemandeDetails() {
                             <></>
                         )}
                         {
-                            valide ? (
+                            isDelivered ? (
                                 <>
                                     <div className='grid grid-cols-2 justify-between items-center mb-6'>
                                         <div>
@@ -836,6 +956,16 @@ export default function DemandeDetails() {
                                             <th className='border w-1/2'>{quantiteDemande}</th>
                                         </tr>
                                         {valide ? (
+                                            <>
+                                                <tr className='border h-15'>
+                                                    <th className='border w-1/2'>Quantité validée</th>
+                                                    <th className='border w-1/2'>{quantiteValidee}</th>
+                                                </tr>
+                                            </>
+                                        ) : (
+                                            <></>
+                                        )}
+                                        {isDelivered ? (
                                             <>
                                                 <tr className='border h-15'>
                                                     <th className='border w-1/2'>Quantité initiale</th>
@@ -1090,11 +1220,11 @@ export default function DemandeDetails() {
                     <div className='text-center text-sm font-normal'>
                         <span>Aucun stock n'existe pour cette pièce !</span>
                     </div>
-                    <div>
+                    {/* <div>
                         <Link to={'/creer-stock'} className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center justify-center hover:bg-gray-200'>
                             <span className='text-sm text-gray-700 font-medium'>Créer nouveau stock</span>
                         </Link>
-                    </div>
+                    </div> */}
                 </div>
             </Modal>
         </>

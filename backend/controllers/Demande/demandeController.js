@@ -626,16 +626,13 @@ const getOneDemande = async (req, res) => {
   }
 }
 
-const validateDemande = async (req, res) => {
+const preValidateDemande = async (req, res) => {
   const {
     demande_id,
-    commentaire,
     user_id,
-    stock_id,
-    nomenclature,
-    detailsDemande,
-    detailsDemandeur,
-    itemId,
+    commentaire,
+    quantiteValidee,
+    owners,
   } = req.body;
 
   try {
@@ -668,6 +665,13 @@ const validateDemande = async (req, res) => {
       return res.status(404).json({ message: "Utilisateur non trouvé." });
     }
 
+    await prisma.demandes.update({
+      where: { id: parseInt(demande_id) },
+      data: {
+        statut_demande: "valide",
+      },
+    });
+
     const newValidation = await prisma.validation_demande.create({
       data: {
         id_demande: parseInt(demande_id),
@@ -677,8 +681,164 @@ const validateDemande = async (req, res) => {
         date_validation_demande: new Date(),
         signature,
         statut_validation_demande: "valide",
+        quantite_validee: +quantiteValidee,
       },
     });
+
+
+    /************************************     GESTION MAILS     **************************************/
+
+    const piece = await prisma.items.findUnique({
+      where: {
+        id_piece: parseInt(demande.item_id)
+      }
+    });
+
+    const service = await prisma.services.findUnique({
+      where: {
+        id: parseInt(demande.service_demandeur)
+      }
+    })
+
+    const userService = await prisma.user_services.findMany({
+      where: {
+        service_id: parseInt(demande.service_demandeur)
+      },
+      include: {
+        users: true
+      }
+    })
+
+    let stockOwners = []
+    if(owners && Array.isArray(owners)) {
+      stockOwners = await prisma.users.findMany({
+        where: {
+          id_user : {
+            in: owners,
+          }
+        }
+      })
+    }
+
+    const service_users = userService.map(us => us.users)
+    const demandeur = await prisma.users.findUnique({
+      where: {
+        id_user: demande.user_id
+      }
+    })
+
+    let motif = demande.motif_demande
+    let nomPiece = piece.nom_piece.toUpperCase()
+
+    let nomServiceDemandeur = service.nom_service.toUpperCase();
+
+    let quantite = quantiteValidee;
+    let commentaire_mail = commentaire ? commentaire : '(sans commentaire)';
+    const url = GENERAL_URL
+    let demandeLink = `${url}/demande-details/${demande.id}`;
+    const sendMail = require("../../utils/emailSender");
+    if ((service_users && service_users.length > 0) || demandeur) {
+      const subject = `VALIDATION DEMANDE DE ${nomPiece}`;
+      const html = `
+        <p>Bonjour,</p>
+        <p>La demande ${demande.id} a été validée.</p>
+        <ul>
+          <li><strong>Motif :</strong> ${motif}</li>
+          <li><strong>Quantité validée :</strong> ${quantite}</li>
+        </ul>
+        <ul>
+          <li><strong>Service demandeur:</strong> ${nomServiceDemandeur}</li>
+          <li><strong>Nom demandeur:</strong> ${demande.nom_demandeur}</li>
+        </ul>
+        <br>
+        <p>Commentaire : ${commentaire_mail}<p>
+        <br>
+        <p>Retrouvez la demande à ce lien : 
+            <span>
+            <a href="${demandeLink}" target="_blank" style="background-color: #73dced; color: white; padding: 7px 12px; text-decoration: none; border-radius: 5px;">
+                Cliquez ici !
+            </a>
+            </span>
+        </p>
+        <br><br>
+        <p>Green - Pay vous remercie.</p>
+        `;
+      for (const stockOwner of stockOwners) {
+        await sendMail({
+          to: stockOwner.email,
+          subject,
+          html,
+        });
+      }
+      for (const service_user of service_users) {
+        await sendMail({
+          to: service_user.email,
+          subject,
+          html,
+        });
+      }
+    }
+    return res.status(201).json(newValidation);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Erreur serveur." });
+  }
+
+}
+
+const validateDemande = async (req, res) => {
+  const {
+    demande_id,
+    user_id,
+    commentaire,
+    stock_id,
+    nomenclature,
+    detailsDemande,
+    detailsDemandeur,
+    itemId,
+  } = req.body;
+
+  try {
+    const demande = await prisma.demandes.findUnique({
+      where: { id: parseInt(demande_id) },
+    });
+
+    if (!demande) return res.status(404).json({ message: "Demande introuvable." });
+
+    if (demande.demande_livree == true) {
+      return res.status(400).json({ message: "Demande déjà livrée." });
+    }
+
+    // if (!req.file) {
+    //   return res.status(400).json({ message: "Signature du validateur requise." });
+    // }
+
+    // const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+    //   folder: "greenpay/signatures",
+    // });
+    // const signature = uploadResult.secure_url;
+
+    if (!user_id) return res.status(403).json({ message: "Utilisateur non authentifié." });
+
+    const user = await prisma.users.findUnique({
+      where: { id_user: parseInt(user_id) },
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "Utilisateur non trouvé." });
+    }
+
+    // const newValidation = await prisma.validation_demande.create({
+    //   data: {
+    //     id_demande: parseInt(demande_id),
+    //     commentaire,
+    //     id_user: user_id ? parseInt(user_id) : null,
+    //     nom_validateur: user.fullname,
+    //     date_validation_demande: new Date(),
+    //     signature,
+    //     statut_validation_demande: "valide",
+    //   },
+    // });
 
     /************************************     GESTION MOUVEMENT DE STOCK     *****************************/
 
@@ -1599,9 +1759,15 @@ const validateDemande = async (req, res) => {
     await prisma.demandes.update({
       where: { id: parseInt(demande_id) },
       data: {
+<<<<<<< HEAD
         statut_demande: "valide",
         nomenclature,
         stock_id: selectedStock.id,
+=======
+        stock_id: +stock_id,
+        demande_livree: true,
+        nomenclature,
+>>>>>>> develop
         type_demande: typeMouvement,
         details_demande: JSON.stringify(detailsMouvement),
         details_demandeur: JSON.stringify(detailsEntree),
@@ -1655,12 +1821,12 @@ const validateDemande = async (req, res) => {
     let demandeLink = `${url}/demande-details/${demande.id}`;
     const sendMail = require("../../utils/emailSender");
     if ((service_users && service_users.length > 0) || demandeur) {
-      const subject = `VALIDATION DEMANDE POUR ${motif}`;
+      const subject = `LIVRAISON STOCK DE ${nomPiece}`;
       const html = `
         <p>Bonjour,</p>
-        <p>La demande ${demande.id} a été validée.</p>
+        <p>La demande ${demande.id} a été livrée.</p>
         <ul>
-          <li><strong>Demande de :</strong> ${nomPiece}</li>
+          <li><strong>Motif :</strong> ${motif}</li>
           <li><strong>${mouvement.titre}</strong></li>
           <li><strong>Quantité :</strong> ${quantite}</li>
         </ul>
@@ -1681,11 +1847,11 @@ const validateDemande = async (req, res) => {
         <br><br>
         <p>Green - Pay vous remercie.</p>
         `;
-      await sendMail({
-        to: demandeur.email,
-        subject,
-        html,
-      });
+      // await sendMail({
+      //   to: demandeur.email,
+      //   subject,
+      //   html,
+      // });
       for (const service_user of service_users) {
         await sendMail({
           to: service_user.email,
@@ -1694,7 +1860,7 @@ const validateDemande = async (req, res) => {
         });
       }
     }
-    return res.status(201).json(newValidation, mouvement_stock, updatedQuantiteDemandeur);
+    return res.status(201).json(mouvement_stock, updatedQuantiteDemandeur);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Erreur serveur." });
@@ -3239,12 +3405,15 @@ const receivePiece = async (req, res) => {
     })
 
     if (!demande) {
+      console.log("Demande introuvable.")
       return res.status(404).json({ message: "Demande introuvable." });
     }
-    if (demande.demande_livree == true) {
+    if (demande.demande_recue == true) {
+      console.log("Demande déjà réceptionnée")
       return res.status(400).json({ message: "Demande déjà réceptionnée." });
     }
     if (!req.file) {
+      console.log("Signature du récepteur requise.")
       return res.status(400).json({ message: "Signature du récepteur requise." });
     }
 
@@ -3279,7 +3448,7 @@ const receivePiece = async (req, res) => {
 
     await prisma.demandes.update({
       where: { id: demande.id },
-      data: { demande_livree: true },
+      data: { demande_recue: true },
     })
 
     // *********** GESTION DES MAILS ************
@@ -3320,7 +3489,7 @@ const receivePiece = async (req, res) => {
     const deliveryLink = `${url}/demande-details/${demande.id}`;
 
     if ((demandeurs && demandeurs.length > 0)) {
-      const subject = `DEMANDE RECEPTIONNEE`;
+      const subject = `STOCK RECEPTIONNE`;
       const html = `
         <p>Bonjour,</p>
         <p>La demande de stock ${demande.id} a été réceptionnée.</p>
@@ -3417,7 +3586,6 @@ const generateDemandePDF = async (req, res) => {
     }
 
     let details = JSON.parse(demande_data.details_demande)
-    console.log(details)
 
     let service_demandeur = "N/A"
     let service_donneur = "N/A"
@@ -3486,12 +3654,13 @@ const generateDemandePDF = async (req, res) => {
           details.stockFinalCarton : type_demande == 5 ?
             details.stockFinalPiece : 0
 
-    console.log(stock_depart)
+    const validation = demande.validation_demande[index]
 
-    let nomValidateur = demande.validation_demande[index].nom_validateur
-    let signature_validation = demande.validation_demande[index].signature
-    let date_validation = demande.validation_demande[index].date_validation_demande
-    let commentaire_validation = demande.validation_demande[index].commentaire
+    let nomValidateur = validation.nom_validateur
+    let signature_validation = validation.signature
+    let date_validation = validation.date_validation_demande
+    let commentaire_validation = validation.commentaire
+    const quantite_validee = validation.quantite_validee
 
     let signature_livraison = 'N/A'
     let date_livraison = 'N/A'
@@ -3531,6 +3700,7 @@ const generateDemandePDF = async (req, res) => {
       .replaceAll("{{nom_demandeur}}", nomDemandeur)
       .replaceAll("{{service_demandeur}}", service_demandeur)
       .replaceAll("{{quantite}}", quantite)
+      .replaceAll("{{quantite_validee}}", quantite_validee)
       .replaceAll("{{quantite_livree}}", quantite_livree)
       .replaceAll("{{quantite_livraison}}", quantite_livraison)
       .replaceAll("{{stock_initial}}", stock_depart)
@@ -3581,4 +3751,5 @@ module.exports = {
   updateDemande,
   generateDemandePDF,
   receivePiece,
+  preValidateDemande,
 }

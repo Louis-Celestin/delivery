@@ -18,8 +18,9 @@ import { Demandes } from "../../../backend/demandes/Demandes.js";
 import { Dropdown } from "primereact/dropdown";
 
 import SignatureCanvas from 'react-signature-canvas'
+import { useSyncExternalStore } from "react";
 
-export default function ValidateDemandeInputs() {
+export default function LivraisonDemandeInputs() {
 
     const stockData = new Stock()
     const userData = new Users()
@@ -145,6 +146,13 @@ export default function ValidateDemandeInputs() {
     const [isSignModalOpen, setIsSignModalOpen] = useState(false)
     const [errorSign, setErrorSign] = useState('');
 
+    const [commentaire, setCommentaire] = useState('')
+
+    const [commentaireValidation, setCommentaireValidation] = useState('')
+    const [quantiteValidee, setQuantiteValidee] = useState(0)
+
+    const [validateur, setValidateur] = useState('')
+
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true)
@@ -152,6 +160,11 @@ export default function ValidateDemandeInputs() {
 
                 const demande_data = await demandeData.getOneDemande(idDemande)
                 const detailsDemande = JSON.parse(demande_data.details_demande)
+
+                const index = demande_data.validation_demande.length - 1
+                const validation = demande_data.validation_demande[index]
+                setCommentaireValidation(validation.commentaire)
+                setQuantiteValidee(validation.quantite_validee)
 
                 const items_data = await stockData.getAllItems()
                 setItems(items_data)
@@ -164,6 +177,7 @@ export default function ValidateDemandeInputs() {
                 const pieceDemande = items_data.find((item) => {
                     return item.id_piece == demande_data.item_id
                 })
+                setSelectedPiece(demande_data.item_id)
                 if (pieceDemande) {
                     setNomPiece(pieceDemande.nom_piece)
                 }
@@ -197,8 +211,9 @@ export default function ValidateDemandeInputs() {
                 setNomUser(demande_data.nom_demandeur)
                 setSelectedUser(demande_data.id_demandeur)
 
-                setMotif(demande_data.motif_demande)
+                setValidateur(validation.nom_validateur)
 
+                setMotif(demande_data.motif_demande)
 
                 setCommentaireDemande(demande_data.commentaire)
 
@@ -207,7 +222,10 @@ export default function ValidateDemandeInputs() {
 
                 const stocks_data_all = await stockData.getAllStocks()
                 const stocks_data = stocks_data_all.filter((item) => {
-                    return item.is_deleted == false && item.piece_id == demande_data.item_id && item.quantite_piece > 0
+                    return item.is_deleted == false && 
+                        item.piece_id == demande_data.item_id && 
+                        item.quantite_piece > 0 &&
+                        item.created_by == +userId
                 })
                 setStocks(stocks_data)
                 const options_stocks = stocks_data.map((item) => {
@@ -221,11 +239,9 @@ export default function ValidateDemandeInputs() {
                     })
                 })
 
-                setOptionsStocks(options_stocks)
-
                 const models_data = await stockData.getAllModels()
                 setModels(models_data)
-
+                setOptionsStocks(options_stocks)
 
             } catch (error) {
                 console.log(error)
@@ -550,30 +566,30 @@ export default function ValidateDemandeInputs() {
     };
 
     const checkValidate = () => {
-        if (!selectedStock) {
-            setError("Vous devez choisir la stock !")
+        if (selectedStock.length == 0) {
+            setError("Vous devez choisir le stock !")
             return false
         }
-        if (!serviceUser) {
-            setError("Vous devez choisir le service demandeur")
-            return false
-        }
-        if (!selectedUser) {
-            setError("Vous devez choisir le demandeur")
-            return false
-        }
-        if (!motif) {
-            setError("Vous devez précisier le motif !")
-            return false
-        }
-        if (!selectedServicePiece) {
-            setError("Vous devez choisir le service !")
-            return false
-        }
-        if (!selectedModel) {
-            setError("Vous devez choisir le modèle !")
-            return false
-        }
+        // if (!serviceUser) {
+        //     setError("Vous devez choisir le service demandeur")
+        //     return false
+        // }
+        // if (!selectedUser) {
+        //     setError("Vous devez choisir le demandeur")
+        //     return false
+        // }
+        // if (!motif) {
+        //     setError("Vous devez précisier le motif !")
+        //     return false
+        // }
+        // if (!selectedServicePiece) {
+        //     setError("Vous devez choisir le service !")
+        //     return false
+        // }
+        // if (!selectedModel) {
+        //     setError("Vous devez choisir le modèle !")
+        //     return false
+        // }
         setError('')
         return true
     }
@@ -917,61 +933,54 @@ export default function ValidateDemandeInputs() {
     const handleValidate = async () => {
 
         setIsSignModalOpen(false)
+        setSortieParPieceModalOpen(false)
+        setSortieParCartonModalOpen(false)
+        setSortieParPieceCartonModalOpen(false)
+        setSortieParCartonLotModalOpen(false)
+        setSortieParLotModalOpen(false)
 
-        if (signature.isEmpty()) {
-            setErrorSign('Vous devez signer pour valider !')
-            return;
-        }
-
-        const sign = signature.toDataURL('image/png')
-        const fd = new FormData();
-
-        if (sign) {
-            const blob = await fetch(sign).then(res => res.blob());
-            fd.append('signature', blob, 'signature.png');
-        }
-        fd.append('demande_id', idDemande)
-        fd.append('user_id', userId)
-        fd.append('commentaire', message)
-        fd.append('stock_id', selectedStock)
-        fd.append('nomDemandeur', nomUser)
-        fd.append('quantite_demande', quantite)
-        fd.append('nomenclature', nomenclature)
-        fd.append('detailsDemande', JSON.stringify(detailsDemande))
-        fd.append('detailsDemandeur', JSON.stringify(detailsDemandeur))
-        fd.append('itemId', selectedPiece)
-        fd.append('idDemandeur', selectedUser)
-        fd.append('motif', motif)
-        fd.append('serviceDemandeur', serviceUser)
-        fd.append('champsAutre', otherFields)
+        // const sign = signature.toDataURL('image/png')
+        // const fd = new FormData();
+        // if (sign) {
+        //     const blob = await fetch(sign).then(res => res.blob());
+        //     fd.append('signature', blob, 'signature.png');
+        // }
+        // fd.append('demande_id', idDemande)
+        // fd.append('user_id', userId)
+        // fd.append('commentaire', message)
+        // fd.append('stock_id', selectedStock)
+        // fd.append('nomDemandeur', nomUser)
+        // fd.append('quantite_demande', quantite)
+        // fd.append('nomenclature', nomenclature)
+        // fd.append('detailsDemande', JSON.stringify(detailsDemande))
+        // fd.append('detailsDemandeur', JSON.stringify(detailsDemandeur))
+        // fd.append('itemId', selectedPiece)
+        // fd.append('idDemandeur', selectedUser)
+        // fd.append('motif', motif)
+        // fd.append('serviceDemandeur', serviceUser)
+        // fd.append('champsAutre', otherFields)
         const payload = {
-            idDemande,
-            nomDemandeur: nomUser,
+            demande_id: idDemande,
+            user_id: userId,
             commentaire: message,
-            selectedStock,
-            quantite_demande: quantite,
+            stock_id: selectedStock,
             nomenclature,
-            detailsDemande,
-            detailsDemandeur,
-            userId,
+            detailsDemande: JSON.stringify(detailsDemande),
+            detailsDemandeur: JSON.stringify(detailsDemandeur),
             itemId: selectedPiece,
-            idDemandeur: selectedUser,
-            motif,
-            serviceDemandeur: serviceUser,
-            champsAutre: otherFields,
         }
 
         try {
             setLoadingValidation(true)
             console.log('Sendind payload...')
 
-            // const response = await demandeData.faireDemande(payload)
-            const response = await demandeData.validateDemande(fd)
+            const response = await demandeData.validateDemande(payload)
+            // const response = await demandeData.validateDemande(fd)
 
             console.log(response)
             Swal.fire({
                 title: "Succès",
-                text: "Demande validée avec succès !",
+                text: "Stock livré avec succès !",
                 icon: "success"
             })
             navigate('/toutes-les-demandes')
@@ -979,10 +988,10 @@ export default function ValidateDemandeInputs() {
         } catch (error) {
             Swal.fire({
                 title: "Attention",
-                text: "Une erreur est survenue lors de la validation !",
+                text: "Une erreur est survenue lors de la livraison !",
                 icon: "warning"
             })
-            navigate('/toutes-les-demandes')
+            navigate(`/demande-details/${idDemande}`)
         } finally {
             setLoadingValidation(false)
         }
@@ -1009,7 +1018,7 @@ export default function ValidateDemandeInputs() {
                                     <div className="space-y-6">
                                         <div className="space-y-5">
                                             <div className="text-center">
-                                                <span className="text-sm font-semibold">Informations générales</span>
+                                                <span className="text-sm font-semibold">Informations demande</span>
                                             </div>
                                             <div className="text-xs space-y-4">
                                                 <div className="grid grid-cols-2">
@@ -1028,7 +1037,7 @@ export default function ValidateDemandeInputs() {
                                                         <span className="text-sm">{typeDemande}</span>
                                                     </div>
                                                     <div className="flex flex-col text-right">
-                                                        <span className="font-bold">Quantité</span>
+                                                        <span className="font-bold">Quantité demandée</span>
                                                         <span className="text-sm">{quantiteDemande}</span>
                                                     </div>
                                                 </div>
@@ -1045,73 +1054,36 @@ export default function ValidateDemandeInputs() {
                                                     )}
                                                 </div>
                                             </div>
-                                            {/* <div>
-                                                <Label className="text-gray-400">Service Demandeur</Label>
-                                                <Input
-                                                    type="text"
-                                                    value={nomServiceUser}
-                                                    className="text-gray-400 border-gray-300 opacity-50 bg-gray-100 cursor-not-allowed dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700"
-                                                />
+                                        </div>
+                                        <div className="space-y-5">
+                                            <div className="text-center">
+                                                <span className="text-sm font-semibold">Validation</span>
                                             </div>
-                                            <div>
-                                                <Label className="text-gray-400">Demandeur</Label>
-                                                <Input
-                                                    type="text"
-                                                    value={nomUser}
-                                                    className="text-gray-400 border-gray-300 opacity-50 bg-gray-100 cursor-not-allowed dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700"
-                                                />
-                                            </div>
-                                            <div>
-                                                <Label className="text-gray-400">Motif</Label>
-                                                <Input
-                                                    type="text"
-                                                    value={motif}
-                                                    className="text-gray-400 border-gray-300 opacity-50 bg-gray-100 cursor-not-allowed dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700"
-                                                />
-                                            </div>
-                                            <div className='overflow-hidden mb-6 pt-2 p-6 rounded-xl border text-gray-400 border-gray-300 opacity-60 bg-gray-25 cursor-not-allowed dark:border-white/[0.05] dark:bg-white/[0.03]'>
-                                                <div className='mb-6 pb-2 w-full border-b'>
-                                                    <span className='text-sm mr-2'>Commentaire demandeur</span>
-                                                    <span className='text-sm'><i className="pi pi-comment"></i></span>
+                                            <div className="text-xs space-y-4">
+                                                <div className="grid grid-cols-2">
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold">Validateur</span>
+                                                        <span className="">{validateur}</span>
+                                                    </div>
+                                                    <div className="flex flex-col text-right">
+                                                        <span className="font-bold text-green-700">Quantité validée</span>
+                                                        <span className="text-green-600">{quantiteValidee}</span>
+                                                    </div>
                                                 </div>
-                                                {commentaireDemande ? (
-                                                    <p className='text-sm text-gray-500'>{commentaireDemande}</p>
-                                                ) : (
-                                                    <p className='text-xs text-gray-500'>Sans commentaire</p>
-                                                )}
-                                            </div> */}
+                                                <div className="flex flex-col">
+                                                    <span className="font-bold">Commentaire</span>
+                                                    {commentaireValidation ? (
+                                                        <span className="font-light">{commentaireValidation}</span>
+                                                    ) : (
+                                                        <span className="text-gray-400 font-light">sans commentaire</span>
+                                                    )}
+                                                </div>
+                                            </div>
                                         </div>
                                         <div className="space-y-5">
                                             <div className="text-center">
                                                 <span className="text-sm font-semibold">Informations sur stock</span>
                                             </div>
-                                            {/* <div>
-                        <Label>Pièce <span className="text-red-700">*</span></Label>
-                        <Select
-                          options={optionsItems}
-                          placeholder="Choisir une option"
-                          onChange={handleSelectPiece}
-                          className="dark:bg-dark-900"
-                        />
-                      </div> */}
-                                            {/* <div>
-                        <Label>Service <span className="text-red-700">*</span></Label>
-                        <Select
-                          options={optionsServicesPiece}
-                          placeholder="Choisir une option"
-                          onChange={handleSelectServicePiece}
-                          className="dark:bg-dark-900"
-                        />
-                      </div> */}
-                                            {/* <div>
-                        <Label>Modèle <span className="text-red-700">*</span></Label>
-                        <Select
-                          options={optionsModels}
-                          placeholder="Choisir une option"
-                          onChange={handleSelectModel}
-                          className="dark:bg-dark-900"
-                        />
-                      </div> */}
                                             <div>
                                                 <Label>Stock <span className="text-red-700">*</span></Label>
                                                 <Dropdown
@@ -1500,14 +1472,14 @@ export default function ValidateDemandeInputs() {
                                                     </div>
                                                 ))}
                                             </div>
-                                            <div>
+                                            {/* <div>
                                                 <button
                                                     type="button"
                                                     onClick={handleAddField}
                                                 >
                                                     <span className="text-xs text-gray-500 font-medium"> <span className="underline">Ajouter un champ </span><span className="text-xl">+</span></span>
                                                 </button>
-                                            </div>
+                                            </div> */}
                                         </div>
                                         {parLot ? (
                                             <>
@@ -1708,7 +1680,7 @@ export default function ValidateDemandeInputs() {
                     </div>
                     <div className='w-full mt-6 flex justify-center items-center'>
                         <button
-                            onClick={handleConfirmSign}
+                            onClick={handleValidate}
                             className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
                             Confirmer
                         </button>
@@ -1769,7 +1741,7 @@ export default function ValidateDemandeInputs() {
                     </div>
                     <div className='w-full mt-6 flex justify-center items-center'>
                         <button
-                            onClick={handleConfirmSign}
+                            onClick={handleValidate}
                             className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
                             Confirmer
                         </button>
@@ -1822,7 +1794,7 @@ export default function ValidateDemandeInputs() {
                     </div>
                     <div className='w-full mt-6 flex justify-center items-center'>
                         <button
-                            onClick={handleConfirmSign}
+                            onClick={handleValidate}
                             className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
                             Confirmer
                         </button>
@@ -1875,7 +1847,7 @@ export default function ValidateDemandeInputs() {
                     </div>
                     <div className='w-full mt-6 flex justify-center items-center'>
                         <button
-                            onClick={handleConfirmSign}
+                            onClick={handleValidate}
                             className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
                             Confirmer
                         </button>
@@ -1915,7 +1887,7 @@ export default function ValidateDemandeInputs() {
                     </div>
                     <div className='w-full mt-6 flex justify-center items-center'>
                         <button
-                            onClick={handleConfirmSign}
+                            onClick={handleValidate}
                             className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
                             Confirmer
                         </button>
