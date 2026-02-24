@@ -826,6 +826,8 @@ export default function DemandeInputs() {
       otherFields: fields,
     }
 
+    const fd = new FormData();
+
     fd.append('detailsDemande', JSON.stringify(details))
     fd.append('userId', userId)
     fd.append('quantite', quantite)
@@ -842,7 +844,7 @@ export default function DemandeInputs() {
 
     try {
       setLoadingValidation(true)
-      // const response = await demandeData.faireDemande(fd)
+      const response = await demandeData.faireDemande(fd)
       Swal.fire({
         title: "Succès",
         text: "Demande effectuée avec succès !",

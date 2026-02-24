@@ -425,6 +425,8 @@ const faireDemande = async (req, res) => {
       ? JSON.parse(detailsDemande)
       : detailsDemande;
 
+    // const details = detailsDemande
+
     const autres = typeof otherFields === "string"
       ? JSON.parse(otherFields)
       : otherFields
@@ -469,7 +471,7 @@ const faireDemande = async (req, res) => {
         date_demande: new Date(),
         commentaire,
         qte_total_demande: parseInt(quantite),
-        details_demande: JSON.stringify(detailsDemande),
+        details_demande: JSON.stringify(details),
         statut_demande: 'en_cours',
         user_id: parseInt(userId),
         item_id: parseInt(details.selectedPiece),
@@ -479,6 +481,23 @@ const faireDemande = async (req, res) => {
         champs_autre: JSON.stringify(autres),
       }
     });
+
+    if (files_content.length > 0) {
+      await prisma.fichiers.createMany({
+        data: files_content.map(fichier => ({
+          path: fichier.path,
+          filename: fichier.name,
+          originalName: fichier.name,
+          mimeType: fichier.type,
+          size: fichier.size,
+          uploaded_by: +userId,
+          demande_id: nouvelleDemande.id,
+          type_formulaire: 'demande',
+          role: 'demandeur',
+          created_at: new Date(),
+        }))
+      })
+    }
 
 
     /************************** GESTION DES MAILS ********************************/
@@ -710,10 +729,10 @@ const preValidateDemande = async (req, res) => {
     })
 
     let stockOwners = []
-    if(owners && Array.isArray(owners)) {
+    if (owners && Array.isArray(owners)) {
       stockOwners = await prisma.users.findMany({
         where: {
-          id_user : {
+          id_user: {
             in: owners,
           }
         }
@@ -1759,15 +1778,9 @@ const validateDemande = async (req, res) => {
     await prisma.demandes.update({
       where: { id: parseInt(demande_id) },
       data: {
-<<<<<<< HEAD
-        statut_demande: "valide",
-        nomenclature,
-        stock_id: selectedStock.id,
-=======
         stock_id: +stock_id,
         demande_livree: true,
         nomenclature,
->>>>>>> develop
         type_demande: typeMouvement,
         details_demande: JSON.stringify(detailsMouvement),
         details_demandeur: JSON.stringify(detailsEntree),
@@ -3741,6 +3754,43 @@ const generateDemandePDF = async (req, res) => {
   }
 };
 
+const getAllDemandeFiles = async (req, res) => {
+  const {
+    idDemande
+  } = req.params
+
+  try {
+
+    const demandeId = parseInt(idDemande, 10);
+
+    if (isNaN(demandeId)) {
+      return res.status(400).json({ message: "Invalid demande ID" });
+    }
+    const demande = await prisma.demandes.findUnique({
+      where: { id: parseInt(demandeId)}
+    })
+    if(!demande){
+      console.log('Demande introuvable')
+      return res.status(404).json({ message: "Demande introuvable" });
+    }
+    const files = await prisma.fichiers.findMany({
+      where: {
+        demande_id: demandeId,
+      },
+      orderBy: {
+        created_at: "asc"
+      },
+    });
+
+    console.log('Succès !')
+    res.status(200).json(files);
+  } catch (error) {
+    console.log("Erreur serveur: ", error)
+    console.error("Erreur :", error)
+    res.status(500).json({ message: "Erreur lors de la récupération des fichiers", error });
+  }
+}
+
 module.exports = {
   faireDemande,
   getAllDemandes,
@@ -3752,4 +3802,5 @@ module.exports = {
   generateDemandePDF,
   receivePiece,
   preValidateDemande,
+  getAllDemandeFiles,
 }

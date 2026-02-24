@@ -110,5 +110,14 @@ export class Demandes {
       throw error.response.data;
     }
   }
+
+  async getAllDemandeFiles(idDemande) {
+    try {
+      const response = await axios.get(`${urlBase}/api/demandes/getAllDemandeFiles/${idDemande}`)
+      return response.data;
+    } catch (error) {
+      throw error.response.data
+    }
+  };
 }
 
