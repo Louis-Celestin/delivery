@@ -12,8 +12,7 @@ import Swal from 'sweetalert2'
 import SignatureCanvas from 'react-signature-canvas'
 import Label from "../../components/form/Label";
 import TextArea from "../../components/form/input/TextArea";
-
-
+import { FilesHandler } from '../../backend/filesHandler/FilesHandler';
 
 export default function DemandeDetails() {
 
@@ -133,6 +132,10 @@ export default function DemandeDetails() {
     const [isLivre, setIslivree] = useState(false)
 
     const [quantiteValidee, setQuantiteValidee] = useState(0)
+
+    const [demandeurFiles, setDemandeuFiles] = useState([])
+
+    const [fileId, setFileId] = useState(null);
 
     const formatDate = (date) => {
         const d = new Date(date);
@@ -346,6 +349,12 @@ export default function DemandeDetails() {
                     })
                     setStocksPiece(stocks)
 
+                    const allFiles = await demandes.getAllDemandeFiles(id)
+                    const dFiles = allFiles.filter((item) => {
+                        return item.role == 'demandeur'
+                    })
+                    setDemandeuFiles(dFiles)
+
                 } catch (error) {
                     console.log("Error fetchind data ", error)
                 } finally {
@@ -375,6 +384,51 @@ export default function DemandeDetails() {
             setLoadingPrint(false);
         }
     }
+
+    const handleDemandeurFiles = () => {
+        for (let blob in demandeurFiles) {
+            const fileURL = URL.createObjectURL(new Blob([blob], { type: `${blob.mimeType}` }));
+            window.open(fileURL, '_blank');
+        }
+    }
+    const handleSingleFile = async (id) => {
+        try {
+            setFileId(id)
+            const service = new FilesHandler();
+            const response = await service.downloadFile(id);
+
+            const url = window.URL.createObjectURL(response.data);
+
+            const a = document.createElement("a");
+            a.href = url;
+
+            // Extract filename from headers if backend sends it
+            const contentDisposition = response.headers["content-disposition"];
+            let fileName = "download";
+
+            if (contentDisposition) {
+                const match = contentDisposition.match(/filename="?(.+)"?/);
+                if (match?.[1]) fileName = match[1];
+            }
+
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+
+            window.URL.revokeObjectURL(url);
+
+        } catch (error) {
+            console.error("Download error:", error);
+            Swal.fire({
+                title: "Attention",
+                text: "Une erreur s'est produite lors du téléchargement !",
+                icon: "warning"
+            });
+        } finally {
+            setFileId(null)
+        }
+    };
 
     const handleClear = () => {
         signature.clear()
@@ -841,7 +895,7 @@ export default function DemandeDetails() {
                                 </div>
                             </div>
                         </div>
-                        <div className='overflow-hidden mb-6 pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
+                        <div className='overflow-hidden mb-6 pt-2 px-6 space-y-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
                             <div className='mb-6 pb-2 w-full border-b'>
                                 <span className='text-sm mr-2'>Commentaire demandeur</span>
                                 <span className='text-sm'><i className="pi pi-comment"></i></span>
@@ -851,6 +905,56 @@ export default function DemandeDetails() {
                             ) : (
                                 <p className='text-xs opacity-20'>Sans commentaire</p>
                             )}
+                            {demandeurFiles.length > 0 ? (
+                                <>
+                                    <div className='grid grid-cols-6 text-xs gap-1'>
+                                        {demandeurFiles.map((file) => {
+                                            let icon = 'pi pi-file'
+                                            let fileClass = 'flex items-center justify-between bg-gray-300 rounded p-0.5'
+                                            if (file.path.endsWith('.pdf')) {
+                                                icon = 'pi pi-file-pdf'
+                                                fileClass = 'flex items-center justify-between bg-red-100 text-red-500 rounded p-0.5'
+                                            } else if (file.path.endsWith('.docx')) {
+                                                icon = 'pi pi-file-word'
+                                                fileClass = 'flex items-center justify-between bg-blue-100 text-blue-600 rounded p-0.5'
+                                            } else if (file.path.endsWith('.xlsx')) {
+                                                icon = 'pi pi-file-excel'
+                                                fileClass = 'flex items-center justify-between bg-green-100 text-green-600 rounded p-0.5'
+                                            }
+                                            return (
+                                                <>
+                                                    {fileId == file.id ? (
+                                                        <>
+                                                            <div className='text-center'>
+                                                                <span className='mx-1'>
+                                                                    <ProgressSpinner style={{ width: '15px', height: '15px' }} strokeWidth="8" animationDuration=".5s" />
+                                                                </span>
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <button key={file.id} className={fileClass} style={{ fontSize: '8px' }} onClick={() => handleSingleFile(file.id)}>
+                                                            <i className={icon}></i>
+                                                            <span className=''>{file.filename}</span>
+                                                        </button>
+                                                    )}
+                                                </>
+                                            )
+                                        })}
+                                    </div>
+                                </>
+                            ) : (
+                                <></>
+                            )}
+                            {/* {demandeurFiles.length > 0 ? (
+                                <>
+                                    <div className='text-xs mb-2'>
+                                        <button onClick={handleDemandeurFiles}>Pièce(s) jointe(s) disponible(s)</button>
+                                    </div>
+                                </>
+                            ) : (
+                                <></>
+                            )} */}
+
                         </div>
                         {recu ? (
                             <>
