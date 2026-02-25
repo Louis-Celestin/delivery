@@ -3791,6 +3791,43 @@ const getAllDemandeFiles = async (req, res) => {
   }
 }
 
+const downloadFile = async (req, res) => {
+  const { id } = req.params;
+
+  const fileId = parseInt(id, 10);
+
+  if (isNaN(fileId)) {
+    console.log("Invalid file ID")
+    return res.status(400).json({ message: "Invalid file ID" });
+  }
+
+  try {
+    const file = await prisma.fichiers.findUnique({
+      where: { id: fileId }
+    });
+
+    if (!file) {
+      console.log("File not found")
+      return res.status(404).json({ message: "File not found" });
+    }
+
+    const filePath = path.resolve(file.path);
+
+    if (!fs.existsSync(filePath)) {
+      console.log("File missing on server")
+      return res.status(404).json({ message: "File missing on server" });
+    }
+
+    console.log('File downloaded !')
+    return res.download(filePath, file.filename);
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+
 module.exports = {
   faireDemande,
   getAllDemandes,
@@ -3803,4 +3840,5 @@ module.exports = {
   receivePiece,
   preValidateDemande,
   getAllDemandeFiles,
+  downloadFile,
 }

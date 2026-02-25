@@ -12,8 +12,7 @@ import Swal from 'sweetalert2'
 import SignatureCanvas from 'react-signature-canvas'
 import Label from "../../components/form/Label";
 import TextArea from "../../components/form/input/TextArea";
-
-
+import { FilesHandler } from '../../backend/filesHandler/FilesHandler';
 
 export default function DemandeDetails() {
 
@@ -350,9 +349,10 @@ export default function DemandeDetails() {
 
                     const allFiles = await demandes.getAllDemandeFiles(id)
                     // console.log(allFiles)
-                    const dFiles = allFiles.map((item) => {
+                    const dFiles = allFiles.filter((item) => {
                         return item.role == 'demandeur'
                     })
+                    // console.log(dFiles)
                     setDemandeuFiles(dFiles)
 
                 } catch (error) {
@@ -386,10 +386,43 @@ export default function DemandeDetails() {
     }
 
     const handleDemandeurFiles = () => {
-        
-        const fileURL = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
-        window.open(fileURL, '_blank');
+        for (let blob in demandeurFiles) {
+            const fileURL = URL.createObjectURL(new Blob([blob], { type: `${blob.mimeType}` }));
+            window.open(fileURL, '_blank');
+        }
     }
+    const handleSingleFile = async (id) => {
+        try {
+            const service = new FilesHandler();
+            const response = await service.downloadFile(id);
+
+            const blob = new Blob([response.data]);
+            const url = window.URL.createObjectURL(blob);
+
+            const a = document.createElement("a");
+            a.href = url;
+
+            // Extract filename from headers if backend sends it
+            const contentDisposition = response.headers["content-disposition"];
+            let fileName = "download";
+
+            if (contentDisposition) {
+                const match = contentDisposition.match(/filename="?(.+)"?/);
+                if (match?.[1]) fileName = match[1];
+            }
+
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+
+            window.URL.revokeObjectURL(url);
+
+        } catch (error) {
+            console.error("Download error:", error);
+        }
+    };
+
     const handleClear = () => {
         signature.clear()
     }
@@ -867,13 +900,44 @@ export default function DemandeDetails() {
                             )}
                             {demandeurFiles.length > 0 ? (
                                 <>
-                                    <div className='text-xs mb-2'>
-                                        <button onClick={ }>Pièce(s) jointe(s) disponible(s)</button>
+                                    <div className='grid grid-cols-6 text-xs gap-1'>
+                                        {demandeurFiles.map((file) => {
+                                            let icon = 'pi pi-file'
+                                            let fileClass = 'flex items-center justify-between bg-gray-300 rounded p-0.5'
+                                            if (file.path.endsWith('.pdf')) {
+                                                icon = 'pi pi-file-pdf'
+                                                fileClass = 'flex items-center justify-between bg-red-100 text-red-500 rounded p-0.5'
+                                            } else if (file.path.endsWith('.docx')) {
+                                                icon = 'pi pi-file-word'
+                                                fileClass = 'flex items-center justify-between bg-blue-100 text-blue-600 rounded p-0.5'
+                                            } else if (file.path.endsWith('.xlsx')) {
+                                                icon = 'pi pi-file-excel'
+                                                fileClass = 'flex items-center justify-between bg-green-100 text-green-600 rounded p-0.5'
+                                            }
+                                            return (
+                                                <>
+                                                    <button key={file.id} className={fileClass} style={{ fontSize: '8px' }} onClick={() => handleSingleFile(file.id)}>
+                                                        <i className={icon}></i>
+                                                        <span className=''>{file.filename}</span>
+                                                    </button>
+                                                </>
+                                            )
+                                        })}
                                     </div>
                                 </>
                             ) : (
                                 <></>
                             )}
+                            {/* {demandeurFiles.length > 0 ? (
+                                <>
+                                    <div className='text-xs mb-2'>
+                                        <button onClick={handleDemandeurFiles}>Pièce(s) jointe(s) disponible(s)</button>
+                                    </div>
+                                </>
+                            ) : (
+                                <></>
+                            )} */}
+
                         </div>
                         {recu ? (
                             <>

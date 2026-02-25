@@ -6,7 +6,7 @@ const uploadAll = require("../middlewares/uploadAll")
 // const upload = multer({ storage: multer.memoryStorage() });
 const { faireDemande, getAllDemandes, getOneDemande, validateDemande, returnDemande,
     cancelDemande, updateDemande, generateDemandePDF, receivePiece, preValidateDemande,
-    getAllDemandeFiles,
+    getAllDemandeFiles, downloadFile,
 } = require("../controllers/Demande/demandeController")
 
 router.post('/faireDemande', uploadAll.fields([
@@ -22,5 +22,6 @@ router.get('/getPdf/:id', generateDemandePDF);
 router.post('/receivePiece', upload.single("signature"), receivePiece);
 router.post('/preValidateDemande', upload.single("signature"), preValidateDemande);
 router.get('/getAllDemandeFiles/:idDemande', getAllDemandeFiles);
+router.get("/downloadFile/:id", downloadFile);
 
 module.exports = router
