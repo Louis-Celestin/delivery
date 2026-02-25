@@ -895,16 +895,18 @@ export default function DemandeDetails() {
                                 </div>
                             </div>
                         </div>
-                        <div className='overflow-hidden mb-6 pt-2 px-6 space-y-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
+                        <div className='overflow-hidden mb-6 pt-2 px-6 space-y-3 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
                             <div className='mb-6 pb-2 w-full border-b'>
                                 <span className='text-sm mr-2'>Commentaire demandeur</span>
                                 <span className='text-sm'><i className="pi pi-comment"></i></span>
                             </div>
-                            {commentaire ? (
-                                <p className='text-sm text-cyan-700'>{commentaire}</p>
-                            ) : (
-                                <p className='text-xs opacity-20'>Sans commentaire</p>
-                            )}
+                            <div className='pb-3'>
+                                {commentaire ? (
+                                    <p className='text-sm text-cyan-700'>{commentaire}</p>
+                                ) : (
+                                    <p className='text-xs opacity-20'>Sans commentaire</p>
+                                )}
+                            </div>
                             {demandeurFiles.length > 0 ? (
                                 <>
                                     <div className='grid grid-cols-6 text-xs gap-1'>
