@@ -76,9 +76,13 @@ export class Demandes {
     }
   };
 
-  async updateDemande(id, payload) {
+  async updateDemande(id, formData) {
     try {
-      const response = await axios.put(`${urlBase}/api/demandes/updateDemande/${id}`, payload)
+      const response = await axios.put(`${urlBase}/api/demandes/updateDemande/${id}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }}
+      )
       return response.data;
     } catch (error) {
       throw error.response.data

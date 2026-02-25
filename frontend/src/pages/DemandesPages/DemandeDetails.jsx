@@ -135,6 +135,8 @@ export default function DemandeDetails() {
 
     const [demandeurFiles, setDemandeuFiles] = useState([])
 
+    const [fileId, setFileId] = useState(null);
+
     const formatDate = (date) => {
         const d = new Date(date);
         return d.toLocaleDateString('fr-FR'); // or use any locale you want
@@ -348,11 +350,9 @@ export default function DemandeDetails() {
                     setStocksPiece(stocks)
 
                     const allFiles = await demandes.getAllDemandeFiles(id)
-                    // console.log(allFiles)
                     const dFiles = allFiles.filter((item) => {
                         return item.role == 'demandeur'
                     })
-                    // console.log(dFiles)
                     setDemandeuFiles(dFiles)
 
                 } catch (error) {
@@ -393,11 +393,11 @@ export default function DemandeDetails() {
     }
     const handleSingleFile = async (id) => {
         try {
+            setFileId(id)
             const service = new FilesHandler();
             const response = await service.downloadFile(id);
 
-            const blob = new Blob([response.data]);
-            const url = window.URL.createObjectURL(blob);
+            const url = window.URL.createObjectURL(response.data);
 
             const a = document.createElement("a");
             a.href = url;
@@ -420,6 +420,13 @@ export default function DemandeDetails() {
 
         } catch (error) {
             console.error("Download error:", error);
+            Swal.fire({
+                title: "Attention",
+                text: "Une erreur s'est produite lors du téléchargement !",
+                icon: "warning"
+            });
+        } finally {
+            setFileId(null)
         }
     };
 
@@ -888,7 +895,7 @@ export default function DemandeDetails() {
                                 </div>
                             </div>
                         </div>
-                        <div className='overflow-hidden mb-6 pt-2 px-6 space-y-4 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
+                        <div className='overflow-hidden mb-6 pt-2 px-6 space-y-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
                             <div className='mb-6 pb-2 w-full border-b'>
                                 <span className='text-sm mr-2'>Commentaire demandeur</span>
                                 <span className='text-sm'><i className="pi pi-comment"></i></span>
@@ -916,10 +923,20 @@ export default function DemandeDetails() {
                                             }
                                             return (
                                                 <>
-                                                    <button key={file.id} className={fileClass} style={{ fontSize: '8px' }} onClick={() => handleSingleFile(file.id)}>
-                                                        <i className={icon}></i>
-                                                        <span className=''>{file.filename}</span>
-                                                    </button>
+                                                    {fileId == file.id ? (
+                                                        <>
+                                                            <div className='text-center'>
+                                                                <span className='mx-1'>
+                                                                    <ProgressSpinner style={{ width: '15px', height: '15px' }} strokeWidth="8" animationDuration=".5s" />
+                                                                </span>
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <button key={file.id} className={fileClass} style={{ fontSize: '8px' }} onClick={() => handleSingleFile(file.id)}>
+                                                            <i className={icon}></i>
+                                                            <span className=''>{file.filename}</span>
+                                                        </button>
+                                                    )}
                                                 </>
                                             )
                                         })}

@@ -3268,6 +3268,17 @@ const updateDemande = async (req, res) => {
       }
     })
 
+    const files = req.files?.files || [];
+
+    const files_content = files.length
+      ? files.map(file => ({
+        name: file.originalname,
+        path: file.path,
+        type: file.mimetype,
+        size: file.size
+      }))
+      : [];
+
     if (!piece) {
       return res.status(404).json({ message: "Pièce introuvable !" })
     }
@@ -3287,8 +3298,8 @@ const updateDemande = async (req, res) => {
       nom_demandeur: nomUser,
       date_demande: new Date(),
       commentaire,
-      qte_total_demande: quantite,
-      details_demande: JSON.stringify(detailsDemande),
+      qte_total_demande: +quantite,
+      details_demande: JSON.stringify(details),
       statut_demande: 'en_cours',
       user_id: parseInt(userId),
       item_id: piece.id_piece,
@@ -3304,8 +3315,26 @@ const updateDemande = async (req, res) => {
       data,
     })
 
+    if (files_content.length > 0) {
+      await prisma.fichiers.createMany({
+        data: files_content.map(fichier => ({
+          path: fichier.path,
+          filename: fichier.name,
+          originalName: fichier.name,
+          mimeType: fichier.type,
+          size: fichier.size,
+          uploaded_by: +userId,
+          demande_id: updatedDemande.id,
+          type_formulaire: 'demande',
+          role: 'demandeur',
+          created_at: new Date(),
+        }))
+      })
+    }
+
 
     /************************** GESTION DES MAILS ********************************/
+
     const service = await prisma.services.findUnique({
       where: {
         id: parseInt(serviceUser)

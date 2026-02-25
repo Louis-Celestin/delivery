@@ -17,7 +17,9 @@ router.get('/getOneDemande/:id', getOneDemande);
 router.post('/validateDemande', validateDemande);
 router.post('/returnDemande', returnDemande);
 router.post('/cancelDemande', cancelDemande);
-router.put('/updateDemande/:id', updateDemande);
+router.put('/updateDemande/:id', uploadAll.fields([
+    { name: 'files', maxCount: 10 },
+]), updateDemande);
 router.get('/getPdf/:id', generateDemandePDF);
 router.post('/receivePiece', upload.single("signature"), receivePiece);
 router.post('/preValidateDemande', upload.single("signature"), preValidateDemande);
