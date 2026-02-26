@@ -17,6 +17,8 @@ import { Demandes } from "../../../backend/demandes/Demandes.js";
 
 import { Dropdown } from "primereact/dropdown";
 
+import FileInput from "../input/FileInput.tsx"
+
 export default function DemandeInputs() {
 
   const stockData = new Stock()
@@ -140,6 +142,8 @@ export default function DemandeInputs() {
 
   const [pieceLoading, setPieceLoading] = useState(false)
   const [stockInitial, setStockInitial] = useState(0)
+
+  const [selectedFiles, setSelectedFiles] = useState([])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -301,190 +305,29 @@ export default function DemandeInputs() {
     setSelectedServicePiece(value)
   }
 
-  const stocksTemplate = (stock) => {
-    return (
-      <>
-        <span className="text-sm font-semibold">{stock.label}</span>
-      </>
-    )
-  }
+  const handleFileChange = (e) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const newFiles = Array.from(files);
 
-  const selectedStockTemplate = (option, props) => {
-    if (option) {
-      return (
-        <>
-          <span className="text-sm font-semibold">{option.label}</span>
-        </>
-      )
-    }
-    return <span>{props.placeholder}</span>;
-  }
+      // Avoid adding duplicate files (optional)
+      const updatedFiles = [...selectedFiles];
 
-  const handleSelectStock = async (e) => {
-    const value = e.value
-    console.log(value)
-    console.log(typeof (value))
-    setSelectedStock(value)
-    const stock = stocks.find((item) => {
-      return item.id == value
-    })
-    if (stock) {
-      setNomStock(stock.code_stock)
-      setQuantitePiece(stock.quantite_piece)
-      // setQuantiteCarton(stock.quantite_carton)
-      // setQuantiteLot(stock.quantite_lot)
-
-      const stock_carton_all = await stockData.getCartonStock(value)
-      const stock_carton = stock_carton_all.filter((item) => {
-        return item.is_deleted == false
-      })
-      setQuantiteCarton(stock_carton.length)
-      if (stock_carton.length > 0) {
-        setHasCarton(true)
-      } else {
-        setHasCarton(false)
-      }
-      const carton_simple = stock_carton.filter((item) => {
-        return item.lot_id == null
-      })
-      const options_carton = carton_simple.map((item) => ({
-        value: item.id,
-        label: `Carton ${item.numero_carton} - ${item.quantite_totale_piece} pièces`
-      }))
-      setOptionsCartons(options_carton)
-      setListeCartons(stock_carton)
-
-      const stock_lot_all = await stockData.getLotStock(value)
-      const stock_lot = stock_lot_all.filter((item) => {
-        return item.is_deleted == false
-      })
-      setQuantiteLot(stock_lot.length)
-      setListeLots(stock_lot)
-      const options_lot = stock_lot.map((item) => ({
-        value: item.id,
-        label: `Lot ${item.numero_lot} - ${item.quantite_carton} cartons - ${item.quantite_piece} pièces`
-      }))
-      setOptionsLot(options_lot)
-      if (stock_lot.length > 0) {
-        setHasLot(true)
-      } else {
-        setHasLot(false)
-      }
-
-      if (stock && stock.piece_id == 1 && stock.service_id == 5) {
-        const stock_demandeur = stocks.find((item) => {
-          return item.service_id == 3 && item.piece_id == 1 && item.code_stock == stock.code_stock
-        })
-        if (stock_demandeur) {
-          setQuantitePieceDemandeur(stock_demandeur.quantite_piece)
-
-          const stock_carton_all = await stockData.getCartonStock(stock_demandeur.id)
-          const stock_carton = stock_carton_all.filter((item) => {
-            return item.is_deleted == false
-          })
-          setQuantiteCartonDemandeur(stock_carton.length)
-
-          const stock_lot_all = await stockData.getLotStock(stock_demandeur.id)
-          const stock_lot = stock_lot_all.filter((item) => {
-            return item.is_deleted == false
-          })
-          setQuantiteLotDemandeur(stock_lot.length)
+      newFiles.forEach(file => {
+        if (!updatedFiles.find(f => f.name === file.name && f.size === file.size)) {
+          updatedFiles.push(file);
         }
-      }
+      });
+
+      setSelectedFiles(updatedFiles);
     }
+  };
 
-    const pieceId = stock ? stock.piece_id : null
-    setSelectedPiece(pieceId)
-    const piece = items.find((item) => {
-      return item.id_piece == pieceId
-    })
-    const nomPiece = piece ? piece.nom_piece : 'N/A'
-    setNomPiece(nomPiece)
-
-    const modelId = stock ? stock.model_id : null
-    setSelectedModel(modelId)
-    const model = models.find((item) => {
-      return item.id_model == modelId
-    })
-    const nomModel = model ? model.nom_model : 'N/A'
-    setNomModel(nomModel)
-
-    const serviceId = stock ? stock.service_id : null
-    setSelectedServicePiece(serviceId)
-    const service = servicesPiece.find((item) => {
-      return item.id == serviceId
-    })
-    const nomService = service ? service.nom_service : 'N/A'
-    setNomServicePiece(nomService)
+  const handleDeleteFile = (indexToRemove) => {
+    setSelectedFiles((prev) =>
+      prev.filter((_, index) => index !== indexToRemove)
+    );
   }
-
-  // useEffect(() => {
-  //   const fetchQuantite = async () => {
-  //     if (!selectedModel || !selectedServicePiece) return // wait until both are chosen
-  //     try {
-  //       const quantite_piece = await stockData.getStockPiece(selectedPiece, selectedModel, selectedServicePiece)
-  //       setQuantitePiece(quantite_piece)
-
-  //       const stock_carton_all = await stockData.getCartonPiece(selectedPiece, selectedModel, selectedServicePiece)
-  //       const stock_carton = stock_carton_all.filter((item) => {
-  //         return item.is_deleted == false
-  //       })
-  //       setQuantiteCarton(stock_carton.length)
-  //       const carton_simple = stock_carton.filter((item) => {
-  //         return item.lot_id == null
-  //       })
-  //       const options_carton = carton_simple.map((item) => ({
-  //         value: item.id,
-  //         label: `Carton ${item.numero_carton} - ${item.quantite_totale_piece} pièces`
-  //       }))
-  //       setOptionsCartons(options_carton)
-  //       setListeCartons(stock_carton)
-
-  //       const stock_lot_all = await stockData.getLotPiece(selectedPiece, selectedModel, selectedServicePiece)
-  //       const stock_lot = stock_lot_all.filter((item) => {
-  //         return item.is_deleted == false
-  //       })
-  //       setQuantiteLot(stock_lot.length)
-  //       setListeLots(stock_lot)
-  //       const options_lot = stock_lot.map((item) => ({
-  //         value: item.id,
-  //         label: `Lot ${item.numero_lot} - ${item.quantite_carton} cartons - ${item.quantite_piece} pièces`
-  //       }))
-  //       setOptionsLot(options_lot)
-  //     } catch (error) {
-  //       console.log("Error fetching quantity", error)
-  //     }
-  //   }
-
-  //   fetchQuantite()
-  // }, [selectedPiece, selectedModel, selectedServicePiece])
-
-  // useEffect(() => {
-  //   const fetchQuantite = async () => {
-  //     if (!selectedModel || !serviceUser) return // wait until both are chosen
-  //     try {
-  //       const quantite_piece_demandeur = await stockData.getStockPiece(selectedPiece, selectedModel, serviceUser)
-  //       setQuantitePieceDemandeur(quantite_piece_demandeur)
-
-  //       const stock_carton_all_demandeur = await stockData.getCartonPiece(selectedPiece, selectedModel, serviceUser)
-  //       const stock_carton_demandeur = stock_carton_all_demandeur.filter((item) => {
-  //         return item.is_deleted == false
-  //       })
-  //       setQuantiteCartonDemandeur(stock_carton_demandeur.length)
-
-  //       const stock_lot_demandeur_all = await stockData.getLotPiece(selectedPiece, selectedModel, serviceUser)
-  //       const stock_lot_demandeur = stock_lot_demandeur_all.filter((item) => {
-  //         return item.is_deleted == false
-  //       })
-  //       setQuantiteLotDemandeur(stock_lot_demandeur.length)
-
-  //     } catch (error) {
-  //       console.log("Error fetching quantity", error)
-  //     }
-  //   }
-
-  //   fetchQuantite()
-  // }, [selectedPiece, selectedModel, serviceUser])
 
   const handleSelectLotCarton = async (id) => {
     setSelectedLot(id)
@@ -983,9 +826,25 @@ export default function DemandeInputs() {
       otherFields: fields,
     }
 
+    const fd = new FormData();
+
+    fd.append('detailsDemande', JSON.stringify(details))
+    fd.append('userId', userId)
+    fd.append('quantite', quantite)
+    fd.append('serviceUser', serviceUser)
+    fd.append('selectedUser', selectedUser)
+    fd.append('nomUser', nomUser)
+    fd.append('motif', motif)
+    fd.append('commentaire', commentaire)
+    fd.append('otherFields', JSON.stringify(fields) )
+
+    selectedFiles.forEach((file) => {
+      fd.append("files", file);
+    });
+
     try {
       setLoadingValidation(true)
-      const response = await demandeData.faireDemande(payload)
+      const response = await demandeData.faireDemande(fd)
       Swal.fire({
         title: "Succès",
         text: "Demande effectuée avec succès !",
@@ -1004,7 +863,6 @@ export default function DemandeInputs() {
       setLoadingValidation(false)
     }
   }
-
 
   return (
     <>
@@ -1085,17 +943,6 @@ export default function DemandeInputs() {
                           </>
                         )}
                       </div>
-                      {/* <div>
-                        <Label>Nomenclature</Label>
-                        <Input
-                          type="text"
-                          value={nomenclature}
-                          onChange={(e) => {
-                            const value = e.target.value
-                            setNomenclature(value)
-                          }}
-                        />
-                      </div> */}
                       <div>
                         <Label>Service Demandeur <span className="text-red-700">*</span></Label>
                         <Select
@@ -1134,65 +981,37 @@ export default function DemandeInputs() {
                           onChange={(value) => setCommentaire(value)}
                         />
                       </div>
+                      <div>
+                        <Label>Importer des fichiers</Label>
+                        <FileInput className="curstom-class"
+                          onChange={handleFileChange}
+                          multiple
+                        />
+                        {selectedFiles.length > 0 ? (
+                          <div className="mt-3">
+                            {selectedFiles.map((selectedFile, index) => (
+                              <div key={index} className="bg-gray-100 px-1 flex justify-between items-center rounded-sm my-1">
+                                <span>
+                                  <i className="pi pi-file-check"></i>
+                                </span>
+                                <span className=" text-gray-500" style={{ fontSize: '9px' }}>
+                                  {selectedFile.name}
+                                </span>
+                                <button onClick={() => handleDeleteFile(index)}>
+                                  <span className="text-error-600"><i className="pi pi-times"></i></span>
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <></>
+                        )}
+                      </div>
                     </div>
                     <div className="space-y-5">
                       <div className="text-center">
                         <span className="text-sm font-semibold">Informations sur stock</span>
                       </div>
-                      {/* <div>
-                        <Label>Pièce <span className="text-red-700">*</span></Label>
-                        <Select
-                          options={optionsItems}
-                          placeholder="Choisir une option"
-                          onChange={handleSelectPiece}
-                          className="dark:bg-dark-900"
-                        />
-                      </div> */}
-                      {/* <div>
-                        <Label>Service <span className="text-red-700">*</span></Label>
-                        <Select
-                          options={optionsServicesPiece}
-                          placeholder="Choisir une option"
-                          onChange={handleSelectServicePiece}
-                          className="dark:bg-dark-900"
-                        />
-                      </div> */}
-                      {/* <div>
-                        <Label>Modèle <span className="text-red-700">*</span></Label>
-                        <Select
-                          options={optionsModels}
-                          placeholder="Choisir une option"
-                          onChange={handleSelectModel}
-                          className="dark:bg-dark-900"
-                        />
-                      </div> */}
-                      {/* <div>
-                        <Label>Stock <span className="text-red-700">*</span></Label>
-                        <Dropdown
-                          options={optionsStocks}
-                          optionLabel="Label"
-                          placeholder="Choisir Stock"
-                          filter
-                          filterBy="label"
-                          itemTemplate={stocksTemplate}
-                          className="w-full"
-                          onChange={handleSelectStock}
-                          value={selectedStock}
-                          valueTemplate={selectedStockTemplate}
-                        />
-                      </div> */}
-                      {/* <div className="flex justify-between items-center">
-                        <div className="flex flex-col  border-b pb-2 border-black">
-                          <span className="text-xs text-gray-700 font-normal">{nomPiece} {nomModel}</span>
-                          <span className="font-medium">QUANTITE ACTUELLE</span>
-                          <span className="text-title-md font-bold">{quantitePiece ? quantitePiece : '0'}</span>
-                          <span className="text-sm">Stock carton - {quantiteCarton ? quantiteCarton : 'N/A'}</span>
-                          <span className="text-sm">Stock lot - {quantiteLot ? quantiteLot : 'N/A'}</span>
-                        </div>
-                        <div>
-                          <span><i className="pi pi-box" style={{ fontSize: '3rem' }}></i></span>
-                        </div>
-                      </div> */}
                       <div>
                         <span>Faire une demande  : </span>
                         <div>

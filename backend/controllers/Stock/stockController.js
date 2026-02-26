@@ -1955,6 +1955,34 @@ const getStockParPiece = async (req, res) => {
   }
 }
 
+const getAllUserTypeStocks = async (req, res) => {
+  const {
+    itemId,
+    modelId,
+    serviceId,
+  } = req.params
+
+  try {
+    const users = await prisma.users.findMany({
+      where: {
+        stocks_stocks_created_byTousers: {
+          some: {
+            piece_id: +itemId,
+            model_id: +modelId,
+            service_id: +serviceId,
+          }
+        }
+      }
+    });
+
+    console.log('Succès récupération des users')
+    return res.status(200).json(users);
+  } catch (error) {
+    console.log("Error : ", error)
+    res.status(500).json({ message: "Erreur lors de la récupération des utilisateurs par type de stock", error });
+  }
+}
+
 module.exports = {
   setStockPiece,
   getAllItems,
@@ -1986,4 +2014,5 @@ module.exports = {
   getStockParPiece,
   getAllOneQuantitePiece,
   setStockSn,
+  getAllUserTypeStocks,
 }

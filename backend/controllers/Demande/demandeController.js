@@ -228,6 +228,185 @@ if (test_env) {
 //   }
 // };
 
+// const faireDemande = async (req, res) => {
+//   try {
+//     const {
+//       detailsDemande,
+//       userId,
+//       quantite,
+//       serviceUser,
+//       selectedUser,
+//       nomUser,
+//       motif,
+//       commentaire,
+//       otherFields,
+//     } = req.body;
+
+//     const details = typeof detailsDemande === "string"
+//       ? JSON.parse(detailsDemande)
+//       : detailsDemande;
+
+//     const autres = typeof otherFields === "string"
+//       ? JSON.parse(otherFields)
+//       : otherFields
+
+//     const piece = await prisma.items.findUnique({
+//       where: {
+//         id_piece: parseInt(details.selectedPiece)
+//       }
+//     })
+
+//     if (!piece) {
+//       console.log("Erreur serveur 404: pièce introuvable ! ")
+//       return res.status(404).json({ message: "Pièce introuvable !" })
+//     }
+
+//     // const stock = await prisma.stocks.findUnique({
+//     //   where: {
+//     //     id: parseInt(selectedStock)
+//     //   }
+//     // })
+
+//     // if (!stock) {
+//     //   console.log("Erreur serveur 404: stock introuvable ! ")
+//     //   return res.status(404).json({ message: "Stock introuvable !" })
+//     // }
+
+//     let utilisateur = null;
+//     utilisateur = await prisma.users.findUnique({
+//       where: {
+//         id_user: parseInt(userId)
+//       }
+//     });
+
+//     if (!utilisateur) {
+//       console.log("Erreur serveur 404: utilisateur introuvable ! ")
+//       return res.status(404).json({ message: "Utilisateur non trouvé" });
+//     }
+
+//     const nouvelleDemande = await prisma.demandes.create({
+//       data: {
+//         nom_demandeur: nomUser,
+//         date_demande: new Date(),
+//         commentaire,
+//         qte_total_demande: parseInt(quantite),
+//         details_demande: JSON.stringify(detailsDemande),
+//         // details_demandeur: JSON.stringify(detailsDemandeur),
+//         statut_demande: 'en_cours',
+//         user_id: parseInt(userId),
+//         // stock_id: parseInt(selectedStock),
+//         item_id: parseInt(details.selectedPiece),
+//         // type_demande: parseInt(details.typeMouvement),
+//         id_demandeur: parseInt(selectedUser),
+//         motif_demande: motif,
+//         service_demandeur: parseInt(serviceUser),
+//         champs_autre: JSON.stringify(autres)
+//       }
+//     });
+
+
+//     /************************** GESTION DES MAILS ********************************/
+//     const service = await prisma.services.findUnique({
+//       where: {
+//         id: parseInt(serviceUser)
+//       }
+//     })
+
+//     const nomService = service.nom_service.toUpperCase()
+
+//     const userService = await prisma.user_services.findMany({
+//       where: {
+//         service_id: parseInt(serviceUser)
+//       },
+//       include: {
+//         users: true
+//       }
+//     })
+
+//     const userRole = await prisma.user_roles.findMany({
+//       where: {
+//         role_id: 4,
+//       },
+//       include: {
+//         users: true
+//       }
+//     })
+//     // const mouvement = await prisma.type_mouvement_stock.findUnique({
+//     //   where: {
+//     //     id: details.typeMouvement
+//     //   }
+//     // })
+
+//     const service_users = userService.map(us => us.users)
+//     const validateurs = userRole.map(us => us.users)
+
+//     let nomPiece = piece.nom_piece.toUpperCase()
+
+//     let quantiteDemande = quantite;
+
+//     let commentaire_mail = commentaire ? commentaire : '(sans commentaire)';
+
+//     const url = GENERAL_URL
+//     let demandeLink = `${url}/demande-details/${nouvelleDemande.id}`;
+
+//     const sendMail = require("../../utils/emailSender");
+
+//     if ((service_users && service_users.length > 0) || (validateurs && validateurs.length > 0)) {
+//       const subject = `MOUVEMENT DE STOCK DE ${nomPiece}`;
+//       let html = `
+//         <p>Bonjour,</p>
+//         <p>Une nouvelle demande a été enregistrée.</p>
+//         <ul>
+//           <li><strong>Demande de :</strong> ${nomPiece}</li>
+//           <li><strong>${details.typeDemande}</strong></li>
+//           <li><strong>Nombre de produits:</strong> ${quantiteDemande}</li>
+//         </ul>
+//         <ul>
+//           <li><strong>Service demandeur:</strong> ${nomService}</li>
+//           <li><strong>Nom demandeur:</strong> ${nomUser}</li>
+//         </ul>
+//         <br>
+//         <p>Commentaire : ${commentaire_mail}<p>
+//         <br>
+//         <p>Retrouvez la demande à ce lien : 
+//           <span>
+//           <a href="${demandeLink}" target="_blank" style="background-color: #73dced; color: white; padding: 7px 12px; text-decoration: none; border-radius: 5px;">
+//             Cliquez ici !
+//           </a>
+//           </span>
+//         </p>
+//         <br><br>
+//         <p>Green - Pay vous remercie.</p>
+//         `;
+//       for (const service_user of service_users) {
+//         await sendMail({
+//           to: service_user.email,
+//           subject,
+//           html,
+//         });
+//       }
+//       for (const validateur of validateurs) {
+//         await sendMail({
+//           to: validateur.email,
+//           subject,
+//           html,
+//         });
+//       }
+//     }
+
+//     console.log("Succès ! ")
+//     res.status(201).json({
+//       message: "Demande enregistrée avec succès",
+//       demandes: nouvelleDemande
+//     });
+
+//   } catch (error) {
+//     console.log("Erreur serveur: ", error)
+//     console.error("Erreur lors de la demande :", error);
+//     res.status(500).json({ message: "Erreur interne", error });
+//   }
+// };
+
 const faireDemande = async (req, res) => {
   try {
     const {
@@ -246,6 +425,8 @@ const faireDemande = async (req, res) => {
       ? JSON.parse(detailsDemande)
       : detailsDemande;
 
+    // const details = detailsDemande
+
     const autres = typeof otherFields === "string"
       ? JSON.parse(otherFields)
       : otherFields
@@ -261,17 +442,6 @@ const faireDemande = async (req, res) => {
       return res.status(404).json({ message: "Pièce introuvable !" })
     }
 
-    // const stock = await prisma.stocks.findUnique({
-    //   where: {
-    //     id: parseInt(selectedStock)
-    //   }
-    // })
-
-    // if (!stock) {
-    //   console.log("Erreur serveur 404: stock introuvable ! ")
-    //   return res.status(404).json({ message: "Stock introuvable !" })
-    // }
-
     let utilisateur = null;
     utilisateur = await prisma.users.findUnique({
       where: {
@@ -284,25 +454,50 @@ const faireDemande = async (req, res) => {
       return res.status(404).json({ message: "Utilisateur non trouvé" });
     }
 
+    const files = req.files?.files || [];
+
+    const files_content = files.length
+      ? files.map(file => ({
+        name: file.originalname,
+        path: file.path,
+        type: file.mimetype,
+        size: file.size
+      }))
+      : [];
+
     const nouvelleDemande = await prisma.demandes.create({
       data: {
         nom_demandeur: nomUser,
         date_demande: new Date(),
         commentaire,
         qte_total_demande: parseInt(quantite),
-        details_demande: JSON.stringify(detailsDemande),
-        // details_demandeur: JSON.stringify(detailsDemandeur),
+        details_demande: JSON.stringify(details),
         statut_demande: 'en_cours',
         user_id: parseInt(userId),
-        // stock_id: parseInt(selectedStock),
         item_id: parseInt(details.selectedPiece),
-        // type_demande: parseInt(details.typeMouvement),
         id_demandeur: parseInt(selectedUser),
         motif_demande: motif,
         service_demandeur: parseInt(serviceUser),
-        champs_autre: JSON.stringify(autres)
+        champs_autre: JSON.stringify(autres),
       }
     });
+
+    if (files_content.length > 0) {
+      await prisma.fichiers.createMany({
+        data: files_content.map(fichier => ({
+          path: fichier.path,
+          filename: fichier.name,
+          originalName: fichier.name,
+          mimeType: fichier.type,
+          size: fichier.size,
+          uploaded_by: +userId,
+          demande_id: nouvelleDemande.id,
+          type_formulaire: 'demande',
+          role: 'demandeur',
+          created_at: new Date(),
+        }))
+      })
+    }
 
 
     /************************** GESTION DES MAILS ********************************/
@@ -450,16 +645,13 @@ const getOneDemande = async (req, res) => {
   }
 }
 
-const validateDemande = async (req, res) => {
+const preValidateDemande = async (req, res) => {
   const {
     demande_id,
-    commentaire,
     user_id,
-    stock_id,
-    nomenclature,
-    detailsDemande,
-    detailsDemandeur,
-    itemId,
+    commentaire,
+    quantiteValidee,
+    owners,
   } = req.body;
 
   try {
@@ -492,6 +684,13 @@ const validateDemande = async (req, res) => {
       return res.status(404).json({ message: "Utilisateur non trouvé." });
     }
 
+    await prisma.demandes.update({
+      where: { id: parseInt(demande_id) },
+      data: {
+        statut_demande: "valide",
+      },
+    });
+
     const newValidation = await prisma.validation_demande.create({
       data: {
         id_demande: parseInt(demande_id),
@@ -501,8 +700,164 @@ const validateDemande = async (req, res) => {
         date_validation_demande: new Date(),
         signature,
         statut_validation_demande: "valide",
+        quantite_validee: +quantiteValidee,
       },
     });
+
+
+    /************************************     GESTION MAILS     **************************************/
+
+    const piece = await prisma.items.findUnique({
+      where: {
+        id_piece: parseInt(demande.item_id)
+      }
+    });
+
+    const service = await prisma.services.findUnique({
+      where: {
+        id: parseInt(demande.service_demandeur)
+      }
+    })
+
+    const userService = await prisma.user_services.findMany({
+      where: {
+        service_id: parseInt(demande.service_demandeur)
+      },
+      include: {
+        users: true
+      }
+    })
+
+    let stockOwners = []
+    if (owners && Array.isArray(owners)) {
+      stockOwners = await prisma.users.findMany({
+        where: {
+          id_user: {
+            in: owners,
+          }
+        }
+      })
+    }
+
+    const service_users = userService.map(us => us.users)
+    const demandeur = await prisma.users.findUnique({
+      where: {
+        id_user: demande.user_id
+      }
+    })
+
+    let motif = demande.motif_demande
+    let nomPiece = piece.nom_piece.toUpperCase()
+
+    let nomServiceDemandeur = service.nom_service.toUpperCase();
+
+    let quantite = quantiteValidee;
+    let commentaire_mail = commentaire ? commentaire : '(sans commentaire)';
+    const url = GENERAL_URL
+    let demandeLink = `${url}/demande-details/${demande.id}`;
+    const sendMail = require("../../utils/emailSender");
+    if ((service_users && service_users.length > 0) || demandeur) {
+      const subject = `VALIDATION DEMANDE DE ${nomPiece}`;
+      const html = `
+        <p>Bonjour,</p>
+        <p>La demande ${demande.id} a été validée.</p>
+        <ul>
+          <li><strong>Motif :</strong> ${motif}</li>
+          <li><strong>Quantité validée :</strong> ${quantite}</li>
+        </ul>
+        <ul>
+          <li><strong>Service demandeur:</strong> ${nomServiceDemandeur}</li>
+          <li><strong>Nom demandeur:</strong> ${demande.nom_demandeur}</li>
+        </ul>
+        <br>
+        <p>Commentaire : ${commentaire_mail}<p>
+        <br>
+        <p>Retrouvez la demande à ce lien : 
+            <span>
+            <a href="${demandeLink}" target="_blank" style="background-color: #73dced; color: white; padding: 7px 12px; text-decoration: none; border-radius: 5px;">
+                Cliquez ici !
+            </a>
+            </span>
+        </p>
+        <br><br>
+        <p>Green - Pay vous remercie.</p>
+        `;
+      for (const stockOwner of stockOwners) {
+        await sendMail({
+          to: stockOwner.email,
+          subject,
+          html,
+        });
+      }
+      for (const service_user of service_users) {
+        await sendMail({
+          to: service_user.email,
+          subject,
+          html,
+        });
+      }
+    }
+    return res.status(201).json(newValidation);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Erreur serveur." });
+  }
+
+}
+
+const validateDemande = async (req, res) => {
+  const {
+    demande_id,
+    user_id,
+    commentaire,
+    stock_id,
+    nomenclature,
+    detailsDemande,
+    detailsDemandeur,
+    itemId,
+  } = req.body;
+
+  try {
+    const demande = await prisma.demandes.findUnique({
+      where: { id: parseInt(demande_id) },
+    });
+
+    if (!demande) return res.status(404).json({ message: "Demande introuvable." });
+
+    if (demande.demande_livree == true) {
+      return res.status(400).json({ message: "Demande déjà livrée." });
+    }
+
+    // if (!req.file) {
+    //   return res.status(400).json({ message: "Signature du validateur requise." });
+    // }
+
+    // const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+    //   folder: "greenpay/signatures",
+    // });
+    // const signature = uploadResult.secure_url;
+
+    if (!user_id) return res.status(403).json({ message: "Utilisateur non authentifié." });
+
+    const user = await prisma.users.findUnique({
+      where: { id_user: parseInt(user_id) },
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "Utilisateur non trouvé." });
+    }
+
+    // const newValidation = await prisma.validation_demande.create({
+    //   data: {
+    //     id_demande: parseInt(demande_id),
+    //     commentaire,
+    //     id_user: user_id ? parseInt(user_id) : null,
+    //     nom_validateur: user.fullname,
+    //     date_validation_demande: new Date(),
+    //     signature,
+    //     statut_validation_demande: "valide",
+    //   },
+    // });
 
     /************************************     GESTION MOUVEMENT DE STOCK     *****************************/
 
@@ -1422,10 +1777,10 @@ const validateDemande = async (req, res) => {
 
     await prisma.demandes.update({
       where: { id: parseInt(demande_id) },
-      data: { 
-        statut_demande: "valide",
-        nomenclature, 
-        stock_id: selectedStock.id,
+      data: {
+        stock_id: +stock_id,
+        demande_livree: true,
+        nomenclature,
         type_demande: typeMouvement,
         details_demande: JSON.stringify(detailsMouvement),
         details_demandeur: JSON.stringify(detailsEntree),
@@ -1479,12 +1834,12 @@ const validateDemande = async (req, res) => {
     let demandeLink = `${url}/demande-details/${demande.id}`;
     const sendMail = require("../../utils/emailSender");
     if ((service_users && service_users.length > 0) || demandeur) {
-      const subject = `VALIDATION DEMANDE POUR ${motif}`;
+      const subject = `LIVRAISON STOCK DE ${nomPiece}`;
       const html = `
         <p>Bonjour,</p>
-        <p>La demande ${demande.id} a été validée.</p>
+        <p>La demande ${demande.id} a été livrée.</p>
         <ul>
-          <li><strong>Demande de :</strong> ${nomPiece}</li>
+          <li><strong>Motif :</strong> ${motif}</li>
           <li><strong>${mouvement.titre}</strong></li>
           <li><strong>Quantité :</strong> ${quantite}</li>
         </ul>
@@ -1505,11 +1860,11 @@ const validateDemande = async (req, res) => {
         <br><br>
         <p>Green - Pay vous remercie.</p>
         `;
-      await sendMail({
-        to: demandeur.email,
-        subject,
-        html,
-      });
+      // await sendMail({
+      //   to: demandeur.email,
+      //   subject,
+      //   html,
+      // });
       for (const service_user of service_users) {
         await sendMail({
           to: service_user.email,
@@ -1518,7 +1873,7 @@ const validateDemande = async (req, res) => {
         });
       }
     }
-    return res.status(201).json(newValidation, mouvement_stock, updatedQuantiteDemandeur);
+    return res.status(201).json(mouvement_stock, updatedQuantiteDemandeur);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Erreur serveur." });
@@ -2913,6 +3268,17 @@ const updateDemande = async (req, res) => {
       }
     })
 
+    const files = req.files?.files || [];
+
+    const files_content = files.length
+      ? files.map(file => ({
+        name: file.originalname,
+        path: file.path,
+        type: file.mimetype,
+        size: file.size
+      }))
+      : [];
+
     if (!piece) {
       return res.status(404).json({ message: "Pièce introuvable !" })
     }
@@ -2932,8 +3298,8 @@ const updateDemande = async (req, res) => {
       nom_demandeur: nomUser,
       date_demande: new Date(),
       commentaire,
-      qte_total_demande: quantite,
-      details_demande: JSON.stringify(detailsDemande),
+      qte_total_demande: +quantite,
+      details_demande: JSON.stringify(details),
       statut_demande: 'en_cours',
       user_id: parseInt(userId),
       item_id: piece.id_piece,
@@ -2949,8 +3315,26 @@ const updateDemande = async (req, res) => {
       data,
     })
 
+    if (files_content.length > 0) {
+      await prisma.fichiers.createMany({
+        data: files_content.map(fichier => ({
+          path: fichier.path,
+          filename: fichier.name,
+          originalName: fichier.name,
+          mimeType: fichier.type,
+          size: fichier.size,
+          uploaded_by: +userId,
+          demande_id: updatedDemande.id,
+          type_formulaire: 'demande',
+          role: 'demandeur',
+          created_at: new Date(),
+        }))
+      })
+    }
+
 
     /************************** GESTION DES MAILS ********************************/
+
     const service = await prisma.services.findUnique({
       where: {
         id: parseInt(serviceUser)
@@ -3063,12 +3447,15 @@ const receivePiece = async (req, res) => {
     })
 
     if (!demande) {
+      console.log("Demande introuvable.")
       return res.status(404).json({ message: "Demande introuvable." });
     }
-    if (demande.demande_livree == true) {
+    if (demande.demande_recue == true) {
+      console.log("Demande déjà réceptionnée")
       return res.status(400).json({ message: "Demande déjà réceptionnée." });
     }
     if (!req.file) {
+      console.log("Signature du récepteur requise.")
       return res.status(400).json({ message: "Signature du récepteur requise." });
     }
 
@@ -3103,7 +3490,7 @@ const receivePiece = async (req, res) => {
 
     await prisma.demandes.update({
       where: { id: demande.id },
-      data: { demande_livree: true },
+      data: { demande_recue: true },
     })
 
     // *********** GESTION DES MAILS ************
@@ -3144,7 +3531,7 @@ const receivePiece = async (req, res) => {
     const deliveryLink = `${url}/demande-details/${demande.id}`;
 
     if ((demandeurs && demandeurs.length > 0)) {
-      const subject = `DEMANDE RECEPTIONNEE`;
+      const subject = `STOCK RECEPTIONNE`;
       const html = `
         <p>Bonjour,</p>
         <p>La demande de stock ${demande.id} a été réceptionnée.</p>
@@ -3241,7 +3628,6 @@ const generateDemandePDF = async (req, res) => {
     }
 
     let details = JSON.parse(demande_data.details_demande)
-    console.log(details)
 
     let service_demandeur = "N/A"
     let service_donneur = "N/A"
@@ -3310,12 +3696,13 @@ const generateDemandePDF = async (req, res) => {
           details.stockFinalCarton : type_demande == 5 ?
             details.stockFinalPiece : 0
 
-    console.log(stock_depart)
+    const validation = demande.validation_demande[index]
 
-    let nomValidateur = demande.validation_demande[index].nom_validateur
-    let signature_validation = demande.validation_demande[index].signature
-    let date_validation = demande.validation_demande[index].date_validation_demande
-    let commentaire_validation = demande.validation_demande[index].commentaire
+    let nomValidateur = validation.nom_validateur
+    let signature_validation = validation.signature
+    let date_validation = validation.date_validation_demande
+    let commentaire_validation = validation.commentaire
+    const quantite_validee = validation.quantite_validee
 
     let signature_livraison = 'N/A'
     let date_livraison = 'N/A'
@@ -3355,6 +3742,7 @@ const generateDemandePDF = async (req, res) => {
       .replaceAll("{{nom_demandeur}}", nomDemandeur)
       .replaceAll("{{service_demandeur}}", service_demandeur)
       .replaceAll("{{quantite}}", quantite)
+      .replaceAll("{{quantite_validee}}", quantite_validee)
       .replaceAll("{{quantite_livree}}", quantite_livree)
       .replaceAll("{{quantite_livraison}}", quantite_livraison)
       .replaceAll("{{stock_initial}}", stock_depart)
@@ -3395,6 +3783,80 @@ const generateDemandePDF = async (req, res) => {
   }
 };
 
+const getAllDemandeFiles = async (req, res) => {
+  const {
+    idDemande
+  } = req.params
+
+  try {
+
+    const demandeId = parseInt(idDemande, 10);
+
+    if (isNaN(demandeId)) {
+      return res.status(400).json({ message: "Invalid demande ID" });
+    }
+    const demande = await prisma.demandes.findUnique({
+      where: { id: parseInt(demandeId)}
+    })
+    if(!demande){
+      console.log('Demande introuvable')
+      return res.status(404).json({ message: "Demande introuvable" });
+    }
+    const files = await prisma.fichiers.findMany({
+      where: {
+        demande_id: demandeId,
+      },
+      orderBy: {
+        created_at: "asc"
+      },
+    });
+
+    console.log('Succès !')
+    res.status(200).json(files);
+  } catch (error) {
+    console.log("Erreur serveur: ", error)
+    console.error("Erreur :", error)
+    res.status(500).json({ message: "Erreur lors de la récupération des fichiers", error });
+  }
+}
+
+const downloadFile = async (req, res) => {
+  const { id } = req.params;
+
+  const fileId = parseInt(id, 10);
+
+  if (isNaN(fileId)) {
+    console.log("Invalid file ID")
+    return res.status(400).json({ message: "Invalid file ID" });
+  }
+
+  try {
+    const file = await prisma.fichiers.findUnique({
+      where: { id: fileId }
+    });
+
+    if (!file) {
+      console.log("File not found")
+      return res.status(404).json({ message: "File not found" });
+    }
+
+    const filePath = path.resolve(file.path);
+
+    if (!fs.existsSync(filePath)) {
+      console.log("File missing on server")
+      return res.status(404).json({ message: "File missing on server" });
+    }
+
+    console.log('File downloaded !')
+    return res.download(filePath, file.filename);
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+
 module.exports = {
   faireDemande,
   getAllDemandes,
@@ -3405,4 +3867,7 @@ module.exports = {
   updateDemande,
   generateDemandePDF,
   receivePiece,
+  preValidateDemande,
+  getAllDemandeFiles,
+  downloadFile,
 }

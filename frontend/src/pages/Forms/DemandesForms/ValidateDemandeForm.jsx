@@ -1,5 +1,5 @@
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb"
-import ValidateDemandeInputs from "../../../components/form/stock/ValidateDemandeInputs"
+import ValidateDemandeInputs from "../../../components/form/demandes/ValidateDemandeInputs"
 export default function ValidateDemandeForm() {
     return (
         <>

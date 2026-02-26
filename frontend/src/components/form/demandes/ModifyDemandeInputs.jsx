@@ -16,6 +16,7 @@ import { Users } from "../../../backend/users/Users.js";
 import { Demandes } from "../../../backend/demandes/Demandes.js";
 
 import { Dropdown } from "primereact/dropdown";
+import FileInput from "../input/FileInput.tsx"
 
 export default function ModifyDemandeInputs() {
 
@@ -83,6 +84,8 @@ export default function ModifyDemandeInputs() {
 
   const [pieceLoading, setPieceLoading] = useState(false)
   const [stockInitial, setStockInitial] = useState(0)
+
+  const [selectedFiles, setSelectedFiles] = useState([])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -209,6 +212,12 @@ export default function ModifyDemandeInputs() {
           setNomServicePiece(nomService)
         }
 
+        // const allFiles = await demandeData.getAllDemandeFiles(id)
+        // const dFiles = allFiles.filter((item) => {
+        //   return item.role == 'demandeur'
+        // })
+        // setSelectedFiles(dFiles)
+
       } catch (error) {
         console.log(error)
         setErrorForm('Une erreur est survenue lors de la génération du formulaire.')
@@ -318,6 +327,30 @@ export default function ModifyDemandeInputs() {
     setSelectedServicePiece(value)
   }
 
+  const handleFileChange = (e) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const newFiles = Array.from(files);
+
+      // Avoid adding duplicate files (optional)
+      const updatedFiles = [...selectedFiles];
+
+      newFiles.forEach(file => {
+        if (!updatedFiles.find(f => f.name === file.name && f.size === file.size)) {
+          updatedFiles.push(file);
+        }
+      });
+
+      setSelectedFiles(updatedFiles);
+    }
+  };
+
+  const handleDeleteFile = (indexToRemove) => {
+    setSelectedFiles((prev) =>
+      prev.filter((_, index) => index !== indexToRemove)
+    );
+  }
+
   const handleAddField = () => {
     setFields((prev) => [
       ...prev,
@@ -406,9 +439,25 @@ export default function ModifyDemandeInputs() {
       otherFields: fields,
     }
 
+    const fd = new FormData();
+
+    fd.append('detailsDemande', JSON.stringify(details))
+    fd.append('userId', userId)
+    fd.append('quantite', quantite)
+    fd.append('serviceUser', serviceUser)
+    fd.append('selectedUser', selectedUser)
+    fd.append('nomUser', nomUser)
+    fd.append('motif', motif)
+    fd.append('commentaire', commentaire)
+    fd.append('otherFields', JSON.stringify(fields))
+
+    selectedFiles.forEach((file) => {
+      fd.append("files", file);
+    });
+
     try {
       setLoadingValidation(true)
-      const response = await demandeData.updateDemande(id, payload)
+      const response = await demandeData.updateDemande(id, fd)
       Swal.fire({
         title: "Succès",
         text: "Demande modifiée avec succès !",
@@ -545,6 +594,36 @@ export default function ModifyDemandeInputs() {
                           value={commentaire}
                           onChange={(value) => setCommentaire(value)}
                         />
+                      </div>
+                      <div>
+                        <Label>Importer des fichiers</Label>
+                        <FileInput className="curstom-class"
+                          onChange={handleFileChange}
+                          multiple
+                        />
+                        {selectedFiles.length > 0 ? (
+                          <div className="mt-3">
+                            {selectedFiles.map((selectedFile, index) => {
+                              const name = selectedFile.name ? selectedFile.name : selectedFile.filename
+                              return (
+                                <div key={index} className="bg-gray-100 px-1 flex justify-between items-center rounded-sm my-1">
+                                  <span>
+                                    <i className="pi pi-file-check"></i>
+                                  </span>
+                                  <span className=" text-gray-500" style={{ fontSize: '9px' }}>
+                                    {name}
+                                  </span>
+                                  <button onClick={() => handleDeleteFile(index)}>
+                                    <span className="text-error-600"><i className="pi pi-times"></i></span>
+                                  </button>
+                                </div>
+                              )
+                            }
+                            )}
+                          </div>
+                        ) : (
+                          <></>
+                        )}
                       </div>
                     </div>
                     <div className="space-y-5">

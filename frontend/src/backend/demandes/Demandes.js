@@ -2,9 +2,13 @@ import axios from "axios";
 import urlBase from '../const';
 
 export class Demandes {
-  async faireDemande(payload) {
+  async faireDemande(formData) {
     try {
-      const response = await axios.post(`${urlBase}/api/demandes/faireDemande`, payload);
+      const response = await axios.post(`${urlBase}/api/demandes/faireDemande`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
       return response.data
     } catch (error) {
       throw error.response.data;
@@ -30,9 +34,18 @@ export class Demandes {
     }
   };
 
-  async validateDemande(formData) {
+  async validateDemande(payload) {
     try {
-      const response = await axios.post(`${urlBase}/api/demandes/validateDemande`, formData, {
+      const response = await axios.post(`${urlBase}/api/demandes/validateDemande`, payload)
+      return response.data;
+    } catch (error) {
+      throw error.response.data;
+    }
+  }
+
+  async preValidateDemande(formData) {
+    try {
+      const response = await axios.post(`${urlBase}/api/demandes/preValidateDemande`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -63,9 +76,13 @@ export class Demandes {
     }
   };
 
-  async updateDemande(id, payload) {
+  async updateDemande(id, formData) {
     try {
-      const response = await axios.put(`${urlBase}/api/demandes/updateDemande/${id}`, payload)
+      const response = await axios.put(`${urlBase}/api/demandes/updateDemande/${id}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }}
+      )
       return response.data;
     } catch (error) {
       throw error.response.data
@@ -97,5 +114,14 @@ export class Demandes {
       throw error.response.data;
     }
   }
+
+  async getAllDemandeFiles(idDemande) {
+    try {
+      const response = await axios.get(`${urlBase}/api/demandes/getAllDemandeFiles/${idDemande}`)
+      return response.data;
+    } catch (error) {
+      throw error.response.data
+    }
+  };
 }
 

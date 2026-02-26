@@ -175,7 +175,11 @@ import ItemDetails from "./pages/GestionStock/ItemDetails"
 import ValidateDemandeForm from "./pages/Forms/DemandesForms/ValidateDemandeForm"
 
 // @ts-ignore
+<<<<<<< HEAD
 import RegularisationDemandeForm from "./pages/Forms/DemandesForms/RegularisationDemandeForm"
+=======
+import LivraisonDemandeForm from "./pages/Forms/DemandesForms/LivraisonDemandeForm"
+>>>>>>> develop
 
 export default function App() {
   return (
@@ -228,7 +232,11 @@ export default function App() {
               <Route path="/demande-details/:id" element={<DemandeDetails />} />
               <Route path="/modifier-demande/:id" element={<ModifyDemandeForm />} />
               <Route path="/valider-demande/:id" element={<ValidateDemandeForm />} />
+<<<<<<< HEAD
               <Route path="/regularisation-demande" element={<RegularisationDemandeForm />} />
+=======
+              <Route path="/livraison-demande/:id" element={<LivraisonDemandeForm />} />
+>>>>>>> develop
 
               {/* Remplacement */}
               <Route path="/nouveau-remplacement" element={<RemplacementForm />} />
