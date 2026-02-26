@@ -9,7 +9,7 @@ import TextArea from "../input/TextArea.tsx";
 import Swal from 'sweetalert2'
 import { Modal } from "../../ui/modal/index.tsx";
 import { ProgressSpinner } from 'primereact/progressspinner';
-import { useNavigate } from "react-router";
+import { useNavigate, useParams } from "react-router";
 
 import { Stock } from "../../../backend/stock/Stock.js";
 import { Users } from "../../../backend/users/Users.js";
@@ -17,7 +17,8 @@ import { Demandes } from "../../../backend/demandes/Demandes.js";
 
 import { Dropdown } from "primereact/dropdown";
 
-import DatePicker from "../date-picker.tsx";
+import SignatureCanvas from 'react-signature-canvas'
+import { useSyncExternalStore } from "react";
 
 export default function RegularisationDemandeInputs() {
 
@@ -27,6 +28,7 @@ export default function RegularisationDemandeInputs() {
     const userId = localStorage.getItem('id');
     const role = localStorage.getItem("role_id")
     const navigate = useNavigate()
+    const { id: idDemande } = useParams();
 
     const [loading, setLoading] = useState(false)
     const [errorForm, setErrorForm] = useState('')
@@ -108,7 +110,7 @@ export default function RegularisationDemandeInputs() {
 
     const [motif, setMotif] = useState('')
 
-    const [commentaire, setCommentaire] = useState('')
+    const [commentaireDemande, setCommentaireDemande] = useState('')
 
     const [nomenclature, setNomenclature] = useState('')
 
@@ -136,17 +138,34 @@ export default function RegularisationDemandeInputs() {
     const [hasLot, setHasLot] = useState(false)
     const [hasCarton, setHasCarton] = useState(false)
 
-    const [selectedType, setSelectedType] = useState(false)
+    const [quantiteDemande, setQuantiteDemande] = useState(0)
+    const [typeDemande, setTypeDemande] = useState('')
 
-    const [validationModalOpen, setValidationModalOpen] = useState(false)
+    const [signature, setSignature] = useState();
+    const [message, setMessage] = useState("");
+    const [isSignModalOpen, setIsSignModalOpen] = useState(false)
+    const [errorSign, setErrorSign] = useState('');
 
-    const [pieceLoading, setPieceLoading] = useState(false)
-    const [stockInitial, setStockInitial] = useState(0)
+    const [commentaire, setCommentaire] = useState('')
+
+    const [commentaireValidation, setCommentaireValidation] = useState('')
+    const [quantiteValidee, setQuantiteValidee] = useState(0)
+
+    const [validateur, setValidateur] = useState('')
 
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true)
             try {
+
+                const demande_data = await demandeData.getOneDemande(idDemande)
+                const detailsDemande = JSON.parse(demande_data.details_demande)
+
+                const index = demande_data.validation_demande.length - 1
+                const validation = demande_data.validation_demande[index]
+                setCommentaireValidation(validation.commentaire)
+                setQuantiteValidee(validation.quantite_validee)
+
                 const items_data = await stockData.getAllItems()
                 setItems(items_data)
                 const options_items = items_data.map((item) => ({
@@ -155,14 +174,29 @@ export default function RegularisationDemandeInputs() {
                 }))
                 setOptionsItems(options_items)
 
+                const pieceDemande = items_data.find((item) => {
+                    return item.id_piece == demande_data.item_id
+                })
+                setSelectedPiece(demande_data.item_id)
+                if (pieceDemande) {
+                    setNomPiece(pieceDemande.nom_piece)
+                }
+
                 const services_data = await userData.getAllServices()
                 setServicesUsers(services_data)
-                // setServicesPiece(services_data)
+                setServicesPiece(services_data)
                 const options_services = services_data.map((item) => ({
                     value: item.id,
                     label: item.nom_service.toUpperCase()
                 }))
                 setOptionsServicesUsers(options_services)
+                const serviceDemandeur = services_data.find((item) => {
+                    return item.id == demande_data.service_demandeur
+                })
+                if (serviceDemandeur) {
+                    setNomServiceUser(serviceDemandeur.nom_service)
+                }
+                setServiceUser(demande_data.service_demandeur)
 
                 const users_data = await userData.getAllUsers()
                 setUserList(users_data)
@@ -171,10 +205,27 @@ export default function RegularisationDemandeInputs() {
                     label: item.fullname,
                 }))
                 setOptionsUsers(options_users)
+                const demandeur = users_data.find((item) => {
+                    return item.id_user == demande_data.userId
+                })
+                setNomUser(demande_data.nom_demandeur)
+                setSelectedUser(demande_data.id_demandeur)
+
+                setValidateur(validation.nom_validateur)
+
+                setMotif(demande_data.motif_demande)
+
+                setCommentaireDemande(demande_data.commentaire)
+
+                setQuantiteDemande(demande_data.qte_total_demande)
+                setTypeDemande(detailsDemande.typeDemande)
 
                 const stocks_data_all = await stockData.getAllStocks()
                 const stocks_data = stocks_data_all.filter((item) => {
-                    return item.is_deleted == false
+                    return item.is_deleted == false && 
+                        item.piece_id == demande_data.item_id && 
+                        item.quantite_piece > 0 &&
+                        item.created_by == +userId
                 })
                 setStocks(stocks_data)
                 const options_stocks = stocks_data.map((item) => {
@@ -188,11 +239,9 @@ export default function RegularisationDemandeInputs() {
                     })
                 })
 
+                const models_data = await stockData.getAllModels()
+                setModels(models_data)
                 setOptionsStocks(options_stocks)
-
-                // const models_data = await stockData.getAllModels()
-                // setModels(models_data)
-
 
             } catch (error) {
                 console.log(error)
@@ -229,58 +278,29 @@ export default function RegularisationDemandeInputs() {
     }
 
     const handleSelectPiece = async (value) => {
-        setPieceLoading(true)
-        setSelectedModel(null)
-        setSelectedServicePiece(null)
         setSelectedPiece(value)
         const piece = items.find((item) => {
             return item.id_piece == value
         })
-        const nom = piece ? piece.nom_piece : ''
-        setNomPiece(nom)
-        try {
-            const itemModels_data = await stockData.getItemModels(value)
-            const options_models = itemModels_data.model_piece.map((item) => ({
-                value: item.id_model,
-                label: item.nom_model.toUpperCase()
-            }))
-            setOptionsModels(options_models)
-            setModels(itemModels_data.model_piece)
-            const listModels = itemModels_data.model_piece.map((item) => {
-                return item.id_model
-            })
-            if (listModels.length == 1) {
-                setSelectedModel(listModels[0])
-                const model = itemModels_data.model_piece.find((item) => {
-                    return item.id_model == listModels[0]
-                })
-                const nomModel = model ? model.nom_model : ''
-                setNomModel(nomModel)
-            }
 
-            const itemService_data = await stockData.getItemServices(value)
-            const options_services = itemService_data.services.map((item) => ({
-                value: item.id,
-                label: item.nom_service.toUpperCase()
-            }))
-            setOptionsServicesPieces(options_services)
-            setServicesPiece(itemService_data.services)
-            const listServices = itemService_data.services.map((item) => {
-                return item.id
-            })
-            if (listServices.length == 1) {
-                setSelectedServicePiece(listServices[0])
-                const service = itemService_data.services.find((item) => {
-                    return item.id == listServices[0]
-                })
-                const nomService = service ? service.nom_service : ''
-                setNomServicePiece(nomService)
-            }
-        } catch (error) {
-            console.log('Erreur avec la pièce : ', error)
-        } finally {
-            setPieceLoading(false)
-        }
+        const nom = piece ? piece.nom_piece.toUpperCase() : ''
+        setNomPiece(nom)
+
+        const itemModels_data = await stockData.getItemModels(value)
+        const options_models = itemModels_data.model_piece.map((item) => ({
+            value: item.id_model,
+            label: item.nom_model.toUpperCase()
+        }))
+        setOptionsModels(options_models)
+        setModels(itemModels_data.model_piece)
+
+        const itemService_data = await stockData.getItemServices(value)
+        const options_services = itemService_data.services.map((item) => ({
+            value: item.id,
+            label: item.nom_service.toUpperCase()
+        }))
+        setOptionsServicesPieces(options_services)
+        setServicesPiece(itemService_data.services)
     }
 
     const handleSelectModel = (value) => {
@@ -293,7 +313,7 @@ export default function RegularisationDemandeInputs() {
         setSelectedModel(value)
     }
 
-    const handleSelectService = (value) => {
+    const handleSelectServicePiece = (value) => {
         console.log('Selected service value: ', value)
         const service = servicesPiece.find((item) => {
             return item.id == value
@@ -546,30 +566,30 @@ export default function RegularisationDemandeInputs() {
     };
 
     const checkValidate = () => {
-        if (!serviceUser) {
-            setError("Vous devez choisir le service demandeur")
+        if (selectedStock.length == 0) {
+            setError("Vous devez choisir le stock !")
             return false
         }
-        if (!selectedUser) {
-            setError("Vous devez choisir le demandeur")
-            return false
-        }
-        if (!motif) {
-            setError("Vous devez précisier le motif !")
-            return false
-        }
-        if (!selectedPiece) {
-            setError("Vous devez choisir la pièce !")
-            return false
-        }
-        if (!selectedServicePiece) {
-            setError("Vous devez choisir le service !")
-            return false
-        }
-        if (!selectedModel) {
-            setError("Vous devez choisir le modèle !")
-            return false
-        }
+        // if (!serviceUser) {
+        //     setError("Vous devez choisir le service demandeur")
+        //     return false
+        // }
+        // if (!selectedUser) {
+        //     setError("Vous devez choisir le demandeur")
+        //     return false
+        // }
+        // if (!motif) {
+        //     setError("Vous devez précisier le motif !")
+        //     return false
+        // }
+        // if (!selectedServicePiece) {
+        //     setError("Vous devez choisir le service !")
+        //     return false
+        // }
+        // if (!selectedModel) {
+        //     setError("Vous devez choisir le modèle !")
+        //     return false
+        // }
         setError('')
         return true
     }
@@ -896,101 +916,71 @@ export default function RegularisationDemandeInputs() {
         setDetailsDemandeur(details_demandeur)
     }
 
-    // const handleValidate = async () => {
-    //   setSortieParPieceModalOpen(false)
-    //   setSortieParCartonModalOpen(false)
-    //   setSortieParPieceCartonModalOpen(false)
-    //   setSortieParCartonLotModalOpen(false)
-    //   setSortieParLotModalOpen(false)
+    const handleClear = () => {
+        signature.clear()
+    }
 
-    //   const payload = {
-    //     nomDemandeur: nomUser,
-    //     commentaire,
-    //     selectedStock,
-    //     quantite_demande: quantite,
-    //     nomenclature,
-    //     detailsDemande,
-    //     detailsDemandeur,
-    //     userId,
-    //     itemId: selectedPiece,
-    //     idDemandeur: selectedUser,
-    //     motif,
-    //     serviceDemandeur: serviceUser,
-    //     champsAutre: otherFields,
-    //   }
+    const handleConfirmSign = () => {
+        setSortieParPieceModalOpen(false)
+        setSortieParCartonModalOpen(false)
+        setSortieParPieceCartonModalOpen(false)
+        setSortieParCartonLotModalOpen(false)
+        setSortieParLotModalOpen(false)
 
-    //   try {
-    //     setLoadingValidation(true)
-    //     console.log('Sendind payload...')
-
-    //     const response = await demandeData.faireDemande(payload)
-
-    //     console.log(response)
-    //     Swal.fire({
-    //       title: "Succès",
-    //       text: "Demande effectuée avec succès !",
-    //       icon: "success"
-    //     })
-    //     navigate('/toutes-les-demandes')
-
-    //   } catch (error) {
-    //     Swal.fire({
-    //       title: "Attention",
-    //       text: "Une erreur est survenue lors de la demande !",
-    //       icon: "warning"
-    //     })
-    //     navigate('/toutes-les-demandes')
-    //   } finally {
-    //     setLoadingValidation(false)
-    //   }
-    // }
-
-    const handleSortie = () => {
-        if (!checkValidate()) {
-            return
-        }
-
-        if (stockInitial <= 0) {
-            setError("Quantité initiale invalide !")
-        }
-
-        if (quantite <= 0) {
-            setError("Quantité demandée invalide !")
-        }
-
-        setValidationModalOpen(true)
-        setError('')
+        setIsSignModalOpen(true)
     }
 
     const handleValidate = async () => {
-        setValidationModalOpen(false)
 
-        const typeDemande = parPiece ? 'Par pièce' : parCarton ? 'Par carton' : parLot ? 'Par lot' : ''
-        const details = {
-            selectedPiece,
-            selectedModel,
-            selectedServicePiece,
-            typeDemande,
-            quantite,
-        }
+        setIsSignModalOpen(false)
+        setSortieParPieceModalOpen(false)
+        setSortieParCartonModalOpen(false)
+        setSortieParPieceCartonModalOpen(false)
+        setSortieParCartonLotModalOpen(false)
+        setSortieParLotModalOpen(false)
+
+        // const sign = signature.toDataURL('image/png')
+        // const fd = new FormData();
+        // if (sign) {
+        //     const blob = await fetch(sign).then(res => res.blob());
+        //     fd.append('signature', blob, 'signature.png');
+        // }
+        // fd.append('demande_id', idDemande)
+        // fd.append('user_id', userId)
+        // fd.append('commentaire', message)
+        // fd.append('stock_id', selectedStock)
+        // fd.append('nomDemandeur', nomUser)
+        // fd.append('quantite_demande', quantite)
+        // fd.append('nomenclature', nomenclature)
+        // fd.append('detailsDemande', JSON.stringify(detailsDemande))
+        // fd.append('detailsDemandeur', JSON.stringify(detailsDemandeur))
+        // fd.append('itemId', selectedPiece)
+        // fd.append('idDemandeur', selectedUser)
+        // fd.append('motif', motif)
+        // fd.append('serviceDemandeur', serviceUser)
+        // fd.append('champsAutre', otherFields)
         const payload = {
-            detailsDemande: details,
-            userId,
-            quantite,
-            serviceUser,
-            selectedUser,
-            nomUser,
-            motif,
-            commentaire,
-            otherFields: fields,
+            demande_id: idDemande,
+            user_id: userId,
+            commentaire: message,
+            stock_id: selectedStock,
+            nomenclature,
+            detailsDemande: JSON.stringify(detailsDemande),
+            detailsDemandeur: JSON.stringify(detailsDemandeur),
+            itemId: selectedPiece,
         }
 
         try {
             setLoadingValidation(true)
-            const response = await demandeData.faireDemande(payload)
+            console.log('Sendind payload...')
+
+            const response = await demandeData.validateDemande(payload)
+            // const response = await demandeData.validateDemande(fd)
+
+            console.log(response)
             Swal.fire({
                 title: "Succès",
-                text: "Demande effectuée avec succès !",
+                text: "Stock livré avec succès !",
                 icon: "success"
             })
             navigate('/toutes-les-demandes')
@@ -998,10 +988,10 @@ export default function RegularisationDemandeInputs() {
         } catch (error) {
             Swal.fire({
                 title: "Attention",
-                text: "Une erreur est survenue lors de la demande !",
+                text: "Une erreur est survenue lors de la livraison !",
                 icon: "warning"
             })
-            navigate('/toutes-les-demandes')
+            navigate(`/demande-details/${idDemande}`)
         } finally {
             setLoadingValidation(false)
         }
@@ -1024,292 +1014,414 @@ export default function RegularisationDemandeInputs() {
                             </>
                         ) : (
                             <>
-                                <ComponentCard className="md:w-1/2 w-full" title={`Demande`}>
+                                <ComponentCard className="md:w-1/2 w-full" title={`Demande ${nomPiece}`}>
                                     <div className="space-y-6">
                                         <div className="space-y-5">
                                             <div className="text-center">
-                                                <span className="text-sm font-semibold">Informations générales</span>
+                                                <span className="text-sm font-semibold">Informations demande</span>
                                             </div>
-                                            <div>
-                                                <DatePicker
-                                                    id="date-picker-debut"
-                                                    label="Date"
-                                                    // placeholder={startDate ? formatDate(startDate) : 'Date de début'}
-                                                    // value={startDate}
-                                                    onChange={''}
-                                                    dateFormat="dd/mm/yy" />
+                                            <div className="text-xs space-y-4">
+                                                <div className="grid grid-cols-2">
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold">Service</span>
+                                                        <span className="">{nomServiceUser}</span>
+                                                    </div>
+                                                    <div className="flex flex-col text-right">
+                                                        <span className="font-bold">Demandeur</span>
+                                                        <span>{nomUser}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="grid grid-cols-2">
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold">Type demande</span>
+                                                        <span className="text-sm">{typeDemande}</span>
+                                                    </div>
+                                                    <div className="flex flex-col text-right">
+                                                        <span className="font-bold">Quantité demandée</span>
+                                                        <span className="text-sm">{quantiteDemande}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="font-bold">Motif</span>
+                                                    <span className="font-light">{motif}</span>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="font-bold">Commentaire</span>
+                                                    {commentaireDemande ? (
+                                                        <span className="font-light">{commentaireDemande}</span>
+                                                    ) : (
+                                                        <span className="text-gray-400 font-light">sans commentaire</span>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <div>
-                                                <Label>Pièce <span className="text-red-700">*</span></Label>
-                                                <Select
-                                                    options={optionsItems}
-                                                    placeholder="Choisir une option"
-                                                    onChange={handleSelectPiece}
-                                                    className="dark:bg-dark-900"
-                                                />
+                                        </div>
+                                        <div className="space-y-5">
+                                            <div className="text-center">
+                                                <span className="text-sm font-semibold">Validation</span>
                                             </div>
-                                            <div>
-                                                {pieceLoading ? (
-                                                    <>
-                                                        <div>
-                                                            <ProgressSpinner style={{ width: '20px', height: '20px' }} strokeWidth="8" animationDuration=".5s" />
-                                                        </div>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <div className="space-y-5">
-                                                            <div>
-                                                                {models.length > 1 ? (
-                                                                    <>
-                                                                        <div>
-                                                                            <Label>Choisir le model <span className="text-red-700">*</span></Label>
-                                                                            <Select
-                                                                                options={optionsModels}
-                                                                                onChange={handleSelectModel}
-                                                                                className="dark:bg-dark-900"
-                                                                            />
-                                                                        </div>
-                                                                    </>
-                                                                ) : (
-                                                                    <></>
-                                                                )}
-                                                            </div>
-                                                            <div>
-                                                                {servicesPiece.length > 1 ? (
-                                                                    <>
-                                                                        <div>
-                                                                            <Label>Choisir le service <span className="text-red-700">*</span></Label>
-                                                                            <Select
-                                                                                options={optionsServicesPiece}
-                                                                                placeholder="Choisir une option"
-                                                                                onChange={handleSelectService}
-                                                                                className="dark:bg-dark-900"
-                                                                            />
-                                                                        </div>
-                                                                    </>
-                                                                ) : (
-                                                                    <></>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </>
-                                                )}
-                                            </div>
-                                            {/* <div>
-                        <Label>Nomenclature</Label>
-                        <Input
-                          type="text"
-                          value={nomenclature}
-                          onChange={(e) => {
-                            const value = e.target.value
-                            setNomenclature(value)
-                          }}
-                        />
-                      </div> */}
-                                            <div>
-                                                <Label>Service Demandeur <span className="text-red-700">*</span></Label>
-                                                <Select
-                                                    options={optionsServicesUsers}
-                                                    placeholder="Choisir une option"
-                                                    onChange={handleSelectServiceUser}
-                                                    className="dark:bg-dark-900"
-                                                />
-                                            </div>
-                                            <div>
-                                                <Label>Demandeur <span className="text-red-700">*</span></Label>
-                                                <Select
-                                                    options={optionsUsers}
-                                                    placeholder="Choisir une option"
-                                                    onChange={handleSelectUser}
-                                                    className="dark:bg-dark-900"
-                                                />
-                                            </div>
-                                            <div>
-                                                <Label>Motif <span className="text-red-700">*</span></Label>
-                                                <Input
-                                                    type="text"
-                                                    value={motif}
-                                                    onChange={(e) => {
-                                                        const value = e.target.value
-                                                        setMotif(value)
-                                                    }}
-                                                />
-                                            </div>
-                                            <div>
-                                                <Label>Commentaire</Label>
-                                                <TextArea
-                                                    type="text"
-                                                    placeholder="Ajoutez un commentaire"
-                                                    value={commentaire}
-                                                    onChange={(value) => setCommentaire(value)}
-                                                />
+                                            <div className="text-xs space-y-4">
+                                                <div className="grid grid-cols-2">
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold">Validateur</span>
+                                                        <span className="">{validateur}</span>
+                                                    </div>
+                                                    <div className="flex flex-col text-right">
+                                                        <span className="font-bold text-green-700">Quantité validée</span>
+                                                        <span className="text-green-600">{quantiteValidee}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="font-bold">Commentaire</span>
+                                                    {commentaireValidation ? (
+                                                        <span className="font-light">{commentaireValidation}</span>
+                                                    ) : (
+                                                        <span className="text-gray-400 font-light">sans commentaire</span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                         <div className="space-y-5">
                                             <div className="text-center">
                                                 <span className="text-sm font-semibold">Informations sur stock</span>
                                             </div>
-                                            {/* <div>
-                        <Label>Pièce <span className="text-red-700">*</span></Label>
-                        <Select
-                          options={optionsItems}
-                          placeholder="Choisir une option"
-                          onChange={handleSelectPiece}
-                          className="dark:bg-dark-900"
-                        />
-                      </div> */}
-                                            {/* <div>
-                        <Label>Service <span className="text-red-700">*</span></Label>
-                        <Select
-                          options={optionsServicesPiece}
-                          placeholder="Choisir une option"
-                          onChange={handleSelectServicePiece}
-                          className="dark:bg-dark-900"
-                        />
-                      </div> */}
-                                            {/* <div>
-                        <Label>Modèle <span className="text-red-700">*</span></Label>
-                        <Select
-                          options={optionsModels}
-                          placeholder="Choisir une option"
-                          onChange={handleSelectModel}
-                          className="dark:bg-dark-900"
-                        />
-                      </div> */}
-                                            {/* <div>
-                        <Label>Stock <span className="text-red-700">*</span></Label>
-                        <Dropdown
-                          options={optionsStocks}
-                          optionLabel="Label"
-                          placeholder="Choisir Stock"
-                          filter
-                          filterBy="label"
-                          itemTemplate={stocksTemplate}
-                          className="w-full"
-                          onChange={handleSelectStock}
-                          value={selectedStock}
-                          valueTemplate={selectedStockTemplate}
-                        />
-                      </div> */}
-                                            {/* <div className="flex justify-between items-center">
-                        <div className="flex flex-col  border-b pb-2 border-black">
-                          <span className="text-xs text-gray-700 font-normal">{nomPiece} {nomModel}</span>
-                          <span className="font-medium">QUANTITE ACTUELLE</span>
-                          <span className="text-title-md font-bold">{quantitePiece ? quantitePiece : '0'}</span>
-                          <span className="text-sm">Stock carton - {quantiteCarton ? quantiteCarton : 'N/A'}</span>
-                          <span className="text-sm">Stock lot - {quantiteLot ? quantiteLot : 'N/A'}</span>
-                        </div>
-                        <div>
-                          <span><i className="pi pi-box" style={{ fontSize: '3rem' }}></i></span>
-                        </div>
-                      </div> */}
                                             <div>
-                                                <span>Faire une demande  : </span>
-                                                <div>
-                                                    <div>
-                                                        <div className="flex items-center gap-3 my-2">
-                                                            {/* Demande par lot */}
-                                                            <Checkbox
-                                                                checked={parLot}
-                                                                onChange={() => {
-                                                                    if (parLot) {
-                                                                        setParLot(false)
-                                                                        setSelectedType(false)
-                                                                    } else {
-                                                                        setParLot(true)
-                                                                        setParCarton(false)
-                                                                        setParCartonLot(false)
-                                                                        setParPiece(false)
-                                                                        setParPieceCarton(false)
-                                                                        setSelectedType(true)
-                                                                    }
-                                                                }}
-                                                                readOnly
-                                                                label="Par Lot"
-                                                            />
-                                                        </div>
-                                                        <div className="flex items-center gap-3 my-2">
-                                                            {/* Demande par carton */}
-                                                            <Checkbox
-                                                                checked={parCarton}
-                                                                onChange={() => {
-                                                                    if (parCarton) {
-                                                                        setParCarton(false)
-                                                                        setSelectedType(false)
-                                                                    } else {
-                                                                        setParLot(false)
-                                                                        setParCarton(true)
-                                                                        setParCartonLot(false)
-                                                                        setParPiece(false)
-                                                                        setParPieceCarton(false)
-                                                                        setSelectedType(true)
-                                                                    }
-                                                                }}
-                                                                readOnly
-                                                                label="Par carton"
-                                                            />
-                                                        </div>
-                                                        <div className="flex items-center gap-3 my-2">
-                                                            {/* Demande par pièce */}
-                                                            <Checkbox
-                                                                checked={parPiece}
-                                                                onChange={() => {
-                                                                    if (parPiece) {
-                                                                        setParPiece(false)
-                                                                        setSelectedType(false)
-                                                                    } else {
-                                                                        setParLot(false)
-                                                                        setParCarton(false)
-                                                                        setParCartonLot(false)
-                                                                        setParPiece(true)
-                                                                        setParPieceCarton(false)
-                                                                        setSelectedType(true)
-                                                                    }
-                                                                }}
-                                                                readOnly
-                                                                label="Par pièce"
-                                                            />
-                                                        </div>
-                                                    </div>
+                                                <Label>Stock <span className="text-red-700">*</span></Label>
+                                                <Dropdown
+                                                    options={optionsStocks}
+                                                    optionLabel="Label"
+                                                    placeholder="Choisir Stock"
+                                                    filter
+                                                    filterBy="label"
+                                                    itemTemplate={stocksTemplate}
+                                                    className="w-full"
+                                                    onChange={handleSelectStock}
+                                                    value={selectedStock}
+                                                    valueTemplate={selectedStockTemplate}
+                                                />
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <div className="flex flex-col  border-b pb-2 border-black">
+                                                    <span className="text-xs text-gray-700 font-normal">{nomPiece} {nomModel}</span>
+                                                    <span className="font-medium">QUANTITE ACTUELLE</span>
+                                                    <span className="text-title-md font-bold">{quantitePiece ? quantitePiece : '0'}</span>
+                                                    <span className="text-sm">Stock carton - {quantiteCarton ? quantiteCarton : 'N/A'}</span>
+                                                    <span className="text-sm">Stock lot - {quantiteLot ? quantiteLot : 'N/A'}</span>
                                                 </div>
                                                 <div>
-                                                    {selectedType ? (
+                                                    <span><i className="pi pi-box" style={{ fontSize: '3rem' }}></i></span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <span>Faire une sortie  : </span>
+                                                <div>
+                                                    {hasLot ? (
                                                         <>
-                                                            <div className="space-y-3 mt-3">
-                                                                {/* <div>
-                                  <Label>Quantité Initiale</Label>
-                                  <Input
-                                    type="number"
-                                    id="input"
-                                    value={stockInitial}
-                                    onChange={(e) => {
-                                      const value = Number(e.target.value)
-                                      if (value >= 0) {
-                                        setStockInitial(value)
-                                      }
-                                    }}
-                                  />
-                                </div> */}
-                                                                <div>
-                                                                    <Label>Quantité demandée</Label>
-                                                                    <Input
-                                                                        type="number"
-                                                                        id="input"
-                                                                        value={quantite}
-                                                                        onChange={(e) => {
-                                                                            const value = Number(e.target.value)
-                                                                            if (value >= 0) {
-                                                                                setQuantite(value)
-                                                                            }
-                                                                        }}
-                                                                    />
-                                                                </div>
+                                                            <div className="flex items-center gap-3 my-2">
+                                                                {/* Demande par lot */}
+                                                                <Checkbox
+                                                                    checked={parLot}
+                                                                    onChange={() => {
+                                                                        if (parLot) {
+                                                                            setParLot(false)
+                                                                        } else {
+                                                                            setParLot(true)
+                                                                            setParCarton(false)
+                                                                            setParCartonLot(false)
+                                                                            setParPiece(false)
+                                                                            setParPieceCarton(false)
+                                                                        }
+                                                                    }}
+                                                                    label="Par Lot"
+                                                                />
+                                                            </div>
+                                                            <div className="flex items-center gap-3 my-2">
+                                                                {/* Par carton lot */}
+                                                                <Checkbox
+                                                                    checked={parCartonLot}
+                                                                    onChange={() => {
+                                                                        if (parCartonLot) {
+                                                                            setParCartonLot(false)
+                                                                        } else {
+                                                                            setParLot(false)
+                                                                            setParCarton(false)
+                                                                            setParCartonLot(true)
+                                                                            setParPiece(false)
+                                                                            setParPieceCarton(false)
+                                                                        }
+                                                                    }}
+                                                                    label="Par Carton"
+                                                                />
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <></>
+                                                    )}
+                                                    {hasCarton || hasLot ? (
+                                                        <>
+                                                            <div className="flex items-center gap-3 my-2">
+                                                                {/* Par piece carton */}
+                                                                <Checkbox
+                                                                    checked={parPieceCarton}
+                                                                    onChange={() => {
+                                                                        if (parPieceCarton) {
+                                                                            setParCartonLot(false)
+                                                                        } else {
+                                                                            setParLot(false)
+                                                                            setParCarton(false)
+                                                                            setParCartonLot(false)
+                                                                            setParPiece(false)
+                                                                            setParPieceCarton(true)
+                                                                        }
+                                                                    }}
+                                                                    label="Par Pièce"
+                                                                />
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <></>
+                                                    )}
+                                                    {hasCarton && !hasLot ? (
+                                                        <>
+                                                            <div className="flex items-center gap-3 my-2">
+                                                                {/* Par carton */}
+                                                                <Checkbox
+                                                                    checked={parCarton}
+                                                                    onChange={() => {
+                                                                        if (parCarton) {
+                                                                            setParCarton(false)
+                                                                        } else {
+                                                                            setParLot(false)
+                                                                            setParCarton(true)
+                                                                            setParCartonLot(false)
+                                                                            setParPiece(false)
+                                                                            setParPieceCarton(false)
+                                                                        }
+                                                                    }}
+                                                                    label="Par Carton"
+                                                                />
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <></>
+                                                    )}
+                                                    {(!hasCarton && !hasLot) ? (
+                                                        <>
+                                                            <div className="flex items-center gap-3 my-2">
+                                                                {/* Par piece */}
+                                                                <Checkbox
+                                                                    checked={parPiece}
+                                                                    onChange={() => {
+                                                                        if (parPiece) {
+                                                                            setParPiece(false)
+                                                                        } else {
+                                                                            setParLot(false)
+                                                                            setParCarton(false)
+                                                                            setParCartonLot(false)
+                                                                            setParPiece(true)
+                                                                            setParPieceCarton(false)
+                                                                        }
+                                                                    }}
+                                                                    label="Par Pièce"
+                                                                />
                                                             </div>
                                                         </>
                                                     ) : (
                                                         <></>
                                                     )}
                                                 </div>
+                                            </div>
+                                            <div>
+                                                {parLot ? (
+                                                    <>
+                                                        <div className="">
+                                                            <div className="space-y-5">
+                                                                <div className="py-3 text-center">
+                                                                    <span className="text-sm font-semibold">Livraison par lots</span>
+                                                                </div>
+                                                                <div>
+                                                                    <div>
+                                                                        <MultiSelect
+                                                                            value={selectedLots}
+                                                                            options={optionsLot}
+                                                                            display="chip"
+                                                                            optionLabel="label"
+                                                                            maxSelectedLabels={3}
+                                                                            onChange={(e) => setSelectedLots(e.value)}
+                                                                            placeholder="Choisir le(s) lot(s)"
+                                                                            className="w-full"
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <></>
+                                                )}
+                                                {parCartonLot ? (
+                                                    <>
+                                                        <div>
+                                                            <div className="space-y-5">
+                                                                <div className="py-3 text-center">
+                                                                    <span className="text-sm font-semibold">Livraison par cartons-lot</span>
+                                                                </div>
+                                                                <div className="space-y-5">
+                                                                    <div>
+                                                                        <Label>Choisir le lot</Label>
+                                                                        <Select
+                                                                            options={optionsLot}
+                                                                            placeholder="Choisir une option"
+                                                                            className="dark:bg-dark-900"
+                                                                            onChange={handleSelectLotCarton}
+                                                                        />
+                                                                    </div>
+                                                                    {selectedLot ? (
+                                                                        <>
+                                                                            <div>
+                                                                                <MultiSelect
+                                                                                    value={selectedCartons}
+                                                                                    options={optionsCartons}
+                                                                                    display="chip"
+                                                                                    optionLabel="label"
+                                                                                    maxSelectedLabels={4}
+                                                                                    onChange={(e) => setSelectedCartons(e.value)}
+                                                                                    placeholder="Choisir le(s) carton(s)"
+                                                                                    className="w-full"
+                                                                                />
+                                                                            </div>
+                                                                        </>
+                                                                    ) : (
+                                                                        <></>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <></>
+                                                )}
+                                                {parPieceCarton ? (
+                                                    <>
+                                                        <div className="space-y-5">
+                                                            <div>
+                                                                <div className="py-3 text-center">
+                                                                    <span className="text-sm font-semibold">Livraison par pièce-carton</span>
+                                                                </div>
+                                                                <div className="space-y-5">
+                                                                    {hasLot ? (
+                                                                        <>
+                                                                            <div className="grid grid-cols-2 gap-2">
+                                                                                <div>
+                                                                                    <Label>Choisir le lot</Label>
+                                                                                    <Select
+                                                                                        options={optionsLot}
+                                                                                        placeholder="Choisir une option"
+                                                                                        className="dark:bg-dark-900"
+                                                                                        onChange={handleSelectLotCarton}
+                                                                                    />
+                                                                                </div>
+                                                                                <div>
+                                                                                    <Label>Choisir le carton</Label>
+                                                                                    <Select
+                                                                                        options={optionsCartons}
+                                                                                        placeholder="Choisir une option"
+                                                                                        className="dark:bg-dark-900"
+                                                                                        onChange={handleSelectCarton}
+                                                                                    />
+                                                                                </div>
+                                                                            </div>
+                                                                        </>
+                                                                    ) : (
+                                                                        <>
+                                                                            <div>
+                                                                                <Label>Choisir le carton</Label>
+                                                                                <Select
+                                                                                    options={optionsCartons}
+                                                                                    placeholder="Choisir une option"
+                                                                                    className="dark:bg-dark-900"
+                                                                                    onChange={handleSelectCarton}
+                                                                                />
+                                                                            </div>
+                                                                        </>
+                                                                    )}
+                                                                    <div>
+                                                                        <Label>Quantité pièce</Label>
+                                                                        <Input type="number" id="input" value={newStockPiece}
+                                                                            onChange={(e) => {
+                                                                                const value = Number(e.target.value)
+                                                                                if (value >= 0) {
+                                                                                    setNewStockPiece(value)
+                                                                                }
+                                                                            }}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <></>
+                                                )}
+                                                {parCarton ? (
+                                                    <>
+                                                        <div className="">
+                                                            <div className="space-y-5">
+                                                                <div className="text-center">
+                                                                    <span className="text-sm font-semibold">Livraison par cartons</span>
+                                                                </div>
+                                                                <div>
+                                                                    <MultiSelect
+                                                                        value={selectedCartons}
+                                                                        options={optionsCartons}
+                                                                        display="chip"
+                                                                        optionLabel="label"
+                                                                        maxSelectedLabels={3}
+                                                                        onChange={(e) => setSelectedCartons(e.value)}
+                                                                        placeholder="Choisir le(s) carton(s)"
+                                                                        className="w-full"
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <></>
+                                                )}
+                                                {parPiece ? (
+                                                    <>
+                                                        <div className="space-y-5">
+                                                            <div>
+                                                                <div className="py-3 text-center">
+                                                                    <span className="text-sm font-semibold">Livraison par pièce</span>
+                                                                </div>
+                                                                <div>
+                                                                    <Label>Quantité</Label>
+                                                                    <Input type="number" id="input" value={newStockPiece}
+                                                                        onChange={(e) => {
+                                                                            const value = Number(e.target.value)
+                                                                            if (value >= 0) {
+                                                                                setNewStockPiece(value)
+                                                                            }
+                                                                        }}
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <></>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <Label>Nomenclature</Label>
+                                                <Input
+                                                    type="text"
+                                                    value={nomenclature}
+                                                    onChange={(e) => {
+                                                        const value = e.target.value
+                                                        setNomenclature(value)
+                                                    }}
+                                                />
                                             </div>
                                             <div>
                                                 {fields.map((field, index) => (
@@ -1360,16 +1472,16 @@ export default function RegularisationDemandeInputs() {
                                                     </div>
                                                 ))}
                                             </div>
-                                            <div>
+                                            {/* <div>
                                                 <button
                                                     type="button"
                                                     onClick={handleAddField}
                                                 >
                                                     <span className="text-xs text-gray-500 font-medium"> <span className="underline">Ajouter un champ </span><span className="text-xl">+</span></span>
                                                 </button>
-                                            </div>
+                                            </div> */}
                                         </div>
-                                        {selectedType ? (
+                                        {parLot ? (
                                             <>
                                                 <div className="text-center">
                                                     {loadingValidation ? (
@@ -1382,9 +1494,109 @@ export default function RegularisationDemandeInputs() {
                                                         <>
                                                             <div className="w-full flex justify-center items-center">
                                                                 <button className="w-1/2 flex items-center justify-center bg-green-400 p-2 rounded-2xl"
-                                                                    onClick={handleSortie}
+                                                                    onClick={handleSortieParLot}
                                                                 >
-                                                                    Faire demande
+                                                                    Valider
+                                                                </button>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <></>
+                                        )}
+                                        {parCartonLot ? (
+                                            <>
+                                                <div className="text-center">
+                                                    {loadingValidation ? (
+                                                        <>
+                                                            <div>
+                                                                <ProgressSpinner style={{ width: '50px', height: '50px' }} strokeWidth="8" animationDuration=".5s" />
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <div className="w-full flex justify-center items-center">
+                                                                <button className="w-1/2 flex items-center justify-center bg-green-400 p-2 rounded-2xl"
+                                                                    onClick={handleSortieParCartonLot}
+                                                                >
+                                                                    Valider
+                                                                </button>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <></>
+                                        )}
+                                        {parPieceCarton ? (
+                                            <>
+                                                <div className="text-center">
+                                                    {loadingValidation ? (
+                                                        <>
+                                                            <div>
+                                                                <ProgressSpinner style={{ width: '50px', height: '50px' }} strokeWidth="8" animationDuration=".5s" />
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <div className="w-full flex justify-center items-center">
+                                                                <button className="w-1/2 flex items-center justify-center bg-green-400 p-2 rounded-2xl"
+                                                                    onClick={handleSortieParPieceCarton}
+                                                                >
+                                                                    Valider
+                                                                </button>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <></>
+                                        )}
+                                        {parCarton ? (
+                                            <>
+                                                <div className="text-center">
+                                                    {loadingValidation ? (
+                                                        <>
+                                                            <div>
+                                                                <ProgressSpinner style={{ width: '50px', height: '50px' }} strokeWidth="8" animationDuration=".5s" />
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <div className="w-full flex justify-center items-center">
+                                                                <button className="w-1/2 flex items-center justify-center bg-green-400 p-2 rounded-2xl"
+                                                                    onClick={handleSortieParCarton}
+                                                                >
+                                                                    Valider
+                                                                </button>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <></>
+                                        )}
+                                        {parPiece ? (
+                                            <>
+                                                <div className="text-center">
+                                                    {loadingValidation ? (
+                                                        <>
+                                                            <div>
+                                                                <ProgressSpinner style={{ width: '50px', height: '50px' }} strokeWidth="8" animationDuration=".5s" />
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <div className="w-full flex justify-center items-center">
+                                                                <button className="w-1/2 flex items-center justify-center bg-green-400 p-2 rounded-2xl"
+                                                                    onClick={handleSortieParPiece}
+                                                                >
+                                                                    Valider
                                                                 </button>
                                                             </div>
                                                         </>
@@ -1411,12 +1623,247 @@ export default function RegularisationDemandeInputs() {
                     </>
                 )}
             </div>
-            <Modal isOpen={validationModalOpen} onClose={() => setValidationModalOpen(false)} className="p-4 max-w-md">
+            {/* DEMANDE PAR LOT */}
+            <Modal isOpen={sortieParLotModalOpen} onClose={() => setSortieParLotModalOpen(false)} className="p-4 max-w-md">
+                <div className="space-y-5">
+                    <div className="w-full text-center">
+                        <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium">Sortie stock</span>
+                    </div>
+                    <div className="text-center flex flex-col">
+                        <span className="font-bold text-sm">
+                            {nomStock}
+                        </span>
+                        <span>
+                            <span className="text-sm text-gray-800 font-medium">{nomPiece} </span>
+                            -
+                            <span className="font-semibold"> {nomModel}</span> |
+                            <span className="font-medium text-gray-700"> {nomServicePiece}</span>
+                        </span>
+                    </div>
+                    <div className="ms-5 text-center">
+                        <span className="text-sm text-gray-800 underline">Motif: {motif}</span>
+                    </div>
+                    <div className="space-y-2">
+                        <div className="space-y-1 ms-5 border-b pb-2 text-sm">
+                            <div>
+                                <span>Quantité lot initiale : {quantiteLot ? quantiteLot : '0'}</span>
+                            </div>
+                            <div>
+                                <span>Mouvement : <span className="text-red-600 font-bold">-{selectedLots.length}</span></span>
+                            </div>
+                            <div>
+                                <span>Stock final lot : {finalStockLot}</span>
+                            </div>
+                        </div>
+                        <div className="space-y-1 ms-5 border-b pb-2 text-sm">
+                            <div>
+                                <span>Quantité carton initiale : {quantiteCarton ? quantiteCarton : '0'}</span>
+                            </div>
+                            <div>
+                                <span>Mouvement : <span className="text-red-600 font-bold">-{newStockCarton}</span></span>
+                            </div>
+                            <div>
+                                <span>Stock final carton : {finalStockCarton}</span>
+                            </div>
+                        </div>
+                        <div className="space-y-1 ms-5 text-sm">
+                            <div>
+                                <span>Quantité pièce initiale : {quantitePiece ? quantitePiece : '0'}</span>
+                            </div>
+                            <div>
+                                <span>Mouvement : <span className="text-red-600 font-bold">-{newStockPiece}</span></span>
+                            </div>
+                            <div>
+                                <span>Stock final pièce : {finalStockPiece}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className='w-full mt-6 flex justify-center items-center'>
+                        <button
+                            onClick={handleValidate}
+                            className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
+                            Confirmer
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+            {/* DEMANDE PAR CARTON LOT */}
+            <Modal isOpen={sortieParCartonLotModalOpen} onClose={() => setSortieParCartonLotModalOpen(false)} className="p-4 max-w-md">
+                <div className="space-y-5">
+                    <div className="w-full text-center">
+                        <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium">Sortie stock</span>
+                    </div>
+                    <div className="text-center flex flex-col">
+                        <span className="font-bold text-sm">
+                            {nomStock}
+                        </span>
+                        <span>
+                            <span className="text-sm text-gray-800 font-medium">{nomPiece} </span>
+                            -
+                            <span className="font-semibold"> {nomModel}</span> |
+                            <span className="font-medium text-gray-700"> {nomServicePiece}</span>
+                        </span>
+                    </div>
+                    <div className="ms-5 text-center">
+                        <span className="text-sm text-gray-800 underline">Motif: {motif}</span>
+                    </div>
+                    <div className="space-y-2">
+                        <div className="space-y-1 ms-5 border-b pb-2 text-sm">
+                            <div>
+                                <span>Lot sélectionné : {nomLot}</span>
+                            </div>
+                            <div>
+                                <span>Quantité initiale : {stockCartonLot}</span>
+                            </div>
+                            <div>
+                                <span>Mouvement : <span className="text-red-600 font-bold">-{newStockCarton}</span></span>
+                            </div>
+                            <div>
+                                <span>Stock final : {finalStockCartonLot}</span>
+                            </div>
+                        </div>
+                        <div className="space-y-1 ms-5 border-b pb-2 text-sm">
+                            <div>
+                                <span>Quantité carton initiale : {quantiteCarton ? quantiteCarton : '0'}</span>
+                            </div>
+                            <div>
+                                <span>Stock final carton : {finalStockCarton}</span>
+                            </div>
+                        </div>
+                        <div className="space-y-1 ms-5 text-sm">
+                            <div>
+                                <span>Quantité pièce initiale : {quantitePiece ? quantitePiece : '0'}</span>
+                            </div>
+                            <div>
+                                <span>Stock final pièce : {finalStockPiece}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className='w-full mt-6 flex justify-center items-center'>
+                        <button
+                            onClick={handleValidate}
+                            className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
+                            Confirmer
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+            {/* DEMANDE PAR PIECE CARTON */}
+            <Modal isOpen={sortieParPieceCartonModalOpen} onClose={() => setSortieParPieceCartonModalOpen(false)} className="p-4 max-w-md">
+                <div className="space-y-5">
+                    <div className="w-full text-center">
+                        <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium">Sortie stock</span>
+                    </div>
+                    <div className="text-center flex flex-col">
+                        <span className="font-bold text-sm">
+                            {nomStock}
+                        </span>
+                        <span>
+                            <span className="text-sm text-gray-800 font-medium">{nomPiece} </span>
+                            -
+                            <span className="font-semibold"> {nomModel}</span> |
+                            <span className="font-medium text-gray-700"> {nomServicePiece}</span>
+                        </span>
+                    </div>
+                    <div className="ms-5 text-center">
+                        <span className="text-sm text-gray-800 underline">Motif: {motif}</span>
+                    </div>
+                    <div className="space-y-2">
+                        <div className="space-y-1 ms-5 border-b pb-2 text-sm">
+                            <div>
+                                <span>Carton sélectionné : {nomCarton}</span>
+                            </div>
+                            <div>
+                                <span>Quantité initiale : {stockPieceCarton}</span>
+                            </div>
+                            <div>
+                                <span>Mouvement : <span className="text-red-600 font-bold">-{newStockPiece}</span></span>
+                            </div>
+                            <div>
+                                <span>Stock final : {finalStockPieceCarton}</span>
+                            </div>
+                        </div>
+                        <div className="space-y-1 ms-5 text-sm">
+                            <div>
+                                <span>Quantité pièce initiale : {quantitePiece ? quantitePiece : '0'}</span>
+                            </div>
+                            <div>
+                                <span>Stock final pièce : {finalStockPiece}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className='w-full mt-6 flex justify-center items-center'>
+                        <button
+                            onClick={handleValidate}
+                            className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
+                            Confirmer
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+            {/* DEMANDE PAR CARTON */}
+            <Modal isOpen={sortieParCartonModalOpen} onClose={() => setSortieParCartonModalOpen(false)} className="p-4 max-w-md">
+                <div className="space-y-5">
+                    <div className="w-full text-center">
+                        <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium">Sortie stock</span>
+                    </div>
+                    <div className="text-center flex flex-col">
+                        <span className="font-bold text-sm">
+                            {nomStock}
+                        </span>
+                        <span>
+                            <span className="text-sm text-gray-800 font-medium">{nomPiece} </span>
+                            -
+                            <span className="font-semibold"> {nomModel}</span> |
+                            <span className="font-medium text-gray-700"> {nomServicePiece}</span>
+                        </span>
+                    </div>
+                    <div className="ms-5 text-center">
+                        <span className="text-sm text-gray-800 underline">Motif: {motif}</span>
+                    </div>
+                    <div className="space-y-2">
+                        <div className="space-y-1 ms-5 border-b pb-2 text-sm">
+                            <div>
+                                <span>Quantité carton initiale : {quantiteCarton ? quantiteCarton : '0'}</span>
+                            </div>
+                            <div>
+                                <span>Mouvement : <span className="text-red-600 font-bold">-{selectedCartons.length}</span></span>
+                            </div>
+                            <div>
+                                <span>Stock final carton : {finalStockCarton}</span>
+                            </div>
+                        </div>
+                        <div className="space-y-1 ms-5 text-sm">
+                            <div>
+                                <span>Quantité pièce initiale : {quantitePiece ? quantitePiece : '0'}</span>
+                            </div>
+                            <div>
+                                <span>Mouvement : <span className="text-red-600 font-bold">-{newStockPiece}</span></span>
+                            </div>
+                            <div>
+                                <span>Stock final pièce : {finalStockPiece}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className='w-full mt-6 flex justify-center items-center'>
+                        <button
+                            onClick={handleValidate}
+                            className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
+                            Confirmer
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+            {/* DEMANDE PAR PIECE */}
+            <Modal isOpen={sortieParPieceModalOpen} onClose={() => setSortieParPieceModalOpen(false)} className="p-4 max-w-md">
                 <div className="space-y-5">
                     <div className="w-full text-center">
                         <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium">Demande</span>
                     </div>
                     <div className="text-center flex flex-col">
+                        <span className="font-bold text-sm">
+                            {nomStock}
+                        </span>
                         <span>
                             <span className="text-sm text-gray-800 font-medium">{nomPiece} </span>
                             -
@@ -1429,18 +1876,64 @@ export default function RegularisationDemandeInputs() {
                     </div>
                     <div className="space-y-1 ms-5">
                         <div>
-                            <span>Demande : {parPiece ? 'par pièce' : parCarton ? 'par carton' : parLot ? 'par lot' : '?'}</span>
+                            <span>Quantité initiale : {quantitePiece ? quantitePiece : '0'}</span>
                         </div>
                         <div>
-                            <span>Quantité demandée : {quantite}</span>
+                            <span>Demande : <span className="text-red-600 font-bold">-{newStockPiece}</span></span>
+                        </div>
+                        <div>
+                            <span>Stock final : {finalStockPiece}</span>
                         </div>
                     </div>
                     <div className='w-full mt-6 flex justify-center items-center'>
                         <button
                             onClick={handleValidate}
                             className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
-                            Valider
+                            Confirmer
                         </button>
+                    </div>
+                </div>
+            </Modal>
+
+            <Modal isOpen={isSignModalOpen} onClose={() => setIsSignModalOpen(false)} className="p-4 max-w-md">
+                <div className='p-1'>
+                    <div className="w-full text-center mb-3">
+                        <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium text-sm">Validation</span>
+                    </div>
+                    <div className='text-center mb-3 text-xs'>
+                        <span>Signez manuellement pour valider la demande</span>
+                    </div>
+                    <div className='flex flex-col justify-center items-center'>
+                        <SignatureCanvas
+                            ref={data => setSignature(data)}
+                            canvasProps={{ width: 300, height: 150, className: 'sigCanvas border border-gray-300 rounded' }}
+                        />
+                        <div className='w-full mt-3'>
+                            <Label>Commentaire</Label>
+                            <TextArea
+                                value={message}
+                                onChange={(value) => setMessage(value)}
+                                rows={4}
+                                placeholder="Ajoutez un commentaire"
+                            />
+                        </div>
+                        <div className='w-full mt-6 flex justify-center items-center'>
+                            <button
+                                onClick={handleClear}
+                                className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
+                                Clear
+                            </button>
+                            <button
+                                onClick={handleValidate}
+                                className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
+                                Valider
+                            </button>
+                        </div>
+                    </div>
+                    <div className="text-center">
+                        <span className="text-error-500 text-xs">
+                            {errorSign}
+                        </span>
                     </div>
                 </div>
             </Modal>
