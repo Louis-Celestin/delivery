@@ -177,6 +177,9 @@ import ValidateDemandeForm from "./pages/Forms/DemandesForms/ValidateDemandeForm
 // @ts-ignore
 import LivraisonDemandeForm from "./pages/Forms/DemandesForms/LivraisonDemandeForm"
 
+// @ts-ignore
+import RegularisationLivraisonQrForm from "./pages/Forms/LivraisonForms/LivraisonQrForms/RegularisationLivraisonQrForm"
+
 export default function App() {
   return (
     <>
@@ -205,6 +208,9 @@ export default function App() {
               <Route path="/demande-livraison/:id" element={<DemandeDeliveryDetails />} />
               <Route path="/livraison-pieces/:id" element={<LivraisonPiecesForm />} />
               <Route path="/modifier-livraison-pieces/:id" element={<ModifyLivraisonPiecesForm />} />
+
+              {/* Livraisons QR CODE */}
+              <Route path="/Regularisation-livraison-Qr" element={<RegularisationLivraisonQrForm />} />
 
               {/* Stock */}
               <Route path="/voir-items" element={<AllItems />} />
