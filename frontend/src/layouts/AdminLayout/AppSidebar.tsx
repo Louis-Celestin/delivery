@@ -46,7 +46,9 @@ const navItems: NavItem[] = [
       { name: "Tous les remplacements", path: "/tous-les-remplacements", pro: false},
       { name: "Nouvelle Demande Stock", path:"/nouvelle-demande", roles:[3], pro: false},
       { name: "Toutes les demandes Stock", path: "/toutes-les-demandes",roles:[3,11], pro: false },
-      { name: "REG Livraison QR CODE", path: "/Regularisation-livraison-Qr", pro: false },
+      { name: "REG Demande QRC", path: "/regularisation-demande-qr", pro: false },
+      { name: "Nouvelle Demande QRC", path: "/demande-qr", pro: false },
+      { name: "Toutes les demandes QRC", path: "/toutes-les-demandes-qr", pro: false},
     ],
     
   },

@@ -178,7 +178,11 @@ import ValidateDemandeForm from "./pages/Forms/DemandesForms/ValidateDemandeForm
 import LivraisonDemandeForm from "./pages/Forms/DemandesForms/LivraisonDemandeForm"
 
 // @ts-ignore
-import RegularisationLivraisonQrForm from "./pages/Forms/LivraisonForms/LivraisonQrForms/RegularisationLivraisonQrForm"
+import RegularisationDemandeQrForm from "./pages/Forms/DemandesQrForms/RegularisationDemandeQrForm"
+// @ts-ignore
+import DemandeQrForm from "./pages/Forms/DemandesQrForms/DemandeQrForm"
+// @ts-ignore
+import AllDemandesQr from "./pages/DemandesQrPages/AllDemandesQr"
 
 export default function App() {
   return (
@@ -209,8 +213,10 @@ export default function App() {
               <Route path="/livraison-pieces/:id" element={<LivraisonPiecesForm />} />
               <Route path="/modifier-livraison-pieces/:id" element={<ModifyLivraisonPiecesForm />} />
 
-              {/* Livraisons QR CODE */}
-              <Route path="/Regularisation-livraison-Qr" element={<RegularisationLivraisonQrForm />} />
+              {/* Demandes QR CODE */}
+              <Route path="/regularisation-demande-qr" element={<RegularisationDemandeQrForm />} />
+              <Route path="/demande-qr" element={<DemandeQrForm />} />
+              <Route path ="/toutes-les-demandes-qr" element={<AllDemandesQr />} />
 
               {/* Stock */}
               <Route path="/voir-items" element={<AllItems />} />
