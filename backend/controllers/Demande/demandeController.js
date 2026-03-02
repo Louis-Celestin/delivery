@@ -455,7 +455,7 @@ const faireDemande = async (req, res) => {
     }
 
     const files = req.files?.files || [];
-
+    
     const files_content = files.length
       ? files.map(file => ({
         name: file.originalname,
