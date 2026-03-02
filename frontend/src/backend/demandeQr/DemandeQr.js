@@ -28,5 +28,14 @@ export class DemandeQr {
             throw error.response.data
         }
     }
-    
+
+    async getOneDemandeQr(id) {
+        try {
+            const response = await axios.get(`${urlBase}/api/demandeQr/getOneDemandeQr/${id}`)
+            return response.data;
+        } catch (error) {
+            throw error.response.data
+        }
+    };
+
 }

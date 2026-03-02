@@ -46,9 +46,11 @@ export default function AllDemandesQrList() {
     const [globalFilter, setGlobalFilter] = useState(savedFilters?.globalFilter || "");
     const [selectedStatus, setSelectedStatus] = useState(savedFilters?.selectedStatus || []);
     const statusOptions = [
-        { label: 'En cours', value: 'en_cours' },
-        { label: 'Livré', value: 'livre' },
-        { label: 'Retourné', value: 'en_attente' },
+        { label: 'Soumise', value: 'soumise' },
+        { label: 'Générée', value: 'generee' },
+        { label: 'Imprimée', value: 'imprimee' },
+        { label: 'Livrée', value: 'livree' },
+        { label: 'Reçue', value: 'recue' },
     ];
     const [startDate, setStartDate] = useState(savedFilters?.startDate ? new Date(savedFilters.startDate) : null);
     const [endDate, setEndDate] = useState(savedFilters?.endDate ? new Date(savedFilters.endDate) : null);
@@ -213,36 +215,61 @@ export default function AllDemandesQrList() {
         )
     }
     const actionTemplate = (demande) => {
+        const linkSee = `/demande-qr-details/${demande.id}`
+
+        return (
+            <>
+                <div>
+                    <span>
+                        <Link to={linkSee}>
+                            <button className="mx-1">
+                                <i className="pi pi-eye" style={{fontSize: '13px'}}></i>
+                            </button>
+                        </Link>
+                    </span>
+                    {demande.statut == 'recue' ? (
+                        <>
+                            <span>
+                                {printingId === demande.id ? (
+                                    <span className='mx-1'>
+                                        <ProgressSpinner style={{ width: '15px', height: '15px' }} strokeWidth="8" animationDuration=".5s" />
+                                    </span>
+                                ) : (
+                                    <button onClick={() => handleGeneratePdf(demande.id)}><span className="mx-1 text-gray-500 text-theme-sm dark:text-gray-400"><i className="pi pi-print"></i></span></button>
+                                )}
+                            </span>
+                        </>
+                    ) : (
+                        <></>
+                    )}
+                </div>
+            </>
+        )
     }
 
     const handleClearFilters = () => {
         setGlobalFilter("");
         setSelectedStatus([]);
-        setselectedService([]);
-        setSelectedType([]);
-        setSelectedModels([]);
         setStartDate(null);
         setEndDate(null);
         sessionStorage.removeItem(FILTERS_KEY);
     }
 
-    // const filteredDemandes = deliveryForms.filter((item) => {
-    //     let itemDate = new Date(item.date_livraison);
-    //     if (item.validations.length > 0) {
-    //         let index = item.validations.length - 1
-    //         itemDate = new Date(item.validations[index].date_validation)
-    //     }
-    //     const matchesStatus = selectedStatus.length > 0 ? selectedStatus.includes(item.statut_livraison) : true;
-    //     const matchesType = selectedType.length > 0 ? selectedType.includes(item.type_livraison_id) : true;
-    //     const matchesService = selectedService.length > 0 ? selectedService.includes(item.service_id) : true;
-    //     const matchesModel = selectedModels.length > 0 ? selectedModels.includes(item.model_id) : true;
-    //     const matchesStartDate = startDate ? itemDate >= startDate : true;
-    //     const matchesEndDate = endDate ? itemDate <= endDate : true;
-    //     const matchesGlobalFilter = globalFilter
-    //         ? JSON.stringify(item).toLowerCase().includes(globalFilter.toLowerCase())
-    //         : true;
-    //     return matchesStatus && matchesType && matchesService && matchesModel && matchesStartDate && matchesEndDate && matchesGlobalFilter;
-    // });
+
+    const filteredDemandes = demandes.filter((item) => {
+        const form = item.forms
+        const itemDate = new Date(form.last_modified_at);
+        const matchesStatus = selectedStatus.length > 0 ? selectedStatus.includes(item.statut) : true;
+        const matchesStartDate = startDate ? itemDate >= startDate : true;
+        const matchesEndDate = endDate ? itemDate <= endDate : true;
+        const matchesGlobalFilter = globalFilter
+            ? JSON.stringify(item).toLowerCase().includes(globalFilter.toLowerCase())
+            : true;
+        return matchesStatus && matchesStartDate && matchesEndDate && matchesGlobalFilter;
+    });
+
+    const totalQr = filteredDemandes.reduce((sum, item) => sum + Number(item.quantite_qr || 0), 0);
+
 
     const handleGlobalDownload = async () => {
         console.log(filteredDemandes)
@@ -321,7 +348,7 @@ export default function AllDemandesQrList() {
     return (
         <>
             <div className="rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
-                {/* <div className="px-6 pt-6 flex items-center">
+                <div className="px-6 pt-6 flex items-center">
                     <div className="relative w-full">
                         <Input
                             className="pl-10"
@@ -348,58 +375,6 @@ export default function AllDemandesQrList() {
                         placeholder="Filtrer par statut demande"
                         className=""
                     />
-                    <MultiSelect
-                        label="Filtrer par pièces"
-                        options={optionsPieces}
-                        display="chip"
-                        value={selectedItems}
-                        optionLabel="label"
-                        maxSelectedLabels={2}
-                        placeholder="Filtrer par pièce"
-                        className=""
-                        onChange={(e) => setSelectedItems(e.value)}
-                    />
-                    <MultiSelect
-                        label="Model"
-                        options={optionsModels}
-                        display="chip"
-                        value={selectedModels}
-                        optionLabel="label"
-                        maxSelectedLabels={2}
-                        placeholder="Filtrer par modèle"
-                        className=""
-                        onChange={(e) => setSelectedModels(e.value)}
-                    />
-                    <MultiSelect
-                        value={servicesPieces}
-                        options={optionsServicesPiece}
-                        display="chip"
-                        optionLabel="label"
-                        maxSelectedLabels={2}
-                        onChange={(e) => setServicesPieces(e.value)}
-                        placeholder="Filtrer par service pièce"
-                        className=""
-                    />
-                    <MultiSelect
-                        value={serviceDemandeurs}
-                        options={optionsServicesDemandeur}
-                        display="chip"
-                        optionLabel="label"
-                        maxSelectedLabels={2}
-                        onChange={(e) => setServiceDemandeurs(e.value)}
-                        placeholder="Filtrer par service demandeur"
-                        className=""
-                    />
-                    <MultiSelect
-                        value={selectedStatusReception}
-                        onChange={(e) => setSelectedStatusReception(e.value)}
-                        options={statusReception}
-                        display="chip"
-                        optionLabel="label"
-                        maxSelectedLabels={2}
-                        placeholder="Filtrer par statut réception"
-                        className=""
-                    />
                 </div>
                 <div className="flex justify-normal flex-wrap gap-3 mb-3 p-6">
                     <div className="flex gap-2">
@@ -408,7 +383,7 @@ export default function AllDemandesQrList() {
                             label="Date de début"
                             placeholder={startDate ? formatDate(startDate) : 'Date de début'}
                             value={startDate}
-                            onChange={(dates, currentDateString) => {
+                            onChange={(dates) => {
                                 setStartDate(dates[0])
                             }}
                             dateFormat="dd/mm/yy" />
@@ -417,7 +392,7 @@ export default function AllDemandesQrList() {
                             label="Date de fin"
                             placeholder={endDate ? formatDate(endDate) : 'Date de fin'}
                             value={endDate}
-                            onChange={(dates, currentDateString) => {
+                            onChange={(dates) => {
                                 if (dates && dates[0]) {
                                     let selectedDate = new Date(dates[0]);
                                     let nextDay = new Date(selectedDate);
@@ -428,14 +403,19 @@ export default function AllDemandesQrList() {
                             dateFormat="dd/mm/yy" />
                     </div>
                 </div>
-                <div className="p-6 pt-0">
-                    <span className="text-sm text-gray-600 dark:text-gray-300">
-                        {filteredDemandeForms.length} demande(s) trouvée(s)
-                    </span>
-                </div> */}
+                <div className="p-6 pt-0 flex justify-between">
+                    <div className="flex space-x-3 items-center">
+                        <span className="text-sm text-gray-600 dark:text-gray-300">
+                            {filteredDemandes.length} demande(s) trouvée(s)
+                        </span>
+                        <span className="text-xs text-gray-700 font-semibold dark:text-gray-300">
+                            {totalQr} QR Codes(s)
+                        </span>
+                    </div>
+                </div>
                 <div className="card">
                     <DataTable
-                        value={demandes}
+                        value={filteredDemandes}
                         loading={loading}
                         removableSort
                         paginator

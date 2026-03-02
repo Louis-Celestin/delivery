@@ -80,9 +80,6 @@ const regularisationDemande = async (req, res) => {
                 is_reg: true,
             }
         })
-
-
-
     } catch (error) {
 
     }
@@ -175,7 +172,7 @@ const faireDemandeQr = async (req, res) => {
         let commentaire_mail = commentaire ? commentaire : '(sans commentaire)';
 
         const url = GENERAL_URL
-        let link = `${url}/demandeQr-details/${demande.id}`;
+        let link = `${url}/demande-qr-details/${demande.id}`;
 
         if ((generateurs && generateurs.length > 0) || (imprimeurs && imprimeurs.length > 0)) {
             const subject = `NOUVELLE DEMANDE DE QR CODE(S)`;
@@ -243,7 +240,7 @@ const getAllTypePaiement = async (req, res) => {
 
 const getAllDemandesQr = async (req, res) => {
     try {
-        const demande = await prisma.demande_qr.findMany({
+        const demandes = await prisma.demande_qr.findMany({
             include: {
                 forms: true,
                 generation_qr: {
@@ -256,22 +253,53 @@ const getAllDemandesQr = async (req, res) => {
                 reception_qr: true,
             },
             orderBy: {
-                forms : {
-                    last_modified_at: 'desc', 
+                forms: {
+                    last_modified_at: 'desc',
                 }
             },
         });
 
         console.log('Succès !')
-        res.status(200).json(demande);
+        res.status(200).json(demandes);
     } catch (error) {
         console.error("Erreur lors de la récupération des demandes de QR Codes :", error)
         res.status(500).json({ message: "Erreur lors de la récupération des demandes de QR Codes", error });
     }
 }
 
+const getOneDemandeQr = async (req, res) => {
+    try {
+        const {
+            id
+        } = req.params
+    
+        const demande = await prisma.demande_qr.findUnique({
+            where: {
+                id: parseInt(id)
+            }, include: {
+                forms: true,
+                generation_qr: {
+                    include: {
+                        forms: true
+                    },
+                },
+                impression_qr: true,
+                livraison_qr: true,
+                reception_qr: true,
+            },
+        })
+        console.log('Succès !')
+        res.status(200).json(demande);
+    } catch(error) {
+        console.error("Erreur lors de la récupération de la demande de QR Codes :", error)
+        res.status(500).json({ message: "Erreur lors de la récupération de la demande de QR Codes", error });
+    }
+
+}
+
 module.exports = {
     getAllTypePaiement,
     faireDemandeQr,
     getAllDemandesQr,
+    getOneDemandeQr,
 }

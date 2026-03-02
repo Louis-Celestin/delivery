@@ -183,6 +183,8 @@ import RegularisationDemandeQrForm from "./pages/Forms/DemandesQrForms/Regularis
 import DemandeQrForm from "./pages/Forms/DemandesQrForms/DemandeQrForm"
 // @ts-ignore
 import AllDemandesQr from "./pages/DemandesQrPages/AllDemandesQr"
+// @ts-ignore
+import DemandeQrDetails from "./pages/DemandesQrPages/DemandeQrDetails"
 
 export default function App() {
   return (
@@ -216,7 +218,8 @@ export default function App() {
               {/* Demandes QR CODE */}
               <Route path="/regularisation-demande-qr" element={<RegularisationDemandeQrForm />} />
               <Route path="/demande-qr" element={<DemandeQrForm />} />
-              <Route path ="/toutes-les-demandes-qr" element={<AllDemandesQr />} />
+              <Route path="/toutes-les-demandes-qr" element={<AllDemandesQr />} />
+              <Route path="/demande-qr-details/:id" element={<DemandeQrDetails />} />
 
               {/* Stock */}
               <Route path="/voir-items" element={<AllItems />} />
