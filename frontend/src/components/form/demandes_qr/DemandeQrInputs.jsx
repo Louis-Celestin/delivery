@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { useNavigate } from "react-router";
 import { Merchants } from "../../../backend/livraisons/Merchants"
 import { DemandeQr } from "../../../backend/demandeQr/DemandeQr";
 import ComponentCard from "../../common/ComponentCard";
@@ -33,6 +34,7 @@ export default function DemandeQrInputs() {
     const merchantsData = new Merchants();
     const demandeData = new DemandeQr()
     const userId = localStorage.getItem('id');
+    const navigate = useNavigate()
 
     const [loadingData, setLoadingData] = useState(false)
     const [loadingValidation, setLoadingValidation] = useState(false)
@@ -428,6 +430,7 @@ export default function DemandeQrInputs() {
                 text: "Demande éffectuée avec succès !",
                 icon: "success"
             })
+            navigate('/toutes-les-demandes-qr')
         } catch (error) {
             console.log("Erreur de demande : ", error)
             Swal.fire({
@@ -435,6 +438,7 @@ export default function DemandeQrInputs() {
                 text: "Une erreur s'est produite lors de la demande !",
                 icon: "warning"
             })
+            navigate('/toutes-les-demandes-qr')
         } finally {
             setLoadingValidation(false)
         }

@@ -38,4 +38,51 @@ export class DemandeQr {
         }
     };
 
+    async uploadDemandeQr(id, formData) {
+        try {
+            const response = await axios.put(`${urlBase}/api/demandeQr/uploadDemandeQr/${id}`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            return response.data
+        } catch (error) {
+            throw error.response.data;
+        }
+    }
+
+    async downloadQrCodes(idDemande, idGeneration) {
+        try {
+            const response = await axios.get(`${urlBase}/api/demandeQr/downloadQrCodes/${idDemande}/${idGeneration}`,
+                {
+                    responseType: "blob",
+                }
+            );
+            return response;
+        } catch (error) {
+            throw error.response?.data || { message: "Download failed" };
+        }
+    }
+
+    async impressionDemandeQr(idDemande, idGeneration, payload) {
+        try {
+            const response = await axios.put(`${urlBase}/api/demandeQr/impressionDemandeQr/${idDemande}/${idGeneration}`, payload);
+            return response;
+        } catch (error) {
+            throw error.response.data;
+        }
+    }
+
+    async livraisonDemandeQr(idDemande, formData) {
+        try {
+            const response = await axios.put(`${urlBase}/api/demandesQr/livraisonDemandeQr/${idDemande}`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            })
+            return response.data;
+        } catch (error) {
+            throw error.response.data;
+        }
+    }
 }

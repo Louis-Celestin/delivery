@@ -10,6 +10,7 @@ const { get } = require("http");
 const { urlToHttpOptions } = require("url");
 const { type } = require("os");
 const sendMail = require("../../utils/emailSender");
+const archiver = require("archiver");
 
 const formatDate = (isoDate) => {
     const date = new Date(isoDate);
@@ -248,9 +249,21 @@ const getAllDemandesQr = async (req, res) => {
                         forms: true
                     },
                 },
-                impression_qr: true,
-                livraison_qr: true,
-                reception_qr: true,
+                impression_qr: {
+                    include: {
+                        forms: true
+                    },
+                },
+                livraison_qr: {
+                    include: {
+                        forms: true
+                    },
+                },
+                reception_qr: {
+                    include: {
+                        forms: true
+                    },
+                },
             },
             orderBy: {
                 forms: {
@@ -283,9 +296,21 @@ const getOneDemandeQr = async (req, res) => {
                         forms: true
                     },
                 },
-                impression_qr: true,
-                livraison_qr: true,
-                reception_qr: true,
+                impression_qr: {
+                    include: {
+                        forms: true
+                    },
+                },
+                livraison_qr: {
+                    include: {
+                        forms: true
+                    },
+                },
+                reception_qr: {
+                    include: {
+                        forms: true
+                    },
+                },
             },
         })
         console.log('Succès !')
@@ -367,11 +392,11 @@ const uploadDemandeQr = async (req, res) => {
                 data: qrCodes_content.map(file => ({
                     path: file.path,
                     filename: file.name,
-                    orignalName: file.name,
+                    originalName: file.name,
                     mimeType: file.type,
                     size: file.size,
                     created_at: new Date(),
-                    uploaded_by: utilisateur.id,
+                    uploaded_by: utilisateur.id_user,
                     demande_id: demande.id,
                     generation_id: generation.id,
                 }))
@@ -415,13 +440,206 @@ const uploadDemandeQr = async (req, res) => {
         const url = GENERAL_URL
         let link = `${url}/demande-qr-details/${demande.id}`;
 
-        if ((livreurs && livreurs.length > 0) || (imprimeurs && imprimeurs.length > 0)) {
+        if (imprimeurs && imprimeurs.length > 0) {
             const subject = `QR CODE(S) GÉNÉNÉRÉ(S)`;
             let html = `
                 <p>Bonjour,</p>
                 <p>Les QR Codes de la demande ${demande.id} ont été générés.</p>
                 <ul>
                 <li><strong>Nombre de marchands :</strong> ${quantite_marchand}</li>
+                <li><strong>Nombre de QR Code :</strong> ${quantite_qr}</li>
+                </ul>
+                <br>
+                <p>Commentaire : ${commentaire_mail}<p>
+                <br>
+                <p>Retrouvez la demande à ce lien : 
+                <span>
+                <a href="${link}" target="_blank" style="background-color: #73dced; color: white; padding: 7px 12px; text-decoration: none; border-radius: 5px;">
+                    Cliquez ici !
+                </a>
+                </span>
+                </p>
+                <br><br>
+                <p>Green - Pay vous remercie.</p>
+            `;
+            // for (const livreur of livreurs) {
+            //     await sendMail({
+            //         to: livreur.email,
+            //         subject,
+            //         html,
+            //     });
+            // }
+            for (const imprimeur of imprimeurs) {
+                await sendMail({
+                    to: imprimeur.email,
+                    subject,
+                    html,
+                });
+            }
+        }
+
+        console.log("Génération QR Code éffectué avec succès ! ")
+        res.status(201).json({
+            message: "Génération QR Code éffectué avec succès !",
+            GenerationQr: newGenerationQr,
+        });
+    } catch (error) {
+        console.error("Erreur lors de la génération :", error);
+        res.status(500).json({ message: "Erreur interne", error });
+    }
+}
+
+const downloadQrCodes = async (req, res) => {
+  const { idDemande, idGeneration } = req.params;
+
+  try {
+    const files = await prisma.qr_codes.findMany({
+      where: {
+        demande_id: parseInt(idDemande),
+        generation_id: parseInt(idGeneration),
+        is_deleted: false,
+      },
+    });
+
+    if (files.length === 0) {
+      return res.status(404).json({ message: "Aucun QR Codes trouvés" });
+    }
+
+    // Set ZIP headers
+    res.setHeader("Content-Type", "application/zip");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="qr_codes_${idDemande}_${idGeneration}.zip"`
+    );
+
+    const archive = archiver("zip", {
+      zlib: { level: 9 },
+    });
+
+    archive.pipe(res);
+
+    for (const file of files) {
+      const filePath = path.resolve(file.path);
+
+      if (fs.existsSync(filePath)) {
+        archive.file(filePath, { name: file.filename });
+      }
+    }
+
+    await archive.finalize();
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+const impressionDemandeQr = async (req, res) => {
+    try {
+        const {
+            idDemande,
+            idGeneration,
+        } = req.params
+
+        const {
+            userId,
+            commentaire,
+        } = req.body
+
+        const utilisateur = await prisma.users.findUnique({
+            where: {
+                id_user: parseInt(userId)
+            }
+        })
+        if (!utilisateur) {
+            console.error("Erreur : Utilisateur introuvable")
+            return res.status(404).json({ message: "Utilisateur introuvable !" });
+        }
+
+        const demande = await prisma.demande_qr.findUnique({
+            where: {
+                id: parseInt(idDemande)
+            }
+        })
+        if (!demande) {
+            console.error("Erreur : demande introuvable")
+            return res.status(404).json({ message: "Demande introuvable !" });
+        }
+
+        const generation = await prisma.generation_qr.findUnique({
+            where: {
+                id: parseInt(idGeneration)
+            }
+        })
+        if (!generation) {
+            console.error("Erreur : generation introuvable")
+            return res.status(404).json({ message: "Génération introuvable !" });
+        }
+
+        const newImpressionQr = await prisma.$transaction(async (tx) => {
+            const impressionForm = await tx.forms.create({
+                data: {
+                    type: 'impression_qr',
+                    created_by: utilisateur.id_user,
+                    created_at: new Date(),
+                    last_modified_at: new Date(),
+                    nom_user: utilisateur.fullname,
+                    commentaire,
+                }
+            });
+            await tx.impression_qr.create({
+                data: {
+                    form_id: impressionForm.id,
+                    quantite_qr: demande.quantite_qr,
+                    demande_id: demande.id,
+                    generation_id: generation.id,
+                }
+            })
+
+            const impression = await tx.demande_qr.update({
+                where: {
+                    id: demande.id
+                },
+                data: {
+                    statut: 'imprimee'
+                }
+            })
+
+            return (impressionForm, impression)
+        })
+
+        /*****************          GESTION MAIL             *****************/
+
+        const roleGenerateur = await prisma.user_roles.findMany({
+            where: {
+                role_id: 16,
+            },
+            include: {
+                users: true
+            }
+        })
+        const roleLivraison = await prisma.user_roles.findMany({
+            where: {
+                role_id: 18,
+            },
+            include: {
+                users: true,
+            }
+        })
+        const generateurs = roleGenerateur.map(us => us.users)
+        const livreurs = roleLivraison.map(us => us.users)
+
+        let commentaire_mail = commentaire ? commentaire : '(sans commentaire)';
+
+        const url = GENERAL_URL
+        let link = `${url}/demande-qr-details/${demande.id}`;
+
+        if ((livreurs && livreurs.length > 0) || (generateurs && generateurs.length > 0)) {
+            const subject = `QR CODE(S) IMPRIMÉ(S)`;
+            let html = `
+                <p>Bonjour,</p>
+                <p>Les QR Codes de la demande ${demande.id} ont été imprimés.</p>
+                <ul>
                 <li><strong>Nombre de QR Code :</strong> ${quantite_qr}</li>
                 </ul>
                 <br>
@@ -444,32 +662,168 @@ const uploadDemandeQr = async (req, res) => {
                     html,
                 });
             }
-            for (const imprimeur of imprimeurs) {
+            for (const generateur of generateurs) {
                 await sendMail({
-                    to: imprimeur.email,
+                    to: generateur.email,
                     subject,
                     html,
                 });
             }
         }
 
-        console.log("Génération QR Code éffectué avec succès ! ")
+        console.log("Impression QR Code éffectuée avec succès ! ")
         res.status(201).json({
-            message: "Génération QR Code éffectué avec succès !",
-            GenerationQr: newGenerationQr,
+            message: "Impression QR Code éffectuée avec succès !",
+            ImpressionQr: newImpressionQr,
         });
     } catch (error) {
-        console.error("Erreur lors de la génération :", error);
+        console.error("Erreur lors de l'impression :", error);
         res.status(500).json({ message: "Erreur interne", error });
     }
-
-
 }
 
+const livraisonDemandeQr = async (req, res) => {
+    try {
+        const {
+            idDemande
+        } = req.params
+        
+        const {
+            userId,
+            commentaire,
+        } = req.body
+
+        const signature = req.files?.signature?.[0] || null;
+        if (!signature) {
+            console.error('Signature manquante !')
+            return res.status(404).json({ message: "Signature introuvable !" });
+        }
+
+        const utilisateur = await prisma.users.findUnique({
+            where: {
+                id_user: parseInt(userId)
+            }
+        })
+        if (!utilisateur) {
+            console.error("Erreur : Utilisateur introuvable")
+            return res.status(404).json({ message: "Utilisateur introuvable !" });
+        }
+
+        const demande = await prisma.demande_qr.findUnique({
+            where: {
+                id: parseInt(idDemande)
+            }
+        })
+        if (!demande) {
+            console.error("Erreur : demande introuvable")
+            return res.status(404).json({ message: "Demande introuvable !" });
+        }
+
+        const newLivraisonQr = await prisma.$transaction(async (tx) => {
+            const livraisonForm = await tx.forms.create({
+                data: {
+                    type: 'livraison_qr',
+                    created_by: utilisateur.id_user,
+                    created_at: new Date(),
+                    last_modified_at: new Date(),
+                    nom_user: utilisateur.fullname,
+                    commentaire,
+                }
+            });
+            const livraison = await tx.livraison_qr.create({
+                data: {
+                    form_id: livraisonForm.id,
+                    quantite_qr: demande.quantite_qr,
+                    demande_id: demande.id,
+                }
+            })
+            await tx.form_signatures.create({
+                data: {
+                    form_id: livraisonForm.id,
+                    signature_url: signature.path,
+                    signed_by: utilisateur.id_user,
+                    signed_at: new Date(),
+                    role: 'livreur'
+                },
+            })
+
+            await tx.demande_qr.update({
+                where: {
+                    id: demande.id
+                },
+                data: {
+                    statut: 'livree'
+                }
+            })
+
+            return (livraisonForm, livraison)
+        })
+
+        /*****************          GESTION MAIL             *****************/
+
+        const roleReception = await prisma.user_roles.findMany({
+            where: {
+                role_id: 19,
+            },
+            include: {
+                users: true
+            }
+        })
+        const recepteurs = roleReception.map(us => us.users)
+
+        let commentaire_mail = commentaire ? commentaire : '(sans commentaire)';
+
+        const url = GENERAL_URL
+        let link = `${url}/demande-qr-details/${demande.id}`;
+
+        if (recepteurs && recepteurs.length > 0) {
+            const subject = `QR CODE(S) LIVRÉ(S)`;
+            let html = `
+                <p>Bonjour,</p>
+                <p>Les QR Codes de la demande ${demande.id} ont été livrés.</p>
+                <ul>
+                <li><strong>Nombre de QR Code :</strong> ${quantite_qr}</li>
+                </ul>
+                <br>
+                <p>Commentaire : ${commentaire_mail}<p>
+                <br>
+                <p>Retrouvez la demande à ce lien : 
+                <span>
+                <a href="${link}" target="_blank" style="background-color: #73dced; color: white; padding: 7px 12px; text-decoration: none; border-radius: 5px;">
+                    Cliquez ici !
+                </a>
+                </span>
+                </p>
+                <br><br>
+                <p>Green - Pay vous remercie.</p>
+            `;
+            for (const recepteur of recepteurs) {
+                await sendMail({
+                    to: recepteur.email,
+                    subject,
+                    html,
+                });
+            }
+        }
+
+        console.log("Livraison QR Code éffectuée avec succès ! ")
+        res.status(201).json({
+            message: "Livraison QR Code éffectuée avec succès !",
+            livraisonQr: newLivraisonQr,
+        });
+
+    } catch (error) {
+        console.error("Erreur lors de la livraison :", error);
+        res.status(500).json({ message: "Erreur interne", error });
+    }
+}
 module.exports = {
     getAllTypePaiement,
     faireDemandeQr,
     getAllDemandesQr,
     getOneDemandeQr,
     uploadDemandeQr,
+    downloadQrCodes,
+    impressionDemandeQr,
+    livraisonDemandeQr,
 }
