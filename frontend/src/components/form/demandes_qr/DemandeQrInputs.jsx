@@ -81,6 +81,14 @@ export default function DemandeQrInputs() {
     const [optionsQr, setOptionsQr] = useState([])
     const [selectedNomQr, setSelectedNomQr] = useState('')
 
+    const [listeFormats, setListeForms] = useState([])
+    const [optionsFormats, setOptionsFormats] = useState([])
+    const [selectedFormat, setSelectedFormat] = useState(null)
+    const [format, setFormat] = useState('')
+
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
+    const [nbreMarchand, setNbreMarchand] = useState(0)
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -160,6 +168,14 @@ export default function DemandeQrInputs() {
                 }))
                 setOptionsQr(optionsQr)
 
+                const formatQrData = await demandeData.getAllFormatsQr()
+                setListeForms(formatQrData)
+                const optionsFormats = formatQrData.map((item) => ({
+                    label: item.format,
+                    value: item.id,
+                }))
+                setOptionsFormats(optionsFormats)
+
             } catch (error) {
                 console.log('Error fetching data ', error)
                 setErrorForm("Une erreur s'est produite lors de la génération du formulaire !")
@@ -170,11 +186,17 @@ export default function DemandeQrInputs() {
         fetchData()
     }, [])
 
-    const optionsTypeQr = [
-        { label: 'Orange Money', value: 'Orange Money' },
-        { label: 'MTN Money', value: 'MTN Money' },
-        { label: 'MOOV Money', value: 'MOOV Money' },
-    ]
+    // const optionsTypeQr = [
+    //     { label: 'Orange Money', value: 'Orange Money' },
+    //     { label: 'MTN Money', value: 'MTN Money' },
+    //     { label: 'MOOV Money', value: 'MOOV Money' },
+    // ]
+
+    // const optionsFormat = [
+    //     { label: 'Orange Money', value: 'Orange Money' },
+    //     { label: 'MTN Money', value: 'MTN Money' },
+    //     { label: 'MOOV Money', value: 'MOOV Money' },
+    // ]
 
     const handleChangeNumberQr = (id, value) => {
         console.log(id)
@@ -257,8 +279,18 @@ export default function DemandeQrInputs() {
         const qrCode = listeQr.find((item) => {
             return item.id == value
         })
-        if(qrCode){
+        if (qrCode) {
             setSelectedNomQr(qrCode.nom)
+        }
+    }
+
+    const handleSelectFormat = (value) => {
+        setSelectedFormat(value)
+        const format = listeFormats.find((item) => {
+            return item.id == value
+        })
+        if (format) {
+            setFormat(format.format)
         }
     }
 
@@ -280,6 +312,10 @@ export default function DemandeQrInputs() {
             setErrorAjout('Vous devez sélectionner le type du QR Code !')
             return false
         }
+        if (!selectedFormat) {
+            setErrorAjout('Vous devez sélectionner le format !')
+            return false
+        }
 
         return true
     }
@@ -292,11 +328,17 @@ export default function DemandeQrInputs() {
             setErrorAjout('Vous devez sélectionner le Point Marchand !')
             return
         }
+        // console.log(selectedMarchand)
+        // console.log(selectedTypeQr)
+        // for(let m of listeLivraison){
+        //     console.log(m.pointMarchand)
+        //     console.log(m.typeQrId)
+        // }
         const isDuplicate = listeLivraison.some(item => {
-            return item.pointMarchand === selectedMarchand && item.typeQr === selectedTypeQr
+            return item.pointMarchand == selectedMarchand && item.typeQrId == selectedTypeQr && item.formatId == selectedFormat
         });
         if (isDuplicate) {
-            setErrorAjout("Vous avez déjà ajouté ce type de QR pour ce marchand !");
+            setErrorAjout("Vous avez déjà ajouté ce type de QR avec ce format pour ce marchand !");
             return;
         }
         setIsModalParMarchand(true)
@@ -312,10 +354,10 @@ export default function DemandeQrInputs() {
         }
         for (let m of marchandFields) {
             const isDuplicate = listeLivraison.some(item => {
-                return item.pointMarchand === m.POINT_MARCHAND && item.typeQr === selectedTypeQr
+                return item.pointMarchand == m.POINT_MARCHAND && item.typeQrId == selectedTypeQr && item.formatId == selectedFormat
             });
             if (isDuplicate) {
-                setErrorAjout("Vous avez déjà ajouté ce type de QR pour ce marchand !");
+                setErrorAjout("Vous avez déjà ajouté ce type de QR avec ce format pour ce marchand !");
                 return;
             }
         }
@@ -328,6 +370,8 @@ export default function DemandeQrInputs() {
         const newElement = {
             typeQrId: Number(selectedTypeQr),
             typeQr: selectedNomQr,
+            formatId: Number(selectedFormat),
+            format,
             chaine: selectedChaine,
             pointMarchand: selectedMarchand,
             quantiteTerminal,
@@ -345,6 +389,8 @@ export default function DemandeQrInputs() {
         const liste = marchandFields.map((item) => ({
             typeQrId: Number(selectedTypeQr),
             typeQr: selectedNomQr,
+            formatId: selectedFormat,
+            format,
             chaine: selectedChaine,
             pointMarchand: item.POINT_MARCHAND,
             quantiteTerminal: item.sn_count,
@@ -384,12 +430,29 @@ export default function DemandeQrInputs() {
         signature.clear()
     }
 
+    const handleConfirmValidate = () => {
+        if (listeLivraison.length < 0) {
+            Swal.fire({
+                title: "Attention",
+                text: "Aucun marchand sélectionné !",
+                icon: "warning"
+            })
+            return
+        }
+        const listeMarchand = [
+            ...new Set(listeLivraison.map(item => item.pointMarchand))
+        ]
+        setNbreMarchand(listeMarchand.length)
+        setIsConfirmModalOpen(true)
+    }
+
     const handleValidate = async () => {
         // if (signature.isEmpty()) {
         //     setErrorSign('Vous devez signer pour valider !')
         //     return;
         // }
         setIsSignModalOpen(false)
+        setIsConfirmModalOpen(false)
         setLoadingValidation(true)
         try {
             console.log(listeLivraison)
@@ -482,6 +545,15 @@ export default function DemandeQrInputs() {
                                                         placeholder="Choisir une option"
                                                         className="dark:bg-dark-900"
                                                         onChange={handleSelectType}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Label>Format <span className="text-red-700">*</span></Label>
+                                                    <Select
+                                                        options={optionsFormats}
+                                                        placeholder="Choisir une option"
+                                                        className="dark:bg-dark-900"
+                                                        onChange={handleSelectFormat}
                                                     />
                                                 </div>
                                                 <div className="flex flex-col">
@@ -704,6 +776,11 @@ export default function DemandeQrInputs() {
                                             <TableCell
                                                 isHeader
                                                 className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                                                Format
+                                            </TableCell>
+                                            <TableCell
+                                                isHeader
+                                                className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                                                 Chaîne
                                             </TableCell>
                                             <TableCell
@@ -714,12 +791,12 @@ export default function DemandeQrInputs() {
                                             <TableCell
                                                 isHeader
                                                 className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
-                                                Quantité TPE
+                                                Nbre TPE
                                             </TableCell>
                                             <TableCell
                                                 isHeader
                                                 className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
-                                                Quantité QR Code
+                                                Nbre de copie
                                             </TableCell>
                                             <TableCell
                                                 isHeader
@@ -734,6 +811,9 @@ export default function DemandeQrInputs() {
                                             <TableRow>
                                                 <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                                                     {item.typeQr}
+                                                </TableCell>
+                                                <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                                                    {item.format}
                                                 </TableCell>
                                                 <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                                                     {item.chaine}
@@ -775,7 +855,7 @@ export default function DemandeQrInputs() {
                                             <>
                                                 <div className="w-full flex justify-center items-center">
                                                     <button className="w-1/5 flex items-center justify-center bg-green-400 p-2 rounded-2xl"
-                                                        onClick={handleValidate}
+                                                        onClick={handleConfirmValidate}
                                                     >
                                                         Valider
                                                     </button>
@@ -796,11 +876,15 @@ export default function DemandeQrInputs() {
                     <div className="w-full text-center">
                         <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium">Confirmation</span>
                     </div>
-                    <div>
-                        <div className="text-xs text-center">
+                    <div className="">
+                        <div className="text-xs text-center space-y-1">
                             <div>
                                 <span>Type QR CODE: </span>
                                 <span className="font-bold text-sm">{selectedNomQr}</span>
+                            </div>
+                            <div>
+                                <span>Format: </span>
+                                <span className="font-bold text-sm">{format}</span>
                             </div>
                             <div>
                                 <span className="text-sm font-bold" style={{ fontSize: '15px' }}>{selectedMarchand}</span>
@@ -833,7 +917,11 @@ export default function DemandeQrInputs() {
                                 <span>Type QR CODE: </span>
                                 <span className="font-bold text-sm">{selectedNomQr}</span>
                             </div>
-                            <div className="h-44 overflow-y-scroll space-y-5">
+                            <div>
+                                <span>Format: </span>
+                                <span className="font-bold text-sm">{format}</span>
+                            </div>
+                            <div className="h-44 overflow-y-auto space-y-5">
                                 {marchandFields.map((item) => {
                                     return (
                                         <>
@@ -856,6 +944,38 @@ export default function DemandeQrInputs() {
                         <div className="w-full flex justify-center items-center">
                             <button className="w-1/2 flex items-center justify-center bg-green-400 p-2 rounded-2xl"
                                 onClick={handleAjoutParChaine}
+                            >
+                                Valider
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </Modal>
+            <Modal isOpen={isConfirmModalOpen} onClose={() => setIsConfirmModalOpen(false)} className="p-4 max-w-md">
+                <div className="space-y-5">
+                    <div className="w-full text-center">
+                        <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium">Validation</span>
+                    </div>
+                    <div className="">
+                        <div className="text-xs text-center space-y-1">
+                            <div>
+                                <span>Total demande : </span>
+                                <span className="font-bold text-sm">{quantiteTotale}</span>
+                            </div>
+                            <div>
+                                <span>Marchands : </span>
+                                <span className="font-bold text-sm">{nbreMarchand}</span>
+                            </div>
+                            <div>
+                                <span>Total QR Codes : </span>
+                                <span className="font-bold text-sm">{totalQr}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div className="w-full flex justify-center items-center">
+                            <button className="w-1/2 flex items-center justify-center bg-green-400 p-2 rounded-2xl"
+                                onClick={handleValidate}
                             >
                                 Valider
                             </button>

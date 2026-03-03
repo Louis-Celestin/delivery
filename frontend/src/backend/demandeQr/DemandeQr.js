@@ -75,7 +75,7 @@ export class DemandeQr {
 
     async livraisonDemandeQr(idDemande, formData) {
         try {
-            const response = await axios.put(`${urlBase}/api/demandesQr/livraisonDemandeQr/${idDemande}`, formData, {
+            const response = await axios.put(`${urlBase}/api/demandeQr/livraisonDemandeQr/${idDemande}`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
@@ -83,6 +83,28 @@ export class DemandeQr {
             return response.data;
         } catch (error) {
             throw error.response.data;
+        }
+    }
+
+    async receptionDemandeQr(idDemande, idLivraison, formData) {
+        try {
+            const response = await axios.put(`${urlBase}/api/demandeQr/receptionDemandeQr/${idDemande}/${idLivraison}`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            })
+            return response.data;
+        } catch (error) {
+            throw error.response.data;
+        }
+    }
+
+    async getAllFormatsQr() {
+        try {
+            const response = await axios.get(`${urlBase}/api/demandeQr/getAllFormatsQr`)
+            return response.data;
+        } catch (error) {
+            throw error.response.data
         }
     }
 }

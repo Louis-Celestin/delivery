@@ -335,7 +335,7 @@ const uploadDemandeQr = async (req, res) => {
 
         const qrCodes = req.files?.qrCodes || [];
 
-        if(qrCodes.length == 0) {
+        if (qrCodes.length == 0) {
             console.error("Erreur : Aucun QR CODE upload")
             return res.status(400).json({ message: "Aucun QR CODE upload !" });
         }
@@ -384,7 +384,7 @@ const uploadDemandeQr = async (req, res) => {
             const generation = await tx.generation_qr.create({
                 data: {
                     form_id: generationForm.id,
-                    quantite_qr: qrCodes.length,
+                    quantite_qr: demande.quantite_qr,
                     demande_id: demande.id,
                 }
             })
@@ -446,8 +446,8 @@ const uploadDemandeQr = async (req, res) => {
                 <p>Bonjour,</p>
                 <p>Les QR Codes de la demande ${demande.id} ont été générés.</p>
                 <ul>
-                <li><strong>Nombre de marchands :</strong> ${quantite_marchand}</li>
-                <li><strong>Nombre de QR Code :</strong> ${quantite_qr}</li>
+                <li><strong>Nombre de marchands :</strong> ${demande.quantite_marchand}</li>
+                <li><strong>Nombre de QR Code :</strong> ${demande.quantite_qr}</li>
                 </ul>
                 <br>
                 <p>Commentaire : ${commentaire_mail}<p>
@@ -490,48 +490,48 @@ const uploadDemandeQr = async (req, res) => {
 }
 
 const downloadQrCodes = async (req, res) => {
-  const { idDemande, idGeneration } = req.params;
+    const { idDemande, idGeneration } = req.params;
 
-  try {
-    const files = await prisma.qr_codes.findMany({
-      where: {
-        demande_id: parseInt(idDemande),
-        generation_id: parseInt(idGeneration),
-        is_deleted: false,
-      },
-    });
+    try {
+        const files = await prisma.qr_codes.findMany({
+            where: {
+                demande_id: parseInt(idDemande),
+                generation_id: parseInt(idGeneration),
+                is_deleted: false,
+            },
+        });
 
-    if (files.length === 0) {
-      return res.status(404).json({ message: "Aucun QR Codes trouvés" });
+        if (files.length === 0) {
+            return res.status(404).json({ message: "Aucun QR Codes trouvés" });
+        }
+
+        // Set ZIP headers
+        res.setHeader("Content-Type", "application/zip");
+        res.setHeader(
+            "Content-Disposition",
+            `attachment; filename="qr_codes_${idDemande}_${idGeneration}.zip"`
+        );
+
+        const archive = archiver("zip", {
+            zlib: { level: 9 },
+        });
+
+        archive.pipe(res);
+
+        for (const file of files) {
+            const filePath = path.resolve(file.path);
+
+            if (fs.existsSync(filePath)) {
+                archive.file(filePath, { name: file.filename });
+            }
+        }
+
+        await archive.finalize();
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Server error" });
     }
-
-    // Set ZIP headers
-    res.setHeader("Content-Type", "application/zip");
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="qr_codes_${idDemande}_${idGeneration}.zip"`
-    );
-
-    const archive = archiver("zip", {
-      zlib: { level: 9 },
-    });
-
-    archive.pipe(res);
-
-    for (const file of files) {
-      const filePath = path.resolve(file.path);
-
-      if (fs.existsSync(filePath)) {
-        archive.file(filePath, { name: file.filename });
-      }
-    }
-
-    await archive.finalize();
-
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Server error" });
-  }
 };
 
 const impressionDemandeQr = async (req, res) => {
@@ -635,12 +635,12 @@ const impressionDemandeQr = async (req, res) => {
         let link = `${url}/demande-qr-details/${demande.id}`;
 
         if ((livreurs && livreurs.length > 0) || (generateurs && generateurs.length > 0)) {
-            const subject = `QR CODE(S) IMPRIMÉ(S)`;
+            const subject = `IMPRESSION QR CODE(S)`;
             let html = `
                 <p>Bonjour,</p>
                 <p>Les QR Codes de la demande ${demande.id} ont été imprimés.</p>
                 <ul>
-                <li><strong>Nombre de QR Code :</strong> ${quantite_qr}</li>
+                <li><strong>Nombre de QR Code :</strong> ${demande.quantite_qr}</li>
                 </ul>
                 <br>
                 <p>Commentaire : ${commentaire_mail}<p>
@@ -687,7 +687,7 @@ const livraisonDemandeQr = async (req, res) => {
         const {
             idDemande
         } = req.params
-        
+
         const {
             userId,
             commentaire,
@@ -777,12 +777,12 @@ const livraisonDemandeQr = async (req, res) => {
         let link = `${url}/demande-qr-details/${demande.id}`;
 
         if (recepteurs && recepteurs.length > 0) {
-            const subject = `QR CODE(S) LIVRÉ(S)`;
+            const subject = `LIVRAISON QR CODE(S)`;
             let html = `
                 <p>Bonjour,</p>
                 <p>Les QR Codes de la demande ${demande.id} ont été livrés.</p>
                 <ul>
-                <li><strong>Nombre de QR Code :</strong> ${quantite_qr}</li>
+                <li><strong>Nombre de QR Code :</strong> ${demande.quantite_qr}</li>
                 </ul>
                 <br>
                 <p>Commentaire : ${commentaire_mail}<p>
@@ -817,6 +817,186 @@ const livraisonDemandeQr = async (req, res) => {
         res.status(500).json({ message: "Erreur interne", error });
     }
 }
+
+const receptionDemandeQr = async (req, res) => {
+    try {
+        const {
+            idDemande,
+            idLivraison,
+        } = req.params
+
+        const {
+            userId,
+            commentaire,
+        } = req.body
+
+        const signature = req.files?.signature?.[0] || null;
+        if (!signature) {
+            console.error('Signature manquante !')
+            return res.status(404).json({ message: "Signature introuvable !" });
+        }
+
+        const utilisateur = await prisma.users.findUnique({
+            where: {
+                id_user: parseInt(userId)
+            }
+        })
+        if (!utilisateur) {
+            console.error("Erreur : Utilisateur introuvable")
+            return res.status(404).json({ message: "Utilisateur introuvable !" });
+        }
+
+        const demande = await prisma.demande_qr.findUnique({
+            where: {
+                id: parseInt(idDemande)
+            }
+        })
+        if (!demande) {
+            console.error("Erreur : demande introuvable")
+            return res.status(404).json({ message: "Demande introuvable !" });
+        }
+
+        const livraison = await prisma.livraison_qr.findUnique({
+            where: {
+                id: parseInt(idLivraison)
+            }
+        })
+        if (!livraison) {
+            console.error("Erreur : livraison introuvable")
+            return res.status(404).json({ message: "Livraison introuvable !" });
+        }
+
+        const listeDemande = typeof demande.liste_demande === "string"
+            ? JSON.parse(demande.liste_demande)
+            : demande.liste_demande;
+
+        const newReceptionQr = await prisma.$transaction(async (tx) => {
+            const receptionForm = await tx.forms.create({
+                data: {
+                    type: 'reception_qr',
+                    created_by: utilisateur.id_user,
+                    created_at: new Date(),
+                    last_modified_at: new Date(),
+                    nom_user: utilisateur.fullname,
+                    commentaire,
+                }
+            });
+            const reception = await tx.reception_qr.create({
+                data: {
+                    form_id: receptionForm.id,
+                    quantite_qr: demande.quantite_qr,
+                    demande_id: demande.id,
+                    livraison_id: livraison.id
+                }
+            })
+            await tx.form_signatures.create({
+                data: {
+                    form_id: receptionForm.id,
+                    signature_url: signature.path,
+                    signed_by: utilisateur.id_user,
+                    signed_at: new Date(),
+                    role: 'receveur',
+                },
+            })
+            await tx.demande_qr.update({
+                where: {
+                    id: demande.id
+                },
+                data: {
+                    statut: 'recue'
+                }
+            })
+            await tx.marchands_qr.createMany({
+                data: listeDemande.map((item) => ({
+                    chaine: item.chaine,
+                    nom_marchand: item.pointMarchand,
+                    quantite_sn: Number(item.quantiteTerminal),
+                    quantite_qr: Number(item.quantiteQr),
+                    type_qr: item.typeQr,
+                    type_id: Number(item.typeQrId),
+                    format_id: Number(item.formatId),
+                    format: item.format,
+                    demande_id: demande.id,
+                    created_at: new Date(),
+                }))
+            })
+
+            return (receptionForm, reception)
+        })
+
+        /*****************          GESTION MAIL             *****************/
+
+        const roleLivraison = await prisma.user_roles.findMany({
+            where: {
+                role_id: 18,
+            },
+            include: {
+                users: true
+            }
+        })
+        const livreurs = roleLivraison.map(us => us.users)
+
+        let commentaire_mail = commentaire ? commentaire : '(sans commentaire)';
+
+        const url = GENERAL_URL
+        let link = `${url}/demande-qr-details/${demande.id}`;
+
+        if (livreurs && livreurs.length > 0) {
+            const subject = `RECEPTION QR CODE(S)`;
+            let html = `
+                <p>Bonjour,</p>
+                <p>Les QR Codes de la demande ${demande.id} ont été réceptionnés.</p>
+                <ul>
+                <li><strong>Nombre de QR Code :</strong> ${demande.quantite_qr}</li>
+                </ul>
+                <br>
+                <p>Commentaire : ${commentaire_mail}<p>
+                <br>
+                <p>Retrouvez la demande à ce lien : 
+                <span>
+                <a href="${link}" target="_blank" style="background-color: #73dced; color: white; padding: 7px 12px; text-decoration: none; border-radius: 5px;">
+                    Cliquez ici !
+                </a>
+                </span>
+                </p>
+                <br><br>
+                <p>Green - Pay vous remercie.</p>
+            `;
+            for (const livreur of livreurs) {
+                await sendMail({
+                    to: livreur.email,
+                    subject,
+                    html,
+                });
+            }
+        }
+
+        console.log("QR Codes réceptionnés avec succès ! ")
+        res.status(201).json({
+            message: "QR Codes réceptionnés avec succès !",
+            receptionQr: newReceptionQr,
+        });
+
+    } catch (error) {
+        console.error("Erreur lors de la réception :", error);
+        res.status(500).json({ message: "Erreur interne", error });
+    }
+}
+
+const getAllFormatsQr = async (req, res) => {
+    try {
+        const formats = await prisma.format_qr.findMany({
+            orderBy: { format: 'asc' },
+        });
+
+        console.log('Succès !')
+        res.status(200).json(formats);
+    } catch (error) {
+        console.error("Erreur lors de la récupération des formats de QR Codes :", error)
+        res.status(500).json({ message: "Erreur lors de la récupération des formats de QR Codes :", error });
+    }
+}
+
 module.exports = {
     getAllTypePaiement,
     faireDemandeQr,
@@ -826,4 +1006,6 @@ module.exports = {
     downloadQrCodes,
     impressionDemandeQr,
     livraisonDemandeQr,
+    receptionDemandeQr,
+    getAllFormatsQr,
 }

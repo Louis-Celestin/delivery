@@ -33,6 +33,7 @@ export default function DemandeQrDetails() {
     const [loadingDownload, setLoadingDownload] = useState(false)
     const [loadingImpression, setLoadingImpression] = useState(false)
     const [loadingLivraison, setLoadingLivraison] = useState(false)
+    const [loadingReception, setLoadingReception] = useState(false)
 
     const [dateDemande, setDateDemande] = useState('')
     const [statutDemande, setStatutDemande] = useState('')
@@ -62,7 +63,6 @@ export default function DemandeQrDetails() {
     const [errorGenerate, setErrorGenerate] = useState('')
 
     const [idGeneration, setIdGeneration] = useState(null)
-    const [commentaireGeneration, setCommentaireGeneration] = useState('')
 
     const [isModalImpressionOpen, setIsModalImpressionOpen] = useState(false)
     const [isModalReturnFilesOpen, setIsModalReturnFilesOpen] = useState(false)
@@ -77,6 +77,17 @@ export default function DemandeQrDetails() {
     const [signatureLivraison, setSignatureLivraison] = useState()
     const [commentaireLivraison, setCommentaireLivraison] = useState('')
 
+    const [isModalReceptionOpen, setIsModalReceptionOpen] = useState(false)
+    const [errorSignReception, setErrorSignReception] = useState('')
+    const [signatureReception, setSignatureReception] = useState()
+    const [commentaireReception, setCommentaireReception] = useState('')
+    const [idLivraison, setIdLivraison] = useState(null)
+
+    const [commentaireDemandeur, setCommentaireDemandeur] = useState('')
+    const [commentaireGenerateur, setCommentaireGenerateur] = useState('')
+    const [commentaireImprimeur, setCommentaireImprimeur] = useState('')
+    const [commentaireLivreur, setCommentaireLivreur] = useState('')
+    const [commentaireReceveur, setCommentaireReceveur] = useState('')
 
     const formatDate = (date) => {
         const d = new Date(date);
@@ -101,7 +112,6 @@ export default function DemandeQrDetails() {
 
                 const statut = demande.statut
                 const classStatut = 'text-center text-sm font-semibold rounded-xl p-0.5 bg-blue-50 text-blue-300'
-                const commentaireDemande = formDemande.commentaire
 
                 const dateDemande = formatDate(formDemande.last_modified_at)
                 setDateDemande(dateDemande)
@@ -124,9 +134,16 @@ export default function DemandeQrDetails() {
 
                 const indexGeneration = demande.generation_qr.length - 1
                 const generation = demande.generation_qr[indexGeneration]
+                setIdGeneration(generation?.id)
 
                 const indexImpression = demande.impression_qr.length - 1
                 const impression = demande.impression_qr[indexImpression]
+
+                const indexLivraison = demande.livraison_qr.length - 1
+                const livraison = demande.livraison_qr[indexLivraison]
+
+                const indexReception = demande.reception_qr.length - 1
+                const reception = demande.reception_qr[indexReception]
 
                 if (statut == 'soumise') {
                     setStatutDemande('soumise')
@@ -139,7 +156,6 @@ export default function DemandeQrDetails() {
                     setStatutDemande('générée')
                     setStatutClass('text-center text-xs font-semibold rounded-xl p-0.5 bg-blue-100 text-blue-500')
                     setIsGeneree(true)
-                    setIdGeneration(generation.id)
                     if (rolesId.includes(17)) {
                         setIsImprimeur(true)
                     }
@@ -150,10 +166,29 @@ export default function DemandeQrDetails() {
                     if (rolesId.includes(18)) {
                         setIsLivreur(true)
                     }
+                } else if (statut == 'livree' && livraison) {
+                    setStatutDemande('livrée')
+                    setStatutClass('text-center text-xs font-semibold rounded-xl p-0.5 bg-blue-300 text-blue-600')
+                    setIsLivree(true)
+                    setIdLivraison(livraison.id)
+                    if (rolesId.includes(19)) {
+                        setIsReceveur(true)
+                    }
+                } else if (statut == 'recue' && reception) {
+                    setStatutDemande('reçue')
+                    setStatutClass('text-center text-xs font-semibold rounded-xl p-0.5 bg-green-100 text-green-500')
                 }
                 if (generation && (statut == 'generee' || statut == 'imprimee' || statut == 'livree' || statut == 'recue')) {
-                    setIsUploaded(true)
+                    if (rolesId.includes(20)) {
+                        setIsUploaded(true)
+                    }
                 }
+
+                setCommentaireDemandeur(formDemande.commentaire)
+                setCommentaireGenerateur(generation?.forms.commentaire)
+                setCommentaireImprimeur(impression?.forms.commentaire)
+                setCommentaireLivreur(livraison?.forms.commentaire)
+                setCommentaireReceveur(reception?.forms.commentaire)
 
             } catch (error) {
                 console.log("Error fetchind data ", error)
@@ -317,7 +352,7 @@ export default function DemandeQrDetails() {
             setLoadingImpression(true)
             const payload = {
                 userId,
-                commmentaire: commentaireImpression,
+                commentaire: commentaireImpression,
             }
 
             await demandeData.impressionDemandeQr(idDemande, idGeneration, payload)
@@ -342,6 +377,10 @@ export default function DemandeQrDetails() {
 
     const handleClearLivraison = () => {
         signatureLivraison.clear()
+    }
+
+    const handleClearReception = () => {
+        signatureReception.clear()
     }
 
     const handleLivraisonQr = async () => {
@@ -370,7 +409,7 @@ export default function DemandeQrDetails() {
             })
             navigate('/toutes-les-demandes-qr')
         } catch (error) {
-            console.log("Erreur de confirmation d'impression : ", error)
+            console.log("Erreur de livraison : ", error)
             Swal.fire({
                 title: "Attention",
                 text: "Une erreur est survenue lors de la livraison !",
@@ -378,7 +417,45 @@ export default function DemandeQrDetails() {
             })
             navigate('/toutes-les-demandes-qr')
         } finally {
-            setLoadingImpression(false)
+            setLoadingLivraison(false)
+        }
+    }
+
+    const handleReceptionQr = async () => {
+        if (signatureReception.isEmpty()) {
+            setErrorSignReception('Vous devez signer pour valider !')
+            return;
+        }
+        setIsModalReceptionOpen(false)
+        try {
+            setLoadingReception(true)
+            const sign = signatureReception.toDataURL('image/png')
+            const fd = new FormData();
+            if (sign) {
+                const blob = await fetch(sign).then(res => res.blob());
+                fd.append('signature', blob, 'signature.png');
+            }
+            fd.append('userId', userId)
+            fd.append('commentaire', commentaireReception)
+
+            await demandeData.receptionDemandeQr(idDemande, idLivraison, fd)
+
+            Swal.fire({
+                title: "Succès",
+                text: "Réception enregistrée avec succès !",
+                icon: "success"
+            })
+            navigate('/toutes-les-demandes-qr')
+        } catch (error) {
+            console.log("Erreur de la réception : ", error)
+            Swal.fire({
+                title: "Attention",
+                text: "Une erreur est survenue lors de la réception !",
+                icon: "warning"
+            })
+            navigate('/toutes-les-demandes-qr')
+        } finally {
+            setLoadingReception(false)
         }
     }
 
@@ -531,8 +608,102 @@ export default function DemandeQrDetails() {
                                                 ) : (
                                                     <></>
                                                 )}
+                                                {isReceveur ? (
+                                                    <>
+                                                        {loadingReception ? (
+                                                            <>
+                                                                <div className='text-center'>
+                                                                    <span className=''>
+                                                                        <ProgressSpinner style={{ width: '20px', height: '20px' }} strokeWidth="8" animationDuration=".5s" />
+                                                                    </span>
+                                                                </div>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <button className='bg-gray-100 rounded py-3 px-5 h-8 w-full flex items-center hover:bg-gray-200'
+                                                                    onClick={() => {
+                                                                        setIsModalReceptionOpen(true)
+                                                                    }}>
+                                                                    <span className='mr-4'><i className="pi pi-inbox"></i></span>
+                                                                    <span className='text-sm text-gray-700 font-medium'>Réception QR Codes</span>
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <></>
+                                                )}
                                             </div>
                                         </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div>
+                                        {commentaireDemandeur ? (
+                                            <>
+                                                <div className='overflow-hidden mb-6 pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
+                                                    <div className='mb-6 pb-2 w-full border-b text-left'>
+                                                        <span className='text-sm mr-2'>Commentaire demandeur</span>
+                                                        <span className='text-sm'><i className="pi pi-comment"></i></span>
+                                                    </div>
+                                                    <p className='text-sm text-blue-500 text-left'>{commentaireDemandeur}</p>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <></>
+                                        )}
+                                        {commentaireGenerateur ? (
+                                            <>
+                                                <div className='overflow-hidden mb-6 pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
+                                                    <div className='mb-6 pb-2 w-full border-b text-left'>
+                                                        <span className='text-sm mr-2'>Commentaire générateur</span>
+                                                        <span className='text-sm'><i className="pi pi-comment"></i></span>
+                                                    </div>
+                                                    <p className='text-sm text-blue-500 text-left'>{commentaireGenerateur}</p>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <></>
+                                        )}
+                                        {commentaireImprimeur ? (
+                                            <>
+                                                <div className='overflow-hidden mb-6 pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
+                                                    <div className='mb-6 pb-2 w-full border-b text-left'>
+                                                        <span className='text-sm mr-2'>Commentaire imprimeur</span>
+                                                        <span className='text-sm'><i className="pi pi-comment"></i></span>
+                                                    </div>
+                                                    <p className='text-sm text-blue-500 text-left'>{commentaireImprimeur}</p>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <></>
+                                        )}
+                                        {commentaireLivreur ? (
+                                            <>
+                                                <div className='overflow-hidden mb-6 pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
+                                                    <div className='mb-6 pb-2 w-full border-b text-left'>
+                                                        <span className='text-sm mr-2'>Commentaire livreur</span>
+                                                        <span className='text-sm'><i className="pi pi-comment"></i></span>
+                                                    </div>
+                                                    <p className='text-sm text-blue-500 text-left'>{commentaireLivreur}</p>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <></>
+                                        )}
+                                        {commentaireReceveur ? (
+                                            <>
+                                                <div className='overflow-hidden mb-6 pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
+                                                    <div className='mb-6 pb-2 w-full border-b text-left'>
+                                                        <span className='text-sm mr-2'>Commentaire receveur</span>
+                                                        <span className='text-sm'><i className="pi pi-comment"></i></span>
+                                                    </div>
+                                                    <p className='text-sm text-blue-500 text-left'>{commentaireReceveur}</p>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <></>
+                                        )}
                                     </div>
                                 </div>
                                 <div>
@@ -552,6 +723,11 @@ export default function DemandeQrDetails() {
                                                                 isHeader
                                                                 className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                                                                 Type QR
+                                                            </TableCell>
+                                                            <TableCell
+                                                                isHeader
+                                                                className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                                                                Format
                                                             </TableCell>
                                                             <TableCell
                                                                 isHeader
@@ -581,6 +757,9 @@ export default function DemandeQrDetails() {
                                                             <TableRow>
                                                                 <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                                                                     {item.typeQr}
+                                                                </TableCell>
+                                                                <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                                                                    {item.format}
                                                                 </TableCell>
                                                                 <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                                                                     {item.chaine}
@@ -623,10 +802,10 @@ export default function DemandeQrDetails() {
                     </div>
                     <div className="flex flex-col">
                         <span className="text-xs">
-                            Total QR Codes demandés: <span className="font-semibold">{totalQr}</span>
+                            Total demande: <span className="font-semibold">{listeDemande.length}</span>
                         </span>
                         <span className="text-xs">
-                            QR Codes uploaded: <span className="font-semibold">{selectedFiles.length}</span>
+                            QR Codes files uploaded: <span className="font-semibold">{selectedFiles.length}</span>
                         </span>
                     </div>
                     <div>
@@ -731,7 +910,7 @@ export default function DemandeQrDetails() {
                     <div>
                         <div className="w-full flex justify-center items-center">
                             <button className="w-1/2 flex items-center justify-center bg-green-400 p-2 rounded-2xl"
-                                onClick={handleUploadQr}
+                                onClick={''}
                             >
                                 Retourner
                             </button>
@@ -777,6 +956,48 @@ export default function DemandeQrDetails() {
                     <div className="text-center">
                         <span className="text-error-500 text-xs">
                             {errorSignLivraison}
+                        </span>
+                    </div>
+                </div>
+            </Modal>
+            <Modal isOpen={isModalReceptionOpen} onClose={() => setIsModalReceptionOpen(false)} className="p-4 max-w-md">
+                <div className='p-1'>
+                    <div className="w-full text-center mb-3">
+                        <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium text-sm">Réception</span>
+                    </div>
+                    <div className='text-center mb-3 text-xs'>
+                        <span>Signez manuellement pour valider la réception</span>
+                    </div>
+                    <div className='flex flex-col justify-center items-center'>
+                        <SignatureCanvas
+                            ref={data => setSignatureReception(data)}
+                            canvasProps={{ width: 300, height: 150, className: 'sigCanvas border border-gray-300 rounded' }}
+                        />
+                        <div className='w-full mt-3'>
+                            <Label>Commentaire</Label>
+                            <TextArea
+                                value={commentaireReception}
+                                onChange={(value) => setCommentaireReception(value)}
+                                rows={4}
+                                placeholder="Ajoutez un commentaire"
+                            />
+                        </div>
+                        <div className='w-full mt-6 flex justify-center items-center'>
+                            <button
+                                onClick={handleClearReception}
+                                className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
+                                Clear
+                            </button>
+                            <button
+                                onClick={handleReceptionQr}
+                                className='w-1/4 mx-3 bg-green-400 rounded-2xl h-10 flex justify-center items-center'>
+                                Valider
+                            </button>
+                        </div>
+                    </div>
+                    <div className="text-center">
+                        <span className="text-error-500 text-xs">
+                            {errorSignReception}
                         </span>
                     </div>
                 </div>

@@ -227,7 +227,7 @@ export default function AllDemandesQrList() {
                             </button>
                         </Link>
                     </span>
-                    {demande.statut == 'recue' ? (
+                    {/* {demande.statut == 'recue' ? (
                         <>
                             <span>
                                 {printingId === demande.id ? (
@@ -241,7 +241,7 @@ export default function AllDemandesQrList() {
                         </>
                     ) : (
                         <></>
-                    )}
+                    )} */}
                 </div>
             </>
         )

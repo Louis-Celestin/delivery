@@ -690,14 +690,18 @@ model marchands_qr {
   quantite_qr   Int?
   type_qr       String?        @db.VarChar(255)
   type_id       Int?
+  format_id     Int
+  format        String         @db.VarChar(255)
   demande_id    Int
   created_at    DateTime       @default(now()) @db.DateTime(0)
   is_deleted    Boolean        @default(false)
   demande_qr    demande_qr     @relation(fields: [demande_id], references: [id], map: "marchands_qr_ibfk_1")
   type_paiement type_paiement? @relation(fields: [type_id], references: [id], onDelete: Restrict, map: "marchands_qr_ibfk_2")
+  format_qr     format_qr      @relation(fields: [format_id], references: [id], map: "marchands_qr_ibfk_3")
 
   @@index([demande_id], map: "demande_id")
   @@index([type_id], map: "type_id")
+  @@index([format_id], map: "format_id")
 }
 
 model qr_codes {
@@ -768,6 +772,12 @@ model forms {
   @@index([created_by], map: "created_by")
   @@index([updated_by], map: "updated_by")
   @@index([type], map: "type")
+}
+
+model format_qr {
+  id           Int            @id @default(autoincrement())
+  format       String         @db.VarChar(255)
+  marchands_qr marchands_qr[]
 }
 
 enum livraison_statut_livraison {
