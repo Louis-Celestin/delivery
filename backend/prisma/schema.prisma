@@ -902,4 +902,5 @@ enum fichiers_role {
   demandeur
   validateur
   regularisateur
+  generateur
 }
