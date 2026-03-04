@@ -36,11 +36,14 @@ if (test_env) {
     GENERAL_URL = localUrl
 }
 
-const regularisationDemande = async (req, res) => {
+const regularisationDemandeQr = async (req, res) => {
     try {
         const {
             date_demande,
+            date_generation,
+            date_impression,
             date_livraison,
+            date_reception,
             commentaire,
             liste_demande,
             quantite_marchand,
@@ -48,7 +51,17 @@ const regularisationDemande = async (req, res) => {
             userId,
         } = req.body
 
-        const signature = req.files?.signature || null;
+        const signature = req.files?.signature?.[0] || null;
+
+        const files = req.files?.files || [];
+        const files_content = files.length
+            ? files.map(file => ({
+                name: file.originalname,
+                path: file.path,
+                type: file.mimetype,
+                size: file.size
+            }))
+            : [];
         if (!signature) {
             console.error('Signature manquante !')
             return res.status(404).json({ message: "Signature introuvable !" });
@@ -64,25 +77,165 @@ const regularisationDemande = async (req, res) => {
             return res.status(404).json({ message: "Utilisateur introuvable !" });
         }
 
+        const quantiteQr = Number(quantite_qr)
+        const quantiteMarchand = Number(quantite_marchand)
         const details = typeof liste_demande === "string"
             ? JSON.parse(liste_demande)
             : liste_demande;
 
-        const demande = await prisma.demande_qr.create({
-            data: {
-                statut: 'livree',
-                created_at: new Date(date_demande),
-                created_by: parseInt(userId),
-                nom_user: utilisateur.fullname,
-                quantite_qr,
-                quantite_marchand,
-                liste_demande: JSON.stringify(details),
-                commentaire,
-                is_reg: true,
+        const newRegularisation = await prisma.$transaction(async (tx) => {
+            const demandeForm = await tx.forms.create({
+                data: {
+                    type: 'demande_qr',
+                    created_by: utilisateur.id_user,
+                    created_at: new Date(date_demande),
+                    last_modified_at: new Date(date_demande),
+                    nom_user: utilisateur.fullname,
+                    commentaire,
+                    form_signatures: {
+                        create: {
+                            role: 'regularisateur',
+                            signature_url: signature.path,
+                            signed_by: utilisateur.id_user,
+                            signed_at: new Date()
+                        }
+                    },
+                },
+                include: {
+                    form_signatures: true,
+                }
+            })
+            const demande = await tx.demande_qr.create({
+                data: {
+                    form_id: demandeForm.id,
+                    statut: 'recue',
+                    quantite_qr: quantiteQr,
+                    quantite_marchand: quantiteMarchand,
+                    liste_demande: JSON.stringify(details),
+                    is_reg: true,
+                }
+            })
+            const generationForm = await tx.forms.create({
+                data: {
+                    type: 'generation_qr',
+                    created_by: utilisateur.id_user,
+                    created_at: new Date(date_generation),
+                    last_modified_at: new Date(date_generation),
+                    nom_user: utilisateur.fullname,
+                },
+            })
+            const generation = await tx.generation_qr.create({
+                data: {
+                    form_id: generationForm.id,
+                    quantite_qr: quantiteQr,
+                    demande_id: demande.id,
+                }
+            })
+            const impressionForm = await tx.forms.create({
+                data: {
+                    type: 'impression_qr',
+                    created_by: utilisateur.id_user,
+                    created_at: new Date(date_impression),
+                    last_modified_at: new Date(date_impression),
+                    nom_user: utilisateur.fullname,
+                },
+            })
+            const impression = await tx.impression_qr.create({
+                data: {
+                    form_id: impressionForm.id,
+                    quantite_qr: quantiteQr,
+                    generation_id: generation.id,
+                    demande_id: demande.id,
+                }
+            })
+            const livraisonForm = await tx.forms.create({
+                data: {
+                    type: 'livraison_qr',
+                    created_by: utilisateur.id_user,
+                    created_at: new Date(date_livraison),
+                    last_modified_at: new Date(date_livraison),
+                    nom_user: utilisateur.fullname,
+                },
+            })
+            const livraison = await tx.livraison_qr.create({
+                data: {
+                    form_id: livraisonForm.id,
+                    quantite_qr: quantiteQr,
+                    demande_id: demande.id,
+                }
+            })
+            const receptionForm = await tx.forms.create({
+                data: {
+                    type: 'reception_qr',
+                    created_by: utilisateur.id_user,
+                    created_at: new Date(date_reception),
+                    last_modified_at: new Date(date_reception),
+                    nom_user: utilisateur.fullname,
+                },
+            })
+            const reception = await tx.reception_qr.create({
+                data: {
+                    form_id: receptionForm.id,
+                    quantite_qr: quantiteQr,
+                    demande_id: demande.id,
+                    livraison_id: livraison.id,
+                }
+            })
+
+            await tx.marchands_qr.createMany({
+                data: details.map((item) => ({
+                    chaine: item.chaine,
+                    nom_marchand: item.pointMarchand,
+                    quantite_sn: Number(item.quantiteTerminal),
+                    quantite_qr: Number(item.quantiteQr),
+                    type_qr: item.typeQr,
+                    type_id: Number(item.typeQrId),
+                    format_id: Number(item.formatId),
+                    format: item.format,
+                    demande_id: demande.id,
+                    created_at: new Date(date_demande),
+                }))
+            })
+
+            if (files_content.length > 0) {
+                await tx.fichiers.createMany({
+                    data: files_content.map(fichier => ({
+                        path: fichier.path,
+                        filename: fichier.name,
+                        originalName: fichier.name,
+                        mimeType: fichier.type,
+                        size: fichier.size,
+                        uploaded_by: +userId,
+                        form_id: demandeForm.id,
+                        type_formulaire: 'demande_qr',
+                        role: 'regularisateur',
+                        created_at: new Date(),
+                    }))
+                })
+            }
+            return {
+                demandeForm,
+                demande,
+                generationForm,
+                generation,
+                impressionForm,
+                impression,
+                livraisonForm,
+                livraison,
+                receptionForm,
+                reception
             }
         })
-    } catch (error) {
 
+        console.log("Régularisation enregistrée avec succès ! ")
+        res.status(201).json({
+            message: "Régularisation enregistrée avec succès",
+            data: newRegularisation
+        });
+
+    } catch (error) {
+        console.error("Erreur lors de la régularisation :", error);
+        res.status(500).json({ message: "Erreur interne", error });
     }
 }
 
@@ -101,6 +254,15 @@ const faireDemandeQr = async (req, res) => {
         //     console.error('Signature manquante !')
         //     return res.status(404).json({ message: "Signature introuvable !" });
         // }
+        const files = req.files?.files || [];
+        const files_content = files.length
+            ? files.map(file => ({
+                name: file.originalname,
+                path: file.path,
+                type: file.mimetype,
+                size: file.size
+            }))
+            : [];
 
         const utilisateur = await prisma.users.findUnique({
             where: {
@@ -117,33 +279,53 @@ const faireDemandeQr = async (req, res) => {
             : liste_demande;
 
 
-        const demande = await prisma.forms.create({
-            data: {
-                type: 'demande_qr',
-                created_by: utilisateur.id_user,
-                created_at: new Date(),
-                last_modified_at: new Date(),
-                nom_user: utilisateur.fullname,
-                commentaire,
-                demande_qr: {
-                    create: {
-                        statut: 'soumise',
-                        quantite_qr,
-                        quantite_marchand,
-                        liste_demande: JSON.stringify(details),
-                    }
+        const newDemandeQr = await prisma.$transaction(async (tx) => {
+            const demandeForm = await tx.forms.create({
+                data: {
+                    type: 'demande_qr',
+                    created_by: utilisateur.id_user,
+                    created_at: new Date(),
+                    last_modified_at: new Date(),
+                    nom_user: utilisateur.fullname,
+                    commentaire,
+                    // form_signatures: {
+                    //     create: {
+                    //         role : 'demandeur',
+                    //         signature_url: signature.path,
+                    //         signed_by: utilisateur.id_user
+                    //     }
+                    // },
                 },
-                // form_signatures: {
-                //     create: {
-                //         role : 'demandeur',
-                //         signature_url: signature.path,
-                //         signed_by: utilisateur.id_user
-                //     }
-                // },
-            },
-            include: {
-                demande_qr: true,
-                // form_signatures: true,
+            })
+            const demande = await tx.demande_qr.create({
+                data: {
+                    form_id: demandeForm.id,
+                    statut: 'soumise',
+                    quantite_qr: Number(quantite_qr),
+                    quantite_marchand: Number(quantite_marchand),
+                    liste_demande: JSON.stringify(details),
+                }
+            })
+
+            if (files_content.length > 0) {
+                await tx.fichiers.createMany({
+                    data: files_content.map(fichier => ({
+                        path: fichier.path,
+                        filename: fichier.name,
+                        originalName: fichier.name,
+                        mimeType: fichier.type,
+                        size: fichier.size,
+                        uploaded_by: +userId,
+                        form_id: demandeForm.id,
+                        type_formulaire: 'demande_qr',
+                        role: 'demandeur',
+                        created_at: new Date(),
+                    }))
+                })
+            }
+
+            return {
+                demandeForm, demande
             }
         })
 
@@ -167,15 +349,25 @@ const faireDemandeQr = async (req, res) => {
             }
         })
 
+        const roleSupervision = await prisma.user_roles.findMany({
+            where: {
+                role_id: 22,
+            },
+            include: {
+                users: true
+            }
+        })
+
         const generateurs = roleGenerateur.map(us => us.users)
         const imprimeurs = roleImpression.map(us => us.users)
+        const superviseurs = roleSupervision.map(us => us.users)
 
         let commentaire_mail = commentaire ? commentaire : '(sans commentaire)';
 
         const url = GENERAL_URL
-        let link = `${url}/demande-qr-details/${demande.id}`;
+        let link = `${url}/demande-qr-details/${newDemandeQr.demande.id}`;
 
-        if ((generateurs && generateurs.length > 0) || (imprimeurs && imprimeurs.length > 0)) {
+        if ((generateurs && generateurs.length > 0) || (imprimeurs && imprimeurs.length > 0) || (superviseurs && superviseurs.length > 0)) {
             const subject = `NOUVELLE DEMANDE DE QR CODE(S)`;
             let html = `
                 <p>Bonjour,</p>
@@ -211,12 +403,19 @@ const faireDemandeQr = async (req, res) => {
                     html,
                 });
             }
+            for (const superviseur of superviseurs) {
+                await sendMail({
+                    to: superviseur.email,
+                    subject,
+                    html,
+                });
+            }
         }
 
         console.log("Demande enregistrée avec succès ! ")
         res.status(201).json({
             message: "Demande enregistrée avec succès",
-            demandeQr: demande,
+            demandeQr: newDemandeQr,
         });
     } catch (error) {
         console.error("Erreur lors de la demande :", error);
@@ -432,15 +631,24 @@ const uploadDemandeQr = async (req, res) => {
                 users: true,
             }
         })
+        const roleSupervision = await prisma.user_roles.findMany({
+            where: {
+                role_id: 22,
+            },
+            include: {
+                users: true
+            }
+        })
         const imprimeurs = roleImpression.map(us => us.users)
         const livreurs = roleLivraison.map(us => us.users)
+        const superviseurs = roleSupervision.map(us => us.users)
 
         let commentaire_mail = commentaire ? commentaire : '(sans commentaire)';
 
         const url = GENERAL_URL
         let link = `${url}/demande-qr-details/${demande.id}`;
 
-        if (imprimeurs && imprimeurs.length > 0) {
+        if ((imprimeurs && imprimeurs.length > 0) || (superviseurs && superviseurs.length > 0)) {
             const subject = `QR CODE(S) GÉNÉNÉRÉ(S)`;
             let html = `
                 <p>Bonjour,</p>
@@ -472,6 +680,13 @@ const uploadDemandeQr = async (req, res) => {
             for (const imprimeur of imprimeurs) {
                 await sendMail({
                     to: imprimeur.email,
+                    subject,
+                    html,
+                });
+            }
+            for (const superviseur of superviseurs) {
+                await sendMail({
+                    to: superviseur.email,
                     subject,
                     html,
                 });
@@ -626,15 +841,24 @@ const impressionDemandeQr = async (req, res) => {
                 users: true,
             }
         })
+        const roleSupervision = await prisma.user_roles.findMany({
+            where: {
+                role_id: 22,
+            },
+            include: {
+                users: true
+            }
+        })
         const generateurs = roleGenerateur.map(us => us.users)
         const livreurs = roleLivraison.map(us => us.users)
+        const superviseurs = roleSupervision.map(us => us.users)
 
         let commentaire_mail = commentaire ? commentaire : '(sans commentaire)';
 
         const url = GENERAL_URL
         let link = `${url}/demande-qr-details/${demande.id}`;
 
-        if ((livreurs && livreurs.length > 0) || (generateurs && generateurs.length > 0)) {
+        if ((livreurs && livreurs.length > 0) || (generateurs && generateurs.length > 0) || (superviseurs && superviseurs.length > 0)) {
             const subject = `IMPRESSION QR CODE(S)`;
             let html = `
                 <p>Bonjour,</p>
@@ -665,6 +889,13 @@ const impressionDemandeQr = async (req, res) => {
             for (const generateur of generateurs) {
                 await sendMail({
                     to: generateur.email,
+                    subject,
+                    html,
+                });
+            }
+            for (const superviseur of superviseurs) {
+                await sendMail({
+                    to: superviseur.email,
                     subject,
                     html,
                 });
@@ -769,14 +1000,23 @@ const livraisonDemandeQr = async (req, res) => {
                 users: true
             }
         })
+        const roleSupervision = await prisma.user_roles.findMany({
+            where: {
+                role_id: 22,
+            },
+            include: {
+                users: true
+            }
+        })
         const recepteurs = roleReception.map(us => us.users)
+        const superviseurs = roleSupervision.map(us => us.users)
 
         let commentaire_mail = commentaire ? commentaire : '(sans commentaire)';
 
         const url = GENERAL_URL
         let link = `${url}/demande-qr-details/${demande.id}`;
 
-        if (recepteurs && recepteurs.length > 0) {
+        if ((recepteurs && recepteurs.length > 0) || (superviseurs && superviseurs.length > 0)) {
             const subject = `LIVRAISON QR CODE(S)`;
             let html = `
                 <p>Bonjour,</p>
@@ -800,6 +1040,13 @@ const livraisonDemandeQr = async (req, res) => {
             for (const recepteur of recepteurs) {
                 await sendMail({
                     to: recepteur.email,
+                    subject,
+                    html,
+                });
+            }
+            for (const superviseur of superviseurs) {
+                await sendMail({
+                    to: superviseur.email,
                     subject,
                     html,
                 });
@@ -934,14 +1181,23 @@ const receptionDemandeQr = async (req, res) => {
                 users: true
             }
         })
+        const roleSupervision = await prisma.user_roles.findMany({
+            where: {
+                role_id: 22,
+            },
+            include: {
+                users: true
+            }
+        })
         const livreurs = roleLivraison.map(us => us.users)
+        const superviseurs = roleSupervision.map(us => us.users)
 
         let commentaire_mail = commentaire ? commentaire : '(sans commentaire)';
 
         const url = GENERAL_URL
         let link = `${url}/demande-qr-details/${demande.id}`;
 
-        if (livreurs && livreurs.length > 0) {
+        if ((livreurs && livreurs.length > 0) || (superviseurs && superviseurs.length > 0)) {
             const subject = `RECEPTION QR CODE(S)`;
             let html = `
                 <p>Bonjour,</p>
@@ -965,6 +1221,13 @@ const receptionDemandeQr = async (req, res) => {
             for (const livreur of livreurs) {
                 await sendMail({
                     to: livreur.email,
+                    subject,
+                    html,
+                });
+            }
+            for (const superviseur of superviseurs) {
+                await sendMail({
+                    to: superviseur.email,
                     subject,
                     html,
                 });
@@ -997,6 +1260,43 @@ const getAllFormatsQr = async (req, res) => {
     }
 }
 
+const getAllFormFiles = async (req, res) => {
+    const {
+        id
+    } = req.params
+
+    try {
+
+        const formId = parseInt(id, 10);
+
+        if (isNaN(formId)) {
+            return res.status(400).json({ message: "Invalid demande ID" });
+        }
+        const form = await prisma.forms.findUnique({
+            where: { id: parseInt(formId) }
+        })
+        if (!form) {
+            console.log('Formulaire introuvable')
+            return res.status(404).json({ message: "Formulaire introuvable" });
+        }
+        const files = await prisma.fichiers.findMany({
+            where: {
+                form_id: formId,
+            },
+            orderBy: {
+                created_at: "asc"
+            },
+        });
+
+        console.log('Succès !')
+        res.status(200).json(files);
+    } catch (error) {
+        console.log("Erreur serveur: ", error)
+        console.error("Erreur :", error)
+        res.status(500).json({ message: "Erreur lors de la récupération des fichiers", error });
+    }
+}
+
 module.exports = {
     getAllTypePaiement,
     faireDemandeQr,
@@ -1008,4 +1308,6 @@ module.exports = {
     livraisonDemandeQr,
     receptionDemandeQr,
     getAllFormatsQr,
+    regularisationDemandeQr,
+    getAllFormFiles,
 }

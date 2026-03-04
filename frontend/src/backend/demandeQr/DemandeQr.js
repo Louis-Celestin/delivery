@@ -11,9 +11,13 @@ export class DemandeQr {
         }
     }
 
-    async faireDemandeQr(payload) {
+    async faireDemandeQr(formData) {
         try {
-            const response = await axios.post(`${urlBase}/api/demandeQr/faireDemandeQr`, payload)
+            const response = await axios.post(`${urlBase}/api/demandeQr/faireDemandeQr`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            })
             return response.data;
         } catch (error) {
             throw error.response.data;
@@ -107,4 +111,26 @@ export class DemandeQr {
             throw error.response.data
         }
     }
+
+    async regularisationDemandeQr(formData) {
+        try {
+            const response = await axios.post(`${urlBase}/api/demandeQr/regularisationDemandeQr`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            })
+            return response.data;
+        } catch (error) {
+            throw error.response.data;
+        }
+    }
+
+    async getAllFormFiles(id) {
+        try {
+            const response = await axios.get(`${urlBase}/api/demandeQr/getAllFormFiles/${id}`)
+            return response.data;
+        } catch (error) {
+            throw error.response.data
+        }
+    };
 }

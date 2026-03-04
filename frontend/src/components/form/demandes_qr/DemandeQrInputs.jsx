@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useNavigate } from "react-router";
 import { Merchants } from "../../../backend/livraisons/Merchants"
 import { DemandeQr } from "../../../backend/demandeQr/DemandeQr";
@@ -27,6 +27,9 @@ import { Calendar } from 'primereact/calendar';
 import { addLocale } from "primereact/api";
 import Swal from "sweetalert2";
 import { ProgressSpinner } from "primereact/progressspinner";
+
+import JSZip from "jszip";
+import { useDropzone } from "react-dropzone"
 
 
 export default function DemandeQrInputs() {
@@ -88,6 +91,8 @@ export default function DemandeQrInputs() {
 
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
     const [nbreMarchand, setNbreMarchand] = useState(0)
+
+    const [selectedFiles, setSelectedFiles] = useState([])
 
     useEffect(() => {
         const fetchData = async () => {
@@ -198,6 +203,77 @@ export default function DemandeQrInputs() {
     //     { label: 'MOOV Money', value: 'MOOV Money' },
     // ]
 
+    const onDrop = useCallback(async (acceptedFiles) => {
+        const updatedFiles = [...selectedFiles];
+
+        for (const file of acceptedFiles) {
+
+            // Handle ZIP files
+            if (file.type === "application/zip" || file.name.endsWith(".zip")) {
+                try {
+                    const zip = await JSZip.loadAsync(file);
+
+                    const extractedFiles = await Promise.all(
+                        Object.keys(zip.files).map(async (filename) => {
+                            const zipEntry = zip.files[filename];
+
+                            if (!zipEntry.dir) {
+                                const blob = await zipEntry.async("blob");
+
+                                return new File([blob], filename, {
+                                    type: blob.type,
+                                });
+                            }
+                            return null;
+                        })
+                    );
+
+                    extractedFiles.forEach((extractedFile) => {
+                        if (
+                            extractedFile &&
+                            !updatedFiles.find(
+                                (f) =>
+                                    f.name === extractedFile.name &&
+                                    f.size === extractedFile.size
+                            )
+                        ) {
+                            updatedFiles.push(extractedFile);
+                        }
+                    });
+
+                } catch (error) {
+                    console.error("ZIP extraction error:", error);
+                    Swal.fire({
+                        title: "Attention",
+                        text: "Erreur d'exctraction de fichiers !",
+                        icon: "warining"
+                    })
+                }
+            } else {
+                // Normal file
+                if (
+                    !updatedFiles.find(
+                        (f) => f.name === file.name && f.size === file.size
+                    )
+                ) {
+                    updatedFiles.push(file);
+                }
+            }
+        }
+
+        setSelectedFiles(updatedFiles);
+    }, [selectedFiles]);
+
+    const { getRootProps, getInputProps } = useDropzone({
+        onDrop,
+        multiple: true,
+    });
+
+    const handleDeleteFile = (indexToRemove) => {
+        setSelectedFiles((prev) =>
+            prev.filter((_, index) => index !== indexToRemove)
+        );
+    };
     const handleChangeNumberQr = (id, value) => {
         console.log(id)
         setMarchandsFields((prev) =>
@@ -425,7 +501,8 @@ export default function DemandeQrInputs() {
             return
         }
         setIsSignModalOpen(true)
-    }
+    };
+
     const handleClear = () => {
         signature.clear()
     }
@@ -455,22 +532,25 @@ export default function DemandeQrInputs() {
         setIsConfirmModalOpen(false)
         setLoadingValidation(true)
         try {
-            console.log(listeLivraison)
+            // console.log(listeLivraison)
             const listeMarchand = [
                 ...new Set(listeLivraison.map(item => item.pointMarchand))
             ]
             // console.log(listeMarchand)
             // const sign = signature.toDataURL('image/png')
-            // const fd = new FormData();
+            const fd = new FormData();
             // if (sign) {
             //     const blob = await fetch(sign).then(res => res.blob());
             //     fd.append('signature', blob, 'signature.png');
             // }
-            // fd.append("commentaire", commentaire)
-            // fd.append("liste_demande", JSON.stringify(listeLivraison))
-            // fd.append("quantite_marchand", listeMarchand.length)
-            // fd.append("quantite_qr", Number(totalQr))
-            // fd.append("userId", Number(userId))
+            selectedFiles.forEach((file) => {
+                fd.append("files", file);
+            });
+            fd.append("commentaire", commentaire)
+            fd.append("liste_demande", JSON.stringify(listeLivraison))
+            fd.append("quantite_marchand", listeMarchand.length)
+            fd.append("quantite_qr", Number(totalQr))
+            fd.append("userId", Number(userId))
 
             console.log("Sending data : ")
             // for (let pair of fd.entries()) {
@@ -484,9 +564,9 @@ export default function DemandeQrInputs() {
                 quantite_qr: Number(totalQr),
                 userId: Number(userId),
             }
-            console.log(payload)
+            // console.log(payload)
 
-            await demandeData.faireDemandeQr(payload)
+            await demandeData.faireDemandeQr(fd)
 
             Swal.fire({
                 title: "Succès",
@@ -537,6 +617,37 @@ export default function DemandeQrInputs() {
                                                         value={commentaire}
                                                         onChange={(value) => setCommentaire(value)}
                                                     />
+                                                </div>
+                                                <div>
+                                                    <Label>Importer des fichiers <span className="text-red-700">*</span></Label>
+                                                    <div
+                                                        {...getRootProps()}
+                                                        className="border-2 border-dashed p-2 rounded-lg text-center cursor-pointer"
+                                                    >
+                                                        <input {...getInputProps()} />
+                                                        <p className="text-xs">Faites glisser les fichiers ici, ou cliquer pour les sélectionner.</p>
+                                                    </div>
+                                                    <div className="max-h-38 overflow-y-auto">
+                                                        {selectedFiles.length > 0 ? (
+                                                            <div className="mt-3">
+                                                                {selectedFiles.map((selectedFile, index) => (
+                                                                    <div key={index} className="bg-gray-100 px-1 flex justify-between items-center rounded-sm my-1">
+                                                                        <span>
+                                                                            <i className="pi pi-file-check"></i>
+                                                                        </span>
+                                                                        <span className=" text-center" style={{ fontSize: '9px' }}>
+                                                                            {selectedFile.name}
+                                                                        </span>
+                                                                        <button onClick={() => handleDeleteFile(index)}>
+                                                                            <span className="text-error-600"><i className="pi pi-times"></i></span>
+                                                                        </button>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <></>
+                                                        )}
+                                                    </div>
                                                 </div>
                                                 <div>
                                                     <Label>Type QR Code <span className="text-red-700">*</span></Label>

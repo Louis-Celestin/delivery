@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+  provider          = "mysql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 model Livraisons {
@@ -276,6 +277,8 @@ model roles {
   livraison     livraison[]
   remplacements remplacements[]
   user_roles    user_roles[]
+
+  @@index([nom_role], map: "nom_role")
 }
 
 model services {
@@ -582,6 +585,7 @@ model fichiers {
   mimeType        String?                  @db.VarChar(255)
   size            Int?
   uploaded_by     Int
+  form_id         Int?
   livraison_id    Int?
   remplacement_id Int?
   demande_id      Int?
@@ -594,11 +598,13 @@ model fichiers {
   remplacements   remplacements?           @relation(fields: [remplacement_id], references: [id], map: "fichiers_ibfk_3")
   demandes        demandes?                @relation(fields: [demande_id], references: [id], map: "fichiers_ibfk_4")
   users           users                    @relation(fields: [uploaded_by], references: [id_user], onDelete: NoAction, map: "fichiers_ibfk_5")
+  forms           forms?                   @relation(fields: [form_id], references: [id], map: "fichiers_ibfk_6")
 
   @@index([demande_id], map: "demande_id")
   @@index([livraison_id], map: "livraison_id")
   @@index([remplacement_id], map: "remplacement_id")
   @@index([uploaded_by], map: "uploaded_by")
+  @@index([form_id], map: "form_id")
 }
 
 model types_formulaires {
@@ -761,6 +767,7 @@ model forms {
   commentaire                   String?           @db.LongText
   is_deleted                    Boolean           @default(false)
   demande_qr                    demande_qr[]
+  fichiers                      fichiers[]
   form_signatures               form_signatures[]
   users_forms_created_byTousers users             @relation("forms_created_byTousers", fields: [created_by], references: [id_user], map: "forms_ibfk_1")
   users_forms_updated_byTousers users?            @relation("forms_updated_byTousers", fields: [updated_by], references: [id_user], map: "forms_ibfk_2")
@@ -846,29 +853,9 @@ enum remplacements_statut {
   annule
 }
 
-enum fichiers_type_formulaire {
-  livraison
-  remplacement
-  demande
-}
-
-enum fichiers_role {
-  livreur
-  receveur
-  demandeur
-  validateur
-}
-
 enum type_paiement_type {
   mobile
   bancaire
-}
-
-enum form_signatures_role {
-  livreur
-  receveur
-  demandeur
-  validateur
 }
 
 enum demande_qr_statut {
@@ -892,4 +879,27 @@ enum forms_type {
   impression_qr
   livraison_qr
   reception_qr
+}
+
+enum form_signatures_role {
+  livreur
+  receveur
+  demandeur
+  validateur
+  regularisateur
+}
+
+enum fichiers_type_formulaire {
+  livraison
+  remplacement
+  demande
+  demande_qr
+}
+
+enum fichiers_role {
+  livreur
+  receveur
+  demandeur
+  validateur
+  regularisateur
 }

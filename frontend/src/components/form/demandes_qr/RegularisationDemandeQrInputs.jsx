@@ -1,5 +1,7 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
+import { useNavigate } from "react-router";
 import { Merchants } from "../../../backend/livraisons/Merchants"
+import { DemandeQr } from "../../../backend/demandeQr/DemandeQr";
 import ComponentCard from "../../common/ComponentCard";
 
 import { Dropdown } from "primereact/dropdown";
@@ -12,6 +14,8 @@ import TextArea from "../input/TextArea";
 
 import { Modal } from "../../ui/modal";
 import SignatureCanvas from "react-signature-canvas";
+import JSZip from "jszip";
+import { useDropzone } from "react-dropzone"
 
 import {
     Table,
@@ -30,7 +34,9 @@ import { ProgressSpinner } from "primereact/progressspinner";
 export default function RegularisationDemandeQrInputs() {
 
     const merchantsData = new Merchants();
+    const demandeData = new DemandeQr()
     const userId = localStorage.getItem('id');
+    const navigate = useNavigate()
 
     const [loadingData, setLoadingData] = useState(false)
     const [loadingValidation, setLoadingValidation] = useState(false)
@@ -64,14 +70,31 @@ export default function RegularisationDemandeQrInputs() {
     const [parChaine, setParChaine] = useState(false)
     const [parMarchand, setParMarchand] = useState(false)
 
-    const [selectedDateDemande, setSelectedDateDemande] = useState(new Date())
-    const [selectedDateLivraison, setSelectedDateLivraison] = useState(new Date())
+    const [selectedDateDemande, setSelectedDateDemande] = useState()
+    const [selectedDateGeneration, setSelectedDateGeneration] = useState()
+    const [selectedDateImpression, setSelectedDateImpression] = useState()
+    const [selectedDateLivraison, setSelectedDateLivraison] = useState()
+    const [selectedDateReception, setSelectedDateReception] = useState()
 
     const [commentaire, setCommentaire] = useState('')
 
     const [isSignModalOpen, setIsSignModalOpen] = useState(false)
     const [signature, setSignature] = useState();
     const [errorSign, setErrorSign] = useState('')
+
+    const [listeQr, setListeQr] = useState([])
+    const [optionsQr, setOptionsQr] = useState([])
+    const [selectedNomQr, setSelectedNomQr] = useState('')
+
+    const [listeFormats, setListeForms] = useState([])
+    const [optionsFormats, setOptionsFormats] = useState([])
+    const [selectedFormat, setSelectedFormat] = useState(null)
+    const [format, setFormat] = useState('')
+
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
+    const [nbreMarchand, setNbreMarchand] = useState(0)
+
+    const [selectedFiles, setSelectedFiles] = useState([])
 
     addLocale('fr', {
         firstDayOfWeek: 1,
@@ -94,6 +117,7 @@ export default function RegularisationDemandeQrInputs() {
                 const merchantList = await merchantsData.findMerchant()
                 // console.log(merchantList)
 
+                // Fonction pour avoir une liste des marchands individuellement et leur chaîne ainsi que le nombre de leur TPE
                 const countByPointMarchand = merchantList.reduce((acc, { CHAINE, POINT_MARCHAND }) => {
                     const key = `${CHAINE}__${POINT_MARCHAND}`
                     if (!acc[key]) {
@@ -115,6 +139,7 @@ export default function RegularisationDemandeQrInputs() {
                 }))
                 setOptionsMarchands(optionsPm)
 
+                // Fonction pour avoir la liste des marchands + nbr de TPE, groupés par chaîne
                 const groupedChaine = merchantList.reduce((acc, item) => {
                     const { CHAINE, POINT_MARCHAND } = item
 
@@ -133,7 +158,6 @@ export default function RegularisationDemandeQrInputs() {
 
                     return acc
                 }, {})
-
                 // 4️⃣ Convert object to desired array structure
                 const listeChaine = Object.entries(groupedChaine).map(
                     ([CHAINE, points]) => ({
@@ -154,8 +178,28 @@ export default function RegularisationDemandeQrInputs() {
                 }))
                 setOptionsChaines(optionsC)
 
+                const allPaiementType = await demandeData.getAllTypePaiement()
+                const qrTypes = allPaiementType.filter((item) => {
+                    return item.qr_code == true
+                })
+                setListeQr(qrTypes)
+                const optionsQr = qrTypes.map((item) => ({
+                    label: item.nom,
+                    value: item.id
+                }))
+                setOptionsQr(optionsQr)
+
+                const formatQrData = await demandeData.getAllFormatsQr()
+                setListeForms(formatQrData)
+                const optionsFormats = formatQrData.map((item) => ({
+                    label: item.format,
+                    value: item.id,
+                }))
+                setOptionsFormats(optionsFormats)
+
             } catch (error) {
                 console.log('Error fetching data ', error)
+                setErrorForm("Une erreur s'est produite lors de la génération du formulaire !")
             } finally {
                 setLoadingData(false)
             }
@@ -163,11 +207,88 @@ export default function RegularisationDemandeQrInputs() {
         fetchData()
     }, [])
 
-    const optionsTypeQr = [
-        { label: 'Orange Money', value: 'Orange Money' },
-        { label: 'MTN Money', value: 'MTN Money' },
-        { label: 'MOOV Money', value: 'MOOV Money' },
-    ]
+    // const optionsTypeQr = [
+    //     { label: 'Orange Money', value: 'Orange Money' },
+    //     { label: 'MTN Money', value: 'MTN Money' },
+    //     { label: 'MOOV Money', value: 'MOOV Money' },
+    // ]
+
+    // const optionsFormat = [
+    //     { label: 'Orange Money', value: 'Orange Money' },
+    //     { label: 'MTN Money', value: 'MTN Money' },
+    //     { label: 'MOOV Money', value: 'MOOV Money' },
+    // ]
+    const onDrop = useCallback(async (acceptedFiles) => {
+        const updatedFiles = [...selectedFiles];
+
+        for (const file of acceptedFiles) {
+
+            // Handle ZIP files
+            if (file.type === "application/zip" || file.name.endsWith(".zip")) {
+                try {
+                    const zip = await JSZip.loadAsync(file);
+
+                    const extractedFiles = await Promise.all(
+                        Object.keys(zip.files).map(async (filename) => {
+                            const zipEntry = zip.files[filename];
+
+                            if (!zipEntry.dir) {
+                                const blob = await zipEntry.async("blob");
+
+                                return new File([blob], filename, {
+                                    type: blob.type,
+                                });
+                            }
+                            return null;
+                        })
+                    );
+
+                    extractedFiles.forEach((extractedFile) => {
+                        if (
+                            extractedFile &&
+                            !updatedFiles.find(
+                                (f) =>
+                                    f.name === extractedFile.name &&
+                                    f.size === extractedFile.size
+                            )
+                        ) {
+                            updatedFiles.push(extractedFile);
+                        }
+                    });
+
+                } catch (error) {
+                    console.error("ZIP extraction error:", error);
+                    Swal.fire({
+                        title: "Attention",
+                        text: "Erreur d'exctraction de fichiers !",
+                        icon: "warining"
+                    })
+                }
+            } else {
+                // Normal file
+                if (
+                    !updatedFiles.find(
+                        (f) => f.name === file.name && f.size === file.size
+                    )
+                ) {
+                    updatedFiles.push(file);
+                }
+            }
+        }
+
+        setSelectedFiles(updatedFiles);
+    }, [selectedFiles]);
+
+    const { getRootProps, getInputProps } = useDropzone({
+        onDrop,
+        multiple: true,
+    });
+
+    const handleDeleteFile = (indexToRemove) => {
+        setSelectedFiles((prev) =>
+            prev.filter((_, index) => index !== indexToRemove)
+        );
+    };
 
     const handleChangeNumberQr = (id, value) => {
         console.log(id)
@@ -247,6 +368,22 @@ export default function RegularisationDemandeQrInputs() {
 
     const handleSelectType = (value) => {
         setSelectedTypeQr(value)
+        const qrCode = listeQr.find((item) => {
+            return item.id == value
+        })
+        if (qrCode) {
+            setSelectedNomQr(qrCode.nom)
+        }
+    }
+
+    const handleSelectFormat = (value) => {
+        setSelectedFormat(value)
+        const format = listeFormats.find((item) => {
+            return item.id == value
+        })
+        if (format) {
+            setFormat(format.format)
+        }
     }
 
     const handleSelectMarchand = (e) => {
@@ -267,8 +404,20 @@ export default function RegularisationDemandeQrInputs() {
             setErrorAjout('Vous devez choisir la date de la demande !')
             return false
         }
+        if (!selectedDateGeneration) {
+            setErrorAjout('Vous devez choisir la date de la génération !')
+            return false
+        }
+        if (!selectedDateImpression) {
+            setErrorAjout("Vous devez choisir la date de l'impression !")
+            return false
+        }
         if (!selectedDateLivraison) {
             setErrorAjout('Vous devez choisir la date de la livraison !')
+            return false
+        }
+        if (!selectedDateReception) {
+            setErrorAjout('Vous devez choisir la date de la réception !')
             return false
         }
         if (selectedDateLivraison.getDate() < selectedDateDemande.getDate()) {
@@ -277,6 +426,10 @@ export default function RegularisationDemandeQrInputs() {
         }
         if (!selectedTypeQr) {
             setErrorAjout('Vous devez sélectionner le type du QR Code !')
+            return false
+        }
+        if (!selectedFormat) {
+            setErrorAjout('Vous devez sélectionner le format !')
             return false
         }
 
@@ -291,11 +444,17 @@ export default function RegularisationDemandeQrInputs() {
             setErrorAjout('Vous devez sélectionner le Point Marchand !')
             return
         }
+        // console.log(selectedMarchand)
+        // console.log(selectedTypeQr)
+        // for(let m of listeLivraison){
+        //     console.log(m.pointMarchand)
+        //     console.log(m.typeQrId)
+        // }
         const isDuplicate = listeLivraison.some(item => {
-            return item.pointMarchand === selectedMarchand && item.typeQr === selectedTypeQr
+            return item.pointMarchand == selectedMarchand && item.typeQrId == selectedTypeQr && item.formatId == selectedFormat
         });
         if (isDuplicate) {
-            setErrorAjout("Vous avez déjà ajouté ce type de QR pour ce marchand !");
+            setErrorAjout("Vous avez déjà ajouté ce type de QR avec ce format pour ce marchand !");
             return;
         }
         setIsModalParMarchand(true)
@@ -311,10 +470,10 @@ export default function RegularisationDemandeQrInputs() {
         }
         for (let m of marchandFields) {
             const isDuplicate = listeLivraison.some(item => {
-                return item.pointMarchand === m.POINT_MARCHAND && item.typeQr === selectedTypeQr
+                return item.pointMarchand == m.POINT_MARCHAND && item.typeQrId == selectedTypeQr && item.formatId == selectedFormat
             });
             if (isDuplicate) {
-                setErrorAjout("Vous avez déjà ajouté ce type de QR pour ce marchand !");
+                setErrorAjout("Vous avez déjà ajouté ce type de QR avec ce format pour ce marchand !");
                 return;
             }
         }
@@ -325,7 +484,10 @@ export default function RegularisationDemandeQrInputs() {
         setErrorAjout('')
         setIsModalParMarchand(false)
         const newElement = {
-            typeQr: selectedTypeQr,
+            typeQrId: Number(selectedTypeQr),
+            typeQr: selectedNomQr,
+            formatId: Number(selectedFormat),
+            format,
             chaine: selectedChaine,
             pointMarchand: selectedMarchand,
             quantiteTerminal,
@@ -341,7 +503,10 @@ export default function RegularisationDemandeQrInputs() {
         setErrorAjout('')
         setIsModalParChaineOpen(false)
         const liste = marchandFields.map((item) => ({
-            typeQr: selectedTypeQr,
+            typeQrId: Number(selectedTypeQr),
+            typeQr: selectedNomQr,
+            formatId: selectedFormat,
+            format,
             chaine: selectedChaine,
             pointMarchand: item.POINT_MARCHAND,
             quantiteTerminal: item.sn_count,
@@ -375,34 +540,31 @@ export default function RegularisationDemandeQrInputs() {
             })
             return
         }
-        if (!selectedDateDemande) {
-            Swal.fire({
-                title: "Attention",
-                text: "Vous devez choisir la date de la demande !",
-                icon: "warning"
-            })
-            return
-        }
-        if (!selectedDateLivraison) {
-            Swal.fire({
-                title: "Attention",
-                text: "Vous devez choisir la date de la livraison !",
-                icon: "warning"
-            })
-            return
-        }
-        if (selectedDateLivraison.getDate() < selectedDateDemande.getDate()) {
-            Swal.fire({
-                title: "Attention",
-                text: "La date de la livraison ne peut pas être avant la date de la demande !",
-                icon: "warning"
-            })
-            return
-        }
+        const listeMarchand = [
+            ...new Set(listeLivraison.map(item => item.pointMarchand))
+        ]
+        setNbreMarchand(listeMarchand.length)
         setIsSignModalOpen(true)
-    }
+    };
+
     const handleClear = () => {
         signature.clear()
+    }
+
+    const handleConfirmValidate = () => {
+        if (listeLivraison.length < 0) {
+            Swal.fire({
+                title: "Attention",
+                text: "Aucun marchand sélectionné !",
+                icon: "warning"
+            })
+            return
+        }
+        const listeMarchand = [
+            ...new Set(listeLivraison.map(item => item.pointMarchand))
+        ]
+        setNbreMarchand(listeMarchand.length)
+        setIsConfirmModalOpen(true)
     }
 
     const handleValidate = async () => {
@@ -411,6 +573,7 @@ export default function RegularisationDemandeQrInputs() {
             return;
         }
         setIsSignModalOpen(false)
+        setIsConfirmModalOpen(false)
         setLoadingValidation(true)
         try {
             console.log(listeLivraison)
@@ -424,31 +587,50 @@ export default function RegularisationDemandeQrInputs() {
                 const blob = await fetch(sign).then(res => res.blob());
                 fd.append('signature', blob, 'signature.png');
             }
-            fd.append("date_demande", selectedDateDemande)
-            fd.append("date_livraison", selectedDateLivraison)
+            selectedFiles.forEach((file) => {
+                fd.append("files", file);
+            });
             fd.append("commentaire", commentaire)
             fd.append("liste_demande", JSON.stringify(listeLivraison))
             fd.append("quantite_marchand", listeMarchand.length)
             fd.append("quantite_qr", Number(totalQr))
             fd.append("userId", Number(userId))
+            fd.append("date_demande", new Date(selectedDateDemande))
+            fd.append("date_generation", new Date(selectedDateGeneration))
+            fd.append("date_impression", new Date(selectedDateImpression))
+            fd.append("date_livraison", new Date(selectedDateLivraison))
+            fd.append("date_reception", new Date(selectedDateReception))
 
             console.log("Sending data : ")
-            for (let pair of fd.entries()) {
-                console.log(pair[0] + ' = ' + pair[1]);
+            // for (let pair of fd.entries()) {
+            //     console.log(pair[0] + ' = ' + pair[1]);
+            // }
+
+            const payload = {
+                commentaire,
+                liste_demande: JSON.stringify(listeLivraison),
+                quantite_marchand: listeMarchand.length,
+                quantite_qr: Number(totalQr),
+                userId: Number(userId),
             }
+            console.log(payload)
+
+            await demandeData.regularisationDemandeQr(fd)
 
             Swal.fire({
                 title: "Succès",
-                text: "Régularisation éffectuée avec succès !",
+                text: "Régularisation créée avec succès !",
                 icon: "success"
             })
+            navigate('/toutes-les-demandes-qr')
         } catch (error) {
-            console.log("Erreur de validation : ", error)
+            console.log("Erreur de demande : ", error)
             Swal.fire({
                 title: "Attention",
-                text: "Une erreur s'est produite lors de la validation !",
+                text: "Une erreur s'est produite !",
                 icon: "warning"
             })
+            navigate('/toutes-les-demandes-qr')
         } finally {
             setLoadingValidation(false)
         }
@@ -485,24 +667,116 @@ export default function RegularisationDemandeQrInputs() {
                                                         dateFormat="dd/mm/yy"
                                                         placeholder="dd/mm/yyyy"
                                                         maxDate={new Date()}
-                                                        appendTo={document.body}
-                                                        panelStyle={{ zIndex: 99999 }}
                                                         className="w-full"
                                                     />
                                                 </div>
+                                                {selectedDateDemande ? (
+                                                    <>
+                                                        <div>
+                                                            <Label>Date Génération <span className="text-red-700">*</span></Label>
+                                                            <Calendar
+                                                                value={selectedDateGeneration}
+                                                                locale="fr"
+                                                                onChange={(e) => setSelectedDateGeneration(e.value)}
+                                                                dateFormat="dd/mm/yy"
+                                                                placeholder="dd/mm/yyyy"
+                                                                maxDate={new Date()}
+                                                                minDate={new Date(selectedDateDemande)}
+                                                                className="w-full"
+                                                            />
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <></>
+                                                )}
+                                                {selectedDateGeneration ? (
+                                                    <>
+                                                        <div>
+                                                            <Label>Date Impression <span className="text-red-700">*</span></Label>
+                                                            <Calendar
+                                                                value={selectedDateImpression}
+                                                                locale="fr"
+                                                                onChange={(e) => setSelectedDateImpression(e.value)}
+                                                                dateFormat="dd/mm/yy"
+                                                                placeholder="dd/mm/yyyy"
+                                                                maxDate={new Date()}
+                                                                minDate={new Date(selectedDateGeneration)}
+                                                                className="w-full"
+                                                            />
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <></>
+                                                )}
+                                                {selectedDateImpression ? (
+                                                    <>
+                                                        <div>
+                                                            <Label>Date Livraison <span className="text-red-700">*</span></Label>
+                                                            <Calendar
+                                                                value={selectedDateLivraison}
+                                                                locale="fr"
+                                                                onChange={(e) => setSelectedDateLivraison(e.value)}
+                                                                dateFormat="dd/mm/yy"
+                                                                placeholder="dd/mm/yyyy"
+                                                                maxDate={new Date()}
+                                                                minDate={new Date(selectedDateImpression)}
+                                                                className="w-full"
+                                                            />
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <></>
+                                                )}
+                                                {selectedDateLivraison ? (
+                                                    <>
+                                                        <div>
+                                                            <Label>Date Réception <span className="text-red-700">*</span></Label>
+                                                            <Calendar
+                                                                value={selectedDateReception}
+                                                                locale="fr"
+                                                                onChange={(e) => setSelectedDateReception(e.value)}
+                                                                dateFormat="dd/mm/yy"
+                                                                placeholder="dd/mm/yyyy"
+                                                                maxDate={new Date()}
+                                                                minDate={new Date(selectedDateLivraison)}
+                                                                className="w-full"
+                                                            />
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                    </>
+                                                )}
                                                 <div>
-                                                    <Label>Date Livraison <span className="text-red-700">*</span></Label>
-                                                    <Calendar
-                                                        value={selectedDateLivraison}
-                                                        locale="fr"
-                                                        onChange={(e) => setSelectedDateLivraison(e.value)}
-                                                        dateFormat="dd/mm/yy"
-                                                        placeholder="dd/mm/yyyy"
-                                                        maxDate={new Date()}
-                                                        appendTo={document.body}
-                                                        panelStyle={{ zIndex: 99999 }}
-                                                        className="w-full"
-                                                    />
+                                                    <Label>Importer des fichiers <span className="text-red-700">*</span></Label>
+                                                    <div
+                                                        {...getRootProps()}
+                                                        className="border-2 border-dashed p-2 rounded-lg text-center cursor-pointer"
+                                                    >
+                                                        <input {...getInputProps()} />
+                                                        <p className="text-xs">Faites glisser les fichiers ici, ou cliquer pour les sélectionner.</p>
+                                                    </div>
+                                                    <div className="max-h-38 overflow-y-auto">
+                                                        {selectedFiles.length > 0 ? (
+                                                            <div className="mt-3">
+                                                                {selectedFiles.map((selectedFile, index) => (
+                                                                    <div key={index} className="bg-gray-100 px-1 flex justify-between items-center rounded-sm my-1">
+                                                                        <span>
+                                                                            <i className="pi pi-file-check"></i>
+                                                                        </span>
+                                                                        <span className=" text-center" style={{ fontSize: '9px' }}>
+                                                                            {selectedFile.name}
+                                                                        </span>
+                                                                        <button onClick={() => handleDeleteFile(index)}>
+                                                                            <span className="text-error-600"><i className="pi pi-times"></i></span>
+                                                                        </button>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <></>
+                                                        )}
+                                                    </div>
                                                 </div>
                                                 <div>
                                                     <Label>Commentaire</Label>
@@ -516,10 +790,19 @@ export default function RegularisationDemandeQrInputs() {
                                                 <div>
                                                     <Label>Type QR Code <span className="text-red-700">*</span></Label>
                                                     <Select
-                                                        options={optionsTypeQr}
+                                                        options={optionsQr}
                                                         placeholder="Choisir une option"
                                                         className="dark:bg-dark-900"
                                                         onChange={handleSelectType}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Label>Format <span className="text-red-700">*</span></Label>
+                                                    <Select
+                                                        options={optionsFormats}
+                                                        placeholder="Choisir une option"
+                                                        className="dark:bg-dark-900"
+                                                        onChange={handleSelectFormat}
                                                     />
                                                 </div>
                                                 <div className="flex flex-col">
@@ -742,6 +1025,11 @@ export default function RegularisationDemandeQrInputs() {
                                             <TableCell
                                                 isHeader
                                                 className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                                                Format
+                                            </TableCell>
+                                            <TableCell
+                                                isHeader
+                                                className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                                                 Chaîne
                                             </TableCell>
                                             <TableCell
@@ -752,12 +1040,12 @@ export default function RegularisationDemandeQrInputs() {
                                             <TableCell
                                                 isHeader
                                                 className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
-                                                Quantité TPE
+                                                Nbre TPE
                                             </TableCell>
                                             <TableCell
                                                 isHeader
                                                 className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
-                                                Quantité QR Code
+                                                Nbre de copie
                                             </TableCell>
                                             <TableCell
                                                 isHeader
@@ -772,6 +1060,9 @@ export default function RegularisationDemandeQrInputs() {
                                             <TableRow>
                                                 <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                                                     {item.typeQr}
+                                                </TableCell>
+                                                <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                                                    {item.format}
                                                 </TableCell>
                                                 <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                                                     {item.chaine}
@@ -834,11 +1125,15 @@ export default function RegularisationDemandeQrInputs() {
                     <div className="w-full text-center">
                         <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium">Confirmation</span>
                     </div>
-                    <div>
-                        <div className="text-xs text-center">
+                    <div className="">
+                        <div className="text-xs text-center space-y-1">
                             <div>
                                 <span>Type QR CODE: </span>
-                                <span className="font-bold text-sm">{selectedTypeQr}</span>
+                                <span className="font-bold text-sm">{selectedNomQr}</span>
+                            </div>
+                            <div>
+                                <span>Format: </span>
+                                <span className="font-bold text-sm">{format}</span>
                             </div>
                             <div>
                                 <span className="text-sm font-bold" style={{ fontSize: '15px' }}>{selectedMarchand}</span>
@@ -869,9 +1164,13 @@ export default function RegularisationDemandeQrInputs() {
                         <div className="text-xs text-center space-y-5">
                             <div>
                                 <span>Type QR CODE: </span>
-                                <span className="font-bold text-sm">{selectedTypeQr}</span>
+                                <span className="font-bold text-sm">{selectedNomQr}</span>
                             </div>
-                            <div className="h-44 overflow-y-scroll space-y-5">
+                            <div>
+                                <span>Format: </span>
+                                <span className="font-bold text-sm">{format}</span>
+                            </div>
+                            <div className="h-44 overflow-y-auto space-y-5">
                                 {marchandFields.map((item) => {
                                     return (
                                         <>
@@ -901,13 +1200,61 @@ export default function RegularisationDemandeQrInputs() {
                     </div>
                 </div>
             </Modal>
+            <Modal isOpen={isConfirmModalOpen} onClose={() => setIsConfirmModalOpen(false)} className="p-4 max-w-md">
+                <div className="space-y-5">
+                    <div className="w-full text-center">
+                        <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium">Validation</span>
+                    </div>
+                    <div className="">
+                        <div className="text-xs text-center space-y-1">
+                            <div>
+                                <span>Total demande : </span>
+                                <span className="font-bold text-sm">{quantiteTotale}</span>
+                            </div>
+                            <div>
+                                <span>Marchands : </span>
+                                <span className="font-bold text-sm">{nbreMarchand}</span>
+                            </div>
+                            <div>
+                                <span>Total QR Codes : </span>
+                                <span className="font-bold text-sm">{totalQr}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div className="w-full flex justify-center items-center">
+                            <button className="w-1/2 flex items-center justify-center bg-green-400 p-2 rounded-2xl"
+                                onClick={handleValidate}
+                            >
+                                Valider
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </Modal>
             <Modal isOpen={isSignModalOpen} onClose={() => setIsSignModalOpen(false)} className="p-4 max-w-md">
                 <div className='p-1'>
                     <div className="w-full text-center mb-3">
                         <span className="p-3 rounded bg-blue-200 text-blue-500 font-medium text-sm">Validation</span>
                     </div>
+                    <div className="">
+                        <div className="text-xs text-center space-y-1">
+                            <div>
+                                <span>Total demande : </span>
+                                <span className="font-bold text-sm">{quantiteTotale}</span>
+                            </div>
+                            <div>
+                                <span>Marchands : </span>
+                                <span className="font-bold text-sm">{nbreMarchand}</span>
+                            </div>
+                            <div>
+                                <span>Total QR Codes : </span>
+                                <span className="font-bold text-sm">{totalQr}</span>
+                            </div>
+                        </div>
+                    </div>
                     <div className='text-center mb-3 text-xs'>
-                        <span>Signez manuellement pour valider la demande</span>
+                        <span>Signez manuellement pour valider la régularisation</span>
                     </div>
                     <div className='flex flex-col justify-center items-center'>
                         <SignatureCanvas

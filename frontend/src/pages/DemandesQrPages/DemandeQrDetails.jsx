@@ -20,6 +20,7 @@ import JSZip from "jszip";
 import { useDropzone } from "react-dropzone"
 import Swal from "sweetalert2";
 import SignatureCanvas from "react-signature-canvas";
+import { FilesHandler } from "../../backend/filesHandler/FilesHandler";
 
 export default function DemandeQrDetails() {
     const demandeData = new DemandeQr()
@@ -89,6 +90,15 @@ export default function DemandeQrDetails() {
     const [commentaireLivreur, setCommentaireLivreur] = useState('')
     const [commentaireReceveur, setCommentaireReceveur] = useState('')
 
+    const [marchandsParType, setMarchandsParType] = useState([])
+
+    const [commentaireRegularisateur, setCommentaireRegularisateur] = useState('')
+    const [regularisateurFiles, setRegularisateurFiles] = useState([])
+
+    const [demandeurFiles, setDemandeurFiles] = useState([])
+
+    const [fileId, setFileId] = useState(null);
+
     const formatDate = (date) => {
         const d = new Date(date);
         return d.toLocaleDateString('fr-FR'); // or use any locale you want
@@ -110,6 +120,12 @@ export default function DemandeQrDetails() {
                 setTotalListe(listeDemande.length)
                 // console.log(listeDemande)
 
+                const listeDemandeType = [
+                    ...new Set(listeDemande.map(item => item.pointMarchand + ' ' + item.typeQr))
+                ]
+                setMarchandsParType(listeDemandeType)
+                // console.log(listeDemandeType)
+
                 const statut = demande.statut
                 const classStatut = 'text-center text-sm font-semibold rounded-xl p-0.5 bg-blue-50 text-blue-300'
 
@@ -127,9 +143,10 @@ export default function DemandeQrDetails() {
                     return role.id_role
                 })
 
-                const regularisation = demande.isReg
+                const regularisation = demande.is_reg
                 if (regularisation) {
                     setIsReg(true)
+                    setCommentaireRegularisateur(formDemande.commentaire)
                 }
 
                 const indexGeneration = demande.generation_qr.length - 1
@@ -176,6 +193,7 @@ export default function DemandeQrDetails() {
                     }
                 } else if (statut == 'recue' && reception) {
                     setStatutDemande('reçue')
+                    setIsRecue(true)
                     setStatutClass('text-center text-xs font-semibold rounded-xl p-0.5 bg-green-100 text-green-500')
                 }
                 if (generation && (statut == 'generee' || statut == 'imprimee' || statut == 'livree' || statut == 'recue')) {
@@ -189,6 +207,16 @@ export default function DemandeQrDetails() {
                 setCommentaireImprimeur(impression?.forms.commentaire)
                 setCommentaireLivreur(livraison?.forms.commentaire)
                 setCommentaireReceveur(reception?.forms.commentaire)
+
+                const allFiles = await demandeData.getAllFormFiles(formDemande.id)
+                const regFiles = allFiles.filter((item) => {
+                    return item.role == 'regularisateur'
+                })
+                setRegularisateurFiles(regFiles)
+                const dFiles = allFiles.filter((item) => {
+                    return item.role == 'demandeur'
+                })
+                setDemandeurFiles(dFiles)
 
             } catch (error) {
                 console.log("Error fetchind data ", error)
@@ -271,6 +299,45 @@ export default function DemandeQrDetails() {
         );
     };
 
+    const handleSingleFile = async (id) => {
+        try {
+            setFileId(id)
+            const service = new FilesHandler();
+            const response = await service.downloadFile(id);
+
+            const url = window.URL.createObjectURL(response.data);
+
+            const a = document.createElement("a");
+            a.href = url;
+
+            // Extract filename from headers if backend sends it
+            const contentDisposition = response.headers["content-disposition"];
+            let fileName = "download";
+
+            if (contentDisposition) {
+                const match = contentDisposition.match(/filename="?(.+)"?/);
+                if (match?.[1]) fileName = match[1];
+            }
+
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+
+            window.URL.revokeObjectURL(url);
+
+        } catch (error) {
+            console.error("Download error:", error);
+            Swal.fire({
+                title: "Attention",
+                text: "Une erreur s'est produite lors du téléchargement !",
+                icon: "warning"
+            });
+        } finally {
+            setFileId(null)
+        }
+    };
+
     const handleUploadQr = async () => {
         if (selectedFiles.length == 0) {
             setErrorGenerate("Vous devez upload au moins un fichier !")
@@ -291,7 +358,7 @@ export default function DemandeQrDetails() {
 
             Swal.fire({
                 title: "Succès",
-                text: "Demande effectuée avec succès !",
+                text: "QR Code(s) généré(s) avec succès !",
                 icon: "success"
             })
             navigate('/toutes-les-demandes-qr')
@@ -638,10 +705,78 @@ export default function DemandeQrDetails() {
                                     </div>
                                 </div>
                                 <div>
-                                    <div>
-                                        {commentaireDemandeur ? (
+                                    <div className="space-y-3">
+                                        {isReg ? (
                                             <>
-                                                <div className='overflow-hidden mb-6 pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
+                                                <div>
+                                                    <div>
+                                                        {commentaireRegularisateur ? (
+                                                            <>
+                                                                <div className='overflow-hidden pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
+                                                                    <div className='mb-6 pb-2 w-full border-b text-left'>
+                                                                        <span className='text-sm mr-2'>Commentaire régularisation</span>
+                                                                        <span className='text-sm'><i className="pi pi-comment"></i></span>
+                                                                    </div>
+                                                                    <p className='text-sm text-blue-500 text-left'>{commentaireDemandeur}</p>
+                                                                </div>
+                                                            </>
+                                                        ) : (
+                                                            <></>
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        {regularisateurFiles.length > 0 ? (
+                                                            <>
+                                                                <div>
+                                                                    <span className="text-xs text-gray-500">Pièce(s) jointe(s) régularisation</span>
+                                                                </div>
+                                                                <div className='grid grid-cols-6 text-xs gap-1'>
+                                                                    {regularisateurFiles.map((file) => {
+                                                                        let icon = 'pi pi-file'
+                                                                        let fileClass = 'flex items-center justify-between bg-gray-300 rounded p-0.5'
+                                                                        if (file.path.endsWith('.pdf')) {
+                                                                            icon = 'pi pi-file-pdf'
+                                                                            fileClass = 'flex items-center justify-between bg-red-100 text-red-500 rounded p-0.5'
+                                                                        } else if (file.path.endsWith('.docx')) {
+                                                                            icon = 'pi pi-file-word'
+                                                                            fileClass = 'flex items-center justify-between bg-blue-100 text-blue-600 rounded p-0.5'
+                                                                        } else if (file.path.endsWith('.xlsx')) {
+                                                                            icon = 'pi pi-file-excel'
+                                                                            fileClass = 'flex items-center justify-between bg-green-100 text-green-600 rounded p-0.5'
+                                                                        }
+                                                                        return (
+                                                                            <>
+                                                                                {fileId == file.id ? (
+                                                                                    <>
+                                                                                        <div className='text-center'>
+                                                                                            <span className='mx-1'>
+                                                                                                <ProgressSpinner style={{ width: '15px', height: '15px' }} strokeWidth="8" animationDuration=".5s" />
+                                                                                            </span>
+                                                                                        </div>
+                                                                                    </>
+                                                                                ) : (
+                                                                                    <button key={file.id} className={fileClass} style={{ fontSize: '8px' }} onClick={() => handleSingleFile(file.id)}>
+                                                                                        <i className={icon}></i>
+                                                                                        <span className=''>{file.filename}</span>
+                                                                                    </button>
+                                                                                )}
+                                                                            </>
+                                                                        )
+                                                                    })}
+                                                                </div>
+                                                            </>
+                                                        ) : (
+                                                            <></>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <></>
+                                        )}
+                                        {commentaireDemandeur && !isReg ? (
+                                            <>
+                                                <div className='overflow-hidden pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
                                                     <div className='mb-6 pb-2 w-full border-b text-left'>
                                                         <span className='text-sm mr-2'>Commentaire demandeur</span>
                                                         <span className='text-sm'><i className="pi pi-comment"></i></span>
@@ -652,9 +787,54 @@ export default function DemandeQrDetails() {
                                         ) : (
                                             <></>
                                         )}
+                                        <div>
+                                            {demandeurFiles.length > 0 ? (
+                                                <>
+                                                    <div>
+                                                        <span className="text-xs text-gray-500">Pièce(s) jointe(s) demandeur</span>
+                                                    </div>
+                                                    <div className='grid grid-cols-6 text-xs gap-1'>
+                                                        {demandeurFiles.map((file) => {
+                                                            let icon = 'pi pi-file'
+                                                            let fileClass = 'flex items-center justify-between bg-gray-300 rounded p-0.5'
+                                                            if (file.path.endsWith('.pdf')) {
+                                                                icon = 'pi pi-file-pdf'
+                                                                fileClass = 'flex items-center justify-between bg-red-100 text-red-500 rounded p-0.5'
+                                                            } else if (file.path.endsWith('.docx')) {
+                                                                icon = 'pi pi-file-word'
+                                                                fileClass = 'flex items-center justify-between bg-blue-100 text-blue-600 rounded p-0.5'
+                                                            } else if (file.path.endsWith('.xlsx')) {
+                                                                icon = 'pi pi-file-excel'
+                                                                fileClass = 'flex items-center justify-between bg-green-100 text-green-600 rounded p-0.5'
+                                                            }
+                                                            return (
+                                                                <>
+                                                                    {fileId == file.id ? (
+                                                                        <>
+                                                                            <div className='text-center'>
+                                                                                <span className='mx-1'>
+                                                                                    <ProgressSpinner style={{ width: '15px', height: '15px' }} strokeWidth="8" animationDuration=".5s" />
+                                                                                </span>
+                                                                            </div>
+                                                                        </>
+                                                                    ) : (
+                                                                        <button key={file.id} className={fileClass} style={{ fontSize: '8px' }} onClick={() => handleSingleFile(file.id)}>
+                                                                            <i className={icon}></i>
+                                                                            <span className=''>{file.filename}</span>
+                                                                        </button>
+                                                                    )}
+                                                                </>
+                                                            )
+                                                        })}
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <></>
+                                            )}
+                                        </div>
                                         {commentaireGenerateur ? (
                                             <>
-                                                <div className='overflow-hidden mb-6 pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
+                                                <div className='overflow-hidden pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
                                                     <div className='mb-6 pb-2 w-full border-b text-left'>
                                                         <span className='text-sm mr-2'>Commentaire générateur</span>
                                                         <span className='text-sm'><i className="pi pi-comment"></i></span>
@@ -667,7 +847,7 @@ export default function DemandeQrDetails() {
                                         )}
                                         {commentaireImprimeur ? (
                                             <>
-                                                <div className='overflow-hidden mb-6 pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
+                                                <div className='overflow-hidden pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
                                                     <div className='mb-6 pb-2 w-full border-b text-left'>
                                                         <span className='text-sm mr-2'>Commentaire imprimeur</span>
                                                         <span className='text-sm'><i className="pi pi-comment"></i></span>
@@ -680,7 +860,7 @@ export default function DemandeQrDetails() {
                                         )}
                                         {commentaireLivreur ? (
                                             <>
-                                                <div className='overflow-hidden mb-6 pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
+                                                <div className='overflow-hidden pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
                                                     <div className='mb-6 pb-2 w-full border-b text-left'>
                                                         <span className='text-sm mr-2'>Commentaire livreur</span>
                                                         <span className='text-sm'><i className="pi pi-comment"></i></span>
@@ -693,7 +873,7 @@ export default function DemandeQrDetails() {
                                         )}
                                         {commentaireReceveur ? (
                                             <>
-                                                <div className='overflow-hidden mb-6 pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
+                                                <div className='overflow-hidden pt-2 p-6 rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
                                                     <div className='mb-6 pb-2 w-full border-b text-left'>
                                                         <span className='text-sm mr-2'>Commentaire receveur</span>
                                                         <span className='text-sm'><i className="pi pi-comment"></i></span>
@@ -742,12 +922,12 @@ export default function DemandeQrDetails() {
                                                             <TableCell
                                                                 isHeader
                                                                 className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
-                                                                Quantité TPE
+                                                                Nbre TPE
                                                             </TableCell>
                                                             <TableCell
                                                                 isHeader
                                                                 className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
-                                                                Quantité QR Code
+                                                                Nbre de copie
                                                             </TableCell>
                                                         </TableRow>
                                                     </TableHeader>
@@ -802,7 +982,7 @@ export default function DemandeQrDetails() {
                     </div>
                     <div className="flex flex-col">
                         <span className="text-xs">
-                            Total demande: <span className="font-semibold">{listeDemande.length}</span>
+                            Total marchand par type QR: <span className="font-semibold">{marchandsParType.length}</span>
                         </span>
                         <span className="text-xs">
                             QR Codes files uploaded: <span className="font-semibold">{selectedFiles.length}</span>
